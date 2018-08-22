@@ -231,16 +231,16 @@ def main():
         print(CRISPRessoShared.get_crispresso_header(description,pooled_string))
 
         parser = CRISPRessoShared.getCRISPRessoArgParser(_ROOT, parserTitle = 'CRISPRessoPooled Parameters',requiredParams={'fastq_r1':True})
-        parser.add_argument('-f','--amplicons_file', type=str,  help='Amplicons description file. In particular, this file, is a tab delimited text file with up to 5 columns (2 required):\
-        \nAMPLICON_NAME:  an identifier for the amplicon (must be unique)\nAMPLICON_SEQUENCE:  amplicon sequence used in the design of the experiment\n\
-        \nsgRNA_SEQUENCE (OPTIONAL):  sgRNA sequence used for this amplicon without the PAM sequence. If more than one separate them by commas and not spaces. If not available enter NA.\
+        parser.add_argument('-f','--amplicons_file', type=str,  help='Amplicons description file. This file is a tab-delimited text file with up to 5 columns (2 required):\
+        \nAMPLICON_NAME:  an identifier for the amplicon (must be unique)\nAMPLICON_SEQUENCE:  amplicon sequence used in the experiment\n\
+        \nsgRNA_SEQUENCE (OPTIONAL):  sgRNA sequence used for this amplicon without the PAM sequence. Multiple guides can be given separated by commas and not spaces. If not available enter NA.\
         \nEXPECTED_AMPLICON_AFTER_HDR (OPTIONAL): expected amplicon sequence in case of HDR. If not available enter NA.\
         \nCODING_SEQUENCE (OPTIONAL): Subsequence(s) of the amplicon corresponding to coding sequences. If more than one separate them by commas and not spaces. If not available enter NA.', default='')
 
         #tool specific optional
         parser.add_argument('--gene_annotations', type=str, help='Gene Annotation Table from UCSC Genome Browser Tables (http://genome.ucsc.edu/cgi-bin/hgTables?command=start), \
         please select as table "knownGene", as output format "all fields from selected table" and as file returned "gzip compressed"', default='')
-        parser.add_argument('-p','--n_processes',type=int, help='Specify the number of processes to use for the quantification.\
+        parser.add_argument('-p','--n_processes',type=int, help='Specify the number of processes to use for Bowtie2.\
         Please use with caution since increasing this parameter will increase significantly the memory required to run CRISPResso.',default=1)
         parser.add_argument('-x','--bowtie2_index', type=str, help='Basename of Bowtie2 index for the reference genome', default='')
         parser.add_argument('--bowtie2_options_string', type=str, help='Override options for the Bowtie2 alignment command',default=' -k 1 --end-to-end -N 0 --np 0 ')
@@ -249,23 +249,58 @@ def main():
         args = parser.parse_args()
 
 
-
-        crispresso_options=[
-    		'amplicon_min_alignment_score',
-    		'amplicon_min_unmodified_score',
-    		'guide_seq', 'donor_seq', 'coding_seq',
-    		'min_average_read_quality', 'min_single_bp_quality','min_bp_quality_or_N',
-    		'window_around_sgrna',
-    		'exclude_bp_from_left', 'exclude_bp_from_right',
-    		'ignore_substitutions', 'ignore_insertions', 'ignore_deletions',
-    		'needleman_wunsch_gap_open', 'needleman_wunsch_gap_extend', 'needleman_wunsch_gap_incentive'
-    		'keep_intermediate', 'dump', 'save_also_png',
-    		'offset_around_cut_to_plot',
-    		'min_frequency_alleles_around_cut_to_plot',
-    		'max_rows_alleles_around_cut_to_plot',
-    		'default_min_aln_score',
-            'conversion_nuc_from','conversion_nuc_to','base_editor_mode','analysis_window_coordinates','crispresso1_mode'
-        ]
+        crispresso_options_for_pooled=[
+#'fastq_r1',
+#'fastq_r2',
+#'amplicon_seq',
+#'amplicon_name',
+'amplicon_min_alignment_score',
+'default_min_aln_score',
+'expand_ambiguous_alignments',
+'guide_seq',
+'expected_hdr_amplicon_seq',
+'coding_seq',
+'min_average_read_quality',
+'min_single_bp_quality',
+'min_bp_quality_or_N',
+'name',
+'file_prefix',
+#'output_folder', disable setting of output folder
+'split_paired_end',
+'trim_sequences',
+'trimmomatic_options_string',
+'min_paired_end_reads_overlap',
+'max_paired_end_reads_overlap',
+'quantification_window_size',
+'quantification_window_center',
+'exclude_bp_from_left',
+'exclude_bp_from_right',
+'ignore_substitutions',
+'ignore_insertions',
+'ignore_deletions',
+'discard_indel_reads',
+'needleman_wunsch_gap_open',
+'needleman_wunsch_gap_extend',
+'needleman_wunsch_gap_incentive',
+'aln_seed_count',
+'aln_seed_len',
+'aln_seed_min',
+'keep_intermediate',
+'dump',
+'plot_window_size',
+'min_frequency_alleles_around_cut_to_plot',
+'max_rows_alleles_around_cut_to_plot',
+'conversion_nuc_from',
+'conversion_nuc_to',
+'base_editor_output',
+'quantification_window_coordinates',
+'crispresso1_mode',
+'auto',
+'debug',
+'no_rerun',
+'suppress_report',
+'write_cleaned_report',
+]
 
         def propagate_options(cmd,options,args):
 
@@ -487,8 +522,8 @@ def main():
                         if wrong_nt:
                             raise NTException('The sgRNA sequence %s contains wrong characters:%s'  % (current_guide_seq, ' '.join(wrong_nt)))
 
-                        offset_fw=args.cleavage_offset+len(current_guide_seq)-1
-                        offset_rc=(-args.cleavage_offset)-1
+                        offset_fw=args.quantification_window_center+len(current_guide_seq)-1
+                        offset_rc=(-args.quantification_window_center)-1
                         cut_points+=[m.start() + offset_fw for \
                                     m in re.finditer(current_guide_seq,  row.Amplicon_Sequence)]+[m.start() + offset_rc for m in re.finditer(reverse_complement(current_guide_seq),  row.Amplicon_Sequence)]
 
@@ -551,7 +586,7 @@ def main():
                     if row['Coding_sequence'] and not pd.isnull(row['Coding_sequence']):
                         crispresso_cmd+=' -c %s' % row['Coding_sequence']
 
-                    crispresso_cmd=propagate_options(crispresso_cmd,crispresso_options,args)
+                    crispresso_cmd=propagate_options(crispresso_cmd,crispresso_options_for_pooled,args)
                     info('Running CRISPResso:%s' % crispresso_cmd)
                     sb.call(crispresso_cmd,shell=True)
                 else:
@@ -708,7 +743,7 @@ def main():
                         if row['Coding_sequence'] and not pd.isnull(row['Coding_sequence']):
                             crispresso_cmd+=' -c %s' % row['Coding_sequence']
 
-                        crispresso_cmd=propagate_options(crispresso_cmd,crispresso_options,args)
+                        crispresso_cmd=propagate_options(crispresso_cmd,crispresso_options_for_pooled,args)
                         info('Running CRISPResso:%s' % crispresso_cmd)
                         sb.call(crispresso_cmd,shell=True)
 
@@ -801,7 +836,7 @@ def main():
                 if row.n_reads > args.min_reads_to_use_region:
                     info('\nRunning CRISPResso on: %s-%d-%d...'%(row.chr_id,row.bpstart,row.bpend ))
                     crispresso_cmd='CRISPResso -r1 %s -a %s -o %s' %(row.fastq_file,row.sequence,OUTPUT_DIRECTORY)
-                    crispresso_cmd=propagate_options(crispresso_cmd,crispresso_options,args)
+                    crispresso_cmd=propagate_options(crispresso_cmd,crispresso_options_for_pooled,args)
                     info('Running CRISPResso:%s' % crispresso_cmd)
                     sb.call(crispresso_cmd,shell=True)
                 else:

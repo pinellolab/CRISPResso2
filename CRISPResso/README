@@ -1,0 +1,2 @@
+run setup.sh to compile cython code
+after running setup.sh, it puts that .so file in a CRISPResso folder.. move that .so file to this folder and delete the new CRISPResso file

@@ -107,6 +107,7 @@ def global_align(char* seqj, char* seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
     mScore[0,0] = 0
     mPointer[0,1:] = IARRAY
     mPointer[1:,0] = JARRAY
+    mPointer[0,0] = 0
 
 # no penalty for gaps starting at beginning
 #    score[0, 1:] = 0
@@ -354,6 +355,7 @@ def global_align(char* seqj, char* seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
           else:
             print('i: ' + str(i) + ' j: ' + str(j))
             print('currMatrix:' + str(currMatrix))
+            print('seqj: ' + str(seqj) + ' seqi: ' + str(seqi))
             raise Exception('wtf4!:pointer: %i', i)
 #          print('at end, currMatrix is ' + str(currMatrix))
 

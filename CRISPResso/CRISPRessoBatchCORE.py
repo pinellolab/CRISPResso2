@@ -18,8 +18,17 @@ import traceback
 import multiprocessing as mp
 import signal
 from functools import partial
-import CRISPRessoShared
-import CRISPRessoPlot
+from CRISPResso import CRISPRessoShared
+from CRISPResso import CRISPRessoPlot
+
+running_python3 = False
+if sys.version_info > (3, 0):
+    running_python3 = True
+
+if running_python3:
+    import pickle as cp #python 3
+else:
+    import cPickle as cp #python 2.7
 
 
 import logging
@@ -178,26 +187,58 @@ def main():
 
         debug_flag = args.debug
 
-        crispresso_options_for_batch=['fastq_r1','fastq_r2','amplicon_seq',
-    		'amplicon_name', 'amplicon_min_alignment_score',
-    		'amplicon_min_unmodified_score',
-    		'guide_seq', 'coding_seq',
-    		'min_average_read_quality', 'min_single_bp_quality','min_bp_quality_or_N',
-    		'name',
-            #'output_folder', #disable setting of output folder
-    		'split_paired_end', 'trim_sequences', 'trimmomatic_options_string',
-    		'min_paired_end_reads_overlap', 'max_paired_end_reads_overlap',
-    		'window_around_sgrna', 'cleavage_offset',
-    		'exclude_bp_from_left', 'exclude_bp_from_right',
-    		'ignore_substitutions', 'ignore_insertions', 'ignore_deletions',
-    		'needleman_wunsch_gap_open', 'needleman_wunsch_gap_extend','needleman_wunsch_gap_incentive',
-    		'keep_intermediate', 'dump', 'save_also_png',
-    		'offset_around_cut_to_plot',
-    		'min_frequency_alleles_around_cut_to_plot',
-    		'max_rows_alleles_around_cut_to_plot',
-    		'default_min_aln_score',
-            'conversion_nuc_from','conversion_nuc_to','base_editor_mode','analysis_window_coordinates','crispresso1_mode','debug'
-        ]
+        crispresso_options_for_batch=['fastq_r1',
+'fastq_r2',
+'amplicon_seq',
+'amplicon_name',
+'amplicon_min_alignment_score',
+'default_min_aln_score',
+'expand_ambiguous_alignments',
+'guide_seq',
+'expected_hdr_amplicon_seq',
+'coding_seq',
+'min_average_read_quality',
+'min_single_bp_quality',
+'min_bp_quality_or_N',
+'name',
+'file_prefix',
+#'output_folder', disable setting of output folder
+'split_paired_end',
+'trim_sequences',
+'trimmomatic_options_string',
+'min_paired_end_reads_overlap',
+'max_paired_end_reads_overlap',
+'quantification_window_size',
+'quantification_window_center',
+'exclude_bp_from_left',
+'exclude_bp_from_right',
+'ignore_substitutions',
+'ignore_insertions',
+'ignore_deletions',
+'discard_indel_reads',
+'needleman_wunsch_gap_open',
+'needleman_wunsch_gap_extend',
+'needleman_wunsch_gap_incentive',
+'aln_seed_count',
+'aln_seed_len',
+'aln_seed_min',
+'keep_intermediate',
+'dump',
+'plot_window_size',
+'min_frequency_alleles_around_cut_to_plot',
+'max_rows_alleles_around_cut_to_plot',
+'conversion_nuc_from',
+'conversion_nuc_to',
+'base_editor_output',
+'quantification_window_coordinates',
+'crispresso1_mode',
+'auto',
+'debug',
+'no_rerun',
+'suppress_report',
+]
+
+        CRISPRessoShared.check_file(args.batch_settings)
 
         ##parse excel sheet
         batch_params=pd.read_csv(args.batch_settings,comment='#',sep='\t')
@@ -231,12 +272,12 @@ def main():
         if batch_params.drop_duplicates('name').shape[0] != batch_params.shape[0]:
             raise Exception('Batch input names must be unique. The given names are not unique: ' + str(batch_params.loc[:,'name']))
 
-        cleavage_offset = -3 #default value
-        if args.cleavage_offset is not None:
-            cleavage_offset = args.cleavage_offset
-        offset_around_cut_to_plot = 20 #default value
-        if args.offset_around_cut_to_plot is not None:
-            offset_around_cut_to_plot = args.offset_around_cut_to_plot
+        quantification_window_center = -3 #default value
+        if args.quantification_window_center is not None:
+            quantification_window_center = args.quantification_window_center
+        plot_window_size = 20 #default value
+        if args.plot_window_size is not None:
+            plot_window_size = args.plot_window_size
 
 
         #Check files
@@ -260,53 +301,28 @@ def main():
             #iterate through amplicons
             for curr_amplicon_seq in curr_amplicon_seq_str.split(','):
                 this_include_idxs=[] #mask for bp to include for this amplicon seq, as specified by sgRNA cut points
+                this_sgRNA_intervals = []
                 wrong_nt=CRISPRessoShared.find_wrong_nt(curr_amplicon_seq)
                 if wrong_nt:
                     raise NTException('The amplicon sequence in row %d (%s) contains incorrect characters:%s' % (idx+1,curr_amplicon_seq_str,' '.join(wrong_nt)))
 
                 #iterate through guides
                 curr_guide_seq_string = row.guide_seq
-                sgRNA_intervals = []
                 if curr_guide_seq_string is not None and curr_guide_seq_string != "":
-                    for curr_guide_seq in curr_guide_seq_string.strip().upper().split(','):
+                    guides = curr_guide_seq_string.strip().upper().split(',')
+                    for curr_guide_seq in guides:
                         wrong_nt=CRISPRessoShared.find_wrong_nt(curr_guide_seq)
                         if wrong_nt:
                             raise NTException('The sgRNA sequence in row %d (%s) contains incorrect characters:%s'  % (idx+1,curr_guide_seq, ' '.join(wrong_nt)))
-
-                        offset_fw=cleavage_offset+len(curr_guide_seq)-1
-                        offset_rc=(-cleavage_offset)-1
-
-                        cut_points = [m.start() + offset_fw for m in re.finditer(curr_guide_seq, curr_amplicon_seq)] + \
-                                    [m.start() + offset_rc for m in re.finditer(CRISPRessoShared.reverse_complement(curr_guide_seq), curr_amplicon_seq)] + \
-                                    [m.start() + offset_rc for m in re.finditer(CRISPRessoShared.reverse(curr_guide_seq), curr_amplicon_seq)]
-                        sgRNA_intervals += [(m.start(),m.start()+len(curr_guide_seq)-1) for m in re.finditer(curr_guide_seq, curr_amplicon_seq)]+\
-                                      [(m.start(),m.start()+len(curr_guide_seq)-1) for m in re.finditer(CRISPRessoShared.reverse_complement(curr_guide_seq), curr_amplicon_seq)]+\
-                                      [(m.start(),m.start()+len(curr_guide_seq)-1) for m in re.finditer(CRISPRessoShared.reverse(curr_guide_seq), curr_amplicon_seq)]
-
-                        #create mask of positions in which to include/exclude indels
-                        if cut_points and offset_around_cut_to_plot >0:
-                            for cut_p in cut_points:
-                                st=max(0,cut_p-offset_around_cut_to_plot+1)
-                                en=min(len(curr_amplicon_seq)-1,cut_p+offset_around_cut_to_plot+1)
-                                this_include_idxs.extend(range(st,en))
-                    if (not cut_points) and not (curr_guide_seq in guides_are_in_amplicon):
-                        guides_are_in_amplicon[curr_guide_seq] = 0
-                    elif (cut_points):
-                        guides_are_in_amplicon[curr_guide_seq] = 1
-
-                this_exclude_idxs=[]
-
-                if row.exclude_bp_from_left:
-                   this_exclude_idxs+=range(row.exclude_bp_from_left)
-
-                if row.exclude_bp_from_right:
-                   this_exclude_idxs+=range(len(curr_amplicon_seq))[-row.exclude_bp_from_right:]
-
-                this_include_idxs=set(np.setdiff1d(this_include_idxs,this_exclude_idxs))
-                this_include_idxs = sorted(list(set(this_include_idxs)))
+                    (this_sgRNA_sequences, this_sgRNA_intervals, this_cut_points, this_sgRNA_plot_offsets, this_include_idxs,
+                        this_exclude_idxs, this_plot_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(curr_amplicon_seq,guides,row.quantification_window_center,
+                        row.quantification_window_size,row.quantification_window_coordinates,row.exclude_bp_from_left,row.exclude_bp_from_right,row.plot_window_size)
+                    for guide_seq in this_sgRNA_sequences:
+                        guides_are_in_amplicon[guide_seq] = 1
 
                 batch_params.ix[idx,"cut_point_include_idx"].append(this_include_idxs)
-                batch_params.ix[idx,"sgRNA_intervals"].append(sgRNA_intervals)
+                batch_params.ix[idx,"sgRNA_intervals"].append(this_sgRNA_intervals)
+
             for guide_seq in guides_are_in_amplicon:
                 if guides_are_in_amplicon[guide_seq] != 1:
                     warn('\nThe guide sequence provided on row %d (%s) is not present in any amplicon sequence:%s! \nNOTE: The guide will be ignored for the analysis. Please check your input!' % (idx+1,row.guide_seq,curr_amplicon_seq))
@@ -343,19 +359,35 @@ def main():
         signal.signal(signal.SIGINT, original_sigint_handler)
         try:
             res = pool.map_async(pFunc,idxs)
-            res.get(60*60) # Without the timeout this blocking call ignores all signals.
+            ret_vals = res.get(60*60) # Without the timeout this blocking call ignores all signals.
+            for idx, ret in enumerate(ret_vals):
+                if ret != 0:
+                    raise Exception('CRISPResso batch #' + str(idx) + ' failed')
         except KeyboardInterrupt:
             pool.terminate()
             info('Caught SIGINT. Program Terminated')
             raise Exception('CRISPResso2 Terminated')
             exit (0)
         except Exception as e:
-            print('CAUGHT EXCEPTION HERE!!!')
+            print('CRISPResso2 failed')
             raise e
         else:
             info("Finished all batches")
             pool.close()
         pool.join()
+
+        run_datas = [] #crispresso2 info from each row
+
+        for idx,row in batch_params.iterrows():
+            batchName = row["name"]
+            file_prefix = row['file_prefix']
+            folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
+            run_data = cp.load(open(os.path.join(folder_name,'CRISPResso2_info.pickle'),'rb'))
+            run_datas.append(run_data)
+
+        save_png = True
+        if args.suppress_report:
+            save_png = False
 
         #if amplicons are all the same, merge substitutions and perform base editor comparison
         if batch_params.drop_duplicates('amplicon_seq').shape[0]  == 1:
@@ -371,15 +403,17 @@ def main():
                 amp_found_count = 0 #how many folders had information for this amplicon
                 for idx,row in batch_params.iterrows():
                     batchName = row["name"]
+                    file_prefix = row['file_prefix']
                     folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
+                    run_data = run_datas[idx]
 
-                    nucleotide_frequency_file=os.path.join(folder_name,amplicon_name+'.nucleotide_frequency_table.txt')
+                    nucleotide_frequency_file = run_data['refs'][amplicon_name]['nuc_freq_filename']
                     ampSeq_nf,nuc_freqs = CRISPRessoShared.parse_count_file(nucleotide_frequency_file)
 
-                    nucleotide_pct_file=os.path.join(folder_name,amplicon_name+'.nucleotide_percentage_table.txt')
+                    nucleotide_pct_file=run_data['refs'][amplicon_name]['nuc_pct_filename']
                     ampSeq_np,nuc_pcts = CRISPRessoShared.parse_count_file(nucleotide_pct_file)
 
-                    count_file=os.path.join(folder_name,amplicon_name+'.modification_count_vectors.txt')
+                    count_file=run_data['refs'][amplicon_name]['mod_count_filename']
                     ampSeq_cf,mod_freqs = CRISPRessoShared.parse_count_file(count_file)
 
                     if ampSeq_nf is None or ampSeq_np is None or ampSeq_cf is None:
@@ -455,7 +489,7 @@ def main():
 
 
 
-                #if guides are all the same, merge substitutions and perform base editor comparison at guide target region
+                #if guides are all the same, merge substitutions and perform base editor comparison at guide quantification window
                 if batch_params.drop_duplicates('guide_seq').shape[0]  == 1 and batch_params.ix[0,"cut_point_include_idx"][amplicon_index]:
                     include_idxs = batch_params.ix[0,"cut_point_include_idx"][amplicon_index]
                     sgRNA_intervals = batch_params.ix[0,"sgRNA_intervals"][amplicon_index]
@@ -481,25 +515,26 @@ def main():
                         #otherwise, correct partial overlaps
                         elif newstart == None and newend == None:
                             newstart = 0
-                            newend = len(include_idxs)
+                            newend = len(include_idxs) -1
                         elif newstart == None:
                             newstart = 0
                         elif newend == None:
-                            newend = len(include_idxs)
+                            newend = len(include_idxs) -1
                         #and add it to the list
                         sub_sgRNA_intervals.append((newstart,newend))
 
-                    CRISPRessoPlot.plot_nucleotide_quilt(sub_nucleotide_percentage_summary_df,sub_modification_percentage_summary_df,_jp(amplicon_name + '.TARGET_NUCLEOTIDE_PERCENTAGE_QUILT_INDEL'),args.save_also_png,sgRNA_intervals=sub_sgRNA_intervals)
-                    if args.base_editor_mode:
-                        CRISPRessoPlot.plot_conversion_map(sub_nucleotide_percentage_summary_df,_jp(amplicon_name + '.TARGET_NUCLEOTIDE_CONVERSION'),args.conversion_nuc_from,args.conversion_nuc_to,args.save_also_png,sgRNA_intervals=sub_sgRNA_intervals)
+                    CRISPRessoPlot.plot_nucleotide_quilt(sub_nucleotide_percentage_summary_df,sub_modification_percentage_summary_df,_jp(amplicon_name
+                        + '.Quantification_Window_Nucleotide_Percentage_Quilt'),save_png,sgRNA_intervals=sub_sgRNA_intervals)
+                    if args.base_editor_output:
+                        CRISPRessoPlot.plot_conversion_map(sub_nucleotide_percentage_summary_df,_jp(amplicon_name + '.Quantification_Window_Nucleotide_Conversion'),args.conversion_nuc_from,args.conversion_nuc_to,save_png,sgRNA_intervals=sub_sgRNA_intervals)
 
-                    CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df,modification_percentage_summary_df,_jp(amplicon_name + '.NUCLEOTIDE_PERCENTAGE_QUILT_INDEL'),args.save_also_png,sgRNA_intervals=sgRNA_intervals)
-                    if args.base_editor_mode:
-                        CRISPRessoPlot.plot_conversion_map(nucleotide_percentage_summary_df,_jp(amplicon_name + '.NUCLEOTIDE_CONVERSION'),args.conversion_nuc_from,args.conversion_nuc_to,args.save_also_png,sgRNA_intervals=sgRNA_intervals)
+                    CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df,modification_percentage_summary_df,_jp(amplicon_name + '.Nucleotide_Percentage_Quilt'),save_png,sgRNA_intervals=sgRNA_intervals,quantification_window_idxs=include_idxs)
+                    if args.base_editor_output:
+                        CRISPRessoPlot.plot_conversion_map(nucleotide_percentage_summary_df,_jp(amplicon_name + '.Nucleotide_Conversion'),args.conversion_nuc_from,args.conversion_nuc_to,save_png,sgRNA_intervals=sgRNA_intervals)
                 else: #guides are not the same
-                    CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df,modification_percentage_summary_df,_jp(amplicon_name + '.NUCLEOTIDE_PERCENTAGE_QUILT_INDEL'),args.save_also_png)
-                    if args.base_editor_mode:
-                        CRISPRessoPlot.plot_conversion_map(nucleotide_percentage_summary_df,_jp(amplicon_name + '.NUCLEOTIDE_CONVERSION'),args.conversion_nuc_from,args.conversion_nuc_to,args.save_also_png)
+                    CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df,modification_percentage_summary_df,_jp(amplicon_name + '.Nucleotide_Percentage_Quilt'),save_png)
+                    if args.base_editor_output:
+                        CRISPRessoPlot.plot_conversion_map(nucleotide_percentage_summary_df,_jp(amplicon_name + '.Nucleotide_Conversion'),args.conversion_nuc_from,args.conversion_nuc_to,save_png)
 
             amplicon_seqs = row.amplicon_seq.split(',')
             amplicon_names = row.amplicon_name.split(',')
@@ -515,17 +550,18 @@ def main():
                 wrote_header = False
                 for idx,row in batch_params.iterrows():
                     batchName = row["name"]
+                    file_prefix = row['file_prefix']
                     folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
-                    amplicon_modification_file=os.path.join(folder_name,'CRISPResso_quantification_of_editing_frequency.txt')
+                    run_data = run_datas[idx]
+
+                    amplicon_modification_file=run_data['quant_of_editing_freq_filename']
                     with open(amplicon_modification_file,'r') as infile:
                         file_head = infile.readline()
                         if not wrote_header:
                             outfile.write('Batch\t' + file_head)
                             wrote_header = True
-                        line = infile.readline()
-                        while(line):
+                        for line in infile:
                             outfile.write(batchName + "\t" + line)
-                            line = infile.readline()
 
             #summarize alignment
             with open(_jp('CRISPRessoBatch_mapping_statistics.txt'),'w') as outfile:
@@ -533,19 +569,19 @@ def main():
                 for idx,row in batch_params.iterrows():
                     batchName = row["name"]
                     folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
-                    amplicon_modification_file=os.path.join(folder_name,'CRISPResso_mapping_statistics.txt')
+
+                    run_data = run_datas[idx]
+                    amplicon_modification_file=run_data['mapping_stats_filename']
                     with open(amplicon_modification_file,'r') as infile:
                         file_head = infile.readline()
                         if not wrote_header:
                             outfile.write('Batch\t' + file_head)
                             wrote_header = True
-                        line = infile.readline()
-                        while(line):
+                        for line in infile:
                             outfile.write(batchName + "\t" + line)
-                            line = infile.readline()
 
         info('All Done!')
-        print CRISPRessoShared.get_crispresso_footer()
+        print(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)
 
     except Exception as e:

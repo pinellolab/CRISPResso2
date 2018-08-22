@@ -20,8 +20,6 @@ import errno
 import gzip
 import os
 import re
-import signal
-import shutil
 import subprocess as sb
 import traceback
 import unicodedata
@@ -32,13 +30,14 @@ else:
     import cPickle as cp #python 2.7
 
 from CRISPResso import CRISPRessoCOREResources
+from CRISPResso import CRISPRessoReport
 from CRISPResso import CRISPRessoShared
 from CRISPResso import CRISPRessoPlot
 from CRISPResso import cnwalign
 
 from datetime import datetime
 present = datetime.now()
-d1 = datetime.strptime('07/07/2018','%d/%m/%Y')
+d1 = datetime.strptime('07/11/2018','%d/%m/%Y')
 if present > d1:
     print('\nYour version of CRISPResso2 is out of date. Please download a new version.\n')
     sys.exit(1)
@@ -96,27 +95,6 @@ def check_program(binary_name,download_url=None):
         sys.exit(1)
 
 
-def check_file(filename):
-    try:
-        with open(filename): pass
-    except IOError:
-        files_in_dir = os.listdir()
-        raise BadParameterException("The specified file '"+filename + "' cannot be opened. Available files: " + str(files_in_dir))
-
-def force_symlink(src, dst):
-
-    if os.path.exists(dst) and os.path.samefile(src,dst):
-        return
-
-    try:
-        os.symlink(src, dst)
-    except OSError as exc:
-        if exc.errno == errno.EEXIST:
-            os.remove(dst)
-            os.symlink(src, dst)
-        elif exc.errno == errno.EPROTO:
-            #in docker on windows 7, symlinks don't work so well, so we'll just copy the file.
-            shutil.copyfile(src, dst)
 
 def get_avg_read_length_fastq(fastq_filename):
      cmd=('z' if fastq_filename.endswith('.gz') else '' ) +('cat < %s' % fastq_filename)+\
@@ -197,22 +175,27 @@ class AutoException(Exception):
 
 def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
     """process_fastq processes each of the reads contained in a fastq file, given a cache of pre-computed variants
-        fastqIn: name of fastq (e.g. output of FLASh)
+        fastqIn: name of fastq (e.g. output of FLASH)
             This file can be gzipped or plain text
 
-        variantCache: dictionary of sequence>payload
-            The payload is an array. The first element is the count of sequences producing that payload,
-                and the successive items in the array are payload objects
+        variantCache: dict with keys: sequence
+            dict with keys:
+                'count' : number of time sequence was observed
+                'aln_ref_names' : names of reference it was aligned to
+                'aln_scores' : score of alignment to each reference
+                'class_name' : string with class names it was aligned to
+                for each reference, there is a key: variant_ref_name with a payload object
             # payload object:
+            The payload is a dict with keys:
                 ### from CRISPRessoCOREResources.find_indels_substitutions
-                # 'all_insertion_positions' #arr with 1's where there are insertions (including those outside of include_idxs mask)
+                # 'all_insertion_positions' #arr with 1's where there are insertions (including those outside of include_idxs quantification window)
                 # 'all_insertion_left_positions' #arr with 1's to the left of where the insertion occurs
-                # 'insertion_positions' # arr with 1's where there are insertions (1bp before and 1bp after insertion) that overlap with include_idxs mask
+                # 'insertion_positions' # arr with 1's where there are insertions (1bp before and 1bp after insertion) that overlap with include_idxs quantification window
                 # 'insertion_coordinates' # one entry per insertion, tuple of (start,end)
                 # 'insertion_sizes'
                 # 'insertion_n'
                 # 'all_deletion_positions' #arr with 1's where there are insertions
-                # 'deletion_positions' #arr with 1's where there are insertions that overlap the include_idxs mask
+                # 'deletion_positions' #arr with 1's where there are insertions that overlap the include_idxs quantification window
                 # 'deletion_coordinates' # one entry per deletion
                 # 'deletion_sizes' # correspond to entries in 'deletion_coordinates'
                 # 'deletion_n'
@@ -222,12 +205,11 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
                 # 'substitution_values'
                 # 'ref_positions'
                 ### added in this function
-                # 'closest_aln_name' # name of sequence that it most closely aligns to
-                # 'closest_aln_length' # sequence length
-                # 'classification' # MODIFIED or UNMODIFIED
+                # 'ref_name' # name of sequence that it most closely aligns to
+                # 'classification' # MODIFIED or UNMODIFIED or AMBIGUOUS
                 # 'aln_scores' # scores of alignment to each other reference sequence
                 # 'aln_seq' # NW-aligned sequence
-                # 'aln_ref' # NW-aligned sequence of corresponding reference (closest_aln_name)
+                # 'aln_ref' # NW-aligned sequence of corresponding reference (ref_name)
 
         refNameList: list of reference names
         refs: dictionary of sequences name>ref object
@@ -238,18 +220,19 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
                 # 'min_aln_score' #sequence must align with at least this score
                 # 'cut_points'
                 # 'gap_incentive' #incentive for gaps at each position of the reference - to force gaps at the cut points, the indices of these cut points are set to 1  i.e. gap_incentive[4] = 1 would incentivise alignments with insertions to the right of the 4th character in the reference, or deletions of the 4th character in the reference.
-                # 'offset_plots'
+                # 'sgRNA_plot_offsets' #for each sgRNA, if it is on the forward strand it needs to be offset by 1 in the plots. So this is an array of 1's and 0's corresponding to each guide
                 # 'sgRNA_intervals'
                 # 'sgRNA_sequences'
                 # 'contains_guide'
                 # 'contains_coding_seq'
                 # 'exon_positions'
                 # 'exon_intervals'
+                # 'exon_len_mods': the modification to the original exon length (if we copied the exon positions from another reference, this reference could introduce an indel, resulting in a non-zero length modification)
                 # 'splicing_positions'
                 # 'include_idxs'
                 # 'exclude_idxs'
                 # 'plot_idxs'
-                # 'idx_cloned_from' #if this reference didn't contain a guide, it was aligned to 'idx_cloned_from' reference, and cut_points, gap_incentive, sgRNA_intervals, and inculde_idx were cloned from it (at the appropriate indices)
+                # 'idx_cloned_from' #if this reference didn't contain a guide (or exon sequence), it was aligned to 'idx_cloned_from' reference, and cut_points, gap_incentive, sgRNA_intervals, inculde_idx, ane exon information were cloned from it (at the appropriate indices)
            Examples of these seqences can include:
            -the amplicon sequence
            -the repaired CRISPR expected output
@@ -263,9 +246,9 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
     N_COMPUTED_ALN = 0 # not in cache, aligned to at least 1 sequence with min cutoff
     N_COMPUTED_NOTALN = 0 #not in cache, not aligned to any sequence with min cutoff
 
-    alnMatrixLoc = os.path.join(_ROOT,"EDNAFULL")
-    check_file(alnMatrixLoc)
-    alnMatrix = cnwalign.read_matrix(alnMatrixLoc)
+    aln_matrix_loc = os.path.join(_ROOT,args.needleman_wunsch_aln_matrix_loc)
+    CRISPRessoShared.check_file(aln_matrix_loc)
+    aln_matrix = cnwalign.read_matrix(aln_matrix_loc)
 
     if (args.needleman_wunsch_gap_open > 0):
         raise BadParameterException("Needleman Wunsch gap open penalty must be <= 0")
@@ -301,7 +284,7 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
         #if the sequence is already associated with a variant in the variant cache, pull it out
         if (fastq_seq in variantCache):
             N_CACHED_ALN+=1
-            variantCache[fastq_seq][0] += 1
+            variantCache[fastq_seq]['count'] += 1
 
         #otherwise, create a new variant object, and put it in the cache
         else:
@@ -313,17 +296,37 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
             for idx,ref_name in enumerate(ref_names):
                 #get alignment and score from cython
                 #score = 100 * #matchedBases / length(including gaps)
-                fws1,fws2,fwscore=cnwalign.global_align(fastq_seq, refs[ref_name]['sequence'],matrix=alnMatrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
-                rvs1,rvs2,rvscore=cnwalign.global_align(CRISPRessoShared.reverse_complement(fastq_seq), refs[ref_name]['sequence'],matrix=alnMatrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
-#                print "for " + ref_name + " got fws1: " + str(fws1) + " and fws2: " + str(fws2) + " score: " +str(fwscore)
-
-                s1 = fws1
-                s2 = fws2
-                score = fwscore
-                if (rvscore > fwscore):
+                seed_i = 0
+                found_forward_count = 0
+                found_reverse_count = 0
+                while seed_i < args.aln_seed_count:
+                    if refs[ref_name]['fw_seeds'][seed_i] in fastq_seq: #is forward
+                        found_forward_count += 1
+                    if refs[ref_name]['rc_seeds'][seed_i] in fastq_seq: #is rc
+                        found_reverse_count += 1
+                    seed_i += 1
+                if found_forward_count > args.aln_seed_min and found_reverse_count == 0:
+                    fws1,fws2,fwscore=cnwalign.global_align(fastq_seq, refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
+                    s1 = fws1
+                    s2 = fws2
+                    score = fwscore
+                elif found_forward_count == 0 and found_reverse_count > args.aln_seed_min:
+                    rvs1,rvs2,rvscore=cnwalign.global_align(CRISPRessoShared.reverse_complement(fastq_seq), refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
                     s1 = rvs1
                     s2 = rvs2
                     score = rvscore
+                else:
+                    fws1,fws2,fwscore=cnwalign.global_align(fastq_seq, refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
+                    rvs1,rvs2,rvscore=cnwalign.global_align(CRISPRessoShared.reverse_complement(fastq_seq), refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
+                    s1 = fws1
+                    s2 = fws2
+                    score = fwscore
+                    if (rvscore > fwscore):
+                        s1 = rvs1
+                        s2 = rvs2
+                        score = rvscore
+
+#                print "for " + ref_name + " got fws1: " + str(fws1) + " and fws2: " + str(fws2) + " score: " +str(fwscore)
                 aln_scores.append(score)
 
                 #reads are matched to the reference to which they best align. The 'min_aln_score' is calculated using only the changes in 'include_idxs'
@@ -341,46 +344,39 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
 
             if best_match_score > 0:
                 N_COMPUTED_ALN+=1
-                variantCache[fastq_seq] = []
-                variantCache[fastq_seq].append(1) #first element in variant cache is the number of sequences
+                variantCache[fastq_seq] = {}
+                variantCache[fastq_seq]['count'] = 1
+                variantCache[fastq_seq]['aln_ref_names'] = best_match_names
+                variantCache[fastq_seq]['aln_scores'] = aln_scores
+                class_names = []
 
-                if not args.expand_ambiguous_alignments and len(best_match_names) > 1:
-                    idx = 0
-                    payload=CRISPRessoCOREResources.find_indels_substitutions(best_match_s1s[idx],best_match_s2s[idx],refs[best_match_names[idx]]['include_idxs'])
-                    payload['closest_aln_name'] = 'AMBIGUOUS'
+                for idx, best_match_name in enumerate(best_match_names):
+                    payload=CRISPRessoCOREResources.find_indels_substitutions(best_match_s1s[idx],best_match_s2s[idx],refs[best_match_name]['include_idxs'])
+                    payload['ref_name'] = best_match_name
                     payload['aln_scores'] = aln_scores
-                    payload['classification'] = ''
 
+                    # If there is an insertion/deletion/substitution in the quantification window, the read is modified.
+                    is_modified = False
+                    if not args.ignore_deletions and payload['deletion_n'] > 0:
+                        is_modified = True
+                    elif not args.ignore_insertions and payload['insertion_n'] > 0:
+                        is_modified = True
+                    elif not args.ignore_substitutions and payload['substitution_n'] > 0:
+                        is_modified = True
+
+                    if is_modified:
+                        class_names.append(best_match_name+"_MODIFIED")
+                        payload['classification'] = 'MODIFIED'
+                    else:
+                        class_names.append(best_match_name+"_UNMODIFIED")
+                        payload['classification'] = 'UNMODIFIED'
 
                     payload['aln_seq'] = best_match_s1s[idx]
                     payload['aln_ref'] = best_match_s2s[idx]
-                    payload['closest_aln_length'] = refs[best_match_name]['sequence_length']
 
-                    variantCache[fastq_seq].append(payload) #successive elements are payloads corresponding to mappings to references
+                    variantCache[fastq_seq]['variant_'+best_match_name] = payload
 
-                else:
-                    for idx, best_match_name in enumerate(best_match_names):
-                        payload=CRISPRessoCOREResources.find_indels_substitutions(best_match_s1s[idx],best_match_s2s[idx],refs[best_match_name]['include_idxs'])
-                        payload['closest_aln_name'] = best_match_name
-                        payload['aln_scores'] = aln_scores
-
-
-                        # If there is an insertion/deletion/substitution in the target window, the read is modified.
-                        if not args.ignore_deletions and payload['deletion_n'] > 0:
-                            payload['classification'] = 'MODIFIED'
-                        elif not args.ignore_insertions and payload['insertion_n'] > 0:
-                            payload['classification'] = 'MODIFIED'
-                        elif not args.ignore_substitutions and payload['substitution_n'] > 0:
-                            payload['classification'] = 'MODIFIED'
-                        else:
-                            payload['classification'] = 'UNMODIFIED'
-
-
-                        payload['aln_seq'] = best_match_s1s[idx]
-                        payload['aln_ref'] = best_match_s2s[idx]
-                        payload['closest_aln_length'] = refs[best_match_name]['sequence_length']
-
-                        variantCache[fastq_seq].append(payload) #successive elements are payloads corresponding to mappings to references
+                variantCache[fastq_seq]['class_name'] = "&".join(class_names)
 
             else:
                 N_COMPUTED_NOTALN+=1
@@ -437,29 +433,85 @@ def main():
 
         if debug_flag:
             traceback.print_exc(file=sys.stdout)
+            error(traceback.format_exc())
 
     try:
-        description = ['~~~CRISPResso 2~~~','-Analysis of CRISPR/Cas9 outcomes from deep sequencing data-']
+
+        start_time =  datetime.now()
+        start_time_string =  start_time.strftime('%Y-%m-%d %H:%M:%S')
+        description = ['~~~CRISPResso 2~~~','-Analysis of genome editing outcomes from deep sequencing data-']
         header = CRISPRessoShared.get_crispresso_header(description=description,header_str=None)
         print(header)
 
         args = CRISPRessoShared.getCRISPRessoArgParser(_ROOT,requiredParams={'fastq_r1':True}).parse_args()
 
-        alnMatrixLoc = os.path.join(_ROOT,"EDNAFULL")
-        check_file(alnMatrixLoc)
-        alnMatrix = cnwalign.read_matrix(alnMatrixLoc)
+        aln_matrix_loc = os.path.join(_ROOT,"EDNAFULL")
+        CRISPRessoShared.check_file(aln_matrix_loc)
+        aln_matrix = cnwalign.read_matrix(aln_matrix_loc)
 
         #check files
-        check_file(args.fastq_r1)
+        CRISPRessoShared.check_file(args.fastq_r1)
         if args.fastq_r2:
-            check_file(args.fastq_r2)
+            CRISPRessoShared.check_file(args.fastq_r2)
+
+
+        if args.amplicon_seq is None and args.auto is False:
+            raise BadParameterException('Please provide an amplicon sequence for analysis.')
+
+        #create output directory
+        get_name_from_fasta=lambda  x: os.path.basename(x).replace('.fastq','').replace('.gz','')
 
         #normalize name and remove not allowed characters
-        if args.name:
+        if not args.name:
+            if args.fastq_r2!='':
+                database_id='%s_%s' % (get_name_from_fasta(args.fastq_r1),get_name_from_fasta(args.fastq_r2))
+            else:
+                database_id='%s' % get_name_from_fasta(args.fastq_r1)
+
+        else:
             clean_name=slugify(args.name)
             if args.name!= clean_name:
                 warn('The specified name %s contained invalid characters and was changed to: %s' % (args.name,clean_name))
-                args.name=clean_name
+            database_id=clean_name
+
+        clean_file_prefix = ""
+        if args.file_prefix != "":
+            clean_file_prefix = slugify(args.file_prefix)
+            if not clean_file_prefix.endswith("."):
+                clean_file_prefix += "."
+
+        _jp=lambda filename: os.path.join(OUTPUT_DIRECTORY,clean_file_prefix + filename) #handy function to put a file in the output directory
+
+
+        OUTPUT_DIRECTORY='CRISPResso_on_%s' % database_id
+
+        if args.output_folder:
+            OUTPUT_DIRECTORY=os.path.join(os.path.abspath(args.output_folder),OUTPUT_DIRECTORY)
+
+        crispresso2_info_file = os.path.join(OUTPUT_DIRECTORY,'CRISPResso2_info.pickle')
+        crispresso2_info = {} #keep track of all information for this run to be pickled and saved at the end of the run
+        crispresso2_info['version'] = CRISPRessoShared.__version__
+        crispresso2_info['args'] = args
+
+        log_filename=_jp('CRISPResso_RUNNING_LOG.txt')
+        crispresso2_info['log_filename'] = log_filename
+
+        if args.no_rerun:
+            if os.path.exists(crispresso2_info_file):
+                previous_run_data = cp.load(open(crispresso2_info_file,'rb'))
+                if previous_run_data['version'] == CRISPRessoShared.__version__:
+                    args_are_same = True
+                    for arg in vars(args):
+                        if arg not in vars(previous_run_data['args']):
+                            info('Comparing current run to previous run: old run had argument ' + str(arg) + ' \nRerunning.')
+                            args_are_same = False
+                        elif str(getattr(previous_run_data['args'],arg)) != str(getattr(args,arg)):
+                            info('Comparing current run to previous run:\n\told argument ' + str(arg) + ' = ' + str(getattr(previous_run_data['args'],arg)) + '\n\tnew argument: ' + str(arg) + ' = ' + str(getattr(args,arg)) + '\nRerunning.')
+                            args_are_same = False
+
+                    if args_are_same:
+                        info('Analysis already completed on %s!'%previous_run_data['end_time_string'])
+                        sys.exit(0)
 
         #### ASSERT GUIDE(S)
         guides = []
@@ -485,64 +537,13 @@ def main():
         ref_names = [] #ordered list of names
         refs = {} #dict of ref_name > ref object
 
+
 #        #if we should automatically infer amplicon sequence, pull out the most frequent read and assign it to be the amplicon
         if args.auto:
-            #paste <(zcat R1.fastq.gz) <(zcat R2.fastq.gz) | head -n 500 | paste - - - - | awk -v OFS="\n" -v FS="\t" '{print($1,$3,$5,$7,$2,$4,$6,$8)}' | flash - --interleaved --to-stdout 2>/dev/null | awk '((NR-2)%4==0){print $1}' | sort | uniq -c | sort -nr | head
             number_of_reads_to_consider = 1000 * 4 #1000 fastq sequences (4 lines each)
-            view_cmd_1 = 'cat'
-            if args.fastq_r1.endswith('.gz'):
-                view_cmd_1 = 'zcat'
-            file_generation_command = "%s %s | head -n %d "%(view_cmd_1,args.fastq_r1,number_of_reads_to_consider)
 
-            if args.fastq_r2:
-                view_cmd_2 = 'cat'
-                if args.fastq_r2.endswith('.gz'):
-                    view_cmd_2 = 'zcat'
-                file_generation_command = "paste <(%s %s) <(%s %s) | head -n %d | paste - - - - | awk -v OFS=\"\\n\" -v FS=\"\\t\" '{print($1,$3,$5,$7,$2,$4,$6,$8)}' | flash - --interleaved-input --min-overlap %d --to-stdout 2>/dev/null " %(view_cmd_1,args.fastq_r1,view_cmd_2,args.fastq_r2,number_of_reads_to_consider,args.min_paired_end_reads_overlap)
-            count_frequent_cmd = file_generation_command + " | awk \"((NR-2)%4==0){print $1}\" | sort | uniq -c | sort -nr "
-            def default_sigpipe():
-                signal.signal(signal.SIGPIPE, signal.SIG_DFL)
-
-            p = sb.Popen(count_frequent_cmd, shell=True,stdout=sb.PIPE,preexec_fn=default_sigpipe)
-            top_unaligned = p.communicate()[0]
-            if p.poll() != 0:
-                raise AutoException('Cannot retrieve most frequent amplicon sequences. Got nonzero return code.')
-            seq_lines = top_unaligned.strip().split("\n")
-            if len(seq_lines) == 0:
-                raise AutoException('Cannot parse any frequent amplicons sequences.')
-
-            curr_amplicon_id = 1
-
-            amplicon_seq_arr = []
-            amplicon_name_arr = []
-
-            #add most frequent amplicon to the list
-            count,seq = seq_lines[0].strip().split()
-            amplicon_seq_arr.append(seq)
-            amplicon_name_arr.append('Amplicon')
-            curr_amplicon_id += 1
-
-            #for the remainder of the amplicons, test them before adding
-            for i in range(1,len(seq_lines)):
-                count,seq = seq_lines[i].strip().split()
-                last_count,last_seq = seq_lines[i-1].strip().split()
-                #if this allele is present in at least 20% of the samples
-                if float(last_count)/float(number_of_reads_to_consider) > 0.01:
-                    for amp_seq in amplicon_seq_arr:
-                        ref_incentive = np.zeros(len(amp_seq)+1,dtype=np.int)
-                        fws1,fws2,fwscore=cnwalign.global_align(seq,amp_seq,matrix=alnMatrix,gap_incentive=ref_incentive,gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
-                        rvs1,rvs2,rvscore=cnwalign.global_align(CRISPRessoShared.reverse_complement(seq),amp_seq,matrix=alnMatrix,gap_incentive=ref_incentive,gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
-                        #if the sequence is similar to a previously-seen read, don't add it
-                        if fwscore > 0.95 or rvscore > 0.95:
-                            continue
-                        else:
-                            amplicon_seq_arr.append(seq)
-                            amplicon_name_arr.append('Amplicon_%d'%curr_amplicon_id)
-                            curr_amplicon_id += 1
-                            continue
-                else:
-                    break
-
+            amplicon_seq_arr = CRISPRessoShared.guess_amplicons(args.fastq_r1,args.fastq_r2,number_of_reads_to_consider,args.max_paired_end_reads_overlap,args.min_paired_end_reads_overlap,aln_matrix,args.needleman_wunsch_gap_open,args.needleman_wunsch_gap_extend)
+            amplicon_name_arr = ['Amplicon'+str(x) for x in ['',range(1,len(amplicon_seq_arr))]]
 
             amplicon_min_alignment_score_arr = []
             plural_string = ""
@@ -553,6 +554,10 @@ def main():
             amplicon_seq_arr = args.amplicon_seq.split(",")
             amplicon_name_arr = args.amplicon_name.split(",")
             amplicon_min_alignment_score_arr = args.amplicon_min_alignment_score.split(",")
+
+        if args.expected_hdr_amplicon_seq != "":
+            amplicon_seq_arr.append(args.expected_hdr_amplicon_seq)
+            amplicon_name_arr.append('HDR')
 
         found_guide_seq = [False]*len(guides)
         found_coding_seq = [False]*len(coding_seqs)
@@ -571,40 +576,31 @@ def main():
 
             wrong_nt=CRISPRessoShared.find_wrong_nt(this_seq)
             if wrong_nt:
-                raise NTException('Amplicon sequence %d (%s) contains invalid characters:%s' % idx,this_name, ' '.join(wrong_nt))
+                raise NTException('Reference amplicon sequence %d (%s) contains invalid characters:%s' % idx,this_name, ' '.join(wrong_nt))
 
             this_min_aln_score = args.default_min_aln_score
             if idx < len(amplicon_min_alignment_score_arr):
                 this_min_aln_score = float(amplicon_min_alignment_score_arr[idx])
 
+
             # Calculate cut sites for this reference
+            #this_sgRNA_plot_offsets = [] #whether each guide is on the forward strand or the reverse strand -- if it's on the reverse strand, it needs to be offset by 1 in the plot
+            (this_sgRNA_sequences, this_sgRNA_intervals, this_cut_points, this_sgRNA_plot_offsets, this_include_idxs,
+                this_exclude_idxs, this_plot_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(this_seq,guides,args.quantification_window_center,
+                args.quantification_window_size,args.quantification_window_coordinates,args.exclude_bp_from_left,args.exclude_bp_from_right,args.plot_window_size)
+
             this_contains_guide = False
-            this_cut_points = []
-            this_sgRNA_intervals = []
-            this_sgRNA_sequences = []
-            this_offset_plots = []
+            if len(this_sgRNA_sequences) > 0:
+                this_contains_guide = True
 
-            for guide_idx, current_guide_seq in enumerate(guides):
-                offset_fw=args.cleavage_offset+len(current_guide_seq)-1
-                offset_rc=(-args.cleavage_offset)-1
-                this_cut_points+=[m.start() + offset_fw for m in re.finditer(current_guide_seq, this_seq)]+\
-                                 [m.start() + offset_rc for m in re.finditer(CRISPRessoShared.reverse_complement(current_guide_seq), this_seq)]+\
-                                 [m.start() + offset_rc for m in re.finditer(CRISPRessoShared.reverse(current_guide_seq), this_seq)]
-                this_sgRNA_intervals+=[(m.start(),m.start()+len(current_guide_seq)-1) for m in re.finditer(current_guide_seq, this_seq)]+\
-                                      [(m.start(),m.start()+len(current_guide_seq)-1) for m in re.finditer(CRISPRessoShared.reverse_complement(current_guide_seq), this_seq)]+\
-                                      [(m.start(),m.start()+len(current_guide_seq)-1) for m in re.finditer(CRISPRessoShared.reverse(current_guide_seq), this_seq)]
-                this_sgRNA_sequences.append(current_guide_seq)
-
-                if this_cut_points:
+            for guide_idx, guide_seq in enumerate(guides):
+                if guide_seq in this_sgRNA_sequences:
                     found_guide_seq[guide_idx] = True
-                    this_contains_guide=True
-                    this_offset_plots.append(1)
-                else:
-                    this_offset_plots.append(0)
 
             # Calculate coding sequence for this reference
             this_exon_positions = set()
             this_exon_intervals = []
+            this_exon_len_mods = []
             this_splicing_positions = []
             this_contains_coding_seq = False
             for exon_idx, exon_seq in enumerate(coding_seqs):
@@ -613,6 +609,7 @@ def main():
                     found_coding_seq[exon_idx] = True
                     this_contains_coding_seq = True
                     en_exon = st_exon + len(exon_seq)  # this do not include the upper bound as usual in python
+                    this_exon_len_mods.append(0)
                     this_exon_intervals.append((st_exon, en_exon))
                     this_exon_positions = this_exon_positions.union(set(range(st_exon, en_exon)))
 
@@ -624,99 +621,55 @@ def main():
             # protect from the wrong splitting of exons by the users to avoid false splicing sites
             this_splicing_positions = set(this_splicing_positions).difference(this_exon_positions)
 
-
-            #create mask of positions in which to include/exclude indels for the analysis window
-            this_include_idxs=[]
-            #first, if base editor mode is set, set the guide as the analysis swindow
-            if args.base_editor_mode and len(this_sgRNA_intervals) > 0:
-                for sgRNA_int in this_sgRNA_intervals:
-                    this_include_idxs.extend(range(sgRNA_int[0],sgRNA_int[1]))
-            #otherwise, if exact coordinates have been given, set those
-            elif args.analysis_window_coordinates is not None and len(args.analysis_window_coordinates.split(",")) > idx :
-                theseCoords = args.analysis_window_coordinates.split(",")[idx].split("_")
-                for coord in theseCoords:
-                    coordRE = re.match(r'^(\d+)-(\d+)$',coord)
-                    if coordRE:
-                        start = int(coordRE.group(1))
-                        end = int(coordRE.group(2)) + 1
-                        if end > this_seq_length:
-                            raise NTException("End coordinate " + str(end) + " for '" + str(coord) + "' in '" + str(theseCoords) + "' is longer than the sequence length ("+str(this_seq_length)+")")
-                        this_include_idxs.extend(range(start,end))
-                    else:
-                        raise NTException("Cannot parse analysis window coordinate '" + str(coord) + "' in '" + str(theseCoords) + "'. Coordinates must be given in the form start-end e.g. 5-10 . Please check the --analysis_window_coordinate parameter.")
-            elif this_cut_points and args.window_around_sgrna>0:
-                if args.crispresso1_mode:
-                    half_window=max(1,args.window_around_sgrna/2)
-                    for cut_p in this_cut_points:
-                        st=max(0,cut_p-half_window+1)
-                        en=min(len(seq)-1,cut_p+half_window+1)
-                        this_include_idxs.extend(range(st,en))
-                else:
-                    for cut_p in this_cut_points:
-                        st=max(0,cut_p-args.window_around_sgrna+1)
-                        en=min(len(seq)-1,cut_p+args.window_around_sgrna+1)
-                        this_include_idxs.extend(range(st,en))
-            else:
-               this_include_idxs=range(len(seq))
-
-            this_exclude_idxs=[]
-
-            if args.exclude_bp_from_left:
-               this_exclude_idxs+=range(args.exclude_bp_from_left)
-
-            if args.exclude_bp_from_right:
-               this_exclude_idxs+=range(this_seq_length)[-args.exclude_bp_from_right:]
-
-            #flatten the arrays to avoid errors with old numpy library
-            this_include_idxs=np.ravel(this_include_idxs)
-            this_exclude_idxs=np.ravel(this_exclude_idxs)
-
-            this_include_idxs=set(np.setdiff1d(this_include_idxs,this_exclude_idxs))
-
-            this_plot_idxs=[]
-            if this_cut_points and args.offset_around_cut_to_plot>0:
-                window_around_cut = args.offset_around_cut_to_plot
-                if args.crispresso1_mode:
-                    window_around_cut=max(1,args.offset_around_cut_to_plot/2)
-                for cut_p in this_cut_points:
-                    if cut_p - window_around_cut + 1 < 0:
-                        raise BadParameterException('Offset around cut would extend to the left of the amplicon. Please decrease offset_around_cut_to_plot parameter')
-                    if cut_p - window_around_cut > len(seq)-1:
-                        raise BadParameterException('Offset around cut would be greater than sequence length . Please decrease offset_around_cut_to_plot parameter')
-                    st=max(0,cut_p-window_around_cut+1)
-                    en=min(len(seq)-1,cut_p+window_around_cut+1)
-                    this_plot_idxs.append(range(st,en))
-            else:
-               this_plot_idxs=range(len(seq))
-
-            this_plot_idxs = np.ravel(this_plot_idxs)
-
-            this_gap_incentive = np.zeros(len(seq)+1,dtype=np.int)
+            this_gap_incentive = np.zeros(this_seq_length+1,dtype=np.int)
             for cut_point in this_cut_points:
                 this_gap_incentive[cut_point+1] = args.needleman_wunsch_gap_incentive
 
+            seq_rc = CRISPRessoShared.reverse_complement(this_seq)
+            seeds = []
+            rc_seeds = []
+            seedStarts = list(range(args.exclude_bp_from_left,this_seq_length-args.exclude_bp_from_right-args.aln_seed_len,args.aln_seed_count)) #define all possible seed starts
+            for seedStart in seedStarts:
+                attemptsToFindSeed = 0
+                thisSeedStart = seedStart
+                potentialSeed = this_seq[thisSeedStart:thisSeedStart+args.aln_seed_len]
+                while potentialSeed in seq_rc:
+                    if (seedStart > this_seq_length - args.aln_seed_len):
+                        thisSeedStart = 0
+                    if attemptsToFindSeed > 100:
+                        raise FlipException("Can't find seed that is unique to the forward sequence")
+                    thisSeedStart += 1
+                    potentialSeed = this_seq[thisSeedStart:thisSeedStart+args.aln_seed_len]
+                seeds.append(potentialSeed)
+                seed_rc = CRISPRessoShared.reverse_complement(potentialSeed)
+                if seed_rc in this_seq:
+                    raise FlipException("Reverse compliment of seed %s is in amplicon %s even though seed is not in reverse compliment of amplicon"%(seed,amplicon))
+                rc_seeds.append(seed_rc)
+
             refObj = {'name':this_name,
-                   'sequence':seq,
+                   'sequence':this_seq,
                    'sequence_length':this_seq_length,
                    'min_aln_score':this_min_aln_score,
                    'cut_points':this_cut_points,
                    'gap_incentive':this_gap_incentive,
-                   'offset_plots':np.array(this_offset_plots),
+                   'sgRNA_plot_offsets':np.array(this_sgRNA_plot_offsets),
                    'sgRNA_intervals':this_sgRNA_intervals,
                    'sgRNA_sequences':this_sgRNA_sequences,
                    'contains_guide':this_contains_guide,
                    'contains_coding_seq':this_contains_coding_seq,
                    'exon_positions':this_exon_positions,
+                   'exon_len_mods':this_exon_len_mods,
                    'exon_intervals':this_exon_intervals,
                    'splicing_positions':this_splicing_positions,
                    'include_idxs':this_include_idxs,
                    'exclude_idxs':this_exclude_idxs,
                    'plot_idxs':this_plot_idxs,
                    'idx_cloned_from':None,
+                   'fw_seeds':seeds,
+                   'rc_seeds':rc_seeds,
                    }
             ref_names.append(this_name)
             refs[this_name] = refObj
-
 
         #throw error if guides, or coding seqs not found in any reference
         if args.guide_seq:
@@ -730,34 +683,68 @@ def main():
                     raise ExonSequenceException('The coding subsequence %d (%s) provided is not contained in any amplicon sequence!\n\nPlease check your input!' % (idx,coding_seqs[idx]))
 
 
-        #clone cut points and include idx from first reference where those are set
+        #clone cut points and include idx from first reference where those are set (also exons)
         clone_ref_name = None
+        clone_has_cut_points = False
+        clone_has_exons = False
         for ref_name in ref_names:
             cut_points = refs[ref_name]['cut_points']
+            exon_positions = refs[ref_name]['exon_positions']
             if cut_points:
                 if len(ref_names) > 1:
                     info("Using cut points from %s as template for other references"%ref_name)
                 clone_ref_name = ref_name
+                clone_has_cut_points = True
+                if exon_positions:
+                    clone_has_exons = True
+                break
+            if exon_positions:
+                if len(ref_names) > 1:
+                    info("Using exons positions from %s as template for other references"%ref_name)
+                clone_ref_name = ref_name
+                clone_has_exon_positions = True
+                if cut_points:
+                    clone_has_cut_points = True
                 break
 
         if clone_ref_name is not None:
             for ref_name in ref_names:
                 cut_points = refs[ref_name]['cut_points']
                 sgRNA_intervals = refs[ref_name]['sgRNA_intervals']
+                exon_positions = refs[ref_name]['exon_positions']
+
+                needs_cut_points = False
+                needs_sgRNA_intervals = False
+                needs_exon_positions = False
+
                 if cut_points:
                     if len(ref_names) > 1:
-                        info("Reference '%s' has cut points defined: %s. Not cloning."%(ref_name,cut_points))
-                    continue
+                        info("Reference '%s' has cut points defined: %s. Not inferring."%(ref_name,cut_points))
+                else:
+                    needs_cut_points = True
                 if sgRNA_intervals:
                     if len(ref_names) > 1:
-                        info("Reference '%s' has sgRNA_intervals defined: %s. Not cloning."%(ref_name,sgRNA_intervals))
+                        info("Reference '%s' has sgRNA_intervals defined: %s. Not inferring."%(ref_name,sgRNA_intervals))
+                else:
+                    needs_sgRNA_intervals = True
+
+                if exon_positions:
+                    if len(exon_positions) > 1:
+                        info("Reference '%s' has exon_positions defined: %s. Not inferring."%(ref_name,exon_positions))
+                else:
+                    needs_exon_positions = True
+
+                if not needs_cut_points and not needs_sgRNA_intervals and not needs_exon_positions:
                     continue
 
-                fws1,fws2,fwscore=cnwalign.global_align(refs[ref_name]['sequence'], refs[clone_ref_name]['sequence'],matrix=alnMatrix,gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,gap_incentive=refs[clone_ref_name]['gap_incentive'])
+                fws1,fws2,fwscore=cnwalign.global_align(refs[ref_name]['sequence'], refs[clone_ref_name]['sequence'],matrix=aln_matrix,gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,gap_incentive=refs[clone_ref_name]['gap_incentive'])
                 if fwscore < 60:
                     continue
-                info("Reference '%s' has NO cut points or sgRNA intervals idxs defined. Cloning from %s."%(ref_name,clone_ref_name))
-                print('fwscore is '+str(fwscore))
+
+                if (needs_sgRNA_intervals or needs_cut_points) and clone_has_cut_points:
+                    info("Reference '%s' has NO cut points or sgRNA intervals idxs defined. Inferring from '%s'."%(ref_name,clone_ref_name))
+                if needs_exon_positions and clone_has_exons:
+                    info("Reference '%s' has NO exon_positions defined. Inferring from '%s'."%(ref_name,clone_ref_name))
                 #Create a list such that the nucleotide at ix in the old reference corresponds to s1inds[ix]
                 s1inds = []
                 s1ix = -1
@@ -771,46 +758,59 @@ def main():
 #                print("aln:\n%s\n%s"%(fws1,fws2))
 #                print(str(s1inds))
 
-                this_cut_points = [s1inds[X] for X in refs[clone_ref_name]['cut_points']]
-                this_gap_incentive = np.zeros(len(seq)+1,dtype=np.int)
-                for cut_point in this_cut_points:
-                    this_gap_incentive[cut_point + 1] = args.needleman_wunsch_gap_incentive
+                if (needs_cut_points or needs_sgRNA_intervals) and clone_has_cut_points:
+                    this_cut_points = [s1inds[X] for X in refs[clone_ref_name]['cut_points']]
+                    this_gap_incentive = np.zeros(len(seq)+1,dtype=np.int)
+                    for cut_point in this_cut_points:
+                        this_gap_incentive[cut_point + 1] = args.needleman_wunsch_gap_incentive
 
-                this_sgRNA_intervals = []
-                for (sgRNA_interval_start,sgRNA_interval_end) in refs[clone_ref_name]['sgRNA_intervals']:
-                    this_sgRNA_intervals.append((s1inds[sgRNA_interval_start],s1inds[sgRNA_interval_end]))
+                    this_sgRNA_intervals = []
+                    for (sgRNA_interval_start,sgRNA_interval_end) in refs[clone_ref_name]['sgRNA_intervals']:
+                        this_sgRNA_intervals.append((s1inds[sgRNA_interval_start],s1inds[sgRNA_interval_end]))
 
-                this_include_idxs = [s1inds[X] for X in refs[clone_ref_name]['include_idxs']]
-                #subtract any indices in 'exclude_idxs' -- e.g. in case some of the cloned include_idxs were near the read ends (exlcuded)
-                this_exclude_idxs = set(refs[ref_name]['exclude_idxs'])
-                this_include_idxs = set(np.setdiff1d(this_include_idxs,this_exclude_idxs))
+                    this_include_idxs = [s1inds[X] for X in refs[clone_ref_name]['include_idxs']]
+                    #subtract any indices in 'exclude_idxs' -- e.g. in case some of the cloned include_idxs were near the read ends (exlcuded)
+                    this_exclude_idxs = set(refs[ref_name]['exclude_idxs'])
+                    this_include_idxs = set(np.setdiff1d(this_include_idxs,this_exclude_idxs))
 
-                refs[ref_name]['cut_points'] = this_cut_points
-                refs[ref_name]['gap_incentive'] = this_gap_incentive
-                refs[ref_name]['sgRNA_intervals'] = this_sgRNA_intervals
-                refs[ref_name]['include_idxs'] = this_include_idxs
+                    refs[ref_name]['cut_points'] = this_cut_points
+                    refs[ref_name]['gap_incentive'] = this_gap_incentive
+                    refs[ref_name]['sgRNA_intervals'] = this_sgRNA_intervals
+                    refs[ref_name]['include_idxs'] = this_include_idxs
+                    refs[ref_name]['contains_guide'] = True
+                    refs[ref_name]['sgRNA_sequences'] = refs[clone_ref_name]['sgRNA_sequences']
+                    refs[ref_name]['sgRNA_plot_offsets'] = refs[clone_ref_name]['sgRNA_plot_offsets']
+
+
+                if needs_exon_positions and clone_has_exons:
+                    this_exon_positions = set()
+                    this_splicing_positions = []
+                    this_exon_intervals = []
+                    this_coding_offsets = []
+                    this_exon_len_mods = []
+                    this_seq_length = refs[ref_name]['sequence_length']
+                    for (exon_interval_start,exon_interval_end) in refs[clone_ref_name]['exon_intervals']:
+                        this_exon_start = s1inds[exon_interval_start]
+                        this_exon_end = s1inds[exon_interval_end]
+                        this_exon_intervals.append((this_exon_start,this_exon_end))
+                        this_exon_len_mods.append(((this_exon_end - this_exon_start)-(exon_interval_end - exon_interval_start)))
+                        this_exon_positions = this_exon_positions.union(set(range(this_exon_start,this_exon_end)))
+                        # consider 2 base pairs before and after each exon
+                        this_splicing_positions += [max(0, this_exon_start - 2), max(0, this_exon_start - 1), min(this_seq_length - 1, this_exon_end), min(this_seq_length - 1, this_exon_end + 1)]
+
+                    this_exon_positions = sorted(this_exon_positions)
+
+                    # protect from the wrong splitting of exons by the users to avoid false splicing sites
+                    this_splicing_positions = set(this_splicing_positions).difference(this_exon_positions)
+
+                    refs[ref_name]['exon_positions'] = this_exon_positions
+                    refs[ref_name]['exon_intervals'] = this_exon_intervals
+                    refs[ref_name]['exon_len_mods'] = this_exon_len_mods
+                    refs[ref_name]['splicing_positions'] = this_splicing_positions
+                    refs[ref_name]['contains_coding_seq'] = True
+
                 refs[ref_name]['idx_cloned_from'] = clone_ref_name
 
-        #create output directory
-        get_name_from_fasta=lambda  x: os.path.basename(x).replace('.fastq','').replace('.gz','')
-
-        if not args.name:
-            if args.fastq_r2!='':
-                database_id='%s_%s' % (get_name_from_fasta(args.fastq_r1),get_name_from_fasta(args.fastq_r2))
-            else:
-                database_id='%s' % get_name_from_fasta(args.fastq_r1)
-
-        else:
-            database_id=args.name
-
-
-        OUTPUT_DIRECTORY='CRISPResso_on_%s' % database_id
-
-        if args.output_folder:
-            OUTPUT_DIRECTORY=os.path.join(os.path.abspath(args.output_folder),OUTPUT_DIRECTORY)
-
-        _jp=lambda filename: os.path.join(OUTPUT_DIRECTORY,filename) #handy function to put a file in the output directory
-        log_filename=_jp('CRISPResso_RUNNING_LOG.txt')
 
 
         try:
@@ -826,7 +826,35 @@ def main():
             with open(log_filename,'w+') as outfile:
                 outfile.write('CRISPResso version %s\n[Command used]:\n%s\n\n[Execution log]:\n' %(CRISPRessoShared.__version__,' '.join(sys.argv)))
 
+        N_READS_INPUT=get_n_reads_fastq(args.fastq_r1)
 
+        crispresso2_info['command_used'] = ' '.join(sys.argv)
+
+        if args.write_cleaned_report:
+            cmd_copy = sys.argv[:]
+            cmd_copy[0] = 'CRISPResso'
+            for i in range(len(cmd_copy)):
+                if os.sep in cmd_copy[i]:
+                    cmd_copy[i] = os.path.basename(cmd_copy[i])
+
+            crispresso2_info['command_used'] = ' '.join(cmd_copy) #clean command doesn't show the absolute path to the executable or other files
+
+        args_string_arr = []
+        clean_args_string_arr = []
+        for arg in vars(args):
+            val = str(getattr(args,arg))
+            args_string_arr.append("%s: %s"%(str(arg),val))
+            if os.sep in val:
+                val = os.path.basename(val)
+            clean_args_string_arr.append("%s: %s"%(str(arg),val))
+
+        if args.write_cleaned_report:
+            crispresso2_info['args_string'] = '\n'.join(sorted(clean_args_string_arr))
+        else:
+            crispresso2_info['args_string'] = '\n'.join(sorted(args_string_arr))
+
+        crispresso2_info['start_time'] = start_time
+        crispresso2_info['start_time_string'] = start_time_string
 
         if args.split_paired_end:
             if args.fastq_r2!='':
@@ -878,7 +906,7 @@ def main():
             if not args.trim_sequences:
                 #create a symbolic link
                 symlink_filename=_jp(os.path.basename(args.fastq_r1))
-                force_symlink(os.path.abspath(args.fastq_r1),symlink_filename)
+                CRISPRessoShared.force_symlink(os.path.abspath(args.fastq_r1),symlink_filename)
                 output_forward_filename=symlink_filename
             else:
                 output_forward_filename=_jp('reads.trimmed.fq.gz')
@@ -931,6 +959,9 @@ def main():
 
             #Merging with Flash
             info('Merging paired sequences with Flash...')
+            max_overlap = max_amplicon_len
+            if args.max_paired_end_reads_overlap:
+                max_overlap = args.max_paired_end_reads_overlap
             cmd='flash %s %s --min-overlap %d --max-overlap %d -f %d -z -d %s >>%s 2>&1' %\
             (output_forward_paired_filename,
                  output_reverse_paired_filename,
@@ -946,6 +977,7 @@ def main():
 #                 std_fragment_length,
 #                 OUTPUT_DIRECTORY,log_filename)
 
+            info('Running FLASH command: ' + cmd)
             FLASH_STATUS=sb.call(cmd,shell=True)
             if FLASH_STATUS:
                 raise FlashException('Flash failed to run, please check the log file.')
@@ -959,25 +991,7 @@ def main():
 
             processed_output_filename=_jp('out.extendedFrags.fastq.gz')
 
-
-        if args.left_adapter_umi_trim_seq is not None:
-            #first, flip all reads into alignment with (the first) amplicon
-            temp_flip_filename = jp(processed_output_filename + '.temp_flipped_forward.fq')
-            flip_command = "python flipReadsForward.py --fastq %s --fastq_out %s --amplicon %s"%(processed_output_filename,temp_flip_filename,amplicons[0])
-            FLIP_STATUS=sb.call(flip_command,shell=True)
-            if FLIP_STATUS:
-                raise UMIException('UMI deduplication flipping failed to run, please check the log file.')
-
-            #next, deduplicate and trim adapter sequences
-            left_trim_seq_string = args.left_adapter_umi_trim_seq if args.left_adapter_umi_trim_seq is not None else ""
-            right_trim_seq_string = args.right_adapter_umi_trim_seq if args.right_adapter_umi_trim_seq is not None else ""
-            dedupUMI_command = "python dedupTrimUMI.py.py --fastq %s --fastq_out %s %s %s"%(temp_flip_filename,processed_output_filename,left_adapter_umi_trim_seq_string,right_adapter_umi_trim_seq_string)
-            UMI_STATUS=sb.call(flip_command,shell=True)
-            if FLIP_STATUS:
-                raise UMIException('UMI deduplication failed to run, please check the log file.')
-
         #count reads
-        N_READS_INPUT=get_n_reads_fastq(args.fastq_r1)
         N_READS_AFTER_PREPROCESSING=get_n_reads_fastq(processed_output_filename)
         if N_READS_AFTER_PREPROCESSING == 0:
             raise NoReadsAfterQualityFiltering('No reads in input or no reads survived the average or single bp quality filtering.')
@@ -988,6 +1002,10 @@ def main():
 
         ####INITIALIZE CACHE####
         variantCache = {}
+        #put empty sequence into cache
+        cache_fastq_seq = ''
+        variantCache[cache_fastq_seq] = {}
+        variantCache[cache_fastq_seq]['count'] = 0
 
         #operates on variantCache
         alnStats = process_fastq(processed_output_filename,variantCache,ref_names,refs,args)
@@ -1000,6 +1018,7 @@ def main():
 
         ###initialize
         N_TOTAL = 0
+        N_DISCARDED = 0
 
 
         class_counts = {}
@@ -1007,6 +1026,7 @@ def main():
         counts_total = {}
         counts_modified = {}
         counts_unmodified = {}
+        counts_discarded = {}
 
         counts_insertion = {}
         counts_deletion = {}
@@ -1029,7 +1049,7 @@ def main():
         #substitutions
         counts_modified_non_frameshift = {}
 
-        #we don't touch the exons at all, the read can be still modified though..
+        #read is modified but not at the exon
         counts_non_modified_non_frameshift = {}
 
         counts_splicing_sites_modified = {}
@@ -1040,15 +1060,15 @@ def main():
         alleles_list = [] #will be turned into df with rows with information for each variant (allele)
 
         #for each reference, the following are computed individually
-        all_insertion_count_vectors = {} #all insertions (including masked bases)
-        all_insertion_left_count_vectors = {} #all insertions (including masked bases)
+        all_insertion_count_vectors = {} #all insertions (including quantification window bases)
+        all_insertion_left_count_vectors = {} #all insertions (including quantification window bases)
         all_deletion_count_vectors = {}
         all_substitution_count_vectors = {}
         all_indelsub_count_vectors = {}
         all_substitution_base_vectors = {}
         all_base_count_vectors = {} #number of times each base is seen
 
-        insertion_count_vectors = {} #insertions that are in the target region
+        insertion_count_vectors = {} #insertions that are in the quantification window
         deletion_count_vectors = {}
         substitution_count_vectors = {}
         indelsub_count_vectors = {}
@@ -1078,6 +1098,7 @@ def main():
             counts_total                         [ref_name] = 0
             counts_modified                      [ref_name] = 0
             counts_unmodified                    [ref_name] = 0
+            counts_discarded                     [ref_name] = 0
             counts_modified_frameshift           [ref_name] = 0
             counts_modified_non_frameshift       [ref_name] = 0
             counts_non_modified_non_frameshift   [ref_name] = 0
@@ -1139,214 +1160,257 @@ def main():
             hists_frameshift                    [ref_name] = defaultdict(lambda :0)
         #end initialize data structures for each ref
 
+        #take care of empty seqs
+        cache_fastq_seq = ''
+        variantCache[cache_fastq_seq]['count'] = 0
+
         ###iterate through variants
         for variant in variantCache:
             #skip variant if there were none observed
-            variantCount = variantCache[variant][0]
+            variantCount = variantCache[variant]['count']
             if (variantCount == 0):
                 continue
             N_TOTAL += variantCount
 
-            #create count for classes piechart
-            class_names = [] #list of classes -- these get concatted later
-            aln_reference_names = [] #list of references
-            for payloadInd in range(1,len(variantCache[variant])):
-                class_name = variantCache[variant][payloadInd]['closest_aln_name']+"_"+variantCache[variant][payloadInd]['classification']
-                class_names.append(class_name)
-                aln_reference_names.append(variantCache[variant][payloadInd]['closest_aln_name'])
-            class_name = "&".join(class_names)
-            aln_reference_name = "&".join(aln_reference_names)
+            aln_ref_names = variantCache[variant]['aln_ref_names'] #list of references this seq aligned to
+            aln_ref_scores = variantCache[variant]['aln_scores']
+            class_name = variantCache[variant]['class_name'] #for classifying read e.g. 'HDR_MODIFIED' for pie chart
 
-            if class_name not in class_counts:
-                    class_counts[class_name] = 0
-            class_counts[class_name]+=variantCount
-
-            #iterate through payloads -- if a read aligned equally-well to two references, it could have more than one payload
-            for payloadInd in range(1,len(variantCache[variant])):
-                variantPayload = variantCache[variant][payloadInd]
-                refName = variantPayload['closest_aln_name']
-                if refName not in ref_names: #got 'Ambiguous'
-                    continue
-                counts_total[refName] += variantCount
-                if variantPayload['classification'] == 'MODIFIED':
-                    counts_modified[refName] += variantCount
-                else:
-                    counts_unmodified[refName] += variantCount
-
-                this_effective_len = variantPayload['closest_aln_length']
-
-
-                this_has_insertions = False
-                all_insertion_count_vectors[refName][variantPayload['all_insertion_positions']]+=variantCount
-                all_insertion_left_count_vectors[refName][variantPayload['all_insertion_left_positions']]+=variantCount
-                all_indelsub_count_vectors[refName][variantPayload['all_insertion_positions']]+=variantCount
-                if not args.ignore_insertions:
-                    inserted_n_lists[refName].extend([variantPayload['insertion_n']]*variantCount)
-                    insertion_count_vectors[refName][variantPayload['insertion_positions']]+=variantCount
-                    indelsub_count_vectors[refName][variantPayload['insertion_positions']]+=variantCount
-                    this_effective_len = this_effective_len + variantPayload['insertion_n']
-                    if variantPayload['insertion_n'] > 0:
-                         counts_insertion[refName] += variantCount
-                         this_has_insertions = True
-
-
-                this_has_deletions = False
-                all_deletion_count_vectors[refName][variantPayload['all_deletion_positions']]+=variantCount
-                all_indelsub_count_vectors[refName][variantPayload['all_deletion_positions']]+=variantCount
-                if not args.ignore_deletions:
-                    deleted_n_lists[refName].extend([variantPayload['deletion_n']]*variantCount)
-                    deletion_count_vectors[refName][variantPayload['deletion_positions']]+=variantCount
-                    indelsub_count_vectors[refName][variantPayload['deletion_positions']]+=variantCount
-                    this_effective_len = this_effective_len - variantPayload['deletion_n']
-                    if variantPayload['deletion_n'] > 0:
-                         counts_deletion[refName] += variantCount
-                         this_has_deletions = True
-
-                effective_len_lists[refName].extend([this_effective_len]*variantCount)
-
-                this_has_substitutions = False
-                all_substitution_count_vectors[refName][variantPayload['all_substitution_positions']] += variantCount
-                all_indelsub_count_vectors[refName][variantPayload['all_substitution_positions']] += variantCount
-                if not args.ignore_substitutions:
-                    substituted_n_lists[refName].extend([variantPayload['substitution_n']] * variantCount)
-                    substitution_count_vectors[refName][variantPayload['substitution_positions']] += variantCount
-                    indelsub_count_vectors[refName][variantPayload['substitution_positions']] += variantCount
-                    if variantPayload['substitution_n'] > 0:
-                         counts_substitution[refName] += variantCount
-                         this_has_substitutions = True
-
-                    nucs = ['A','T','C','G','N']
-                    for nuc in nucs:
-                        isNuc = variantPayload['all_substitution_values'] == ord(nuc)
-                        if(np.sum(isNuc) > 0):
-                            locs = np.array(variantPayload['all_substitution_positions'])[isNuc]
-                            all_substitution_base_vectors[refName + "_" + nuc ][locs] += variantCount
-
-
-                if this_has_deletions:
-                    if this_has_insertions:
-                        if this_has_substitutions:
-                            counts_insertion_and_deletion_and_substitution[refName] += variantCount
-                        else:
-                            counts_insertion_and_deletion[refName] += variantCount
-                    else:
-                        if this_has_substitutions:
-                            counts_deletion_and_substitution[refName] += variantCount
-                        else:
-                            counts_only_deletion[refName] += variantCount
-                else: #no deletions
-                    if this_has_insertions:
-                        if this_has_substitutions:
-                            counts_insertion_and_substitution[refName] += variantCount
-                        else:
-                            counts_only_insertion[refName] += variantCount
-                    else:
-                        if this_has_substitutions:
-                            counts_only_substitution[refName] += variantCount
-
-                #set all_base_count_vectors
-                aln_seq = variantPayload['aln_seq']
-                ref_pos = variantPayload['ref_positions']
-                for i in range(len(aln_seq)):
-                    if ref_pos[i] < 0:
-                        continue
-                    nuc = aln_seq[i]
-                    all_base_count_vectors[refName + "_" + nuc][ref_pos[i]] += variantCount
-
-                exon_positions = refs[refName]['exon_positions']
-                splicing_positions = refs[refName]['splicing_positions']
-                insertion_coordinates = variantPayload['insertion_coordinates']
-                insertion_sizes = variantPayload['insertion_sizes']
-                all_insertion_positions = variantPayload['all_insertion_positions']
-                all_insertion_left_positions = variantPayload['all_insertion_left_positions']
-                insertion_positions = variantPayload['insertion_positions']
-                deletion_coordinates = variantPayload['deletion_coordinates']
-                deletion_sizes = variantPayload['deletion_sizes']
-                all_deletion_positions = variantPayload['all_deletion_positions']
-                deletion_positions = variantPayload['deletion_positions']
-                all_substitution_positions = variantPayload['all_substitution_positions']
-                substitution_positions = variantPayload['substitution_positions']
-
-
-
-                length_modified_positions_exons=[]
-                current_read_exons_modified = False
-                current_read_spliced_modified = False
-
-                for idx_ins,(ins_start,ins_end) in enumerate(insertion_coordinates):
-                    insertion_length_vectors[refName][ins_start]+=(insertion_sizes[idx_ins]*variantCount)
-                    insertion_length_vectors[refName][ins_end]+=(insertion_sizes[idx_ins]*variantCount)
-
-                    if refs[refName]['contains_coding_seq']:
-                        if set(exon_positions).intersection((ins_start, ins_end)): # check that we are inserting in one exon
-                            set1 = set(exon_positions).intersection((ins_start, ins_end))
-                            length_modified_positions_exons.append(insertion_sizes[idx_ins])
-                            current_read_exons_modified = True
-
-                for idx_del, (del_start,del_end) in enumerate(deletion_coordinates):
-                    deletion_length_vectors[refName][range(del_start,del_end)] += (deletion_sizes[idx_del]*variantCount)
-
-                if refs[refName]['contains_coding_seq']:
-                    del_positions_to_append = sorted(set(exon_positions).intersection(set(deletion_positions)))
-                    if del_positions_to_append:
-                        # Always use the low include upper not
-                        current_read_exons_modified = True
-                        length_modified_positions_exons.append(-len(del_positions_to_append))
-
-                    if set(exon_positions).intersection(substitution_positions):
-                        current_read_exons_modified = True
-
-                    #splicing modifications
-                    if set(splicing_positions).intersection(deletion_positions):
-                        current_read_spliced_modified = True
-
-                    if set(splicing_positions).intersection(insertion_positions):
-                        current_read_spliced_modified = True
-
-                    if set(splicing_positions).intersection(substitution_positions):
-                        current_read_spliced_modified = True
-
-                    if current_read_spliced_modified:
-                        counts_splicing_sites_modified[refName] += variantCount
-
-                    # if modified check if frameshift
-                    if current_read_exons_modified:
-
-                        if not length_modified_positions_exons:
-                            # there are no indels
-                            counts_modified_non_frameshift[ref_name] += variantCount
-                            hists_inframe[refName][0] += variantCount
-                        else:
-
-                            effective_length = sum(length_modified_positions_exons)
-
-                            if (effective_length % 3) == 0:
-                                counts_modified_non_frameshift[ref_name] += variantCount
-                                hists_inframe[refName][effective_length] += variantCount
-                            else:
-                                counts_modified_frameshift[ref_name] += variantCount
-                                hists_frameshift[refName][effective_length] += variantCount
-
-                    # the indels and subtitutions are outside the exon/s  so we don't care!
-                    else:
-                        counts_non_modified_non_frameshift[ref_name] += variantCount
-                        insertion_count_vectors_noncoding[ref_name][insertion_positions] += variantCount
-                        deletion_count_vectors_noncoding[ref_name][deletion_positions] += variantCount
-                        substitution_count_vectors_noncoding[ref_name][substitution_positions] += variantCount
-
+            if not args.expand_ambiguous_alignments and len(aln_ref_names) > 1: #got 'Ambiguous' -- don't count toward totals
+                variantPayload = variantCache[variant]["variant_"+aln_ref_names[0]]
                 alleleRow = {'#Reads':variantCount,
                            'Aligned_Sequence':variantPayload['aln_seq'],
                            'Reference_Sequence':variantPayload['aln_ref'],
                            'n_inserted':variantPayload['insertion_n'],
                            'n_deleted':variantPayload['deletion_n'],
                            'n_mutated':variantPayload['substitution_n'],
-                           'Reference_Name':variantPayload['closest_aln_name'],
+                           'Reference_Name':'AMBIGUOUS_'+aln_ref_names[0],
                            'Read_Status':variantPayload['classification'],
-                           'Aligned_Reference_Names':aln_reference_name,
-                           'Aligned_Reference_Scores':str(variantPayload['aln_scores']),
+                           'Aligned_Reference_Names':"&".join(aln_ref_names),
+                           'Aligned_Reference_Scores':"&".join([str(x) for x in aln_ref_scores]),
                            'ref_positions':variantPayload['ref_positions']
                 }
                 alleles_list.append(alleleRow)
+
+                class_name = 'AMBIGUOUS'
+                if class_name not in class_counts:
+                        class_counts[class_name] = 0
+                class_counts[class_name]+=variantCount
+
+            else:
+                if class_name not in class_counts:
+                        class_counts[class_name] = 0
+                class_counts[class_name]+=variantCount
+
+                #iterate through payloads -- if a read aligned equally-well to two references, it could have more than one payload
+                for ref_name in aln_ref_names:
+                    variantPayload = variantCache[variant]["variant_"+ref_name]
+                    if args.discard_indel_reads and (variantPayload['deletion_n'] > 0 or variantPayload['insertion_n'] > 0):
+                        counts_discarded[ref_name] += variantCount
+                        continue
+
+
+                    counts_total[ref_name] += variantCount
+                    if variantPayload['classification'] == 'MODIFIED':
+                        counts_modified[ref_name] += variantCount
+                    else:
+                        counts_unmodified[ref_name] += variantCount
+
+                    alleleRow = {'#Reads':variantCount,
+                               'Aligned_Sequence':variantPayload['aln_seq'],
+                               'Reference_Sequence':variantPayload['aln_ref'],
+                               'n_inserted':variantPayload['insertion_n'],
+                               'n_deleted':variantPayload['deletion_n'],
+                               'n_mutated':variantPayload['substitution_n'],
+                               'Reference_Name':variantPayload['ref_name'],
+                               'Read_Status':variantPayload['classification'],
+                               'Aligned_Reference_Names':"&".join(aln_ref_names),
+                               'Aligned_Reference_Scores':"&".join([str(x) for x in aln_ref_scores]),
+                               'ref_positions':variantPayload['ref_positions']
+                    }
+                    alleles_list.append(alleleRow)
+
+                    this_effective_len= refs[ref_name]['sequence_length'] #how long is this alignment (insertions increase length, deletions decrease length)
+
+                    this_has_insertions = False
+                    all_insertion_count_vectors[ref_name][variantPayload['all_insertion_positions']]+=variantCount
+                    all_insertion_left_count_vectors[ref_name][variantPayload['all_insertion_left_positions']]+=variantCount
+                    all_indelsub_count_vectors[ref_name][variantPayload['all_insertion_positions']]+=variantCount
+
+                    if not args.ignore_insertions:
+                        inserted_n_lists[ref_name].extend([variantPayload['insertion_n']]*variantCount)
+                        insertion_count_vectors[ref_name][variantPayload['insertion_positions']]+=variantCount
+                        indelsub_count_vectors[ref_name][variantPayload['insertion_positions']]+=variantCount
+                        this_effective_len = this_effective_len + variantPayload['insertion_n']
+                        if variantPayload['insertion_n'] > 0:
+                             counts_insertion[ref_name] += variantCount
+                             this_has_insertions = True
+
+
+                    this_has_deletions = False
+                    all_deletion_count_vectors[ref_name][variantPayload['all_deletion_positions']]+=variantCount
+                    all_indelsub_count_vectors[ref_name][variantPayload['all_deletion_positions']]+=variantCount
+                    if not args.ignore_deletions:
+                        deleted_n_lists[ref_name].extend([variantPayload['deletion_n']]*variantCount)
+                        deletion_count_vectors[ref_name][variantPayload['deletion_positions']]+=variantCount
+                        indelsub_count_vectors[ref_name][variantPayload['deletion_positions']]+=variantCount
+                        this_effective_len = this_effective_len - variantPayload['deletion_n']
+                        if variantPayload['deletion_n'] > 0:
+                             counts_deletion[ref_name] += variantCount
+                             this_has_deletions = True
+
+                    effective_len_lists[ref_name].extend([this_effective_len]*variantCount)
+
+                    this_has_substitutions = False
+                    all_substitution_count_vectors[ref_name][variantPayload['all_substitution_positions']] += variantCount
+                    all_indelsub_count_vectors[ref_name][variantPayload['all_substitution_positions']] += variantCount
+
+                    if not args.ignore_substitutions:
+                        substituted_n_lists[ref_name].extend([variantPayload['substitution_n']] * variantCount)
+                        substitution_count_vectors[ref_name][variantPayload['substitution_positions']] += variantCount
+                        indelsub_count_vectors[ref_name][variantPayload['substitution_positions']] += variantCount
+                        if variantPayload['substitution_n'] > 0:
+                             counts_substitution[ref_name] += variantCount
+                             this_has_substitutions = True
+
+                        nucs = ['A','T','C','G','N']
+                        for nuc in nucs:
+                            isNuc = variantPayload['all_substitution_values'] == ord(nuc)
+                            if(np.sum(isNuc) > 0):
+                                locs = np.array(variantPayload['all_substitution_positions'])[isNuc]
+                                all_substitution_base_vectors[ref_name + "_" + nuc ][locs] += variantCount
+
+
+                    if this_has_deletions:
+                        if this_has_insertions:
+                            if this_has_substitutions:
+                                counts_insertion_and_deletion_and_substitution[ref_name] += variantCount
+                            else:
+                                counts_insertion_and_deletion[ref_name] += variantCount
+                        else:
+                            if this_has_substitutions:
+                                counts_deletion_and_substitution[ref_name] += variantCount
+                            else:
+                                counts_only_deletion[ref_name] += variantCount
+                    else: #no deletions
+                        if this_has_insertions:
+                            if this_has_substitutions:
+                                counts_insertion_and_substitution[ref_name] += variantCount
+                            else:
+                                counts_only_insertion[ref_name] += variantCount
+                        else:
+                            if this_has_substitutions:
+                                counts_only_substitution[ref_name] += variantCount
+
+                    #set all_base_count_vectors
+                    aln_seq = variantPayload['aln_seq']
+                    ref_pos = variantPayload['ref_positions']
+                    for i in range(len(aln_seq)):
+                        if ref_pos[i] < 0:
+                            continue
+                        nuc = aln_seq[i]
+                        all_base_count_vectors[ref_name + "_" + nuc][ref_pos[i]] += variantCount
+
+                    exon_positions = refs[ref_name]['exon_positions']
+                    exon_len_mods = refs[ref_name]['exon_len_mods'] #for each exon, how much length did this reference modify it?
+                    tot_exon_len_mod = sum(exon_len_mods) #for all exons, how much length was modified?
+                    splicing_positions = refs[ref_name]['splicing_positions']
+                    insertion_coordinates = variantPayload['insertion_coordinates']
+                    insertion_sizes = variantPayload['insertion_sizes']
+                    all_insertion_positions = variantPayload['all_insertion_positions']
+                    all_insertion_left_positions = variantPayload['all_insertion_left_positions']
+                    insertion_positions = variantPayload['insertion_positions']
+                    deletion_coordinates = variantPayload['deletion_coordinates']
+                    deletion_sizes = variantPayload['deletion_sizes']
+                    all_deletion_positions = variantPayload['all_deletion_positions']
+                    deletion_positions = variantPayload['deletion_positions']
+                    all_substitution_positions = variantPayload['all_substitution_positions']
+                    substitution_positions = variantPayload['substitution_positions']
+
+
+                    if this_has_insertions or this_has_deletions or this_has_substitutions or tot_exon_len_mod != 0: #only count modified reads
+                        length_modified_positions_exons=[]
+                        current_read_exons_modified = False
+                        current_read_spliced_modified = False
+
+                        for idx_ins,(ins_start,ins_end) in enumerate(insertion_coordinates):
+                            insertion_length_vectors[ref_name][ins_start]+=(insertion_sizes[idx_ins]*variantCount)
+                            insertion_length_vectors[ref_name][ins_end]+=(insertion_sizes[idx_ins]*variantCount)
+
+                            if refs[ref_name]['contains_coding_seq']:
+                                if set(exon_positions).intersection((ins_start, ins_end)): # check that we are inserting in one exon
+                                    current_read_exons_modified = True
+                                    set1 = set(exon_positions).intersection((ins_start, ins_end))
+                                    length_modified_positions_exons.append((insertion_sizes[idx_ins]))
+
+                        for idx_del, (del_start,del_end) in enumerate(deletion_coordinates):
+                            deletion_length_vectors[ref_name][range(del_start,del_end)] += (deletion_sizes[idx_del]*variantCount)
+
+                        if refs[ref_name]['contains_coding_seq']:
+                            del_positions_to_append = sorted(set(exon_positions).intersection(set(deletion_positions)))
+                            if del_positions_to_append:
+                                current_read_exons_modified = True
+                                length_modified_positions_exons.append(-len(del_positions_to_append))
+
+                            if set(exon_positions).intersection(substitution_positions):
+                                current_read_exons_modified = True
+
+                            #splicing modifications
+                            if set(splicing_positions).intersection(deletion_positions):
+                                current_read_spliced_modified = True
+
+                            if set(splicing_positions).intersection(insertion_positions):
+                                current_read_spliced_modified = True
+
+                            if set(splicing_positions).intersection(substitution_positions):
+                                current_read_spliced_modified = True
+
+                            if current_read_spliced_modified:
+                                counts_splicing_sites_modified[ref_name] += variantCount
+
+                            if tot_exon_len_mod != 0:
+                                effective_length = sum(length_modified_positions_exons) + tot_exon_len_mod
+                                if (effective_length % 3) == 0:
+                                    # indels have restored exon frame
+                                    counts_modified_non_frameshift[ref_name] += variantCount
+                                    hists_inframe[ref_name][effective_length] += variantCount
+                                else:
+                                    counts_modified_frameshift[ref_name] += variantCount
+                                    hists_frameshift[ref_name][effective_length] += variantCount
+                            # if modified check if frameshift
+                            elif current_read_exons_modified:
+
+                                if not length_modified_positions_exons:
+                                    # there are no indels
+                                    counts_modified_non_frameshift[ref_name] += variantCount
+                                    hists_inframe[ref_name][0] += variantCount
+                                else:
+                                    effective_length = sum(length_modified_positions_exons)
+
+                                    if (effective_length % 3) == 0:
+                                        counts_modified_non_frameshift[ref_name] += variantCount
+                                        hists_inframe[ref_name][effective_length] += variantCount
+                                    else:
+                                        counts_modified_frameshift[ref_name] += variantCount
+                                        hists_frameshift[ref_name][effective_length] += variantCount
+
+                            # the indels and subtitutions are outside the exon/s  so we don't care!
+                            else:
+                                counts_non_modified_non_frameshift[ref_name] += variantCount
+                                insertion_count_vectors_noncoding[ref_name][insertion_positions] += variantCount
+                                deletion_count_vectors_noncoding[ref_name][deletion_positions] += variantCount
+                                substitution_count_vectors_noncoding[ref_name][substitution_positions] += variantCount
+                                hists_inframe[ref_name][0] += variantCount
+                    #if unmodified but the tot_exon_len_mod is != 0
+                    elif tot_exon_len_mod != 0:
+                        if (tot_exon_len_mod % 3) == 0:
+                            # indels have restored exon frame
+                            counts_modified_non_frameshift[ref_name] += variantCount
+                            hists_inframe[ref_name][effective_length] += variantCount
+                        else:
+                            counts_modified_frameshift[ref_name] += variantCount
+                            hists_frameshift[ref_name][effective_length] += variantCount
+
 
 
         for ref_name in ref_names:
@@ -1364,16 +1428,64 @@ def main():
             base_count_vectors             [ref_name+"_N" ] = [all_base_count_vectors[ref_name+"_N"][x] for x in this_include_idx]
             base_count_vectors             [ref_name+"_-" ] = [all_base_count_vectors[ref_name+"_-"][x] for x in this_include_idx]
 
-        info('Done!')
+        # For HDR work, create a few more arrays, where all reads are aligned to ref1 (the first reference) and the indels are computed with regard to ref1
+        if args.expected_hdr_amplicon_seq != "":
+            ref1_all_insertion_count_vectors = {} #all insertions (including quantification window bases) with respect to ref1
+            ref1_all_deletion_count_vectors = {}
+            ref1_all_substitution_count_vectors = {}
+            ref1_len = refs[ref_names[0]]['sequence_length']
+            for ref_name in ref_names:
+                ref1_all_insertion_count_vectors[ref_name] = np.zeros(ref1_len)
+                ref1_all_deletion_count_vectors[ref_name] = np.zeros(ref1_len)
+                ref1_all_substitution_count_vectors[ref_name] = np.zeros(ref1_len)
 
+            #for ref1 we will add all other indels to it..
+            ref1_all_insertion_count_vectors[ref_names[0]] = all_insertion_count_vectors[ref_names[0]].copy()
+            ref1_all_deletion_count_vectors[ref_names[0]] = all_deletion_count_vectors[ref_names[0]].copy()
+            ref1_all_substitution_count_vectors[ref_names[0]] = all_substitution_count_vectors[ref_names[0]].copy()
+
+            #then go through and align and add other reads
+            for variant in variantCache:
+                #skip variant if there were none observed
+                variantCount = variantCache[variant]['count']
+                if (variantCount == 0):
+                    continue
+
+                aln_ref_names = variantCache[variant]['aln_ref_names'] #list of references this seq aligned to
+                if len(aln_ref_names) == 0 and ref_names[0] == aln_ref_names[0]: #if this read was only aligned to ref1, skip it
+                    continue
+
+                fws1,fws2,fwscore=cnwalign.global_align(variant, refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
+                rvs1,rvs2,rvscore=cnwalign.global_align(CRISPRessoShared.reverse_complement(variant), refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
+                s1 = fws1
+                s2 = fws2
+                score = fwscore
+                if (rvscore > fwscore):
+                    s1 = rvs1
+                    s2 = rvs2
+                    score = rvscore
+                payload=CRISPRessoCOREResources.find_indels_substitutions(s1,s2,refs[ref_names[0]]['include_idxs'])
+
+                for ref_name in aln_ref_names:
+                    if ref_name == ref_names[0]:
+                        continue
+                    ref1_all_insertion_count_vectors[ref_name][payload['all_insertion_positions']]+=variantCount
+                    ref1_all_deletion_count_vectors[ref_name][payload['all_deletion_positions']]+=variantCount
+                    ref1_all_substitution_count_vectors[ref_name][payload['all_substitution_positions']]+=variantCount
+                #add these indel counts to the ref1
+                ref1_all_insertion_count_vectors[ref_names[0]][payload['all_insertion_positions']]+=variantCount
+                ref1_all_deletion_count_vectors[ref_names[0]][payload['all_deletion_positions']]+=variantCount
+                ref1_all_substitution_count_vectors[ref_names[0]][payload['all_substitution_positions']]+=variantCount
+
+        info('Done!')
 
         #order class_counts
         decorated_class_counts = []
         for class_count_name in class_counts:
             thisRefInd = 100
             thisIsMod = 1
-            for idx,refName in enumerate(ref_names):
-                if class_count_name.startswith(refName):
+            for idx,ref_name in enumerate(ref_names):
+                if class_count_name.startswith(ref_name):
                     thisRefInd = idx
                     break
             if "UNMODIFIED" in class_count_name:
@@ -1407,12 +1519,12 @@ def main():
             return r
 
 
-        all_insertion_pct_vectors = {} #all insertions/tot (including masked bases)
+        all_insertion_pct_vectors = {} #all insertions/tot (including quantification window bases)
         all_deletion_pct_vectors = {}
         all_substitution_pct_vectors = {}
         all_indelsub_pct_vectors = {}
 
-        insertion_pct_vectors = {} #insertions that are in the target region
+        insertion_pct_vectors = {} #insertions that are in the quantification window
         deletion_pct_vectors = {}
         substitution_pct_vectors = {}
         indelsub_pct_vectors = {}
@@ -1521,63 +1633,423 @@ def main():
 
         info('Done!')
 
-        ref_info_file_name = _jp('CRISPResso_reference_info.txt')
-        ref_info_file = open(ref_info_file_name,'w')
-        refString = ( 'name' + "\t" +
-            'sequence' + "\t" +
-            'sequence_length' + "\t" +
-            'min_aln_score' + "\t" +
-            'cut_points' + "\t" +
-            'gap_incentive' + "\t" +
-            'offset_plots' + "\t" +
-            'sgRNA_intervals' + "\t" +
-            'sgRNA_sequences' + "\t" +
-            'contains_guide' + "\t" +
-            'contains_coding_seq' + "\t" +
-            'exon_positions' + "\t" +
-            'exon_intervals' + "\t" +
-            'splicing_positions' + "\t" +
-            'include_idxs' + "\t" +
-            'exclude_idxs' + "\t" +
-            'plot_idxs' + "\t" +
-            'idx_cloned_from' + "\n")
-        ref_info_file.write(refString)
-        np.set_printoptions(linewidth=1000**1000) #no line breaks
-        for ref_name in ref_names:
-            refString = ( refs[ref_name]['name'] + "\t" +
-                str(refs[ref_name]['sequence']) + "\t" +
-                str(refs[ref_name]['sequence_length']) + "\t" +
-                str(refs[ref_name]['min_aln_score']) + "\t" +
-                str(refs[ref_name]['cut_points']) + "\t" +
-                str(refs[ref_name]['gap_incentive']) + "\t" +
-                str(refs[ref_name]['offset_plots']) + "\t" +
-                str(refs[ref_name]['sgRNA_intervals']) + "\t" +
-                str(refs[ref_name]['sgRNA_sequences']) + "\t" +
-                str(refs[ref_name]['contains_guide']) + "\t" +
-                str(refs[ref_name]['contains_coding_seq']) + "\t" +
-                str(refs[ref_name]['exon_positions']) + "\t" +
-                str(refs[ref_name]['exon_intervals']) + "\t" +
-                str(refs[ref_name]['splicing_positions']) + "\t" +
-                str(refs[ref_name]['include_idxs']) + "\t" +
-                str(refs[ref_name]['exclude_idxs']) + "\t" +
-                str(refs[ref_name]['plot_idxs']) + "\t" +
-                str(refs[ref_name]['idx_cloned_from']) + "\n")
+        if args.dump:
+            ref_info_file_name = _jp('CRISPResso_reference_info.txt')
+            ref_info_file = open(ref_info_file_name,'w')
+            refString = ( 'name' + "\t" +
+                'sequence' + "\t" +
+                'sequence_length' + "\t" +
+                'min_aln_score' + "\t" +
+                'cut_points' + "\t" +
+                'gap_incentive' + "\t" +
+                'sgRNA_plot_offsets' + "\t" +
+                'sgRNA_intervals' + "\t" +
+                'sgRNA_sequences' + "\t" +
+                'contains_guide' + "\t" +
+                'contains_coding_seq' + "\t" +
+                'exon_positions' + "\t" +
+                'exon_intervals' + "\t" +
+                'exon_len_mods' + "\t" +
+                'splicing_positions' + "\t" +
+                'include_idxs' + "\t" +
+                'exclude_idxs' + "\t" +
+                'plot_idxs' + "\t" +
+                'idx_cloned_from' + "\n")
             ref_info_file.write(refString)
-        ref_info_file.close()
+            np.set_printoptions(linewidth=1000**1000) #no line breaks
+            for ref_name in ref_names:
+                refString = ( refs[ref_name]['name'] + "\t" +
+                    str(refs[ref_name]['sequence']) + "\t" +
+                    str(refs[ref_name]['sequence_length']) + "\t" +
+                    str(refs[ref_name]['min_aln_score']) + "\t" +
+                    str(refs[ref_name]['cut_points']) + "\t" +
+                    str(refs[ref_name]['gap_incentive']) + "\t" +
+                    str(refs[ref_name]['sgRNA_plot_offsets']) + "\t" +
+                    str(refs[ref_name]['sgRNA_intervals']) + "\t" +
+                    str(refs[ref_name]['sgRNA_sequences']) + "\t" +
+                    str(refs[ref_name]['contains_guide']) + "\t" +
+                    str(refs[ref_name]['contains_coding_seq']) + "\t" +
+                    str(refs[ref_name]['exon_positions']) + "\t" +
+                    str(refs[ref_name]['exon_intervals']) + "\t" +
+                    str(refs[ref_name]['exon_len_mods']) + "\t" +
+                    str(refs[ref_name]['splicing_positions']) + "\t" +
+                    str(refs[ref_name]['include_idxs']) + "\t" +
+                    str(refs[ref_name]['exclude_idxs']) + "\t" +
+                    str(refs[ref_name]['plot_idxs']) + "\t" +
+                    str(refs[ref_name]['idx_cloned_from']) + "\n")
+                ref_info_file.write(refString)
+            ref_info_file.close()
 
+        crispresso2_info['ref_names'] = ref_names
+        crispresso2_info['refs'] = refs
+
+        info('Saving processed data...')
+
+        #write alleles table
+        #crispresso1Cols = ["Aligned_Sequence","Reference_Sequence","NHEJ","UNMODIFIED","HDR","n_deleted","n_inserted","n_mutated","#Reads","%Reads"]
+        #df_alleles.ix[:,crispresso1Cols].to_csv(_jp('Alleles_frequency_table.txt'),sep='\t',header=True,index=None)
+        #crispresso2Cols = ["Aligned_Sequence","Reference_Sequence","Reference_Name","Read_Status","n_deleted","n_inserted","n_mutated","#Reads","%Reads"]
+#        crispresso2Cols = ["Aligned_Sequence","Reference_Sequence","Reference_Name","Read_Status","n_deleted","n_inserted","n_mutated","#Reads","%Reads","Aligned_Reference_Names","Aligned_Reference_Scores"]
+        crispresso2Cols = ["Aligned_Sequence","Reference_Sequence","Reference_Name","Read_Status","n_deleted","n_inserted","n_mutated","#Reads","%Reads"]
+        allele_frequency_table_filename = _jp('Alleles_frequency_table.txt')
+        df_alleles.ix[:,crispresso2Cols].to_csv(allele_frequency_table_filename,sep='\t',header=True,index=None)
+        crispresso2_info['allele_frequency_table_filename'] = allele_frequency_table_filename
+
+
+        with open(_jp('Quantification_of_editing_frequency.txt'),'w+') as outfile:
+            outfile.write("Quantification of editing frequency:\n")
+            for ref_name in ref_names:
+                n_unmod = counts_unmodified[ref_name]
+                n_mod = counts_modified[ref_name]
+                n_discarded = counts_discarded[ref_name]
+
+                n_insertion = counts_insertion[ref_name]
+                n_deletion = counts_deletion[ref_name]
+                n_substitution = counts_substitution[ref_name]
+
+                outfile.write("%s: Unmodified: %d Modified: %d Discarded: %d\n" % (ref_name,n_unmod,n_mod,n_discarded))
+                outfile.write("(%d reads with insertions, %d reads with deletions, %d reads with substitutions)\n" % (n_insertion,n_deletion,n_substitution))
+
+            outfile.write('Total Aligned:%d reads ' % N_TOTAL)
+
+        quant_of_editing_freq_filename =_jp('CRISPResso_quantification_of_editing_frequency.txt')
+        with open(quant_of_editing_freq_filename,'w+') as outfile:
+            outfile.write('Reference\tTotal\tUnmodified\tModified\tDiscarded\tInsertions\tDeletions\tSubstitutions\tOnly Insertions\tOnly Deletions\tOnly Substitutions\tInsertions and Deletions\tInsertions and Substitutions\tDeletions and Substitutions\tInsertions Deletions and Substitutions\n')
+            for ref_name in ref_names:
+                n_tot = counts_total[ref_name]
+                n_unmod = counts_unmodified[ref_name]
+                n_mod = counts_modified[ref_name]
+                n_discarded = counts_discarded[ref_name]
+
+                n_insertion = counts_insertion[ref_name]
+                n_deletion = counts_deletion[ref_name]
+                n_substitution = counts_substitution[ref_name]
+                n_only_insertion = counts_only_insertion[ref_name]
+                n_only_deletion = counts_only_deletion[ref_name]
+                n_only_substitution = counts_only_substitution[ref_name]
+                n_insertion_and_deletion = counts_insertion_and_deletion[ref_name]
+                n_insertion_and_substitution = counts_insertion_and_substitution[ref_name]
+                n_deletion_and_substitution = counts_deletion_and_substitution[ref_name]
+                n_insertion_and_deletion_and_substitution = counts_insertion_and_deletion_and_substitution[ref_name]
+
+                vals = [ref_name]
+                vals.extend([str(x) for x in [n_tot,n_unmod,n_mod,n_discarded,n_insertion,n_deletion,n_substitution,n_only_insertion,n_only_deletion,n_only_substitution,n_insertion_and_deletion,n_insertion_and_substitution,n_deletion_and_substitution,n_insertion_and_deletion_and_substitution]])
+                outfile.write("\t".join(vals) + "\n")
+
+        crispresso2_info['quant_of_editing_freq_filename'] = quant_of_editing_freq_filename
+
+
+        #write statistics
+        with open(_jp('Mapping_statistics.txt'),'w+') as outfile:
+            outfile.write('READS IN INPUTS:%d\nREADS AFTER PREPROCESSING:%d\nREADS ALIGNED:%d\n' % (N_READS_INPUT,N_READS_AFTER_PREPROCESSING,N_TOTAL))
+
+        mapping_stats_filename = _jp('CRISPResso_mapping_statistics.txt')
+        with open(mapping_stats_filename,'w+') as outfile:
+            outfile.write('READS IN INPUTS\tREADS AFTER PREPROCESSING\tREADS ALIGNED\tN_COMPUTED_ALN\tN_CACHED_ALN\tN_COMPUTED_NOTALN\tN_CACHED_NOTALN\n')
+            outfile.write("\t".join([str(x) for x in[N_READS_INPUT,N_READS_AFTER_PREPROCESSING,N_TOTAL,alnStats['N_COMPUTED_ALN'],alnStats['N_CACHED_ALN'],alnStats['N_COMPUTED_NOTALN'],alnStats['N_CACHED_NOTALN']]]) + "\n")
+        crispresso2_info['mapping_stats_filename'] = mapping_stats_filename
+
+        def save_vector_to_file(vector,filename):
+            #np.savetxt(_jp('%s.txt' %name), np.vstack([(np.arange(len(vector))+1),vector]).T, fmt=['%d','%.18e'],delimiter='\t', newline='\n', header='amplicon position\teffect',footer='', comments='# ')
+            np.savetxt(filename, np.vstack([(np.arange(len(vector))+1),vector]).T, fmt=['%d','%.18e'],delimiter='\t', newline='\n', header='amplicon position\teffect',footer='', comments='# ')
+
+        def save_count_vectors_to_file(vectors,vectorNames,refSeq,filename):
+            outfile = open(filename,"w")
+            outfile.write("Sequence\t"+"\t".join(list(refSeq))+"\n") #first row: reference sequence
+            for vector,vectorName in zip(vectors,vectorNames):
+                outfile.write(vectorName +"\t" + "\t".join([str(x) for x in vector]) + "\n") #next, vectors are printed
+            outfile.close()
+
+
+        for ref_name in ref_names:
+
+            #n_this_category = counts_total[ref_name]
+            #if n_this_category < 1:
+            #    continue
+
+            ins_pct_vector_filename = _jp(ref_name+'.effect_vector_insertion.txt')
+            save_vector_to_file(insertion_pct_vectors[ref_name],ins_pct_vector_filename)
+            crispresso2_info['refs'][ref_name]['insertion_pct_vector_filename'] = ins_pct_vector_filename
+
+            del_pct_vector_filename = _jp(ref_name+'.effect_vector_deletion.txt')
+            save_vector_to_file(deletion_pct_vectors[ref_name],del_pct_vector_filename)
+            crispresso2_info['refs'][ref_name]['deletion_pct_vector_filename'] = del_pct_vector_filename
+
+            sub_pct_vector_filename = _jp(ref_name+'.effect_vector_substitution.txt')
+            save_vector_to_file(substitution_pct_vectors[ref_name],sub_pct_vector_filename)
+            crispresso2_info['refs'][ref_name]['substitution_pct_vector_filename'] = sub_pct_vector_filename
+
+            indelsub_pct_vector_filename = _jp(ref_name+'.effect_vector_combined.txt')
+            save_vector_to_file(indelsub_pct_vectors[ref_name],indelsub_pct_vector_filename)
+            crispresso2_info['refs'][ref_name]['combined_pct_vector_filename'] = indelsub_pct_vector_filename
+
+            #save mods in quantification window
+            quant_window_mod_count_filename = _jp(ref_name+'.quantification_window_modification_count_vectors.txt')
+            save_count_vectors_to_file([insertion_count_vectors[ref_name],
+                        deletion_count_vectors[ref_name],
+                        substitution_count_vectors[ref_name],
+                        indelsub_count_vectors[ref_name],
+                        [counts_total[ref_name]]*refs[ref_name]['sequence_length']],
+                        ['Insertions','Deletions','Substitutions','All_modifications','Total'],
+                            refs[ref_name]['sequence'],quant_window_mod_count_filename)
+            crispresso2_info['refs'][ref_name]['quant_window_mod_count_filename'] = quant_window_mod_count_filename
+
+            #save all mods
+            mod_count_filename = _jp(ref_name+'.modification_count_vectors.txt')
+            save_count_vectors_to_file([all_insertion_count_vectors[ref_name],
+                        all_insertion_left_count_vectors[ref_name],
+                        all_deletion_count_vectors[ref_name],
+                        all_substitution_count_vectors[ref_name],
+                        all_indelsub_count_vectors[ref_name],
+                        [counts_total[ref_name]]*refs[ref_name]['sequence_length']],
+                        ['Insertions','Insertions_Left','Deletions','Substitutions','All_modifications','Total'],
+                            refs[ref_name]['sequence'],mod_count_filename)
+            crispresso2_info['refs'][ref_name]['mod_count_filename'] = mod_count_filename
+
+            if (refs[ref_name]['contains_coding_seq']): #PERFORM FRAMESHIFT ANALYSIS
+                MODIFIED_FRAMESHIFT = counts_modified_frameshift[ref_name]
+                MODIFIED_NON_FRAMESHIFT = counts_modified_non_frameshift[ref_name]
+                NON_MODIFIED_NON_FRAMESHIFT = counts_non_modified_non_frameshift[ref_name]
+                SPLICING_SITES_MODIFIED = counts_splicing_sites_modified[ref_name]
+                with open(_jp(ref_name+'.Frameshift_analysis.txt'),'w+') as outfile:
+                        outfile.write('Frameshift analysis:\n\tNoncoding mutation:%d reads\n\tIn-frame mutation:%d reads\n\tFrameshift mutation:%d reads\n' %(NON_MODIFIED_NON_FRAMESHIFT, MODIFIED_NON_FRAMESHIFT ,MODIFIED_FRAMESHIFT))
+
+                with open(_jp('Splice_sites_analysis.txt'),'w+') as outfile:
+                        outfile.write('Splice sites analysis:\n\tUnmodified:%d reads\n\tPotential splice sites modified:%d reads\n' %(counts_total[ref_name]- SPLICING_SITES_MODIFIED, SPLICING_SITES_MODIFIED))
+
+
+                ins_pct_vector_noncoding_filename = _jp(ref_name+'.effect_vector_insertion_noncoding.txt')
+                save_vector_to_file(insertion_pct_vectors_noncoding[ref_name],ins_pct_vector_noncoding_filename)
+                crispresso2_info['refs'][ref_name]['insertion_pct_vector_noncoding_filename'] = ins_pct_vector_noncoding_filename
+
+                del_pct_vector_noncoding_filename = _jp(ref_name+'.effect_vector_deletion_noncoding.txt')
+                save_vector_to_file(deletion_pct_vectors_noncoding[ref_name],del_pct_vector_noncoding_filename)
+                crispresso2_info['refs'][ref_name]['deletion_pct_vector_noncoding_filename'] = del_pct_vector_noncoding_filename
+
+                sub_pct_vector_noncoding_filename = _jp(ref_name+'.effect_vector_substitution_noncoding.txt')
+                save_vector_to_file(substitution_pct_vectors_noncoding[ref_name],sub_pct_vector_noncoding_filename)
+                crispresso2_info['refs'][ref_name]['substitution_pct_vector_noncoding_filename'] = sub_pct_vector_noncoding_filename
+
+            if args.dump:
+                if cut_points:
+                    cp.dump(sgRNA_intervals, open( _jp(ref_name+'.sgRNA_intervals.pickle'), 'wb' ) )
+
+                if sgRNA_intervals:
+                    cp.dump( cut_points, open( _jp(ref_name+'.cut_points.pickle'), 'wb' ) )
+
+                if sgRNA_plot_offsets.any():
+                    cp.dump(sgRNA_plot_offsets,open( _jp(ref_name+'.sgRNA_plot_offsets.pickle'), 'wb' ) )
+
+            hdensity = refs[ref_name]['hdensity']
+            hlengths = refs[ref_name]['hlengths']
+            center_index = refs[ref_name]['center_index']
+
+            y_values_mut = refs[ref_name]['y_values_mut']
+            x_bins_mut = refs[ref_name]['x_bins_mut']
+            y_values_ins = refs[ref_name]['y_values_ins']
+            x_bins_ins = refs[ref_name]['x_bins_ins']
+            y_values_del = refs[ref_name]['y_values_del']
+            x_bins_del = refs[ref_name]['x_bins_del']
+
+            indel_histogram_file = _jp(ref_name+'.indel_histogram.txt')
+            pd.DataFrame(np.vstack([hlengths,hdensity]).T,columns=['indel_size','fq']).to_csv(indel_histogram_file,index=None,sep='\t')
+            crispresso2_info['refs'][ref_name]['indel_histogram_file'] = indel_histogram_file
+
+
+            insertion_histogram_file = _jp(ref_name+'.insertion_histogram.txt')
+            pd.DataFrame(np.vstack([x_bins_ins[:-1],y_values_ins]).T,columns=['ins_size','fq']).to_csv(insertion_histogram_file,index=None,sep='\t')
+            crispresso2_info['refs'][ref_name]['insertion_histogram_file'] = insertion_histogram_file
+
+            deletion_histogram_file = _jp(ref_name+'.deletion_histogram.txt')
+            pd.DataFrame(np.vstack([-x_bins_del[:-1],y_values_del]).T,columns=['del_size','fq']).to_csv(deletion_histogram_file,index=None,sep='\t')
+            crispresso2_info['refs'][ref_name]['deletion_histogram_file'] = deletion_histogram_file
+
+            substitution_histogram_file = _jp(ref_name+'.substitution_histogram.txt')
+            pd.DataFrame(np.vstack([x_bins_mut[:-1],y_values_mut]).T,columns=['sub_size','fq']).to_csv(substitution_histogram_file,index=None,sep='\t')
+            crispresso2_info['refs'][ref_name]['substitution_histogram_file'] = substitution_histogram_file
+
+
+
+            if args.dump:
+                info('Dumping all the processed data...')
+                np.savez(_jp('%s.effect_vector_insertion'%ref_name),insertion_pct_vectors[ref_name])
+                np.savez(_jp('%s.effect_vector_deletion'%ref_name),deletion_pct_vectors[ref_name])
+                np.savez(_jp('%s.effect_vector_substitution'%ref_name),substitution_pct_vectors[ref_name])
+
+                np.savez(_jp('%s.effect_vector_combined'%ref_name),indelsub_pct_vectors[ref_name])
+
+                np.savez(_jp('%s.position_dependent_vector_avg_insertion_size'%ref_name),insertion_length_vectors[ref_name])
+                np.savez(_jp('%s.position_dependent_vector_avg_deletion_size'%ref_name),deletion_length_vectors[ref_name])
 
 
         info('Making Plots...')
         ###############################################################################################################################################
+        save_png = True
+        if args.suppress_report:
+            save_png = False
+
         n_refs = len(ref_names)
         #helper function .. if there is only one reference, don't print the name on the top of every plot
-        def get_plot_title_with_ref_name(plotTitle,refName):
+        def get_plot_title_with_ref_name(plotTitle,ref_name):
             if n_refs > 1:
-                return (plotTitle + ": " + refName)
+                return (plotTitle + ": " + ref_name)
             return plotTitle
-        #(1)plot effective length
+
+        def count_alternate_alleles(sub_base_vectors,ref_name,ref_sequence,ref_total_aln_reads):
+            #create vectors with all allele frequencies -- not just the substitution (the reference allele will not be 0)
+            alph = ['A','C','G','T','N']
+
+            #count the total number of times each substitution occurs
+            count_sub_base_vectors = {}
+            alt_nuc_counts = {}
+            for a in alph:
+                alt_nuc_counts[a] = {}
+                count_sub_base_vectors[a] = list(sub_base_vectors[ref_name+"_"+a])
+                for b in alph:
+                    alt_nuc_counts[a][b] = 0
+
+            for idx,c in enumerate(ref_sequence):
+                tot_sub_at_idx = 0
+                for a in alph:
+                    sub = sub_base_vectors[ref_name+"_" + a][idx]
+                    alt_nuc_counts[c][a] += sub
+                    tot_sub_at_idx += sub
+
+            #df_subs = pd.DataFrame([count_sub_base_vectors["A"],count_sub_base_vectors["C"],count_sub_base_vectors["G"],count_sub_base_vectors["T"],count_sub_base_vectors["N"]])
+            df_subs = pd.DataFrame([count_sub_base_vectors[a] for a in alph])
+            df_subs.index = alph
+            df_subs.columns = list(ref_sequence)
+            return (df_subs,alt_nuc_counts)
+
+            ############
+
+        ###############################################################################################################################################
+        ### FIGURE 1: Alignment
+        #fig=plt.figure(figsize=(12*1.5,12*1.5))
+        fig=plt.figure(figsize=(12,12))
+        ax = plt.subplot(111)
+        labels=['READS\nIN INPUTS\n(%d)'%N_READS_INPUT,'READS AFTER\nPREPROCESSING\n(%d)'%N_READS_AFTER_PREPROCESSING,'READS\nALIGNED\n(%d)'%N_TOTAL]
+        sizes = [N_READS_INPUT,N_READS_AFTER_PREPROCESSING,N_TOTAL]
+        rects = ax.bar(np.arange(len(sizes)),sizes,color='silver')
+        #label each bar
+        for rect in rects:
+            height = rect.get_height()
+            ax.text(rect.get_x() + rect.get_width()/2, height + 0.05,height, ha='center', va='bottom')
+
+        ax.set_xticks(np.arange(len(sizes)))
+        ax.set_xticklabels(labels)
+        ax.set_ylabel('Sequences % (no.)')
+        y_label_values= np.round(np.linspace(0, max(N_READS_INPUT,max(ax.get_yticks())),6))# np.arange(0,y_max,y_max/6.0)
+        ax.set_yticks(y_label_values)
+        ax.set_yticklabels(['%.1f%% (%.0f)' % (100*cnt/N_READS_INPUT,cnt) for cnt in y_label_values])
+        #if too many barplots, flip the labels
+        plt.ylim(0,max(sizes)*1.1)
+
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+
+        plt.tight_layout()
+
+        plot_root = _jp("1a.Read_Barplot")
+        plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
+        if save_png:
+            plt.savefig(plot_root+'.png',bbox_inches='tight')
+        plt.close()
+
+        crispresso2_info['plot_1a_root'] = os.path.basename(plot_root)
+        crispresso2_info['plot_1a_caption'] = "Figure 1a: The number of reads in input fastqs, after preprocessing, and after alignment to amplicons."
+        crispresso2_info['plot_1a_data'] = [('Mapping statistics',mapping_stats_filename)]
+
+
+        #(1b) a piechart of classes
+        labels = []
+        sizes = []
+        for class_name in class_counts_order:
+            if args.expected_hdr_amplicon_seq != "" and class_name == ref_names[0]+"_MODIFIED":
+                labels.append("NHEJ" + "\n(" + str(class_counts[class_name]) + " reads)")
+            elif args.expected_hdr_amplicon_seq != "" and class_name == "HDR_MODIFIED":
+                labels.append("Imperfect HDR" + "\n(" + str(class_counts[class_name]) + " reads)")
+            elif args.expected_hdr_amplicon_seq != "" and class_name == "HDR_UNMODIFIED":
+                labels.append("HDR" + "\n(" + str(class_counts[class_name]) + " reads)")
+            else:
+                labels.append(class_name + "\n(" + str(class_counts[class_name]) + " reads)")
+
+            sizes.append(100*class_counts[class_name]/float(N_TOTAL))
+
+
+        #fig=plt.figure(figsize=(8.3,8))
+        fig=plt.figure(figsize=(12,12))
+        ax = plt.subplot(111)
+        patches, texts, autotexts =ax.pie(sizes, labels=labels,\
+                        autopct='%1.1f%%')
+
+        plt.axis('off')
+
+        proptease = fm.FontProperties()
+#        proptease.set_size('x-large')
+#        plt.setp(autotexts, fontproperties=proptease)
+#        plt.setp(texts, fontproperties=proptease)
+        plt.axis("equal")
+
+        plot_root = _jp("1b.Alignment_Pie_Chart")
+        plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
+        if save_png:
+            plt.savefig(plot_root+'.png',bbox_inches='tight')
+        plt.close()
+
+        crispresso2_info['plot_1b_root'] = os.path.basename(plot_root)
+        crispresso2_info['plot_1b_caption'] = "Figure 1b: Alignment and editing frequency of reads as determined by the percentage and number of sequence reads showing unmodified and modified alleles."
+        crispresso2_info['plot_1b_data'] = [('Quantification of editing',quant_of_editing_freq_filename)]
+
+        #(1c) a barchart of classes
+        fig=plt.figure(figsize=(12,12))
+        ax = plt.subplot(111)
+
+        rects = ax.bar(np.arange(len(sizes)),sizes,color='silver')
+        #label each bar
+        for rect in rects:
+            height = rect.get_height()
+            if len(sizes) > 4:
+                #ax.text(rect.get_x() + rect.get_width()/2, height + 0.05,"%.2f%%"%height, ha='center', va='bottom',fontsize=12)
+                ax.text(rect.get_x() + rect.get_width()/2, height + 0.05,"%.2f%%"%height, ha='center', va='bottom')
+            else:
+                ax.text(rect.get_x() + rect.get_width()/2, height + 0.05,"%.2f%%"%height, ha='center', va='bottom')
+
+
+        ax.set_xticks(np.arange(len(sizes)))
+
+        ax.set_xticklabels(labels)
+        ax.set_xticklabels([X.replace("&"," & ").replace("_UNMODIFIED"," UNMODIFIED").replace("_MODIFIED"," MODIFIED") for X in labels])
+        ax.set_ylabel('Sequences % (no.)')
+        y_label_values= np.round(np.linspace(0, min(100,max(ax.get_yticks())),6))# np.arange(0,y_max,y_max/6.0)
+        ax.set_yticks(y_label_values)
+        ax.set_yticklabels(['%.1f%% (%.0f)' % (pct,pct/100*N_TOTAL) for pct in y_label_values])
+        #if too many barplots, flip the labels
+        if len(sizes) > 4:
+            #plt.setp(ax.get_xticklabels(), fontsize=12, rotation='vertical',multialignment='right')
+            plt.setp(ax.get_xticklabels(),rotation='vertical',multialignment='right')
+        plt.ylim(0,max(sizes)*1.1)
+
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+
+        plt.tight_layout()
+
+        plot_root = _jp('1c.Alignment_Barplot')
+        plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
+        if save_png:
+            plt.savefig(plot_root+'.png',bbox_inches='tight')
+        plt.close()
+
+        crispresso2_info['plot_1c_root'] = os.path.basename(plot_root)
+        crispresso2_info['plot_1c_caption'] = "Figure 1c: Alignment and editing frequency of reads as determined by the percentage and number of sequence reads showing unmodified and modified alleles."
+        crispresso2_info['plot_1c_data'] = [('Quantification of editing',quant_of_editing_freq_filename)]
+        ###############################################################################################################################################
+
+
         for ref_name in ref_names:
             ref_len = refs[ref_name]['sequence_length']
+            ref_seq = refs[ref_name]['sequence']
             xmin = refs[ref_name]['xmin']
             xmax = refs[ref_name]['xmax']
             min_cut = refs[ref_name]['min_cut']
@@ -1585,6 +2057,122 @@ def main():
             hdensity = refs[ref_name]['hdensity']
             hlengths = refs[ref_name]['hlengths']
             center_index = refs[ref_name]['center_index']
+            ref_include_idx = refs[ref_name]['include_idxs']
+            include_idxs_list = sorted(list(refs[ref_name]['include_idxs']))
+            quantification_window_ref_seq = [list(ref_seq)[x] for x in ref_include_idx]
+            ref_plot_idxs = refs[ref_name]['plot_idxs']
+            sgRNA_sequences = refs[ref_name]['sgRNA_sequences']
+            cut_points = refs[ref_name]['cut_points']
+            sgRNA_plot_offsets = refs[ref_name]['sgRNA_plot_offsets']
+            sgRNA_intervals = refs[ref_name]['sgRNA_intervals']
+            tot_aln_reads = counts_total[ref_name]
+            n_this_category = counts_total[ref_name]
+
+            if n_this_category < 1:
+                continue
+
+            #plot quilt for this amplicon  (if not crispresso1 mode)
+            if not args.crispresso1_mode:
+                ##nucleotide counts
+                df_nuc_freq = pd.DataFrame([base_count_vectors[ref_name+"_A"],base_count_vectors[ref_name+"_C"],base_count_vectors[ref_name+"_G"],base_count_vectors[ref_name+"_T"],base_count_vectors[ref_name+"_N"],base_count_vectors[ref_name+'_-']])
+                df_nuc_freq.index = ['A','C','G','T','N','-']
+                df_nuc_freq.columns = quantification_window_ref_seq
+                #print table showing nuc frequencies (sum to total alleles) (in quantification window)
+                quant_window_nuc_freq_filename = _jp(ref_name + '.quantification_window_nucleotide_frequency_table.txt')
+                df_nuc_freq.to_csv(quant_window_nuc_freq_filename,sep='\t',header=True,index=True)
+                crispresso2_info['refs'][ref_name]['quant_window_nuc_freq_filename'] = quant_window_nuc_freq_filename
+
+                df_nuc_pct = df_nuc_freq.divide(tot_aln_reads)
+                quant_window_nuc_pct_filename = _jp(ref_name + '.quantification_window_nucleotide_percentage_table.txt')
+                df_nuc_pct.to_csv(quant_window_nuc_pct_filename,sep='\t',header=True,index=True)
+                crispresso2_info['refs'][ref_name]['quant_window_nuc_pct_filename'] = quant_window_nuc_pct_filename
+
+                df_nuc_freq_all = pd.DataFrame([all_base_count_vectors[ref_name+"_A"],all_base_count_vectors[ref_name+"_C"],all_base_count_vectors[ref_name+"_G"],all_base_count_vectors[ref_name+"_T"],all_base_count_vectors[ref_name+"_N"],all_base_count_vectors[ref_name+'_-']])
+                df_nuc_freq_all.index = ['A','C','G','T','N','-']
+                df_nuc_freq_all.columns = list(ref_seq)
+                #print table showing nuc frequencies (sum to total alleles) (in entire region)
+                nuc_freq_filename = _jp(ref_name + '.nucleotide_frequency_table.txt')
+                df_nuc_freq_all.to_csv(nuc_freq_filename,sep='\t',header=True,index=True)
+                crispresso2_info['refs'][ref_name]['nuc_freq_filename'] = nuc_freq_filename
+
+                df_nuc_pct_all = df_nuc_freq_all.divide(tot_aln_reads)
+                nuc_pct_filename = _jp(ref_name + '.nucleotide_percentage_table.txt')
+                df_nuc_pct_all.to_csv(nuc_pct_filename,sep='\t',header=True,index=True)
+                crispresso2_info['refs'][ref_name]['nuc_pct_filename'] = nuc_pct_filename
+
+                #substitution frequencies
+                df_sub_freq,alt_nuc_counts = count_alternate_alleles(
+                    sub_base_vectors = substitution_base_vectors,
+                    ref_name = ref_name,
+                    ref_sequence = quantification_window_ref_seq,
+                    ref_total_aln_reads = tot_aln_reads
+                    )
+
+                #print table showing sub frequencies
+                quant_window_sub_freq_filename =_jp(ref_name + '.quantification_window_substitution_frequency_table.txt')
+                df_sub_freq.to_csv(quant_window_sub_freq_filename,sep='\t',header=True,index=True)
+                crispresso2_info['refs'][ref_name]['quant_window_sub_freq_filename'] = quant_window_sub_freq_filename
+
+                df_sub_freq_all,alt_nuc_counts_all = count_alternate_alleles(
+                    sub_base_vectors = all_substitution_base_vectors,
+                    ref_name = ref_name,
+                    ref_sequence = ref_seq,
+                    ref_total_aln_reads = tot_aln_reads
+                    )
+
+
+                mod_pcts = []
+                tot = float(counts_total[ref_name])
+                mod_pcts.append(np.concatenate((['Insertions'], np.array(all_insertion_count_vectors[ref_name]).astype(np.float)/tot)))
+                mod_pcts.append(np.concatenate((['Insertions_Left'], np.array(all_insertion_left_count_vectors[ref_name]).astype(np.float)/tot)))
+                mod_pcts.append(np.concatenate((['Deletions'], np.array(all_deletion_count_vectors[ref_name]).astype(np.float)/tot)))
+                mod_pcts.append(np.concatenate((['Substitutions'], np.array(all_substitution_count_vectors[ref_name]).astype(np.float)/tot)))
+                mod_pcts.append(np.concatenate((['All_modifications'], np.array(all_indelsub_count_vectors[ref_name]).astype(np.float)/tot)))
+                mod_pcts.append(np.concatenate((['Total'],[counts_total[ref_name]]*refs[ref_name]['sequence_length'])))
+                colnames = ['Modification']+list(ref_seq)
+                modification_percentage_summary_df = pd.DataFrame(mod_pcts,columns=colnames)
+
+                nuc_df_for_plot = df_nuc_pct_all.reset_index().rename(columns={'index':'Nucleotide'})
+                nuc_df_for_plot.insert(0,'Batch',ref_name) #this function was designed for plottin batch... so just add a column in there to make it happy
+                mod_df_for_plot = modification_percentage_summary_df.copy()
+                mod_df_for_plot.insert(0,'Batch',ref_name)
+
+                plot_root = _jp('2a.'+ref_name + '.Nucleotide_Percentage_Quilt')
+                CRISPRessoPlot.plot_nucleotide_quilt(nuc_df_for_plot,mod_df_for_plot,plot_root,save_png,sgRNA_intervals=refs[ref_name]['sgRNA_intervals'],quantification_window_idxs=refs[ref_name]['include_idxs'])
+                crispresso2_info['refs'][ref_name]['plot_2a_root'] = os.path.basename(plot_root)
+                crispresso2_info['refs'][ref_name]['plot_2a_caption'] = "Figure 2a: Nucleotide distribution across amplicon. Nucleotide distribution across amplicon. At each base in the reference amplicon, the percentage of each base as observed in sequencing reads is shown (A = green; C = orange; G = yellow; T = purple). Black bars show the percentage of reads for which that base was deleted. Brown bars between bases show the percentage of reads having an insertion at that position."
+                crispresso2_info['refs'][ref_name]['plot_2a_data'] = [('Nucleotide frequency table',nuc_freq_filename)]
+
+                crispresso2_info['refs'][ref_name]['plot_2b_roots'] = []
+                crispresso2_info['refs'][ref_name]['plot_2b_captions'] = []
+                crispresso2_info['refs'][ref_name]['plot_2b_datas'] = []
+                for sgRNA,cut_point in zip(sgRNA_sequences,cut_points):
+                    #get nucleotide columns to print for this sgRNA
+                    sel_cols = [0,1]
+                    plot_half_window = max(1,args.plot_window_size/2)
+                    sel_cols.extend(range(cut_point-plot_half_window+3,cut_point+plot_half_window+3))
+                    start = cut_point-plot_half_window+1
+                    #get new intervals
+                    new_sgRNA_intervals = []
+                    #add annotations for each sgRNA (to be plotted on this sgRNA's plot)
+                    for (int_start,int_end) in refs[ref_name]['sgRNA_intervals']:
+                        new_sgRNA_intervals += [(int_start - start,int_end - start)]
+                    new_include_idx = []
+                    for x in refs[ref_name]['include_idxs']:
+                        new_include_idx += [x - start]
+                    plot_root = _jp('2b.'+ref_name + '.Nucleotide_Percentage_Quilt_For_' + sgRNA)
+                    CRISPRessoPlot.plot_nucleotide_quilt(
+                            nuc_df_for_plot.iloc[:,sel_cols],
+                            mod_df_for_plot.iloc[:,sel_cols],
+                            plot_root,
+                            save_png,sgRNA_intervals=new_sgRNA_intervals,quantification_window_idxs=new_include_idx)
+                    crispresso2_info['refs'][ref_name]['plot_2b_roots'].append(os.path.basename(plot_root))
+                    crispresso2_info['refs'][ref_name]['plot_2b_captions'].append('Figure 2b: Nucleotide distribution around sgRNA ' + sgRNA + '.')
+                    crispresso2_info['refs'][ref_name]['plot_2b_datas'].append(nuc_freq_filename)
+
+
+            ###############################################################################################################################################
+            #(3)visualize effective lengths of reads aligning to this amplicon
 
             plt.figure(figsize=(8.3,8))
             ax = plt.subplot(111)
@@ -1609,84 +2197,20 @@ def main():
             lgd.legendHandles[0].set_height(3)
             lgd.legendHandles[1].set_height(3)
 
-            plt.savefig(_jp('1.'+ref_name+'.Indel_size_distribution.pdf'),bbox_inches='tight')
-            if args.save_also_png:
-                plt.savefig(_jp('1.'+ref_name+'.Indel_size_distribution.png'),bbox_inches='tight')
+            plot_root = _jp('3a.'+ref_name+'.Indel_Size_Distribution')
+            plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
+            if save_png:
+                plt.savefig(plot_root+'.png',bbox_inches='tight')
             plt.close()
 
+            crispresso2_info['refs'][ref_name]['plot_3a_root'] = os.path.basename(plot_root)
+            crispresso2_info['refs'][ref_name]['plot_3a_caption'] = "Figure 3a: Frequency distribution of alleles with indels (blue) and without indels (red)."
+            crispresso2_info['refs'][ref_name]['plot_3a_data'] = [('Indel histogram data',crispresso2_info['refs'][ref_name]['indel_histogram_file'])]
+            ###############################################################################################################################################
 
+            ###############################################################################################################################################
+            #(3b) a graph of frequency of deletions and insertions of various sizes (deletions could be consider as negative numbers and insertions as positive);
 
-
-        ###############################################################################################################################################
-
-        ###############################################################################################################################################
-
-        #(2) a piechart of classes
-        labels = []
-        sizes = []
-        for class_name in class_counts_order:
-            labels.append(class_name + "\n(" + str(class_counts[class_name]) + " reads)")
-            sizes.append(100*class_counts[class_name]/float(N_TOTAL))
-
-        fig=plt.figure(figsize=(12*1.5,12*1.5))
-        ax = plt.subplot(111)
-        patches, texts, autotexts =ax.pie(sizes, labels=labels,\
-                        autopct='%1.1f%%')
-
-        plt.axis('off')
-
-        proptease = fm.FontProperties()
-        proptease.set_size('x-large')
-        plt.setp(autotexts, fontproperties=proptease)
-        plt.setp(texts, fontproperties=proptease)
-        plt.axis("equal")
-        plt.savefig(_jp('2a.Alignment_Pie_Chart.pdf'),pad_inches=1,bbox_inches='tight')
-        if args.save_also_png:
-            plt.savefig(_jp('2a.Alignment_Pie_Chart.png'),pad_inches=1,bbox_inches='tight')
-        plt.close()
-
-        #(2b) a barchart of classes
-        fig=plt.figure(figsize=(12*1.5,14.5*1.5))
-        ax = plt.subplot(111)
-
-        rects = ax.bar(np.arange(len(sizes)),sizes,color='silver')
-        #label each bar
-        for rect in rects:
-            height = rect.get_height()
-            if len(sizes) > 4:
-                ax.text(rect.get_x() + rect.get_width()/2, height + 0.05,"%.2f%%"%height, ha='center', va='bottom',fontsize=12)
-            else:
-                ax.text(rect.get_x() + rect.get_width()/2, height + 0.05,"%.2f%%"%height, ha='center', va='bottom')
-
-
-        ax.set_xticks(np.arange(len(sizes)))
-
-        ax.set_xticklabels(labels)
-        ax.set_xticklabels([X.replace("&"," & ").replace("_UNMODIFIED"," UNMODIFIED").replace("_MODIFIED"," MODIFIED") for X in labels])
-        ax.set_ylabel('Sequences % (no.)')
-        y_label_values= np.round(np.linspace(0, min(100,max(ax.get_yticks())),6))# np.arange(0,y_max,y_max/6.0)
-        ax.set_yticks(y_label_values)
-        ax.set_yticklabels(['%.1f%% (%.0f)' % (pct,pct/100*N_TOTAL) for pct in y_label_values])
-        #if too many barplots, flip the labels
-        if len(sizes) > 4:
-            plt.setp(ax.get_xticklabels(), fontsize=12, rotation='vertical',multialignment='right')
-        plt.ylim(0,max(sizes)*1.1)
-        plt.tight_layout()
-
-        plt.savefig(_jp('2b.Alignment_Barplot.pdf'),pad_inches=1,bbox_inches='tight')
-        if args.save_also_png:
-            plt.savefig(_jp('2b.Alignment_Barplot.png'),pad_inches=1,bbox_inches='tight')
-        plt.close()
-
-
-        ###############################################################################################################################################
-
-
-        ###############################################################################################################################################
-
-        #(3) a graph of frequency of deletions and insertions of various sizes (deletions could be consider as negative numbers and insertions as positive);
-
-        for ref_name in ref_names:
             y_values_mut = refs[ref_name]['y_values_mut']
             x_bins_mut = refs[ref_name]['x_bins_mut']
             y_values_ins = refs[ref_name]['y_values_ins']
@@ -1747,26 +2271,18 @@ def main():
 
             plt.tight_layout()
 
-            plt.savefig(_jp('3.'+ref_name+'.Insertion_Deletion_Substitutions_size_hist.pdf'),bbox_inches='tight')
-            if args.save_also_png:
-                plt.savefig(_jp('3.'+ref_name+'.Insertion_Deletion_Substitutions_size_hist.png'),bbox_inches='tight')
+            plot_root = _jp('3b.'+ref_name+'.Insertion_Deletion_Substitutions_Size_Hist')
+            plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
+            if save_png:
+                plt.savefig(plot_root+'.png',bbox_inches='tight')
             plt.close()
 
+            crispresso2_info['refs'][ref_name]['plot_3b_root'] = os.path.basename(plot_root)
+            crispresso2_info['refs'][ref_name]['plot_3b_caption'] = "Figure 3b: Left panel, frequency distribution of sequence modifications that increase read length with respect to the reference amplicon, classified as insertions (positive indel size). Middle panel, frequency distribution of sequence modifications that reduce read length with respect to the reference amplicon, classified as deletions (negative indel size). Right panel, frequency distribution of sequence modifications that do not alter read length with respect to the reference amplicon, which are classified as substitutions (number of substituted positions shown)."
 
 
-        #(4) another graph with the frequency that each nucleotide within the amplicon was modified in any way (perhaps would consider insertion as modification of the flanking nucleotides);
-
-        #Indels location Plots
-        for ref_name in ref_names:
-            len_amplicon = refs[ref_name]['sequence_length']
-            cut_points = refs[ref_name]['cut_points']
-            offset_plots = refs[ref_name]['offset_plots']
-            sgRNA_intervals = refs[ref_name]['sgRNA_intervals']
-            include_idxs_list = list(refs[ref_name]['include_idxs'])
-
-            n_this_category = counts_total[ref_name]
-            if n_this_category < 1:
-                continue
+            #(4) another graph with the frequency that each nucleotide within the amplicon was modified in any way (perhaps would consider insertion as modification of the flanking nucleotides);
+            #Indels location Plots
 
             n_this_category_modified = 0
             modifiedName = ref_name + "_MODIFIED"
@@ -1775,7 +2291,7 @@ def main():
 
             plt.figure(figsize=(10,10))
 
-            y_max=max(all_indelsub_count_vectors[ref_name])*1.2
+            y_max=max(all_indelsub_count_vectors[ref_name])*1.1
 
             #shade quantification window
             if len(include_idxs_list) > 1:
@@ -1785,11 +2301,11 @@ def main():
                     if include_idxs_list[idx] == lastIdx + 1:
                         lastIdx = include_idxs_list[idx]
                     else:
-                        p = matplotlib.patches.Rectangle((lastStart,0),(lastIdx-lastStart)+1,y_max,facecolor='lightgray')
+                        p = matplotlib.patches.Rectangle((lastStart, 0), 1+(lastIdx-lastStart), y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
                         plt.gca().add_patch(p) #gca = get current axis
                         lastStart = include_idxs_list[idx]
                         lastIdx = include_idxs_list[idx]
-                p = matplotlib.patches.Rectangle((lastStart,0),(lastIdx-lastStart)+1,y_max,facecolor='lightgray',label='Computed region')
+                p = matplotlib.patches.Rectangle((lastStart, 0), 1+(lastIdx-lastStart), y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
                 plt.gca().add_patch(p)
 
             plt.plot(all_indelsub_count_vectors[ref_name],'r',lw=3,label=get_plot_title_with_ref_name('Combined Insertions/Deletions/Substitutions',ref_name))
@@ -1798,9 +2314,9 @@ def main():
             if cut_points:
                 for idx,cut_point in enumerate(cut_points):
                     if idx==0:
-                        plt.plot([cut_point+offset_plots[idx],cut_point+offset_plots[idx]],[0,y_max],'--k',lw=2,label='Predicted cleavage position')
+                        plt.plot([cut_point+sgRNA_plot_offsets[idx],cut_point+sgRNA_plot_offsets[idx]],[0,y_max],'--k',lw=2,label='Predicted cleavage position')
                     else:
-                        plt.plot([cut_point+offset_plots[idx],cut_point+offset_plots[idx]],[0,y_max],'--k',lw=2,label='_nolegend_')
+                        plt.plot([cut_point+sgRNA_plot_offsets[idx],cut_point+sgRNA_plot_offsets[idx]],[0,y_max],'--k',lw=2,label='_nolegend_')
 
 
                 for idx,sgRNA_int in enumerate(sgRNA_intervals):
@@ -1820,18 +2336,23 @@ def main():
             else:
                 plt.ylabel('Sequences: % Total ( % '+ref_name+', no. )')
                 plt.yticks(y_label_values,['%.1f%% (%.1f%% , %d)' % (n_reads/float(N_TOTAL)*100,n_reads/float(n_this_category)*100, n_reads) for n_reads in y_label_values])
-            plt.xticks(np.arange(0,len_amplicon,max(3,(len_amplicon/6) - (len_amplicon/6)%5)).astype(int) )
+            plt.xticks(np.arange(0,ref_len,max(3,(ref_len/6) - (ref_len/6)%5)).astype(int) )
 
             plt.title(get_plot_title_with_ref_name('Mutation position distribution',ref_name))
             plt.xlabel('Reference amplicon position (bp)')
             plt.ylim(0,max(1,y_max))
-            plt.xlim(xmax=len_amplicon-1)
-            plt.savefig(_jp('4a.'+ref_name+'.Combined_Insertion_Deletion_Substitution_Locations.pdf'),bbox_extra_artists=(lgd,), bbox_inches='tight')
-            if args.save_also_png:
-                plt.savefig(_jp('4a.'+ref_name+'.Combined_Insertion_Deletion_Substitution_Locations.png'),bbox_extra_artists=(lgd,), bbox_inches='tight',pad=1)
+            plt.xlim(0,ref_len-1)
+
+            plot_root = _jp('4a.'+ref_name+'.Combined_Insertion_Deletion_Substitution_Locations')
+            plt.savefig(plot_root+'.pdf',bbox_extra_artists=(lgd,),bbox_inches='tight')
+            if save_png:
+                plt.savefig(plot_root+'.png',bbox_extra_artists=(lgd,),bbox_inches='tight')
             plt.close()
 
-#            print("subs: " + refName + ":"+ str(all_substitution_count_vectors[refName]))
+            crispresso2_info['refs'][ref_name]['plot_4a_root'] = os.path.basename(plot_root)
+            crispresso2_info['refs'][ref_name]['plot_4a_caption'] = "Figure 4a: Combined frequency of any modification across the amplicon. Modifications outside of the quantification window are also shown."
+
+#            print("subs: " + ref_name + ":"+ str(all_substitution_count_vectors[ref_name]))
             plt.figure(figsize=(10,10))
 
             #shade quantification window
@@ -1842,27 +2363,27 @@ def main():
                     if include_idxs_list[idx] == lastIdx + 1:
                         lastIdx = include_idxs_list[idx]
                     else:
-                        p = matplotlib.patches.Rectangle((lastStart,0),(lastIdx-lastStart)+1,y_max,facecolor='lightgray')
+                        p = matplotlib.patches.Rectangle((lastStart, 0), 1+(lastIdx-lastStart), y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
                         plt.gca().add_patch(p) #gca = get current axis
                         lastStart = include_idxs_list[idx]
                         lastIdx = include_idxs_list[idx]
-                p = matplotlib.patches.Rectangle((lastStart,0),(lastIdx-lastStart)+1,y_max,facecolor='lightgray',label='Computed region')
+                p = matplotlib.patches.Rectangle((lastStart, 0), 1+(lastIdx-lastStart), y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
                 plt.gca().add_patch(p)
 
-            plt.plot(all_insertion_count_vectors[refName],'r',lw=3,label='Insertions')
+            plt.plot(all_insertion_count_vectors[ref_name],'r',lw=3,label='Insertions')
             #plt.hold(True)
-            plt.plot(all_deletion_count_vectors[refName],'m',lw=3,label='Deletions')
-            plt.plot(all_substitution_count_vectors[refName],'g',lw=3,label='Substitutions')
+            plt.plot(all_deletion_count_vectors[ref_name],'m',lw=3,label='Deletions')
+            plt.plot(all_substitution_count_vectors[ref_name],'g',lw=3,label='Substitutions')
 
-            y_max=max(max(all_insertion_count_vectors[refName]),max(all_deletion_count_vectors[refName]),max(all_substitution_count_vectors[refName]))*1.2
+            y_max=max(max(all_insertion_count_vectors[ref_name]),max(all_deletion_count_vectors[ref_name]),max(all_substitution_count_vectors[ref_name]))*1.1
 
 
             if cut_points:
                 for idx,cut_point in enumerate(cut_points):
                     if idx==0:
-                        plt.plot([cut_point+offset_plots[idx],cut_point+offset_plots[idx]],[0,y_max],'--k',lw=2,label='Predicted cleavage position')
+                        plt.plot([cut_point+sgRNA_plot_offsets[idx],cut_point+sgRNA_plot_offsets[idx]],[0,y_max],'--k',lw=2,label='Predicted cleavage position')
                     else:
-                        plt.plot([cut_point+offset_plots[idx],cut_point+offset_plots[idx]],[0,y_max],'--k',lw=2,label='_nolegend_')
+                        plt.plot([cut_point+sgRNA_plot_offsets[idx],cut_point+sgRNA_plot_offsets[idx]],[0,y_max],'--k',lw=2,label='_nolegend_')
 
                 for idx,sgRNA_int in enumerate(sgRNA_intervals):
                     if idx==0:
@@ -1874,7 +2395,7 @@ def main():
             y_label_values = np.arange(0,1,1.0/6.0)
             if y_max > 0:
                 y_label_values=np.arange(0,y_max,y_max/6.0)
-            plt.xticks(np.arange(0,len_amplicon,max(3,(len_amplicon/6) - (len_amplicon/6)%5)).astype(int) )
+            plt.xticks(np.arange(0,ref_len,max(3,(ref_len/6) - (ref_len/6)%5)).astype(int) )
 
             plt.xlabel('Reference amplicon position (bp)')
             if len(ref_names) == 1:
@@ -1886,17 +2407,22 @@ def main():
                 plt.yticks(y_label_values,['%.1f%% (%.1f%% , %d)' % (n_reads/float(N_TOTAL)*100,n_reads/float(n_this_category)*100, n_reads) for n_reads in y_label_values])
 
             plt.ylim(0,max(1,y_max))
-            plt.xlim(xmax=len_amplicon-1)
+            plt.xlim(0,ref_len-1)
 
             plt.title(get_plot_title_with_ref_name('Mutation position distribution',ref_name))
-            plt.savefig(_jp('4b.'+ref_name+'.Insertion_Deletion_Substitution_Locations.pdf'),bbox_extra_artists=(lgd,), bbox_inches='tight')
-            if args.save_also_png:
-                plt.savefig(_jp('4b.'+ref_name+'.Insertion_Deletion_Substitution_Locations.png'),bbox_extra_artists=(lgd,), bbox_inches='tight',pad=1)
+
+            plot_root = _jp('4b.'+ref_name+'.Insertion_Deletion_Substitution_Locations')
+            plt.savefig(plot_root+'.pdf',bbox_extra_artists=(lgd,),pad_inches=1,bbox_inches='tight')
+            if save_png:
+                plt.savefig(plot_root+'.png',bbox_extra_artists=(lgd,),bbox_inches='tight')
             plt.close()
+            crispresso2_info['refs'][ref_name]['plot_4b_root'] = os.path.basename(plot_root)
+            crispresso2_info['refs'][ref_name]['plot_4b_caption'] = "Figure 4b: Frequency of insertions (red), deletions (purple), and substitutions (green) across the entire amplicon, including modifications outside of the quantification window."
+
 
             plt.figure(figsize=(10,10))
 
-            y_max=max(max(insertion_count_vectors[ref_name]),max(deletion_count_vectors[ref_name]),max(substitution_count_vectors[ref_name]),1)*1.2
+            y_max=max(max(insertion_count_vectors[ref_name]),max(deletion_count_vectors[ref_name]),max(substitution_count_vectors[ref_name]),1)*1.1
 
             #shade quantification window
             if len(include_idxs_list) > 1:
@@ -1906,11 +2432,11 @@ def main():
                     if include_idxs_list[idx] == lastIdx + 1:
                         lastIdx = include_idxs_list[idx]
                     else:
-                        p = matplotlib.patches.Rectangle((lastStart,0),(lastIdx-lastStart)+1,y_max,facecolor='lightgray')
+                        p = matplotlib.patches.Rectangle((lastStart, 0), 1+(lastIdx-lastStart), y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
                         plt.gca().add_patch(p) #gca = get current axis
                         lastStart = include_idxs_list[idx]
                         lastIdx = include_idxs_list[idx]
-                p = matplotlib.patches.Rectangle((lastStart,0),(lastIdx-lastStart)+1,y_max,facecolor='lightgray',label='Computed region')
+                p = matplotlib.patches.Rectangle((lastStart, 0), 1+(lastIdx-lastStart), y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
                 plt.gca().add_patch(p)
 
 
@@ -1923,9 +2449,9 @@ def main():
             if cut_points:
                 for idx,cut_point in enumerate(cut_points):
                     if idx==0:
-                        plt.plot([cut_point+offset_plots[idx],cut_point+offset_plots[idx]],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
+                        plt.plot([cut_point+sgRNA_plot_offsets[idx],cut_point+sgRNA_plot_offsets[idx]],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
                     else:
-                        plt.plot([cut_point+offset_plots[idx],cut_point+offset_plots[idx]],[0,y_max],'--k',linewidth=2,label='_nolegend_')
+                        plt.plot([cut_point+sgRNA_plot_offsets[idx],cut_point+sgRNA_plot_offsets[idx]],[0,y_max],'--k',linewidth=2,label='_nolegend_')
 
 
                 for idx,sgRNA_int in enumerate(sgRNA_intervals):
@@ -1940,7 +2466,7 @@ def main():
             if y_max > 0:
                 y_label_values=np.arange(0,y_max,y_max/6.0).astype(int)
             plt.yticks(y_label_values,['%.1f%% (%.1f%% , %d)' % (n_reads/float(N_TOTAL)*100,n_reads/float(n_this_category)*100, n_reads) for n_reads in y_label_values])
-            plt.xticks(np.arange(0,len_amplicon,max(3,(len_amplicon/6) - (len_amplicon/6)%5)).astype(int) )
+            plt.xticks(np.arange(0,ref_len,max(3,(ref_len/6) - (ref_len/6)%5)).astype(int) )
 
             plt.xlabel('Reference amplicon position (bp)')
             if len(ref_names) == 1:
@@ -1952,12 +2478,16 @@ def main():
 
 
             plt.ylim(0,max(1,y_max))
-            plt.xlim(xmax=len_amplicon-1)
+            plt.xlim(0,ref_len-1)
             plt.title(get_plot_title_with_ref_name('Mutation position distribution',ref_name))
-            plt.savefig(_jp('4c.'+ref_name+'.Masked_Insertion_Deletion_Substitution_Locations.pdf'),bbox_extra_artists=(lgd,), bbox_inches='tight')
-            if args.save_also_png:
-                plt.savefig(_jp('4c.'+ref_name+'.Masked_Insertion_Deletion_Substitution_Locations.png'),bbox_extra_artists=(lgd,), bbox_inches='tight',pad=1)
+            plot_root = _jp('4c.'+ref_name+'.Quantification_Window_Insertion_Deletion_Substitution_Locations')
+            plt.savefig(plot_root+'.pdf',bbox_extra_artists=(lgd,),pad_inches=1,bbox_inches='tight')
+            if save_png:
+                plt.savefig(plot_root+'.png',bbox_extra_artists=(lgd,),bbox_inches='tight')
             plt.close()
+
+            crispresso2_info['refs'][ref_name]['plot_4c_root'] = os.path.basename(plot_root)
+            crispresso2_info['refs'][ref_name]['plot_4c_caption'] = "Figure 4c: Frequency of insertions (red), deletions (purple), and substitutions (green) across the entire amplicon, considering only modifications that overlap with the quantification window."
 
             #Position dependent indels plot
             fig=plt.figure(figsize=(24,10))
@@ -1967,20 +2497,20 @@ def main():
             plt.setp(baseline, 'linewidth', 0)
             plt.setp(stemlines, 'color', 'r','linewidth',3)
             #plt.hold(True)
-            y_max=max(insertion_length_vectors[ref_name])*1.2
+            y_max=max(insertion_length_vectors[ref_name])*1.1
             if cut_points:
 
                 for idx,cut_point in enumerate(cut_points):
                     if idx==0:
-                        ax1.plot([cut_point+offset_plots[idx],cut_point+offset_plots[idx]],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
+                        ax1.plot([cut_point+sgRNA_plot_offsets[idx],cut_point+sgRNA_plot_offsets[idx]],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
                     else:
-                        ax1.plot([cut_point+offset_plots[idx],cut_point+offset_plots[idx]],[0,y_max],'--k',linewidth=2,label='_nolegend_')
+                        ax1.plot([cut_point+sgRNA_plot_offsets[idx],cut_point+sgRNA_plot_offsets[idx]],[0,y_max],'--k',linewidth=2,label='_nolegend_')
 
-            plt.xticks(np.arange(0,len_amplicon,max(3,(len_amplicon/6) - (len_amplicon/6)%5)).astype(int) )
+            plt.xticks(np.arange(0,ref_len,max(3,(ref_len/6) - (ref_len/6)%5)).astype(int) )
             plt.xlabel('Reference amplicon position (bp)')
             plt.ylabel('Average insertion length')
             plt.ylim(0,max(1,y_max))
-            plt.xlim(xmax=len_amplicon-1)
+            plt.xlim(0,ref_len-1)
             ax1.set_title(get_plot_title_with_ref_name('Position dependent insertion size',ref_name))
             plt.tight_layout()
 
@@ -1990,52 +2520,115 @@ def main():
             plt.setp(baseline, 'linewidth', 0)
             plt.setp(stemlines, 'color', 'm','linewidth',3)
             #plt.hold(True)
-            y_max=max(deletion_length_vectors[ref_name])*1.2
+            y_max=max(deletion_length_vectors[ref_name])*1.1
             if cut_points:
 
                 for idx,cut_point in enumerate(cut_points):
                     if idx==0:
-                        ax2.plot([cut_point+offset_plots[idx],cut_point+offset_plots[idx]],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
+                        ax2.plot([cut_point+sgRNA_plot_offsets[idx],cut_point+sgRNA_plot_offsets[idx]],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
                     else:
-                        ax2.plot([cut_point+offset_plots[idx],cut_point+offset_plots[idx]],[0,y_max],'--k',linewidth=2,label='_nolegend_')
+                        ax2.plot([cut_point+sgRNA_plot_offsets[idx],cut_point+sgRNA_plot_offsets[idx]],[0,y_max],'--k',linewidth=2,label='_nolegend_')
 
-            plt.xticks(np.arange(0,len_amplicon,max(3,(len_amplicon/6) - (len_amplicon/6)%5)).astype(int) )
+            plt.xticks(np.arange(0,ref_len,max(3,(ref_len/6) - (ref_len/6)%5)).astype(int) )
             plt.xlabel('Reference amplicon position (bp)')
             plt.ylabel('Average deletion length')
 
+            ymin, ymax = ax2.yaxis.get_view_interval()
             plt.ylim(ymin=0,ymax=max(1,y_max))
-            plt.xlim(xmax=len_amplicon-1)
+            plt.xlim(0,ref_len-1)
             ax2.set_title(get_plot_title_with_ref_name('Position dependent deletion size', ref_name))
 
             plt.tight_layout()
 
 
-            plt.savefig(_jp('4d.'+ref_name+'.Position_dependent_average_indel_size.pdf'),bbox_extra_artists=(lgd,), bbox_inches='tight')
-            if args.save_also_png:
-                plt.savefig(_jp('4d.'+ref_name+'.Position_dependent_average_indel_size.png'),bbox_extra_artists=(lgd,), bbox_inches='tight')
+            plot_root = _jp('4d.'+ref_name+'.Position_Dependent_Average_Indel_Size')
+            plt.savefig(plot_root+'.pdf',bbox_extra_artists=(lgd,),pad_inches=1,bbox_inches='tight')
+            if save_png:
+                plt.savefig(plot_root+'.png',bbox_extra_artists=(lgd,),bbox_inches='tight')
             plt.close()
 
+            crispresso2_info['refs'][ref_name]['plot_4d_root'] = os.path.basename(plot_root)
+            crispresso2_info['refs'][ref_name]['plot_4d_caption'] = "Figure 4d: Position dependent insertion size(left) and deletion size (right), including only modifications that overlap with the quantification window."
 
-        ###############################################################################################################################################
+            ###############################################################################################################################################
+            #4e : for HDR, global modifications with respect to reference 1
+            ###############################################################################################################################################
+
+            if args.expected_hdr_amplicon_seq != "" and (ref_name == ref_names[0] or ref_name == "HDR"):
+                plt.figure(figsize=(10,10))
+                ref1_all_insertion_positions = ref1_all_insertion_count_vectors[ref_name]
+                ref1_all_deletion_positions = ref1_all_deletion_count_vectors[ref_name]
+                ref1_all_substitution_positions = ref1_all_substitution_count_vectors[ref_name]
+
+                y_max=max(max(ref1_all_insertion_positions),max(ref1_all_deletion_positions),max(ref1_all_substitution_positions),1)*1.1
+
+                plt.plot(ref1_all_insertion_positions,'r',linewidth=3,label='Insertions')
+                plt.plot(ref1_all_deletion_positions,'m',linewidth=3,label='Deletions')
+                plt.plot(ref1_all_substitution_positions,'g',linewidth=3,label='Substitutions')
+
+
+                ref1_cut_points = refs[ref_names[0]]['cut_points']
+                ref1_sgRNA_plot_offsets = refs[ref_names[0]]['sgRNA_plot_offsets']
+                ref1_sgRNA_intervals = refs[ref_names[0]]['sgRNA_intervals']
+                if ref1_cut_points:
+                    for idx,ref1_cut_point in enumerate(ref1_cut_points):
+                        if idx==0:
+                            plt.plot([ref1_cut_point+ref1_sgRNA_plot_offsets[idx],ref1_cut_point+ref1_sgRNA_plot_offsets[idx]],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
+                        else:
+                            plt.plot([ref1_cut_point+ref1_sgRNA_plot_offsets[idx],ref1_cut_point+ref1_sgRNA_plot_offsets[idx]],[0,y_max],'--k',linewidth=2,label='_nolegend_')
+
+
+                    for idx,sgRNA_int in enumerate(ref1_sgRNA_intervals):
+                        if idx==0:
+                            plt.plot([sgRNA_int[0],sgRNA_int[1]],[0,0],linewidth=10,c=(0,0,0,0.15),label='sgRNA',solid_capstyle='butt')
+                        else:
+                            plt.plot([sgRNA_int[0],sgRNA_int[1]],[0,0],linewidth=10,c=(0,0,0,0.15),label='_nolegend_',solid_capstyle='butt')
+
+
+                lgd=plt.legend(loc='center', bbox_to_anchor=(0.5, -0.28),ncol=1, fancybox=True, shadow=True)
+                y_label_values = np.arange(0,1,1.0/6.0)
+                if y_max > 0:
+                    y_label_values=np.arange(0,y_max,y_max/6.0).astype(int)
+
+                plt.ylabel('Sequences: % Total ( no. )')
+                plt.yticks(y_label_values,['%.1f%% (%d)' % (n_reads/float(N_TOTAL)*100,n_reads) for n_reads in y_label_values])
+
+                plt.xticks(np.arange(0,ref_len,max(3,(ref_len/6) - (ref_len/6)%5)).astype(int) )
+                plt.xlabel(ref_names[0] + ' position (bp)')
+
+                plt.ylim(0,max(1,y_max))
+                plt.xlim(0,ref_len-1)
+                if ref_name == ref_names[0]:
+                    plt.title('Mutation position distribution in all reads with reference to %s'%(ref_names[0]))
+                    plot_root = _jp('4e.' + ref_names[0] + '.Global_Mutations_In_All_Reads')
+                    crispresso2_info['refs'][ref_names[0]]['plot_4e_root'] = os.path.basename(plot_root)
+                    crispresso2_info['refs'][ref_names[0]]['plot_4e_caption'] = "Figure 4e: Modifications in all reads when aligned to the reference sequence. Insertions: red, deletions: purple, substitutions: green. All modifications (including those outside the quantification window) are shown."
+                elif ref_name == "HDR":
+                    plt.title('Mutation position distribution in %s reads with reference to %s'%(ref_name,ref_names[0]))
+                    plot_root = _jp('4f.' + ref_names[0] + '.Global_Mutations_In_HDR_Reads_With_Reference_To_'+ref_names[0])
+                    crispresso2_info['refs'][ref_names[0]]['plot_4f_root'] = os.path.basename(plot_root)
+                    crispresso2_info['refs'][ref_names[0]]['plot_4f_caption'] = "Figure 4f: Modifications in HDR reads with respect to the reference sequence. Insertions: red, deletions: purple, substitutions: green. All modifications (including those outside the quantification window) are shown."
+
+                plt.savefig(plot_root+'.pdf',bbox_extra_artists=(lgd,),pad_inches=1,bbox_inches='tight')
+                if save_png:
+                    plt.savefig(plot_root+'.png',bbox_extra_artists=(lgd,),bbox_inches='tight')
+                plt.close()
 
 
         ###############################################################################################################################################
         #(5, 6) frameshift analyses plots
-        for ref_name in ref_names:
-            n_this_category = counts_total[ref_name]
-            if n_this_category < 1:
-                continue
             if (refs[ref_name]['contains_coding_seq']): #PERFORM FRAMESHIFT ANALYSIS
                 #make frameshift plots
-                len_amplicon = refs[ref_name]['sequence_length']
+                ref_len = refs[ref_name]['sequence_length']
                 cut_points = refs[ref_name]['cut_points']
-                offset_plots = refs[ref_name]['offset_plots']
+                sgRNA_plot_offsets = refs[ref_name]['sgRNA_plot_offsets']
                 sgRNA_intervals = refs[ref_name]['sgRNA_intervals']
                 MODIFIED_FRAMESHIFT = counts_modified_frameshift[ref_name]
                 MODIFIED_NON_FRAMESHIFT = counts_modified_non_frameshift[ref_name]
                 NON_MODIFIED_NON_FRAMESHIFT = counts_non_modified_non_frameshift[ref_name]
                 SPLICING_SITES_MODIFIED = counts_splicing_sites_modified[ref_name]
                 exon_intervals = refs[ref_name]['exon_intervals']
+                exon_len_mods = refs[ref_name]['exon_len_mods']
                 count_total = counts_total[ref_name]
                 count_modified = counts_modified[ref_name]
                 count_unmodified = counts_unmodified[ref_name]
@@ -2054,7 +2647,7 @@ def main():
                                                    autopct='%1.1f%%')
 
                 ax2 = plt.subplot2grid((6,3), (5, 0), colspan=3, rowspan=1)
-                ax2.plot([0,len_amplicon],[0,0],'-k',linewidth=2,label=ref_name+' sequence')
+                ax2.plot([0,ref_len],[0,0],'-k',linewidth=2,label=ref_name+' sequence')
                 #plt.hold(True)
 
                 for idx,exon_interval in enumerate(exon_intervals):
@@ -2064,20 +2657,25 @@ def main():
                         ax2.plot(exon_interval,[0,0],'-',linewidth=10,c=(0,0,1,0.5),label='_nolegend_',solid_capstyle='butt')
 
                 if cut_points:
-                   ax2.plot(cut_points+offset_plots,np.zeros(len(cut_points)),'vr', ms=25,label='Predicted Cas9 cleavage site/s')
+                   ax2.plot(cut_points+sgRNA_plot_offsets,np.zeros(len(cut_points)),'vr', ms=25,label='Predicted cleavage position')
 
                 plt.legend(bbox_to_anchor=(0, 0, 1., 0),  ncol=1, mode="expand", borderaxespad=0.,numpoints=1)
-                plt.xlim(0,len_amplicon)
+                plt.xlim(0,ref_len)
                 plt.axis('off')
 
                 proptease = fm.FontProperties()
                 proptease.set_size('xx-large')
                 plt.setp(autotexts, fontproperties=proptease)
                 plt.setp(texts, fontproperties=proptease)
-                plt.savefig(_jp('5.'+ref_name+'.Frameshift_In-frame_mutations_pie_chart.pdf'),pad_inches=1,bbox_inches='tight')
-                if args.save_also_png:
-                    plt.savefig(_jp('5.'+ref_name+'.Frameshift_In-frame_mutations_pie_chart.png'),pad_inches=1,bbox_inches='tight')
+
+                plot_root = _jp('5.'+ref_name+'.Frameshift_In-frame_Mutations_Pie_Chart')
+                plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
+                if save_png:
+                    plt.savefig(plot_root+'.png',bbox_inches='tight')
                 plt.close()
+                crispresso2_info['refs'][ref_name]['plot_5_root'] = os.path.basename(plot_root)
+                crispresso2_info['refs'][ref_name]['plot_5_caption'] = "Figure 5: Frameshift analysis of coding sequence reads affected by modifications (unmodified reads are excluded from this analysis)."
+
 
 
                  #profiles-----------------------------------------------------------------------------------
@@ -2086,51 +2684,62 @@ def main():
                 x,y=map(np.array,zip(*[a for a in hists_frameshift[ref_name].iteritems()]))
                 if sum(hists_frameshift[ref_name].values()) != 0:
                     y=y/float(sum(hists_frameshift[ref_name].values()))*100
-                ax1.bar(x-0.5,y)
+                ax1.bar(x-0.1,y)
                 ax1.set_xlim(-30.5,30.5)
                 ax1.set_frame_on(False)
                 ax1.set_xticks([idx for idx in range(-30,31) if idx % 3])
                 ax1.tick_params(which='both',      # both major and minor ticks are affected
-                   bottom='off',      # ticks along the bottom edge are off
-                   top='off',         # ticks along the top edge are off
-                   labelbottom='on') # labels along the bottom edge are off)
+                   bottom=False,      # ticks along the bottom edge are off
+                   top=False,         # ticks along the top edge are off
+                   labelbottom=True) # labels along the bottom edge are off)
                 ax1.yaxis.tick_left()
                 xmin, xmax = ax1.get_xaxis().get_view_interval()
                 ymin, ymax = ax1.get_yaxis().get_view_interval()
                 ax1.set_xticklabels([str(idx)  for idx in [idx for idx in range(-30,31) if idx % 3]],rotation='vertical')
                 plt.title(get_plot_title_with_ref_name('Frameshift profile',ref_name))
-                ax1.tick_params(axis='both', which='major', labelsize=32)
-                ax1.tick_params(axis='both', which='minor', labelsize=32)
+                ax1.tick_params(axis='both', which='major', labelsize=24)
+                ax1.tick_params(axis='both', which='minor', labelsize=24)
                 plt.tight_layout()
-                plt.ylabel('%')
+                ax1.set_ylabel('Sequences % (no.)')
+                y_label_values= np.round(np.linspace(0, min(100,max(ax1.get_yticks())),6))# np.arange(0,y_max,y_max/6.0)
+                ax1.set_yticks(y_label_values)
+                ax1.set_yticklabels(['%.1f%% (%.0f)' % (pct,pct/100*sum(hists_frameshift[ref_name].values())) for pct in y_label_values])
 
                 ax2=fig.add_subplot(2,1,2)
                 x,y=map(np.array,zip(*[a for a in hists_inframe[ref_name].iteritems()]))
                 if sum(hists_inframe[ref_name].values()) > 0:
                     y=y/float(sum(hists_inframe[ref_name].values()))*100
-                ax2.bar(x-0.5,y,color=(0,1,1,0.2))
+                #ax2.bar(x-0.5,y,color=(0,1,1,0.2))
+                ax2.bar(x-0.1,y,color=(0,1,1,0.2))
                 ax2.set_xlim(-30.5,30.5)
                 ax2.set_frame_on(False)
                 ax2.set_xticks([idx for idx in range(-30,31) if (idx % 3 ==0) ])
                 ax2.tick_params(which='both',      # both major and minor ticks are affected
-                   bottom='off',      # ticks along the bottom edge are off
-                   top='off',         # ticks along the top edge are off
-                   labelbottom='on') # labels along the bottom edge are off)
+                   bottom=False,      # ticks along the bottom edge are off
+                   top=False,         # ticks along the top edge are off
+                   labelbottom=True) # labels along the bottom edge are off)
                 ax2.yaxis.tick_left()
                 xmin, xmax = ax2.xaxis.get_view_interval()
                 ymin, ymax = ax2.yaxis.get_view_interval()
-                ax2.set_xticklabels([str(idx)  for idx in [idx for idx in range(-30,31) if (idx % 3==0)]],rotation='vertical')
+                ax2.set_xticklabels([str(idx)  for idx in [idx for idx in range(-30,31) if (idx % 3==0)]],rotation='vertical',horizontalalignment="center")
                 plt.title(get_plot_title_with_ref_name('In-frame profile',ref_name))
-                plt.tight_layout()
-                plt.ylabel('%')
-                ax2.tick_params(axis='both', which='major', labelsize=32)
-                ax2.tick_params(axis='both', which='minor', labelsize=32)
+                ax2.set_ylabel('Sequences % (no.)')
+                y_label_values= np.round(np.linspace(0, min(100,max(ax2.get_yticks())),6))# np.arange(0,y_max,y_max/6.0)
+                ax2.set_yticks(y_label_values)
+                ax2.set_yticklabels(['%.1f%% (%.0f)' % (pct,pct/100*sum(hists_inframe[ref_name].values())) for pct in y_label_values])
+
+                ax2.tick_params(axis='both', which='major', labelsize=24)
+                ax2.tick_params(axis='both', which='minor', labelsize=24)
                 plt.tight_layout()
 
-                plt.savefig(_jp('6.'+ref_name+'.Frameshift_In-frame_mutation_profiles.pdf'),pad_inches=1,bbox_inches='tight')
-                if args.save_also_png:
-                    plt.savefig(_jp('6.'+ref_name+'.Frameshift_In-frame_mutation_profiles.png'),pad_inches=1,bbox_inches='tight')
+                plot_root = _jp('6.'+ref_name+'.Frameshift_In-frame_Mutation_Profiles')
+                plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
+                if save_png:
+                    plt.savefig(plot_root+'.png',bbox_inches='tight')
                 plt.close()
+                crispresso2_info['refs'][ref_name]['plot_6_root'] = os.path.basename(plot_root)
+                crispresso2_info['refs'][ref_name]['plot_6_caption'] = "Figure 6: Frameshift and in-frame mutagenesis profiles indicating position affected by modification."
+
 
                  #-----------------------------------------------------------------------------------------------------------
                 fig=plt.figure(figsize=(12*1.5,12*1.5))
@@ -2146,10 +2755,14 @@ def main():
                 proptease.set_size('xx-large')
                 plt.setp(autotexts, fontproperties=proptease)
                 plt.setp(texts, fontproperties=proptease)
-                plt.savefig(_jp('8.'+ref_name+'.Potential_Splice_Sites_pie_chart.pdf'),pad_inches=1,bbox_inches='tight')
-                if args.save_also_png:
-                    plt.savefig(_jp('8.'+ref_name+'.Potential_Splice_Sites_pie_chart.png'),pad_inches=1,bbox_inches='tight')
+                plot_root = _jp('8.'+ref_name+'.Potential_Splice_Sites_Pie_Chart')
+                plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
+                if save_png:
+                    plt.savefig(plot_root+'.png',bbox_inches='tight')
                 plt.close()
+                crispresso2_info['refs'][ref_name]['plot_8_root'] = os.path.basename(plot_root)
+                crispresso2_info['refs'][ref_name]['plot_8_caption'] = "Figure 8: Predicted impact on splice sites. Potential splice sites modified refers to reads in which the either of the two intronic positions adjacent to exon junctions are disrupted."
+
 
                 #non coding
                 plt.figure(figsize=(10,10))
@@ -2158,15 +2771,16 @@ def main():
                 plt.plot(deletion_count_vectors_noncoding[ref_name],'m',linewidth=3,label='Deletions')
                 plt.plot(substitution_count_vectors_noncoding[ref_name],'g',linewidth=3,label='Substitutions')
 
-                y_max=max(max(insertion_count_vectors_noncoding[ref_name]),max(deletion_count_vectors_noncoding[ref_name]),max(substitution_count_vectors_noncoding[ref_name]))*1.2
+                y_max=max(max(insertion_count_vectors_noncoding[ref_name]),max(deletion_count_vectors_noncoding[ref_name]),max(substitution_count_vectors_noncoding[ref_name]))*1.1
 
                 if cut_points:
 
                     for idx,cut_point in enumerate(cut_points):
-                        if idx==0:
-                                plt.plot([cut_point+offset_plots[idx],cut_point+offset_plots[idx]],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
-                        else:
-                                plt.plot([cut_point+offset_plots[idx],cut_point+offset_plots[idx]],[0,y_max],'--k',linewidth=2,label='_nolegend_')
+                        if not args.base_editor_output:
+                            if idx==0:
+                                    plt.plot([cut_point+sgRNA_plot_offsets[idx],cut_point+sgRNA_plot_offsets[idx]],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
+                            else:
+                                    plt.plot([cut_point+sgRNA_plot_offsets[idx],cut_point+sgRNA_plot_offsets[idx]],[0,y_max],'--k',linewidth=2,label='_nolegend_')
 
                         for idx,sgRNA_int in enumerate(sgRNA_intervals):
                             if idx==0:
@@ -2175,198 +2789,159 @@ def main():
                                plt.plot([sgRNA_int[0],sgRNA_int[1]],[0,0],linewidth=10,c=(0,0,0,0.15),label='_nolegend_',solid_capstyle='butt')
 
                 lgd=plt.legend(loc='center', bbox_to_anchor=(0.5, -0.28),ncol=1, fancybox=True, shadow=True)
-                plt.xticks(np.arange(0,len_amplicon,max(3,(len_amplicon/6) - (len_amplicon/6)%5)).astype(int) )
+                plt.xticks(np.arange(0,ref_len,max(3,(ref_len/6) - (ref_len/6)%5)).astype(int) )
 
                 plt.xlabel('Reference amplicon position (bp)')
                 plt.ylabel('Sequences (no.)')
                 plt.ylim(0,max(1,y_max))
-                plt.xlim(xmax=len_amplicon-1)
+                plt.xlim(0,ref_len-1)
                 plt.title(get_plot_title_with_ref_name('Noncoding mutation position distribution',ref_name))
-                plt.savefig(_jp('7.'+ref_name+'.Insertion_Deletion_Substitution_Locations_Noncoding.pdf'),bbox_extra_artists=(lgd,), bbox_inches='tight')
-                if args.save_also_png:
-                    plt.savefig(_jp('7.'+ref_name+'.Insertion_Deletion_Substitution_Locations_Noncoding.png'),bbox_extra_artists=(lgd,), bbox_inches='tight')
+
+                plot_root = _jp('7.'+ref_name+'.Insertion_Deletion_Substitution_Locations_Noncoding')
+                plt.savefig(plot_root+'.pdf',bbox_extra_artists=(lgd,),pad_inches=1,bbox_inches='tight')
+                if save_png:
+                    plt.savefig(plot_root+'.png',bbox_extra_artists=(lgd,),bbox_inches='tight')
                 plt.close()
+                crispresso2_info['refs'][ref_name]['plot_7_root'] = os.path.basename(plot_root)
+                crispresso2_info['refs'][ref_name]['plot_7_caption'] = "Figure 7: Reads with insertions (red), deletions (purple), and substitutions (green) mapped to reference amplicon position exclusively in noncoding region/s (that is, without mutations affecting coding sequences). The predicted cleavage site is indicated by a vertical dashed line. Only sequence positions directly adjacent to insertions or directly affected by deletions or substitutions are plotted."
+            #end contains coding seq
 
-        def count_alternate_alleles(sub_base_vectors,ref_name,ref_sequence,ref_total_aln_reads):
-            #create vectors with all allele frequencies -- not just the substitution (the reference allele will not be 0)
-            count_sub_base_vectors = {}
-            count_sub_base_vectors['A'] = list(sub_base_vectors[ref_name+"_A"])
-            count_sub_base_vectors['C'] = list(sub_base_vectors[ref_name+"_C"])
-            count_sub_base_vectors['G'] = list(sub_base_vectors[ref_name+"_G"])
-            count_sub_base_vectors['T'] = list(sub_base_vectors[ref_name+"_T"])
-            count_sub_base_vectors['N'] = list(sub_base_vectors[ref_name+"_N"])
+            sub_freq_table_filename = _jp(ref_name + '.substitution_frequency_table.txt')
+            df_sub_freq_all.to_csv(sub_freq_table_filename,sep='\t',header=True,index=True)
+            crispresso2_info['refs'][ref_name]['sub_freq_table_filename'] = sub_freq_table_filename
 
-            #count the total number of times each substitution occurs
-            alt_nuc_counts = {}
-            alph = ['A','C','G','T','N']
-            for a in alph:
-                alt_nuc_counts[a] = {}
-                for b in alph:
-                    alt_nuc_counts[a][b] = 0
+        ######PLOT
+            if not args.crispresso1_mode and args.base_editor_output:
+                plot_ref_seq = ''.join([ref_seq[i] for i in ref_plot_idxs])
+                plot_nuc_pcts = df_nuc_pct_all.iloc[:,ref_plot_idxs]
+                plot_nuc_freqs = df_nuc_freq_all.iloc[:,ref_plot_idxs]
 
-            for idx,c in enumerate(ref_sequence):
-                tot_sub_at_idx = 0
-                for a in alph:
-                    sub = sub_base_vectors[ref_name+"_" + a][idx]
-                    alt_nuc_counts[c][a] += sub
-                    tot_sub_at_idx += sub
+                #get computation window in plotted region
+                is_window = np.zeros(ref_len)
+                for ind in include_idxs_list:
+                    is_window[ind] = 1
+                plot_is_window = np.zeros(len(ref_plot_idxs)) #binary array of sgRNAs in the
+                plot_quant_window_idxs = []
+                for ind, loc in enumerate(ref_plot_idxs):
+                    plot_is_window[ind] = is_window[loc]
+                    if is_window[loc]:
+                        plot_quant_window_idxs.append(ind-2)
 
-            df_subs = pd.DataFrame([count_sub_base_vectors["A"],count_sub_base_vectors["C"],count_sub_base_vectors["G"],count_sub_base_vectors["T"],count_sub_base_vectors["N"]])
-            df_subs.index = ['A','C','G','T','N']
-            df_subs.columns = list(ref_sequence)
-            return (df_subs,alt_nuc_counts)
+                from_nuc_indices = [pos for pos, char in enumerate(list(plot_nuc_pcts.columns.values)) if char == args.conversion_nuc_from]
+                just_sel_nuc_pcts = plot_nuc_pcts.iloc[:,from_nuc_indices].copy() #only nucleotides targeted by base editing
+                just_sel_nuc_pcts.columns = [char + str(pos+1) for pos,char in enumerate(list(just_sel_nuc_pcts.columns.values))]
+                just_sel_nuc_freqs = plot_nuc_freqs.iloc[:,from_nuc_indices].copy()
+                just_sel_nuc_freqs.columns = [char + str(pos+1) for pos,char in enumerate(list(just_sel_nuc_freqs.columns.values))]
 
-            ############
+                quant_window_sel_nuc_pct_filename = _jp(ref_name + '.quantification_window_selected_nucleotide_percentage_table.txt')
+                just_sel_nuc_pcts.to_csv(quant_window_sel_nuc_pct_filename,sep='\t',header=True,index=True)
+                crispresso2_info['quant_window_sel_nuc_pct_filename'] = quant_window_sel_nuc_pct_filename
 
-        ######PLOT substitution INFORMATION
-
-        if not args.crispresso1_mode:
-            for ref_name in ref_names:
-                n_this_category = counts_total[ref_name]
-                if n_this_category < 1:
-                    continue
-
-                ref_len = refs[ref_name]['sequence_length']
-                ref_seq = refs[ref_name]['sequence']
-                ref_include_idx = refs[ref_name]['include_idxs']
-                ref_plot_idxs = refs[ref_name]['plot_idxs']
-
-
-                tot_aln_reads = counts_total[ref_name]
-                mask_ref_seq = [list(ref_seq)[x] for x in ref_include_idx]
-
-                ##nucleotide counts
-                df_nuc_freq = pd.DataFrame([base_count_vectors[ref_name+"_A"],base_count_vectors[ref_name+"_C"],base_count_vectors[ref_name+"_G"],base_count_vectors[ref_name+"_T"],base_count_vectors[ref_name+"_N"],base_count_vectors[ref_name+'_-']])
-                df_nuc_freq.index = ['A','C','G','T','N','-']
-                df_nuc_freq.columns = mask_ref_seq
-                #print table showing nuc frequencies (sum to total alleles) (in target region)
-                df_nuc_freq.to_csv(_jp(ref_name + '.target_nucleotide_frequency_table.txt'),sep='\t',header=True,index=True)
-
-                df_nuc_pct = df_nuc_freq.divide(tot_aln_reads)
-                df_nuc_pct.to_csv(_jp(ref_name + '.target_nucleotide_percentage_table.txt'),sep='\t',header=True,index=True)
-
-                df_nuc_freq_all = pd.DataFrame([all_base_count_vectors[ref_name+"_A"],all_base_count_vectors[ref_name+"_C"],all_base_count_vectors[ref_name+"_G"],all_base_count_vectors[ref_name+"_T"],all_base_count_vectors[ref_name+"_N"],all_base_count_vectors[ref_name+'_-']])
-                df_nuc_freq_all.index = ['A','C','G','T','N','-']
-                df_nuc_freq_all.columns = list(ref_seq)
-                #print table showing nuc frequencies (sum to total alleles) (in entire region)
-                df_nuc_freq_all.to_csv(_jp(ref_name + '.nucleotide_frequency_table.txt'),sep='\t',header=True,index=True)
-
-                df_nuc_pct_all = df_nuc_freq_all.divide(tot_aln_reads)
-                df_nuc_pct_all.to_csv(_jp(ref_name + '.nucleotide_percentage_table.txt'),sep='\t',header=True,index=True)
-
-                #substitution frequencies
-                df_sub_freq,alt_nuc_counts = count_alternate_alleles(
-                    sub_base_vectors = substitution_base_vectors,
-                    ref_name = ref_name,
-                    ref_sequence = mask_ref_seq,
-                    ref_total_aln_reads = tot_aln_reads
-                    )
-
-                #print table showing sub frequencies
-                df_sub_freq.to_csv(_jp(ref_name + '.Target_Substitution_Frequency_table.txt'),sep='\t',header=True,index=True)
-
-                df_sub_freq_all,alt_nuc_counts_all = count_alternate_alleles(
-                    sub_base_vectors = all_substitution_base_vectors,
-                    ref_name = ref_name,
-                    ref_sequence = ref_seq,
-                    ref_total_aln_reads = tot_aln_reads
-                    )
-
-
-                mod_pcts = []
-                tot = float(counts_total[ref_name])
-                mod_pcts.append(np.concatenate((['Insertions'], np.array(all_insertion_count_vectors[ref_name]).astype(np.float)/tot)))
-                mod_pcts.append(np.concatenate((['Insertions_Left'], np.array(all_insertion_left_count_vectors[ref_name]).astype(np.float)/tot)))
-                mod_pcts.append(np.concatenate((['Deletions'], np.array(all_deletion_count_vectors[ref_name]).astype(np.float)/tot)))
-                mod_pcts.append(np.concatenate((['Substitutions'], np.array(all_substitution_count_vectors[ref_name]).astype(np.float)/tot)))
-                mod_pcts.append(np.concatenate((['All_modifications'], np.array(all_indelsub_count_vectors[ref_name]).astype(np.float)/tot)))
-                mod_pcts.append(np.concatenate((['Total'],[counts_total[ref_name]]*refs[ref_name]['sequence_length'])))
-                colnames = ['Modification']+list(ref_seq)
-                modification_percentage_summary_df = pd.DataFrame(mod_pcts,columns=colnames)
-
-                nuc_df_for_plot = df_nuc_pct_all.reset_index().rename(columns={'index':'Nucleotide'})
-                nuc_df_for_plot.insert(0,'Batch',ref_name)
-                mod_df_for_plot = modification_percentage_summary_df.copy()
-                mod_df_for_plot.insert(0,'Batch',ref_name)
-                CRISPRessoPlot.plot_nucleotide_quilt(nuc_df_for_plot,mod_df_for_plot,_jp('11.'+ref_name + '.nucleotide_percentage_quilt'),args.save_also_png,sgRNA_intervals=refs[ref_name]['sgRNA_intervals'])
-
-                if args.base_editor_mode:
-                    CRISPRessoPlot.plot_subs_across_ref(
-                        ref_len = ref_len,
-                        ref_seq = ref_seq,
-                        ref_name = ref_name,
-                        ref_count = tot_aln_reads,
-                        all_substitution_base_vectors = all_substitution_base_vectors,
-
-                        plot_title = get_plot_title_with_ref_name('Substitution frequency', ref_name),
-                        fig_filename_root= _jp('10a.'+ref_name+'.Substitution_Frequencies'),
-                        save_also_png = args.save_also_png
-                        )
-
-                    #plot all substitution rates in mask
-                    CRISPRessoPlot.plot_sub_freqs(
-                        alt_nuc_counts = alt_nuc_counts,
-                        plot_title = get_plot_title_with_ref_name('Substitution frequency in mask', ref_name),
-                        fig_filename_root = _jp('10b.'+ref_name+'.Target_Substitution_Frequency_Barplot'),
-                        save_also_png = args.save_also_png
-                        )
-
-                    #plot all substitution rates in entire region
-                    CRISPRessoPlot.plot_sub_freqs(
-                        alt_nuc_counts = alt_nuc_counts_all,
-                        plot_title = get_plot_title_with_ref_name('Substitution frequency in entire amplicon', ref_name),
-                        fig_filename_root = _jp('10c.'+ref_name+'.Substitution_Frequency_Barplot'),
-                        save_also_png = args.save_also_png
-                        )
-
+                quant_window_sel_nuc_freq_filename = _jp(ref_name + '.quantification_window_selected_nucleotide_frequency_table.txt')
+                just_sel_nuc_freqs.to_csv(quant_window_sel_nuc_freq_filename,sep='\t',header=True,index=True)
+                crispresso2_info['quant_window_sel_nuc_freq_filename'] = quant_window_sel_nuc_freq_filename
                 #print table showing all nuc frequencies (sum to total alleles) (in entire region)
-                df_sub_freq_all.to_csv(_jp(ref_name + '.substitution_frequency_table.txt'),sep='\t',header=True,index=True)
+
+                fig_filename_root= _jp('10a.'+ref_name+'.Substitution_Frequencies_At_Each_bp')
+                CRISPRessoPlot.plot_subs_across_ref(
+                    ref_len = ref_len,
+                    ref_seq = ref_seq,
+                    ref_name = ref_name,
+                    ref_count = tot_aln_reads,
+                    all_substitution_base_vectors = all_substitution_base_vectors,
+
+                    plot_title = get_plot_title_with_ref_name('Substitution frequency', ref_name),
+                    fig_filename_root= fig_filename_root,
+                    save_also_png = save_png,
+                    quantification_window_idxs=include_idxs_list
+                    )
+                crispresso2_info['refs'][ref_name]['plot_10a_root'] = os.path.basename(fig_filename_root)
+                crispresso2_info['refs'][ref_name]['plot_10a_caption'] = "Figure 10a: Substitution frequencies across the amplicon."
+                crispresso2_info['refs'][ref_name]['plot_10a_data'] = [('Substitution frequencies',quant_window_sel_nuc_freq_filename)]
+
+
+                #plot all substitution rates in entire region
+                fig_filename_root = _jp('10b.'+ref_name+'.Substitution_Frequency_Barplot')
+                CRISPRessoPlot.plot_sub_freqs(
+                    alt_nuc_counts = alt_nuc_counts_all,
+                    plot_title = get_plot_title_with_ref_name('Substitution frequency\nin entire amplicon', ref_name),
+                    fig_filename_root = fig_filename_root,
+                    save_also_png = save_png
+                    )
+                crispresso2_info['refs'][ref_name]['plot_10b_root'] = os.path.basename(fig_filename_root)
+                crispresso2_info['refs'][ref_name]['plot_10b_caption'] = "Figure 10b: Substitution frequencies across the amplicon."
+
+                #plot all substitution rates in quantification_window
+                fig_filename_root = _jp('10c.'+ref_name+'.Quantification_Window_Substitution_Frequency_Barplot')
+                CRISPRessoPlot.plot_sub_freqs(
+                    alt_nuc_counts = alt_nuc_counts,
+                    plot_title = get_plot_title_with_ref_name('Substitution frequency\nin quantification window', ref_name),
+                    fig_filename_root = fig_filename_root,
+                    save_also_png = save_png
+                    )
+                crispresso2_info['refs'][ref_name]['plot_10c_root'] = os.path.basename(fig_filename_root)
+                crispresso2_info['refs'][ref_name]['plot_10c_caption'] = "Figure 10c: Substitution frequencies in the quantification window"
+
 
 #                CRISPRessoPlot.plot_nuc_freqs(
 #                    df_nuc_freq = df_nuc_freq,
 #                    tot_aln_reads = tot_aln_reads,
 #                    plot_title = get_plot_title_with_ref_name('Nucleotide Frequencies',ref_name),
 #                    fig_filename_root = _jp('14a.'+ref_name+'.nucleotide_frequency'),
-#                    save_also_png = args.save_also_png
+#                    save_also_png = save_png
 #                    )
 
+                fig_filename_root = _jp('10d.'+ref_name+'.Log2_Nucleotide_Frequency')
                 CRISPRessoPlot.plot_log_nuc_freqs(
-                    df_nuc_freq = df_nuc_freq,
+                    df_nuc_freq = plot_nuc_freqs,
                     tot_aln_reads = tot_aln_reads,
                     plot_title = get_plot_title_with_ref_name('Log2 Nucleotide Frequencies',ref_name),
-                    fig_filename_root = _jp('14a.'+ref_name+'.log2_Nucleotide_Frequency'),
-                    save_also_png = args.save_also_png
+                    fig_filename_root = fig_filename_root,
+                    save_also_png = save_png,
+                    quantification_window_idxs = plot_quant_window_idxs
                     )
+                crispresso2_info['refs'][ref_name]['plot_10d_root'] = os.path.basename(fig_filename_root)
+                crispresso2_info['refs'][ref_name]['plot_10d_caption'] = "Figure 10d: Log2 nucleotide frequencies for each position. The quantification window is outlined by the dotted box."
 
-                plot_ref_seq = ''.join([ref_seq[i] for i in ref_plot_idxs])
-                plot_nuc_pcts = df_nuc_pct_all.iloc[:,ref_plot_idxs]
-                plot_nuc_freqs = df_nuc_freq_all.iloc[:,ref_plot_idxs]
 
+                fig_filename_root = _jp('10e.'+ref_name+'.Quantification_Window_Selected_Conversion')
                 CRISPRessoPlot.plot_conversion_at_sel_nucs(
                     df_subs = plot_nuc_pcts,
                     ref_name = ref_name,
                     ref_sequence = plot_ref_seq,
-                    plot_title = get_plot_title_with_ref_name('Substitution Frequencies at Target Nucleotides',ref_name),
+                    plot_title = get_plot_title_with_ref_name('Substitution Frequencies at Quantification Window Nucleotides',ref_name),
                     conversion_nuc_from = args.conversion_nuc_from,
-                    fig_filename_root = _jp('10f.'+ref_name+'.Target_Selected_Conversion'),
-                    save_also_png = args.save_also_png
+                    fig_filename_root = fig_filename_root,
+                    save_also_png = save_png
                     )
-                CRISPRessoPlot.plot_conversion_at_sel_nucs_not_include_nosub(
+                crispresso2_info['refs'][ref_name]['plot_10e_root'] = os.path.basename(fig_filename_root)
+                crispresso2_info['refs'][ref_name]['plot_10e_caption'] = "Figure 10e: Proprotion of each base at each nucleotide targeted by base editors in the quantification window. The number of each target base is annotated on the reference sequence at the bottom of the plot."
+
+                fig_filename_root = _jp('10f.'+ref_name+'.Quantification_Window_Selected_Conversion_No_Ref')
+                CRISPRessoPlot.plot_conversion_at_sel_nucs_not_include_ref(
                     df_subs = plot_nuc_pcts,
                     ref_name = ref_name,
                     ref_sequence = plot_ref_seq,
-                    plot_title = get_plot_title_with_ref_name('Substitution Frequencies at Target Nucleotides',ref_name),
+                    plot_title = get_plot_title_with_ref_name('Substitution Frequencies at Quantification Window Nucleotides',ref_name),
                     conversion_nuc_from = args.conversion_nuc_from,
-                    fig_filename_root = _jp('10g.'+ref_name+'.Target_Selected_Conversion_no_ref'),
-                    save_also_png = args.save_also_png
+                    fig_filename_root = fig_filename_root,
+                    save_also_png = save_png
                     )
-                from_nuc_indices = [pos for pos, char in enumerate(list(plot_nuc_pcts.columns.values)) if char == args.conversion_nuc_from]
-                just_sel_nuc_pcts = plot_nuc_pcts.iloc[:,from_nuc_indices].copy() #only nucleotides targeted by base editing
-                just_sel_nuc_pcts.columns = [char + str(pos+1) for pos,char in enumerate(list(just_sel_nuc_pcts.columns.values))]
-                just_sel_nuc_freqs = plot_nuc_freqs.iloc[:,from_nuc_indices].copy()
-                just_sel_nuc_freqs.columns = [char + str(pos+1) for pos,char in enumerate(list(just_sel_nuc_freqs.columns.values))]
-                just_sel_nuc_pcts.to_csv(_jp(ref_name + '.target_selected_nucleotide_percentage_table.txt'),sep='\t',header=True,index=True)
-                just_sel_nuc_freqs.to_csv(_jp(ref_name + '.target_selected_nucleotide_frequency_table.txt'),sep='\t',header=True,index=True)
+                crispresso2_info['refs'][ref_name]['plot_10f_root'] = os.path.basename(fig_filename_root)
+                crispresso2_info['refs'][ref_name]['plot_10f_caption'] = "Figure 10f: Non-reference base proportions. For target nucleotides in the quantification window, this plot shows the proportion of non-reference (non-"+args.conversion_nuc_from + ") bases as a percentage of all non-reference sequences. The number of each target base is annotated on the reference sequence at the bottom of the plot."
+
+                fig_filename_root = _jp('10g.'+ref_name+'.Quantification_Window_Selected_Conversion_No_Ref_Scaled')
+                CRISPRessoPlot.plot_conversion_at_sel_nucs_not_include_ref_scaled(
+                    df_subs = plot_nuc_pcts,
+                    ref_name = ref_name,
+                    ref_sequence = plot_ref_seq,
+                    plot_title = get_plot_title_with_ref_name('Substitution Frequencies at Quantification Window Nucleotides',ref_name),
+                    conversion_nuc_from = args.conversion_nuc_from,
+                    fig_filename_root = fig_filename_root,
+                    save_also_png = save_png
+                    )
+                crispresso2_info['refs'][ref_name]['plot_10g_root'] = os.path.basename(fig_filename_root)
+                crispresso2_info['refs'][ref_name]['plot_10g_caption'] = "Figure 10g: Non-reference base percentages. For target nucleotides in the quantification window, this plot shows the percentage of non-reference (non-" + args.conversion_nuc_from + ") bases. The number of each target base is annotated on the reference sequence at the bottom of the plot."
 
 
         ##new plots alleles around cut_sites
@@ -2380,14 +2955,179 @@ def main():
             cut_points = refs[ref_name]['cut_points']
             sgRNA_intervals = refs[ref_name]['sgRNA_intervals']
 
+            crispresso2_info['refs'][ref_name]['plot_9_roots'] = []
+            crispresso2_info['refs'][ref_name]['plot_9_captions'] = []
+            crispresso2_info['refs'][ref_name]['allele_frequency_files'] = []
             for sgRNA,cut_point in zip(sgRNA_sequences,cut_points):
-                df_allele_around_cut=CRISPRessoShared.get_dataframe_around_cut(df_alleles.loc[df_alleles['Reference_Name'] == ref_name],cut_point,args.offset_around_cut_to_plot)
+                plot_half_window = max(1,args.plot_window_size/2)
+                if args.crispresso1_mode:
+                    plot_half_window = args.plot_window_size
+                df_allele_around_cut=CRISPRessoShared.get_dataframe_around_cut(df_alleles.loc[df_alleles['Reference_Name'] == ref_name],cut_point,plot_half_window)
 
-                    #write alleles table to file
-                df_allele_around_cut.to_csv(_jp('%s.Alleles_frequency_table_around_cut_site_for_%s.txt' % (ref_name,sgRNA)),sep='\t',header=True)
+                #write alleles table to file
+                allele_filename = _jp('%s.Alleles_frequency_table_around_cut_site_for_%s.txt' % (ref_name,sgRNA))
+                df_allele_around_cut.to_csv(allele_filename,sep='\t',header=True)
+                crispresso2_info['refs'][ref_name]['allele_frequency_files'].append(allele_filename)
 
-                ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-args.offset_around_cut_to_plot+1:cut_point+args.offset_around_cut_to_plot+1]
-                CRISPRessoPlot.plot_alleles_table(ref_seq_around_cut,df_alleles=df_allele_around_cut,fig_filename_root=_jp('9.%s.Alleles_frequency_table_around_cut_site_for_%s' % (ref_name,sgRNA)), MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot,MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot,SAVE_ALSO_PNG=args.save_also_png,base_editor_mode=args.base_editor_mode,sgRNA_intervals=sgRNA_intervals)
+                ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_half_window+1:cut_point+plot_half_window+1]
+                fig_filename_root = _jp('9.%s.Alleles_Frequency_Table_Around_Cut_Site_For_%s' % (ref_name,sgRNA))
+                CRISPRessoPlot.plot_alleles_table(ref_seq_around_cut,df_alleles=df_allele_around_cut,fig_filename_root=fig_filename_root,
+                    MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot,MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot,SAVE_ALSO_PNG=save_png,base_editor_output=args.base_editor_output,sgRNA_intervals=sgRNA_intervals)
+                crispresso2_info['refs'][ref_name]['plot_9_roots'].append(os.path.basename(fig_filename_root))
+                crispresso2_info['refs'][ref_name]['plot_9_captions'].append("Figure 9: Visualization of the distribution of identified alleles around each cleavage site. Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dash line indicates the predicted cleavage site.")
+
+            #(5, 6) GLOBAL frameshift analyses plots
+            if args.coding_seq:
+                global_MODIFIED_FRAMESHIFT = 0
+                global_MODIFIED_NON_FRAMESHIFT = 0
+                global_NON_MODIFIED_NON_FRAMESHIFT = 0
+                global_SPLICING_SITES_MODIFIED = 0
+                global_hists_frameshift = defaultdict(lambda :0)
+                global_hists_inframe = defaultdict(lambda :0)
+
+                global_count_total = 0
+                global_count_modified = 0
+                global_count_unmodified = 0
+                global_exon_len_mods = []
+
+                for ref_name in ref_names:
+                    if refs[ref_name]['contains_coding_seq']: #PERFORM FRAMESHIFT ANALYSIS
+                        if ref_name == "HDR":
+                            global_MODIFIED_FRAMESHIFT += counts_modified_frameshift[ref_name]
+                            global_MODIFIED_NON_FRAMESHIFT += counts_modified_non_frameshift[ref_name]
+                            global_NON_MODIFIED_NON_FRAMESHIFT += counts_non_modified_non_frameshift[ref_name]
+                            global_SPLICING_SITES_MODIFIED += counts_splicing_sites_modified[ref_name]
+
+                            #for HDR, add all unmodified reads to those that have modifications not in exons
+                            global_NON_MODIFIED_NON_FRAMESHIFT += counts_unmodified[ref_name]
+                        else:
+                            global_MODIFIED_FRAMESHIFT += counts_modified_frameshift[ref_name]
+                            global_MODIFIED_NON_FRAMESHIFT += counts_modified_non_frameshift[ref_name]
+                            global_NON_MODIFIED_NON_FRAMESHIFT += counts_non_modified_non_frameshift[ref_name]
+                            global_SPLICING_SITES_MODIFIED += counts_splicing_sites_modified[ref_name]
+
+                        for (exon_len,count) in hists_frameshift[ref_name].iteritems():
+                            global_hists_frameshift[exon_len] += count
+                        for (exon_len,count) in hists_inframe[ref_name].iteritems():
+                            global_hists_inframe[exon_len] += count
+
+
+                        global_count_total += counts_total[ref_name]
+                        global_count_modified += counts_modified[ref_name]
+                        global_count_unmodified += counts_unmodified[ref_name]
+
+                fig=plt.figure(figsize=(12*1.5,14.5*1.5))
+                ax1 = plt.subplot2grid((6,3), (0, 0), colspan=3, rowspan=5)
+
+                patches, texts, autotexts =ax1.pie([global_MODIFIED_FRAMESHIFT,\
+                                                    global_MODIFIED_NON_FRAMESHIFT,\
+                                                    global_NON_MODIFIED_NON_FRAMESHIFT],\
+                                                   labels=['Frameshift mutation\n(%d reads)' %global_MODIFIED_FRAMESHIFT,\
+                                                          'In-frame mutation\n(%d reads)' % global_MODIFIED_NON_FRAMESHIFT,\
+                                                          'Noncoding mutation\n(%d reads)' %global_NON_MODIFIED_NON_FRAMESHIFT],\
+                                                   explode=(0.0,0.0,0.0),\
+                                                   colors=[(0.89019608,  0.29019608,  0.2, 0.8),(0.99215686,  0.73333333,  0.51764706,0.8),(0.99607843,  0.90980392,  0.78431373,0.8)],\
+                                                   autopct='%1.1f%%')
+
+                proptease = fm.FontProperties()
+                proptease.set_size('xx-large')
+                plt.setp(autotexts, fontproperties=proptease)
+                plt.setp(texts, fontproperties=proptease)
+                plot_root = _jp('5a.Global_Frameshift_In-frame_Mutations_Pie_Chart')
+                plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
+                if save_png:
+                    plt.savefig(plot_root+'.png',bbox_inches='tight')
+                plt.close()
+                crispresso2_info['plot_5a_root'] = os.path.basename(plot_root)
+                crispresso2_info['plot_5a_caption'] = "Figure 5a: Frameshift analysis of coding sequence reads affected by modifications for all reads. Unmodified reference reads are excluded from this plot, and all HDR reads are included in this plot."
+
+                 #profiles-----------------------------------------------------------------------------------
+                fig=plt.figure(figsize=(22,10))
+                ax1=fig.add_subplot(2,1,1)
+                x,y=map(np.array,zip(*[a for a in global_hists_frameshift.iteritems()]))
+                if sum(global_hists_frameshift.values()) != 0:
+                    y=y/float(sum(global_hists_frameshift.values()))*100
+                ax1.bar(x-0.1,y)
+                ax1.set_xlim(-30.5,30.5)
+                ax1.set_frame_on(False)
+                ax1.set_xticks([idx for idx in range(-30,31) if idx % 3])
+                ax1.tick_params(which='both',      # both major and minor ticks are affected
+                   bottom=False,      # ticks along the bottom edge are off
+                   top=False,         # ticks along the top edge are off
+                   labelbottom=True) # labels along the bottom edge are off)
+                ax1.yaxis.tick_left()
+                xmin, xmax = ax1.get_xaxis().get_view_interval()
+                ymin, ymax = ax1.get_yaxis().get_view_interval()
+                ax1.set_xticklabels([str(idx)  for idx in [idx for idx in range(-30,31) if idx % 3]],rotation='vertical')
+                plt.title('Global Frameshift profile')
+                ax1.tick_params(axis='both', which='major', labelsize=24)
+                ax1.tick_params(axis='both', which='minor', labelsize=24)
+                plt.tight_layout()
+                ax1.set_ylabel('Sequences % (no.)')
+                y_label_values= np.round(np.linspace(0, min(100,max(ax1.get_yticks())),6))# np.arange(0,y_max,y_max/6.0)
+                ax1.set_yticks(y_label_values)
+                ax1.set_yticklabels(['%.1f%% (%.0f)' % (pct,pct/100*sum(global_hists_frameshift.values())) for pct in y_label_values])
+
+                ax2=fig.add_subplot(2,1,2)
+                x,y=map(np.array,zip(*[a for a in global_hists_inframe.iteritems()]))
+                if sum(global_hists_inframe.values()) > 0:
+                    y=y/float(sum(global_hists_inframe.values()))*100
+                #ax2.bar(x-0.5,y,color=(0,1,1,0.2))
+                ax2.bar(x-0.1,y,color=(0,1,1,0.2))
+                ax2.set_xlim(-30.5,30.5)
+                ax2.set_frame_on(False)
+                ax2.set_xticks([idx for idx in range(-30,31) if (idx % 3 ==0) ])
+                ax2.tick_params(which='both',      # both major and minor ticks are affected
+                   bottom=False,      # ticks along the bottom edge are off
+                   top=False,         # ticks along the top edge are off
+                   labelbottom=True) # labels along the bottom edge are off)
+                ax2.yaxis.tick_left()
+                xmin, xmax = ax2.xaxis.get_view_interval()
+                ymin, ymax = ax2.yaxis.get_view_interval()
+                ax2.set_xticklabels([str(idx)  for idx in [idx for idx in range(-30,31) if (idx % 3==0)]],rotation='vertical',horizontalalignment="center")
+                plt.title('Global In-frame profile')
+                ax2.set_ylabel('Sequences % (no.)')
+                y_label_values= np.round(np.linspace(0, min(100,max(ax2.get_yticks())),6))# np.arange(0,y_max,y_max/6.0)
+                ax2.set_yticks(y_label_values)
+                ax2.set_yticklabels(['%.1f%% (%.0f)' % (pct,pct/100*sum(global_hists_inframe.values())) for pct in y_label_values])
+
+                ax2.tick_params(axis='both', which='major', labelsize=24)
+                ax2.tick_params(axis='both', which='minor', labelsize=24)
+                plt.tight_layout()
+
+                plot_root = _jp('6a.Global_Frameshift_In-frame_Mutation_Profiles')
+                plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
+                if save_png:
+                    plt.savefig(plot_root+'.png',bbox_inches='tight')
+                plt.close()
+                crispresso2_info['plot_6a_root'] = os.path.basename(plot_root)
+                crispresso2_info['plot_6a_caption'] = "Figure 6a: Frameshift and in-frame mutagenesis profiles for all reads indicating position affected by modification."
+
+
+                 #-----------------------------------------------------------------------------------------------------------
+                fig=plt.figure(figsize=(12*1.5,12*1.5))
+                ax=fig.add_subplot(1,1,1)
+                patches, texts, autotexts =ax.pie([global_SPLICING_SITES_MODIFIED,\
+                                                  (global_count_total - global_SPLICING_SITES_MODIFIED)],\
+                                                  labels=['Potential splice sites modified\n(%d reads)' %global_SPLICING_SITES_MODIFIED,\
+                                                          'Unmodified\n(%d reads)' % (global_count_total - global_SPLICING_SITES_MODIFIED)],\
+                                                  explode=(0.0,0),\
+                                                  colors=[(0.89019608,  0.29019608,  0.2, 0.8),(0.99607843,  0.90980392,  0.78431373,0.8)],\
+                                                  autopct='%1.1f%%')
+                proptease = fm.FontProperties()
+                proptease.set_size('xx-large')
+                plt.setp(autotexts, fontproperties=proptease)
+                plt.setp(texts, fontproperties=proptease)
+                plot_root = _jp('8a.Global_Potential_Splice_Sites_Pie_Chart')
+                plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
+                if save_png:
+                    plt.savefig(plot_root+'.png',bbox_inches='tight')
+                plt.close()
+                crispresso2_info['plot_8a_root'] = os.path.basename(plot_root)
+                crispresso2_info['plot_8a_caption'] = "Figure 8a: Predicted impact on splice sites for all reads. Potential splice sites modified refers to reads in which the either of the two intronic positions adjacent to exon junctions are disrupted."
+
+            #end global coding seq plots
+
 
         info('Done!')
 
@@ -2413,9 +3153,6 @@ def main():
                 else:
                     files_to_remove+=[args.fastq_r1]
 
-            if args.left_adapter_umi_trim_seq is not None:
-                files_to_remove +=temp_flip_filename
-
             for file_to_remove in files_to_remove:
                 try:
                     if os.path.islink(file_to_remove):
@@ -2426,169 +3163,26 @@ def main():
                     warn('Skipping:%s' %file_to_remove)
 
              #write effect vectors as plain text files
-        info('Saving processed data...')
-        def save_vector_to_file(vector,name):
-            np.savetxt(_jp('%s.txt' %name), np.vstack([(np.arange(len(vector))+1),vector]).T, fmt=['%d','%.18e'],delimiter='\t', newline='\n', header='amplicon position\teffect',footer='', comments='# ')
 
-        def save_count_vectors_to_file(vectors,vectorNames,refSeq,name):
-            outfile = open(_jp('%s.txt'%name),"w")
-            outfile.write("Sequence\t"+"\t".join(list(refSeq))+"\n") #first row: reference sequence
-            for vector,vectorName in zip(vectors,vectorNames):
-                outfile.write(vectorName +"\t" + "\t".join([str(x) for x in vector]) + "\n") #next, vectors are printed
-            outfile.close()
+        end_time =  datetime.now()
+        end_time_string =  end_time.strftime('%Y-%m-%d %H:%M:%S')
+        running_time = end_time - start_time
+        running_time_string =  str(running_time)
 
-        #write alleles table
-        #crispresso1Cols = ["Aligned_Sequence","Reference_Sequence","NHEJ","UNMODIFIED","HDR","n_deleted","n_inserted","n_mutated","#Reads","%Reads"]
-        #df_alleles.ix[:,crispresso1Cols].to_csv(_jp('Alleles_frequency_table.txt'),sep='\t',header=True,index=None)
-        #crispresso2Cols = ["Aligned_Sequence","Reference_Sequence","Reference_Name","Read_Status","n_deleted","n_inserted","n_mutated","#Reads","%Reads"]
-#        crispresso2Cols = ["Aligned_Sequence","Reference_Sequence","Reference_Name","Read_Status","n_deleted","n_inserted","n_mutated","#Reads","%Reads","Aligned_Reference_Names","Aligned_Reference_Scores"]
-        crispresso2Cols = ["Aligned_Sequence","Reference_Sequence","Reference_Name","Read_Status","n_deleted","n_inserted","n_mutated","#Reads","%Reads"]
-        df_alleles.ix[:,crispresso2Cols].to_csv(_jp('Alleles_frequency_table.txt'),sep='\t',header=True,index=None)
+        crispresso2_info['end_time'] = end_time
+        crispresso2_info['end_time_string'] = end_time_string
+        crispresso2_info['running_time'] = running_time
+        crispresso2_info['running_time_string'] = running_time_string
 
+        cp.dump(crispresso2_info, open(crispresso2_info_file, 'wb' ) )
 
+        if not args.suppress_report:
+            CRISPRessoReport.make_report(crispresso2_info,_jp('CRISPResso2_report.html'),OUTPUT_DIRECTORY,_ROOT)
 
-        with open(_jp('Quantification_of_editing_frequency.txt'),'w+') as outfile:
-            outfile.write("Quantification of editing frequency:\n")
-            for ref_name in ref_names:
-                n_unmod = counts_unmodified[ref_name]
-                n_mod = counts_modified[ref_name]
-
-                n_insertion = counts_insertion[ref_name]
-                n_deletion = counts_deletion[ref_name]
-                n_substitution = counts_substitution[ref_name]
-
-                outfile.write("%s: Unmodified: %d Modified: %d\n" % (ref_name,n_unmod,n_mod))
-                outfile.write("(%d reads with insertions, %d reads with deletions, %d reads with substitutions)\n" % (n_insertion,n_deletion,n_substitution))
-
-            outfile.write('Total Aligned:%d reads ' % N_TOTAL)
-
-        with open(_jp('CRISPResso_quantification_of_editing_frequency.txt'),'w+') as outfile:
-            outfile.write('Reference\tTotal\tUnmodified\tModified\tInsertions\tDeletions\tSubstitutions\tOnly Insertions\tOnly Deletions\tOnly Substitutions\tInsertions and Deletions\tInsertions and Substitutions\tDeletions and Substitutions\tInsertions Deletions and Substitutions\n')
-            for ref_name in ref_names:
-                n_tot = counts_total[ref_name]
-                n_unmod = counts_unmodified[ref_name]
-                n_mod = counts_modified[ref_name]
-
-                n_insertion = counts_insertion[ref_name]
-                n_deletion = counts_deletion[ref_name]
-                n_substitution = counts_substitution[ref_name]
-                n_only_insertion = counts_only_insertion[ref_name]
-                n_only_deletion = counts_only_deletion[ref_name]
-                n_only_substitution = counts_only_substitution[ref_name]
-                n_insertion_and_deletion = counts_insertion_and_deletion[ref_name]
-                n_insertion_and_substitution = counts_insertion_and_substitution[ref_name]
-                n_deletion_and_substitution = counts_deletion_and_substitution[ref_name]
-                n_insertion_and_deletion_and_substitution = counts_insertion_and_deletion_and_substitution[ref_name]
-
-                vals = [ref_name]
-                vals.extend([str(x) for x in [n_tot,n_unmod,n_mod,n_insertion,n_deletion,n_substitution,n_only_insertion,n_only_deletion,n_only_substitution,n_insertion_and_deletion,n_insertion_and_substitution,n_deletion_and_substitution,n_insertion_and_deletion_and_substitution]])
-                outfile.write("\t".join(vals) + "\n")
-
-
-
-        #write statistics
-        with open(_jp('Mapping_statistics.txt'),'w+') as outfile:
-            outfile.write('READS IN INPUTS:%d\nREADS AFTER PREPROCESSING:%d\nREADS ALIGNED:%d\n' % (N_READS_INPUT,N_READS_AFTER_PREPROCESSING,N_TOTAL))
-
-        with open(_jp('CRISPResso_mapping_statistics.txt'),'w+') as outfile:
-            outfile.write('READS IN INPUTS\tREADS AFTER PREPROCESSING\tREADS ALIGNED\tN_COMPUTED_ALN\tN_CACHED_ALN\tN_COMPUTED_NOTALN\tN_CACHED_NOTALN\n')
-            outfile.write("\t".join([str(x) for x in[N_READS_INPUT,N_READS_AFTER_PREPROCESSING,N_TOTAL,alnStats['N_COMPUTED_ALN'],alnStats['N_CACHED_ALN'],alnStats['N_COMPUTED_NOTALN'],alnStats['N_CACHED_NOTALN']]]) + "\n")
-
-
-        for ref_name in ref_names:
-
-            n_this_category = counts_total[ref_name]
-            if n_this_category < 1:
-                continue
-
-            save_vector_to_file(insertion_pct_vectors[ref_name],ref_name+'.effect_vector_insertion')
-            save_vector_to_file(deletion_pct_vectors[ref_name],ref_name+'.effect_vector_deletion')
-            save_vector_to_file(substitution_pct_vectors[ref_name],ref_name+'.effect_vector_substitution')
-            save_vector_to_file(indelsub_pct_vectors[ref_name],ref_name+'.effect_vector_combined')
-
-            #save mods in computation window
-            save_count_vectors_to_file([insertion_count_vectors[ref_name],
-                        deletion_count_vectors[ref_name],
-                        substitution_count_vectors[ref_name],
-                        indelsub_count_vectors[ref_name],
-                        [counts_total[ref_name]]*refs[ref_name]['sequence_length']],
-                        ['Insertions','Deletions','Substitutions','All_modifications','Total'],
-                            refs[ref_name]['sequence'],ref_name+'.target_modification_count_vectors')
-
-            #save all mods
-            save_count_vectors_to_file([all_insertion_count_vectors[ref_name],
-                        all_insertion_left_count_vectors[ref_name],
-                        all_deletion_count_vectors[ref_name],
-                        all_substitution_count_vectors[ref_name],
-                        all_indelsub_count_vectors[ref_name],
-                        [counts_total[ref_name]]*refs[ref_name]['sequence_length']],
-                        ['Insertions','Insertions_Left','Deletions','Substitutions','All_modifications','Total'],
-                            refs[ref_name]['sequence'],ref_name+'.modification_count_vectors')
-
-            if (refs[ref_name]['contains_coding_seq']): #PERFORM FRAMESHIFT ANALYSIS
-                MODIFIED_FRAMESHIFT = counts_modified_frameshift[ref_name]
-                MODIFIED_NON_FRAMESHIFT = counts_modified_non_frameshift[ref_name]
-                NON_MODIFIED_NON_FRAMESHIFT = counts_non_modified_non_frameshift[ref_name]
-                SPLICING_SITES_MODIFIED = counts_splicing_sites_modified[ref_name]
-                with open(_jp(ref_name+'.Frameshift_analysis.txt'),'w+') as outfile:
-                        outfile.write('Frameshift analysis:\n\tNoncoding mutation:%d reads\n\tIn-frame mutation:%d reads\n\tFrameshift mutation:%d reads\n' %(NON_MODIFIED_NON_FRAMESHIFT, MODIFIED_NON_FRAMESHIFT ,MODIFIED_FRAMESHIFT))
-
-                with open(_jp('Splice_sites_analysis.txt'),'w+') as outfile:
-                        outfile.write('Splice sites analysis:\n\tUnmodified:%d reads\n\tPotential splice sites modified:%d reads\n' %(n_reads- SPLICING_SITES_MODIFIED, SPLICING_SITES_MODIFIED))
-
-                save_vector_to_file(insertion_pct_vectors_noncoding[ref_name],ref_name+'.effect_vector_insertion_noncoding')
-                save_vector_to_file(deletion_pct_vectors_noncoding[ref_name],ref_name+'.effect_vector_deletion_noncoding')
-                save_vector_to_file(substitution_pct_vectors_noncoding[ref_name],ref_name+'.effect_vector_substitution_noncoding')
-
-            len_amplicon = refs[ref_name]['sequence_length']
-            cut_points = refs[ref_name]['cut_points']
-            offset_plots = refs[ref_name]['offset_plots']
-            sgRNA_intervals = refs[ref_name]['sgRNA_intervals']
-            if cut_points:
-                cp.dump(sgRNA_intervals, open( _jp(ref_name+'.sgRNA_intervals.pickle'), 'wb' ) )
-
-            if sgRNA_intervals:
-                cp.dump( cut_points, open( _jp(ref_name+'.cut_points.pickle'), 'wb' ) )
-
-            if offset_plots.any():
-                cp.dump(offset_plots,open( _jp(ref_name+'.offset_plots.pickle'), 'wb' ) )
-
-            hdensity = refs[ref_name]['hdensity']
-            hlengths = refs[ref_name]['hlengths']
-            center_index = refs[ref_name]['center_index']
-
-            y_values_mut = refs[ref_name]['y_values_mut']
-            x_bins_mut = refs[ref_name]['x_bins_mut']
-            y_values_ins = refs[ref_name]['y_values_ins']
-            x_bins_ins = refs[ref_name]['x_bins_ins']
-            y_values_del = refs[ref_name]['y_values_del']
-            x_bins_del = refs[ref_name]['x_bins_del']
-
-            pd.DataFrame(np.vstack([hlengths,hdensity]).T,columns=['indel_size','fq']).to_csv(_jp(ref_name+'.indel_histogram.txt'),index=None,sep='\t')
-            pd.DataFrame(np.vstack([x_bins_ins[:-1],y_values_ins]).T,columns=['ins_size','fq']).to_csv(_jp(ref_name+'.insertion_histogram.txt'),index=None,sep='\t')
-            pd.DataFrame(np.vstack([-x_bins_del[:-1],y_values_del]).T,columns=['del_size','fq']).to_csv(_jp(ref_name+'.deletion_histogram.txt'),index=None,sep='\t')
-            pd.DataFrame(np.vstack([x_bins_mut[:-1],y_values_mut]).T,columns=['sub_size','fq']).to_csv(_jp(ref_name+'.substitution_histogram.txt'),index=None,sep='\t')
-
-
-            if args.dump:
-                info('Dumping all the processed data...')
-                np.savez(_jp('%s.effect_vector_insertion'%ref_name),insertion_pct_vectors[ref_name])
-                np.savez(_jp('%s.effect_vector_deletion'%ref_name),deletion_pct_vectors[ref_name])
-                np.savez(_jp('%s.effect_vector_substitution'%ref_name),substitution_pct_vectors[ref_name])
-
-                np.savez(_jp('%s.effect_vector_combined'%ref_name),indelsub_pct_vectors[ref_name])
-
-                np.savez(_jp('%s.position_dependent_vector_avg_insertion_size'%ref_name),insertion_length_vectors[ref_name])
-                np.savez(_jp('%s.position_dependent_vector_avg_deletion_size'%ref_name),deletion_length_vectors[ref_name])
-
-
-
-        info('All Done!')
+        info('Analysis Complete!')
         print(CRISPRessoShared.get_crispresso_footer())
 
         sys.exit(0)
-
-
 
     except NTException as e:
         print_stacktrace_if_debug()
@@ -2598,7 +3192,6 @@ def main():
         print_stacktrace_if_debug()
         error('sgRNA error, please check your input.\n\nERROR: %s' % e)
         sys.exit(2)
-
     except TrimmomaticException as e:
         print_stacktrace_if_debug()
         error('Trimming error, please check your input.\n\nERROR: %s' % e)
@@ -2619,7 +3212,6 @@ def main():
         print_stacktrace_if_debug()
         error('Autorun error. This sample cannot be run in auto mode.\n\nERROR: %s' % e)
         sys.exit(8)
-
     except ExonSequenceException as e:
         print_stacktrace_if_debug()
         error('Coding sequence error, please check your input.\n\nERROR: %s' % e)
