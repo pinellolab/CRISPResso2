@@ -2,7 +2,7 @@
 '''
 CRISPResso2 - Kendell Clement and Luca Pinello 2018
 Software pipeline for the analysis of genome editing outcomes from deep sequencing data
-(c) 2017 The General Hospital Corporation. All Rights Reserved.
+(c) 2018 The General Hospital Corporation. All Rights Reserved.
 '''
 import os
 import errno
@@ -11,8 +11,8 @@ import traceback
 import argparse
 import re
 import cPickle as cp
-import CRISPRessoShared
-import CRISPRessoPlot
+from CRISPResso import CRISPRessoShared
+from CRISPResso import CRISPRessoPlot
 
 
 
@@ -42,7 +42,7 @@ def get_amplicon_output(amplicon_name,output_folder):
     if os.path.exists(quantification_file) and profile_file:
         return quantification_file,profile_file
     else:
-        raise OutputFolderIncompleteException('The folder %s  is not a valid CRISPResso2 output folder. Cannot find profile file %s for amplicon %s.' % (output_folder,profile_file,amplicon_name))
+        raise CRISPRessoShared.OutputFolderIncompleteException('The folder %s  is not a valid CRISPResso2 output folder. Cannot find profile file %s for amplicon %s.' % (output_folder,profile_file,amplicon_name))
 
 def parse_profile(profile_file):
     return np.loadtxt(profile_file,skiprows=1)
@@ -66,8 +66,6 @@ def load_cut_points_sgRNA_intervals(output_folder,amplicon_name):
 
 
 ###EXCEPTIONS############################
-class OutputFolderIncompleteException(Exception):
-    pass
 
 class MixedRunningModeException(Exception):
     pass
@@ -96,15 +94,6 @@ _ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
 def main():
-    def print_stacktrace_if_debug():
-        debug_flag = False
-        if 'args' in vars() and 'debug' in args:
-            debug_flag = args.debug
-
-        if debug_flag:
-            traceback.print_exc(file=sys.stdout)
-            error(traceback.format_exc())
-
     try:
         description = ['~~~CRISPRessoCompare~~~','-Comparison of two CRISPResso analyses-']
         compare_header = r'''
@@ -128,6 +117,7 @@ def main():
         parser.add_argument('-o','--output_folder',  help='', default='')
         parser.add_argument('--min_frequency_alleles_around_cut_to_plot', type=float, help='Minimum %% reads required to report an allele in the alleles table plot.', default=0.2)
         parser.add_argument('--max_rows_alleles_around_cut_to_plot',  type=int, help='Maximum number of rows to report in the alleles table plot. ', default=50)
+        parser.add_argument('--save_also_png',help='Save also .png images additionally to .pdf files',action='store_true')
         parser.add_argument('--debug', help='Show debug messages', action='store_true')
 
         args = parser.parse_args()
@@ -175,8 +165,6 @@ def main():
             if n_refs > 1:
                 return (plotTitle + ": " + refName)
             return plotTitle
-
-        save_png = True
 
         for amplicon_name in amplicon_names_in_both:
             profile_1=parse_profile(amplicon_info_1[amplicon_name]['quantification_file'])
@@ -248,7 +236,7 @@ def main():
 #            plt.xlim(index[0]-bar_width/2, (index+bar_width)[-1]+2*bar_width)
             plt.tight_layout()
             plt.savefig(_jp('1.'+amplicon_name+'.Comparison_Efficiency.pdf'), bbox_inches='tight')
-            if save_png:
+            if args.save_also_png:
                 plt.savefig(_jp('1.'+amplicon_name+'.Comparison_Efficiency.png'), bbox_inches='tight')
 
 
@@ -321,7 +309,7 @@ def main():
             plt.ylim(min(-1,y_min),max(1,y_max))
 
             plt.savefig(_jp('2.'+amplicon_name+'.Comparison_Combined_Insertion_Deletion_Substitution_Locations.pdf'),bbox_extra_artists=(lgd,), bbox_inches='tight')
-            if save_png:
+            if args.save_also_png:
                     plt.savefig(_jp('2.'+amplicon_name+'.Comparison_Insertion_Deletion_Substitution_Locations.png'),bbox_extra_artists=(lgd,), bbox_inches='tight')
 
             mod_file_1 = amplicon_info_1[amplicon_name]['modification_count_file']
@@ -434,7 +422,7 @@ def main():
                 lgd=plt.legend(plots,labs,loc='upper center', bbox_to_anchor=(0.5, -0.2),ncol=1, fancybox=True, shadow=False)
 
                 plt.savefig(_jp('2.'+amplicon_name+'.'+mod+'.quantification.pdf'),bbox_extra_artists=(lgd,), bbox_inches='tight')
-                if save_png:
+                if args.save_also_png:
                     plt.savefig(_jp('2.'+amplicon_name+'.'+mod+'.quantification.png'),bbox_extra_artists=(lgd,), bbox_inches='tight')
 
 
@@ -476,9 +464,9 @@ def main():
                         output_root = allele_file_1_name.replace(".txt","")
                         merged.to_csv(_jp(output_root+".txt"),sep="\t",index=None)
                         CRISPRessoPlot.plot_alleles_table_compare(ref_seq_around_cut,merged.sort_values(['each_LFC'],ascending=True),args.sample_1_name,args.sample_2_name,_jp('3.'+output_root+"_top"),
-                                    MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot,MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot,SAVE_ALSO_PNG=save_png)
+                                    MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot,MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot,SAVE_ALSO_PNG=args.save_also_png)
                         CRISPRessoPlot.plot_alleles_table_compare(ref_seq_around_cut,merged.sort_values(['each_LFC'],ascending=False),args.sample_1_name,args.sample_2_name,_jp('3.'+output_root+"_bottom"),
-                                    MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot,MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot,SAVE_ALSO_PNG=save_png)
+                                    MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot,MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot,SAVE_ALSO_PNG=args.save_also_png)
 
 
         info('All Done!')
@@ -486,6 +474,12 @@ def main():
         sys.exit(0)
 
     except Exception as e:
-        print_stacktrace_if_debug()
+        debug_flag = False
+        if 'args' in vars() and 'debug' in args:
+            debug_flag = args.debug
+
+        if debug_flag:
+            traceback.print_exc(file=sys.stdout)
+
         error('\n\nERROR: %s' % e)
         sys.exit(-1)

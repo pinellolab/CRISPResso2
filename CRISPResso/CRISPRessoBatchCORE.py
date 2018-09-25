@@ -2,7 +2,7 @@
 '''
 CRISPResso2 - Kendell Clement and Luca Pinello 2018
 Software pipeline for the analysis of genome editing outcomes from deep sequencing data
-(c) 2017 The General Hospital Corporation. All Rights Reserved.
+(c) 2018 The General Hospital Corporation. All Rights Reserved.
 '''
 
 import os
@@ -15,11 +15,9 @@ import unicodedata
 import re
 import string
 import traceback
-import multiprocessing as mp
-import signal
-from functools import partial
 from CRISPResso import CRISPRessoShared
 from CRISPResso import CRISPRessoPlot
+from CRISPResso import CRISPRessoMultiProcessing
 
 running_python3 = False
 if sys.version_info > (3, 0):
@@ -44,6 +42,7 @@ debug   = logging.debug
 info    = logging.info
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
+CRISPResso_to_call = os.path.join(os.path.dirname(_ROOT),'CRISPResso.py')
 
 ####Support functions###
 def propagate_options(cmd,options,params,paramInd):
@@ -77,42 +76,6 @@ def propagate_options(cmd,options,params,paramInd):
 #    print("cmd is " + str(cmd))
     return cmd
 
-
-def runCrispresso(OUTPUT_DIRECTORY, selected_options,batch_params,idx):
-    batchName = batch_params.loc[idx,'name']
-
-    testing = True
-    if (testing):
-        curr_file_loc =  str(os.path.abspath(__file__))
-        if '2017_07_CRISPRESSO_DOS' in curr_file_loc:
-            warn('Need to update this with installed Crispresso')
-            crispresso_cmd='python /data/pinello/PROJECTS/2017_07_CRISPRESSO_DOS/src/CRISPResso.py -o %s --name %s' % (OUTPUT_DIRECTORY,batchName)
-        else:
-            crispresso_cmd='/opt/conda/bin/python /CRISPResso/CRISPResso.py -o %s --name %s' % (OUTPUT_DIRECTORY,batchName)
-    else:
-        crispresso_cmd='CRISPResso -o %s --name %s' % (OUTPUT_DIRECTORY,batchName)
-
-    crispresso_cmd=propagate_options(crispresso_cmd,selected_options,batch_params,idx)
-    info('Running CRISPResso batch #%d: %s' % (idx,crispresso_cmd))
-
-    #don't actually process -- just use already processed files (for debug)
-    runFake = False
-
-    if (runFake):
-        return_value = sb.call("sleep 1",shell=True)
-    else:
-        return_value = sb.call(crispresso_cmd,shell=True)
-
-
-    if return_value != 0:
-        warn('CRISPResso command failed (return value ' + str(return_value) + ') on batch #' + str(idx) + ": " + crispresso_cmd)
-    else:
-        info('Finished CRISPResso batch #%d' % idx)
-    return return_value
-
-def get_data(path):
-        return os.path.join(_ROOT, 'data', path)
-
 def check_library(library_name):
         try:
                 return __import__(library_name)
@@ -124,44 +87,6 @@ def check_library(library_name):
 
 pd=check_library('pandas')
 np=check_library('numpy')
-
-###EXCEPTIONS############################
-class FlashException(Exception):
-    pass
-
-class TrimmomaticException(Exception):
-    pass
-
-class Bowtie2Exception(Exception):
-    pass
-
-class AmpliconsNotUniqueException(Exception):
-    pass
-
-class AmpliconsNamesNotUniqueException(Exception):
-    pass
-
-class NoReadsAlignedException(Exception):
-    pass
-
-class DonorSequenceException(Exception):
-    pass
-
-class AmpliconEqualDonorException(Exception):
-    pass
-
-class SgRNASequenceException(Exception):
-    pass
-
-class NTException(Exception):
-    pass
-
-class ExonSequenceException(Exception):
-    pass
-
-class BadParameterException(Exception):
-    pass
-
 
 def main():
     try:
@@ -178,8 +103,8 @@ def main():
         parser = CRISPRessoShared.getCRISPRessoArgParser(_ROOT, parserTitle = 'CRISPRessoBatch Parameters')
 
         #batch specific params
-        parser.add_argument('--batch_settings', type=str, help='Settings file for batch. Must be tab-separated text file. The header row contains CRISPResso parameters (e.g., fastq_r1, fastq_r2, amplicon_seq, and other optional parameters). Each following row sets parameters for an additional batch.',required=True)
-        parser.add_argument('-p','--n_processes',type=int, help='Specify the number of processes to use for the quantification.\
+        parser.add_argument('-bs','--batch_settings', type=str, help='Settings file for batch. Must be tab-separated text file. The header row contains CRISPResso parameters (e.g., fastq_r1, fastq_r2, amplicon_seq, and other optional parameters). Each following row sets parameters for an additional batch.',required=True)
+        parser.add_argument('-p','--n_processes',type=int, help='Specify the number of processes to use for quantification.\
         Please use with caution since increasing this parameter will increase the memory required to run CRISPResso.',default=1)
         parser.add_argument('-bo','--batch_output_folder',  help='Directory where batch analysis output will be stored')
 
@@ -187,56 +112,9 @@ def main():
 
         debug_flag = args.debug
 
-        crispresso_options_for_batch=['fastq_r1',
-'fastq_r2',
-'amplicon_seq',
-'amplicon_name',
-'amplicon_min_alignment_score',
-'default_min_aln_score',
-'expand_ambiguous_alignments',
-'guide_seq',
-'expected_hdr_amplicon_seq',
-'coding_seq',
-'min_average_read_quality',
-'min_single_bp_quality',
-'min_bp_quality_or_N',
-'name',
-'file_prefix',
-#'output_folder', disable setting of output folder
-'split_paired_end',
-'trim_sequences',
-'trimmomatic_options_string',
-'min_paired_end_reads_overlap',
-'max_paired_end_reads_overlap',
-'quantification_window_size',
-'quantification_window_center',
-'exclude_bp_from_left',
-'exclude_bp_from_right',
-'ignore_substitutions',
-'ignore_insertions',
-'ignore_deletions',
-'discard_indel_reads',
-'needleman_wunsch_gap_open',
-'needleman_wunsch_gap_extend',
-'needleman_wunsch_gap_incentive',
-'aln_seed_count',
-'aln_seed_len',
-'aln_seed_min',
-'keep_intermediate',
-'dump',
-'plot_window_size',
-'min_frequency_alleles_around_cut_to_plot',
-'max_rows_alleles_around_cut_to_plot',
-'conversion_nuc_from',
-'conversion_nuc_to',
-'base_editor_output',
-'quantification_window_coordinates',
-'crispresso1_mode',
-'auto',
-'debug',
-'no_rerun',
-'suppress_report',
-]
+        crispresso_options = CRISPRessoShared.get_crispresso_options()
+        options_to_ignore = set(['output_folder'])
+        crispresso_options_for_batch = list(crispresso_options-options_to_ignore)
 
         CRISPRessoShared.check_file(args.batch_settings)
 
@@ -247,12 +125,12 @@ def main():
         batch_params.columns = batch_params.columns.str.strip(' -\xd0')
 
         #rename column "a" to "amplicon_seq", etc
-        batch_params.rename(index=str,columns=CRISPRessoShared.crispresso_options_lookup,inplace=True)
+        batch_params.rename(index=str,columns=CRISPRessoShared.get_crispresso_options_lookup(),inplace=True)
         batch_count = batch_params.shape[0]
         batch_params.index = range(batch_count)
 
         if 'fastq_r1' not in batch_params:
-            raise BadParameterException("fastq_r1 must be specified in the batch settings file. Current headings are: "
+            raise CRISPRessoShared.BadParameterException("fastq_r1 must be specified in the batch settings file. Current headings are: "
                     + str(batch_params.columns.values))
 
         #add args from the command line to batch_params_df
@@ -270,7 +148,7 @@ def main():
                 batch_params.at[i,'name'] = i
 
         if batch_params.drop_duplicates('name').shape[0] != batch_params.shape[0]:
-            raise Exception('Batch input names must be unique. The given names are not unique: ' + str(batch_params.loc[:,'name']))
+            raise CRISPRessoShared.BadParameterException('Batch input names must be unique. The given names are not unique: ' + str(batch_params.loc[:,'name']))
 
         quantification_window_center = -3 #default value
         if args.quantification_window_center is not None:
@@ -287,7 +165,7 @@ def main():
         batch_params["cut_point_include_idx"] = batch_params["cut_point_include_idx"].apply(list)
         for idx,row in batch_params.iterrows():
             if row.fastq_r1 is None:
-                raise Exception("At least one fastq file must be given as a command line parameter or be specified in the batch settings file with the heading 'fastq_r1' (fastq_r1 on row %s '%s' is invalid)"%(int(idx)+1,row.fastq_r1))
+                raise CRISPRessoShared.BadParameterException("At least one fastq file must be given as a command line parameter or be specified in the batch settings file with the heading 'fastq_r1' (fastq_r1 on row %s '%s' is invalid)"%(int(idx)+1,row.fastq_r1))
             CRISPRessoShared.check_file(row.fastq_r1)
 
             if row.fastq_r2 != "":
@@ -295,7 +173,7 @@ def main():
 
             curr_amplicon_seq_str = row.amplicon_seq
             if curr_amplicon_seq_str is None:
-                raise Exception("Amplicon sequence must be given as a command line parameter or be specified in the batch settings file with the heading 'amplicon_seq' (Amplicon seq on row %s '%s' is invalid)"%(int(idx)+1,curr_amplicon_seq_str))
+                raise CRISPRessoShared.BadParameterException("Amplicon sequence must be given as a command line parameter or be specified in the batch settings file with the heading 'amplicon_seq' (Amplicon seq on row %s '%s' is invalid)"%(int(idx)+1,curr_amplicon_seq_str))
 
             guides_are_in_amplicon = {} #dict of whether a guide is in at least one amplicon sequence
             #iterate through amplicons
@@ -304,7 +182,7 @@ def main():
                 this_sgRNA_intervals = []
                 wrong_nt=CRISPRessoShared.find_wrong_nt(curr_amplicon_seq)
                 if wrong_nt:
-                    raise NTException('The amplicon sequence in row %d (%s) contains incorrect characters:%s' % (idx+1,curr_amplicon_seq_str,' '.join(wrong_nt)))
+                    raise CRISPRessoShared.NTException('The amplicon sequence in row %d (%s) contains incorrect characters:%s' % (idx+1,curr_amplicon_seq_str,' '.join(wrong_nt)))
 
                 #iterate through guides
                 curr_guide_seq_string = row.guide_seq
@@ -313,7 +191,7 @@ def main():
                     for curr_guide_seq in guides:
                         wrong_nt=CRISPRessoShared.find_wrong_nt(curr_guide_seq)
                         if wrong_nt:
-                            raise NTException('The sgRNA sequence in row %d (%s) contains incorrect characters:%s'  % (idx+1,curr_guide_seq, ' '.join(wrong_nt)))
+                            raise CRISPRessoShared.NTException('The sgRNA sequence in row %d (%s) contains incorrect characters:%s'  % (idx+1,curr_guide_seq, ' '.join(wrong_nt)))
                     (this_sgRNA_sequences, this_sgRNA_intervals, this_cut_points, this_sgRNA_plot_offsets, this_include_idxs,
                         this_exclude_idxs, this_plot_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(curr_amplicon_seq,guides,row.quantification_window_center,
                         row.quantification_window_size,row.quantification_window_coordinates,row.exclude_bp_from_left,row.exclude_bp_from_right,row.plot_window_size)
@@ -348,33 +226,14 @@ def main():
         with open(log_filename,'w+') as outfile:
                   outfile.write('[Command used]:\nCRISPRessoBatch %s\n\n[Execution log]:\n' % ' '.join(sys.argv))
 
-        info("Running CRISPResso with %d processes" % args.n_processes)
-        pool = mp.Pool(processes = args.n_processes)
-        idxs = range(batch_count)
-#        print("running on odir: %s\nopt: %s\nargs: %s\nbatchParams: %s\n"%(str(OUTPUT_DIRECTORY),str(crispresso_options_for_batch),str(args),str(batch_params)))
-        pFunc = partial(runCrispresso,OUTPUT_DIRECTORY,crispresso_options_for_batch,batch_params)
+        crispresso_cmds = []
+        for idx,row in batch_params.iterrows():
+            batchName = row["name"]
+            crispresso_cmd=CRISPResso_to_call + ' -o %s --name %s' % (OUTPUT_DIRECTORY,batchName)
+            crispresso_cmd=propagate_options(crispresso_cmd,crispresso_options_for_batch,batch_params,idx)
+            crispresso_cmds.append(crispresso_cmd)
 
-        #handle signals -- bug in python 2.7 (https://stackoverflow.com/questions/11312525/catch-ctrlc-sigint-and-exit-multiprocesses-gracefully-in-python)
-        original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
-        signal.signal(signal.SIGINT, original_sigint_handler)
-        try:
-            res = pool.map_async(pFunc,idxs)
-            ret_vals = res.get(60*60) # Without the timeout this blocking call ignores all signals.
-            for idx, ret in enumerate(ret_vals):
-                if ret != 0:
-                    raise Exception('CRISPResso batch #' + str(idx) + ' failed')
-        except KeyboardInterrupt:
-            pool.terminate()
-            info('Caught SIGINT. Program Terminated')
-            raise Exception('CRISPResso2 Terminated')
-            exit (0)
-        except Exception as e:
-            print('CRISPResso2 failed')
-            raise e
-        else:
-            info("Finished all batches")
-            pool.close()
-        pool.join()
+        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'batch')
 
         run_datas = [] #crispresso2 info from each row
 

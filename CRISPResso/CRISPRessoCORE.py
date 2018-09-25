@@ -4,7 +4,7 @@
 '''
 CRISPResso2 - Kendell Clement and Luca Pinello 2018
 Software pipeline for the analysis of genome editing outcomes from deep sequencing data
-(c) 2017 The General Hospital Corporation. All Rights Reserved.
+(c) 2018 The General Hospital Corporation. All Rights Reserved.
 '''
 
 
@@ -37,7 +37,7 @@ from CRISPResso import cnwalign
 
 from datetime import datetime
 present = datetime.now()
-d1 = datetime.strptime('07/11/2018','%d/%m/%Y')
+d1 = datetime.strptime('21/11/2018','%d/%m/%Y')
 if present > d1:
     print('\nYour version of CRISPResso2 is out of date. Please download a new version.\n')
     sys.exit(1)
@@ -139,39 +139,6 @@ sns.set_style('white')
 
 
 
-###EXCEPTIONS############################
-class FlashException(Exception):
-    pass
-
-class TrimmomaticException(Exception):
-    pass
-
-class NoReadsAlignedException(Exception):
-    pass
-
-class SgRNASequenceException(Exception):
-    pass
-
-class NTException(Exception):
-    pass
-
-class ExonSequenceException(Exception):
-    pass
-
-class DuplicateSequenceIdException(Exception):
-    pass
-
-class NoReadsAfterQualityFiltering(Exception):
-    pass
-
-class BadParameterException(Exception):
-    pass
-
-class AutoException(Exception):
-    pass
-
-#########################################
-
 
 def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
     """process_fastq processes each of the reads contained in a fastq file, given a cache of pre-computed variants
@@ -251,9 +218,9 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
     aln_matrix = cnwalign.read_matrix(aln_matrix_loc)
 
     if (args.needleman_wunsch_gap_open > 0):
-        raise BadParameterException("Needleman Wunsch gap open penalty must be <= 0")
+        raise CRISPRessoShared.BadParameterException("Needleman Wunsch gap open penalty must be <= 0")
     if (args.needleman_wunsch_gap_extend > 0):
-        raise BadParameterException("Needleman Wunsch gap extend penalty must be <= 0")
+        raise CRISPRessoShared.BadParameterException("Needleman Wunsch gap extend penalty must be <= 0")
 
 
     not_aln = {} #cache for reads that don't align
@@ -263,6 +230,9 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
     else:
         fastq_handle=open(fastq_filename)
 
+    count_seed_fw = 0
+    count_seed_rv = 0
+    count_seed_both = 0
     while(fastq_handle.readline()):
 
         #read through fastq in sets of 4
@@ -299,7 +269,7 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
                 seed_i = 0
                 found_forward_count = 0
                 found_reverse_count = 0
-                while seed_i < args.aln_seed_count:
+                while seed_i < args.aln_seed_count and seed_i < len(refs[ref_name]['fw_seeds']):
                     if refs[ref_name]['fw_seeds'][seed_i] in fastq_seq: #is forward
                         found_forward_count += 1
                     if refs[ref_name]['rc_seeds'][seed_i] in fastq_seq: #is rc
@@ -310,12 +280,15 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
                     s1 = fws1
                     s2 = fws2
                     score = fwscore
+                    count_seed_fw += 1
                 elif found_forward_count == 0 and found_reverse_count > args.aln_seed_min:
                     rvs1,rvs2,rvscore=cnwalign.global_align(CRISPRessoShared.reverse_complement(fastq_seq), refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
                     s1 = rvs1
                     s2 = rvs2
                     score = rvscore
+                    count_seed_rv += 1
                 else:
+                    count_seed_both += 1
                     fws1,fws2,fwscore=cnwalign.global_align(fastq_seq, refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
                     rvs1,rvs2,rvscore=cnwalign.global_align(CRISPRessoShared.reverse_complement(fastq_seq), refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
                     s1 = fws1
@@ -350,7 +323,9 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
                 variantCache[fastq_seq]['aln_scores'] = aln_scores
                 class_names = []
 
-                for idx, best_match_name in enumerate(best_match_names):
+#                for idx, best_match_name in enumerate(best_match_names):
+                for idx in range(len(best_match_names)):
+                    best_match_name = best_match_names[idx]
                     payload=CRISPRessoCOREResources.find_indels_substitutions(best_match_s1s[idx],best_match_s2s[idx],refs[best_match_name]['include_idxs'])
                     payload['ref_name'] = best_match_name
                     payload['aln_scores'] = aln_scores
@@ -384,12 +359,16 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
 
 
     info("Finished reads; N_TOT_READS: %d N_COMPUTED_ALN: %d N_CACHED_ALN: %d N_COMPUTED_NOTALN: %d N_CACHED_NOTALN: %d"%(N_TOT_READS,N_COMPUTED_ALN,N_CACHED_ALN,N_COMPUTED_NOTALN,N_CACHED_NOTALN))
-    alnStats = {"N_TOT_READS" : N_TOT_READS,
+    aln_stats = {"N_TOT_READS" : N_TOT_READS,
                "N_CACHED_ALN" : N_CACHED_ALN,
                "N_CACHED_NOTALN" : N_CACHED_NOTALN,
                "N_COMPUTED_ALN" : N_COMPUTED_ALN,
-               "N_COMPUTED_NOTALN" : N_COMPUTED_NOTALN}
-    return(alnStats)
+               "N_COMPUTED_NOTALN" : N_COMPUTED_NOTALN,
+               'count_seed_fw' : count_seed_fw,
+               'count_seed_rv' : count_seed_rv,
+               'count_seed_both' : count_seed_both
+               }
+    return(aln_stats)
 
 
 def add_hist(hist_to_add,hist_global):
@@ -419,7 +398,7 @@ def split_paired_end_reads_single_file(fastq_filename,output_filename_r1,output_
         fastq_splitted_outfile_r2=gzip.open(output_filename_r2,'w+')
         [fastq_splitted_outfile_r1.write(line) if (i % 8 < 4) else fastq_splitted_outfile_r2.write(line) for i, line in enumerate(fastq_handle)]
     except:
-        raise Exception('Error in splitting read pairs from a single file')
+        raise CRISPRessoShared.BadParameterException('Error in splitting read pairs from a single file')
 
     return output_filename_r1,output_filename_r2
 
@@ -456,7 +435,7 @@ def main():
 
 
         if args.amplicon_seq is None and args.auto is False:
-            raise BadParameterException('Please provide an amplicon sequence for analysis.')
+            raise CRISPRessoShared.BadParameterException('Please provide an amplicon sequence for analysis.')
 
         #create output directory
         get_name_from_fasta=lambda  x: os.path.basename(x).replace('.fastq','').replace('.gz','')
@@ -502,6 +481,8 @@ def main():
                 if previous_run_data['version'] == CRISPRessoShared.__version__:
                     args_are_same = True
                     for arg in vars(args):
+                        if arg is "no_rerun":
+                            continue
                         if arg not in vars(previous_run_data['args']):
                             info('Comparing current run to previous run: old run had argument ' + str(arg) + ' \nRerunning.')
                             args_are_same = False
@@ -519,7 +500,7 @@ def main():
             for current_guide_seq in args.guide_seq.split(','):
                 wrong_nt=CRISPRessoShared.find_wrong_nt(current_guide_seq)
                 if wrong_nt:
-                    raise NTException('The sgRNA sequence contains bad characters:%s'  % ' '.join(wrong_nt))
+                    raise CRISPRessoShared.NTException('The sgRNA sequence contains bad characters:%s'  % ' '.join(wrong_nt))
                 guides.append(current_guide_seq)
 
         ###FRAMESHIFT SUPPORT###
@@ -529,7 +510,7 @@ def main():
                 #check for wrong NT
                 wrong_nt=CRISPRessoShared.find_wrong_nt(exon_seq)
                 if wrong_nt:
-                    raise NTException('The coding sequence contains bad characters:%s' % ' '.join(wrong_nt))
+                    raise CRISPRessoShared.NTException('The coding sequence contains bad characters:%s' % ' '.join(wrong_nt))
 
                 coding_seqs.append(exon_seq)
 
@@ -576,7 +557,7 @@ def main():
 
             wrong_nt=CRISPRessoShared.find_wrong_nt(this_seq)
             if wrong_nt:
-                raise NTException('Reference amplicon sequence %d (%s) contains invalid characters:%s' % idx,this_name, ' '.join(wrong_nt))
+                raise CRISPRessoShared.NTException('Reference amplicon sequence %d (%s) contains invalid characters:%s' % idx,this_name, ' '.join(wrong_nt))
 
             this_min_aln_score = args.default_min_aln_score
             if idx < len(amplicon_min_alignment_score_arr):
@@ -633,18 +614,22 @@ def main():
                 attemptsToFindSeed = 0
                 thisSeedStart = seedStart
                 potentialSeed = this_seq[thisSeedStart:thisSeedStart+args.aln_seed_len]
-                while potentialSeed in seq_rc:
+                #seed shouldn't be in reverse complement of sequence, and it should also not be the same as another seed
+                while potentialSeed in seq_rc or potentialSeed in seeds:
+                    attemptsToFindSeed += 1
+                    if attemptsToFindSeed > 100:
+                        raise CRISPRessoShared.AlignmentException("Can't find alignment seed that is unique to the forward sequence")
+                    # if this seed would extend past the end of the sequence, reset to position 0 (possibly in the excluded region, but hey, we're desperate)
                     if (seedStart > this_seq_length - args.aln_seed_len):
                         thisSeedStart = 0
-                    if attemptsToFindSeed > 100:
-                        raise FlipException("Can't find seed that is unique to the forward sequence")
                     thisSeedStart += 1
                     potentialSeed = this_seq[thisSeedStart:thisSeedStart+args.aln_seed_len]
                 seeds.append(potentialSeed)
                 seed_rc = CRISPRessoShared.reverse_complement(potentialSeed)
                 if seed_rc in this_seq:
-                    raise FlipException("Reverse compliment of seed %s is in amplicon %s even though seed is not in reverse compliment of amplicon"%(seed,amplicon))
+                    raise CRISPRessoShared.AlignmentException("Reverse compliment of seed %s is in amplicon %s even though seed is not in reverse compliment of amplicon"%(seed,amplicon))
                 rc_seeds.append(seed_rc)
+
 
             refObj = {'name':this_name,
                    'sequence':this_seq,
@@ -675,12 +660,12 @@ def main():
         if args.guide_seq:
             for idx, presence_bool in enumerate(found_guide_seq):
                 if not presence_bool:
-                    raise SgRNASequenceException('The guide sequence %d (%s) provided is not present in the amplicon sequences!\n\nPlease check your input!' % (idx, guides[idx]))
+                    raise CRISPRessoShared.SgRNASequenceException('The guide sequence %d (%s) provided is not present in the amplicon sequences!\n\nPlease check your input!' % (idx, guides[idx]))
 
         if args.coding_seq:
             for idx, presence_bool in enumerate(found_coding_seq):
                 if not presence_bool:
-                    raise ExonSequenceException('The coding subsequence %d (%s) provided is not contained in any amplicon sequence!\n\nPlease check your input!' % (idx,coding_seqs[idx]))
+                    raise CRISPRessoShared.ExonSequenceException('The coding subsequence %d (%s) provided is not contained in any amplicon sequence!\n\nPlease check your input!' % (idx,coding_seqs[idx]))
 
 
         #clone cut points and include idx from first reference where those are set (also exons)
@@ -858,7 +843,7 @@ def main():
 
         if args.split_paired_end:
             if args.fastq_r2!='':
-                raise BadParameterException('The option --split_paired_end is available only when a single fastq file is specified!')
+                raise CRISPRessoShared.BadParameterException('The option --split_paired_end is available only when a single fastq file is specified!')
             else:
                 info('Splitting paired end single fastq file into two files...')
                 args.fastq_r1,args.fastq_r2=split_paired_end_reads_single_file(args.fastq_r1,
@@ -920,7 +905,8 @@ def main():
                 TRIMMOMATIC_STATUS=sb.call(cmd,shell=True)
 
                 if TRIMMOMATIC_STATUS:
-                        raise TrimmomaticException('TRIMMOMATIC failed to run, please check the log file.')
+                        raise CRISPRessoShared.TrimmomaticException('TRIMMOMATIC failed to run, please check the log file.')
+                crispresso2_info['trimmomatic_command'] = cmd
 
 
             processed_output_filename=output_forward_filename
@@ -946,7 +932,8 @@ def main():
                 #print cmd
                 TRIMMOMATIC_STATUS=sb.call(cmd,shell=True)
                 if TRIMMOMATIC_STATUS:
-                    raise TrimmomaticException('TRIMMOMATIC failed to run, please check the log file.')
+                    raise CRISPRessoShared.TrimmomaticException('TRIMMOMATIC failed to run, please check the log file.')
+                crispresso2_info['trimmomatic_command'] = cmd
 
                 info('Done!')
 
@@ -978,9 +965,10 @@ def main():
 #                 OUTPUT_DIRECTORY,log_filename)
 
             info('Running FLASH command: ' + cmd)
+            crispresso2_info['flash_command'] = cmd
             FLASH_STATUS=sb.call(cmd,shell=True)
             if FLASH_STATUS:
-                raise FlashException('Flash failed to run, please check the log file.')
+                raise CRISPRessoShared.FlashException('Flash failed to run, please check the log file.')
 
             info('Done!')
 
@@ -1008,7 +996,7 @@ def main():
         variantCache[cache_fastq_seq]['count'] = 0
 
         #operates on variantCache
-        alnStats = process_fastq(processed_output_filename,variantCache,ref_names,refs,args)
+        aln_stats = process_fastq(processed_output_filename,variantCache,ref_names,refs,args)
 
         info('Done!')
 
@@ -1495,7 +1483,7 @@ def main():
         class_counts_order = [class_count_name for thisRefInd,thisIsMod,class_count_name in decorated_class_counts]
 
         if N_TOTAL == 0:
-            raise NoReadsAlignedException('Error: No alignments were found')
+            raise CRISPRessoShared.NoReadsAlignedException('Error: No alignments were found')
 
         #create alleles table
         info('Calculating allele frequencies...')
@@ -1746,7 +1734,8 @@ def main():
         mapping_stats_filename = _jp('CRISPResso_mapping_statistics.txt')
         with open(mapping_stats_filename,'w+') as outfile:
             outfile.write('READS IN INPUTS\tREADS AFTER PREPROCESSING\tREADS ALIGNED\tN_COMPUTED_ALN\tN_CACHED_ALN\tN_COMPUTED_NOTALN\tN_CACHED_NOTALN\n')
-            outfile.write("\t".join([str(x) for x in[N_READS_INPUT,N_READS_AFTER_PREPROCESSING,N_TOTAL,alnStats['N_COMPUTED_ALN'],alnStats['N_CACHED_ALN'],alnStats['N_COMPUTED_NOTALN'],alnStats['N_CACHED_NOTALN']]]) + "\n")
+            outfile.write("\t".join([str(x) for x in[N_READS_INPUT,N_READS_AFTER_PREPROCESSING,N_TOTAL,aln_stats['N_COMPUTED_ALN'],aln_stats['N_CACHED_ALN'],aln_stats['N_COMPUTED_NOTALN'],aln_stats['N_CACHED_NOTALN']]]) + "\n")
+        crispresso2_info['aln_stats'] = aln_stats
         crispresso2_info['mapping_stats_filename'] = mapping_stats_filename
 
         def save_vector_to_file(vector,filename):
@@ -2150,16 +2139,17 @@ def main():
                     #get nucleotide columns to print for this sgRNA
                     sel_cols = [0,1]
                     plot_half_window = max(1,args.plot_window_size/2)
-                    sel_cols.extend(range(cut_point-plot_half_window+3,cut_point+plot_half_window+3))
-                    start = cut_point-plot_half_window+1
+                    new_sel_cols_start = max(2,cut_point-plot_half_window+1)
+                    new_sel_cols_end = min(ref_len+1,cut_point+plot_half_window+1)
+                    sel_cols.extend(range(new_sel_cols_start+2,new_sel_cols_end+2))
                     #get new intervals
                     new_sgRNA_intervals = []
                     #add annotations for each sgRNA (to be plotted on this sgRNA's plot)
                     for (int_start,int_end) in refs[ref_name]['sgRNA_intervals']:
-                        new_sgRNA_intervals += [(int_start - start,int_end - start)]
+                        new_sgRNA_intervals += [(int_start - new_sel_cols_start,int_end - new_sel_cols_start)]
                     new_include_idx = []
                     for x in refs[ref_name]['include_idxs']:
-                        new_include_idx += [x - start]
+                        new_include_idx += [x - new_sel_cols_start]
                     plot_root = _jp('2b.'+ref_name + '.Nucleotide_Percentage_Quilt_For_' + sgRNA)
                     CRISPRessoPlot.plot_nucleotide_quilt(
                             nuc_df_for_plot.iloc[:,sel_cols],
@@ -3184,43 +3174,47 @@ def main():
 
         sys.exit(0)
 
-    except NTException as e:
+    except CRISPRessoShared.NTException as e:
         print_stacktrace_if_debug()
         error('Alphabet error, please check your input.\n\nERROR: %s' % e)
         sys.exit(1)
-    except SgRNASequenceException as e:
+    except CRISPRessoShared.SgRNASequenceException as e:
         print_stacktrace_if_debug()
         error('sgRNA error, please check your input.\n\nERROR: %s' % e)
         sys.exit(2)
-    except TrimmomaticException as e:
+    except CRISPRessoShared.TrimmomaticException as e:
         print_stacktrace_if_debug()
         error('Trimming error, please check your input.\n\nERROR: %s' % e)
         sys.exit(4)
-    except FlashException as e:
+    except CRISPRessoShared.FlashException as e:
         print_stacktrace_if_debug()
         error('Merging error, please check your input.\n\nERROR: %s' % e)
         sys.exit(5)
-    except BadParameterException as e:
+    except CRISPRessoShared.BadParameterException as e:
         print_stacktrace_if_debug()
         error('Parameter error, please check your input.\n\nERROR: %s' % e)
         sys.exit(6)
-    except NoReadsAlignedException as e:
+    except CRISPRessoShared.NoReadsAlignedException as e:
         print_stacktrace_if_debug()
         error('Alignment error, please check your input.\n\nERROR: %s' % e)
         sys.exit(7)
-    except AutoException as e:
+    except CRISPRessoShared.AutoException as e:
         print_stacktrace_if_debug()
         error('Autorun error. This sample cannot be run in auto mode.\n\nERROR: %s' % e)
         sys.exit(8)
-    except ExonSequenceException as e:
+    except CRISPRessoShared.AlignmentException as e:
+        print_stacktrace_if_debug()
+        error('Alignment error, please check your input.\n\nERROR: %s' % e)
+        sys.exit(8)
+    except CRISPRessoShared.ExonSequenceException as e:
         print_stacktrace_if_debug()
         error('Coding sequence error, please check your input.\n\nERROR: %s' % e)
         sys.exit(11)
-    except DuplicateSequenceIdException as e:
+    except CRISPRessoShared.DuplicateSequenceIdException as e:
         print_stacktrace_if_debug()
         error('Fastq file error, please check your input.\n\nERROR: %s' % e)
         sys.exit(12)
-    except NoReadsAfterQualityFiltering as e:
+    except CRISPRessoShared.NoReadsAfterQualityFiltering as e:
         print_stacktrace_if_debug()
         error('Filtering error, please check your input.\n\nERROR: %s' % e)
         sys.exit(13)

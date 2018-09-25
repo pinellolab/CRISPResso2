@@ -2,7 +2,7 @@
 '''
 CRISPResso2 - Kendell Clement and Luca Pinello 2018
 Software pipeline for the analysis of genome editing outcomes from deep sequencing data
-(c) 2017 The General Hospital Corporation. All Rights Reserved.
+(c) 2018 The General Hospital Corporation. All Rights Reserved.
 '''
 
 
@@ -15,8 +15,8 @@ import argparse
 import unicodedata
 import string
 import re
-import multiprocessing
-import CRISPRessoShared
+from CRISPResso import CRISPRessoShared
+from CRISPResso import CRISPRessoMultiProcessing
 import traceback
 
 import logging
@@ -34,7 +34,7 @@ info    = logging.info
 
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
-
+CRISPResso_to_call = os.path.join(os.path.dirname(_ROOT),'CRISPResso.py')
 
 ####Support functions###
 def get_data(path):
@@ -104,7 +104,7 @@ def check_samtools():
         return True
     else:
         sys.stdout.write('\nCRISPRessoPooled requires samtools')
-        sys.stdout.write('\n\nPlease install it and add to your path following the instruction at: http://www.htslib.org/download/')
+        sys.stdout.write('\n\nPlease install it and add to your path following the instructions at: http://www.htslib.org/download/')
         return False
 
 def check_bowtie2():
@@ -116,7 +116,7 @@ def check_bowtie2():
         return True
     else:
         sys.stdout.write('\nCRISPRessoPooled requires Bowtie2!')
-        sys.stdout.write('\n\nPlease install it and add to your path following the instruction at: http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#obtaining-bowtie-2')
+        sys.stdout.write('\n\nPlease install it and add to your path following the instructions at: http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#obtaining-bowtie-2')
         return False
 
 #this is overkilling to run for many sequences,
@@ -248,75 +248,10 @@ def main():
 
         args = parser.parse_args()
 
+        crispresso_options = CRISPRessoShared.get_crispresso_options()
+        options_to_ignore = set(['fastq_r1','fastq_r2','amplicon_seq','amplicon_name','output_folder'])
+        crispresso_options_for_pooled = list(crispresso_options-options_to_ignore)
 
-        crispresso_options_for_pooled=[
-#'fastq_r1',
-#'fastq_r2',
-#'amplicon_seq',
-#'amplicon_name',
-'amplicon_min_alignment_score',
-'default_min_aln_score',
-'expand_ambiguous_alignments',
-'guide_seq',
-'expected_hdr_amplicon_seq',
-'coding_seq',
-'min_average_read_quality',
-'min_single_bp_quality',
-'min_bp_quality_or_N',
-'name',
-'file_prefix',
-#'output_folder', disable setting of output folder
-'split_paired_end',
-'trim_sequences',
-'trimmomatic_options_string',
-'min_paired_end_reads_overlap',
-'max_paired_end_reads_overlap',
-'quantification_window_size',
-'quantification_window_center',
-'exclude_bp_from_left',
-'exclude_bp_from_right',
-'ignore_substitutions',
-'ignore_insertions',
-'ignore_deletions',
-'discard_indel_reads',
-'needleman_wunsch_gap_open',
-'needleman_wunsch_gap_extend',
-'needleman_wunsch_gap_incentive',
-'aln_seed_count',
-'aln_seed_len',
-'aln_seed_min',
-'keep_intermediate',
-'dump',
-'plot_window_size',
-'min_frequency_alleles_around_cut_to_plot',
-'max_rows_alleles_around_cut_to_plot',
-'conversion_nuc_from',
-'conversion_nuc_to',
-'base_editor_output',
-'quantification_window_coordinates',
-'crispresso1_mode',
-'auto',
-'debug',
-'no_rerun',
-'suppress_report',
-'write_cleaned_report',
-]
-
-        def propagate_options(cmd,options,args):
-
-            for option in options :
-                if option:
-                    val=eval('args.%s' % option )
-
-                    if type(val)==str:
-                        cmd+=' --%s "%s"' % (option,str(val)) # this is for options with space like needle...
-                    elif type(val)==bool:
-                        if val:
-                            cmd+=' --%s' % option
-                    else:
-                        cmd+=' --%s %s' % (option,str(val))
-
-            return cmd
 
         info('Checking dependencies...')
 
@@ -440,13 +375,16 @@ def main():
                  info('Done!')
 
 
+             max_overlap_param = 100
+             if args.max_paired_end_reads_overlap:
+                 max_overlap_param = args.max_paired_end_reads_overlap
              #Merging with Flash
              info('Merging paired sequences with Flash...')
              cmd='flash %s %s --min-overlap %d --max-overlap %d -z -d %s >>%s 2>&1' %\
              (output_forward_paired_filename,
               output_reverse_paired_filename,
               args.min_paired_end_reads_overlap,
-              args.max_paired_end_reads_overlap,
+              max_overlap_param,
               OUTPUT_DIRECTORY,log_filename)
 
              FLASH_STATUS=sb.call(cmd,shell=True)
@@ -486,6 +424,10 @@ def main():
             df_template=pd.read_csv(args.amplicons_file,names=[
                     'Name','Amplicon_Sequence','sgRNA',
                     'Expected_HDR','Coding_sequence'],comment='#',sep='\t',dtype={'Name':str})
+
+            if df_template.iloc[0,1].lower() == "amplicon_sequence":
+                df_template.drop(0,axis=0,inplace=True)
+                info('Detected header in amplicon file.')
 
 
             #remove empty amplicons/lines
@@ -558,6 +500,7 @@ def main():
             aligner_command= 'bowtie2 -x %s -p %s %s -U %s 2>>%s | samtools view -bS - > %s' %(custom_index_filename,args.n_processes,args.bowtie2_options_string,processed_output_filename,log_filename,bam_filename_amplicons)
 
 
+            info('Alignment command: ' + aligner_command)
             sb.call(aligner_command,shell=True)
 
             N_READS_ALIGNED=get_n_aligned_bam(bam_filename_amplicons)
@@ -571,10 +514,11 @@ def main():
 
             info('Demultiplex reads and run CRISPResso on each amplicon...')
             n_reads_aligned_amplicons=[]
+            crispresso_cmds = []
             for idx,row in df_template.iterrows():
                 info('\n Processing:%s' %idx)
                 n_reads_aligned_amplicons.append(get_n_reads_fastq(row['Demultiplexed_fastq.gz_filename']))
-                crispresso_cmd='CRISPResso -r1 %s -a %s -o %s --name %s' % (row['Demultiplexed_fastq.gz_filename'],row['Amplicon_Sequence'],OUTPUT_DIRECTORY,idx)
+                crispresso_cmd= CRISPResso_to_call + ' -r1 %s -a %s -o %s --name %s' % (row['Demultiplexed_fastq.gz_filename'],row['Amplicon_Sequence'],OUTPUT_DIRECTORY,idx)
 
                 if n_reads_aligned_amplicons[-1]>args.min_reads_to_use_region:
                     if row['sgRNA'] and not pd.isnull(row['sgRNA']):
@@ -586,11 +530,13 @@ def main():
                     if row['Coding_sequence'] and not pd.isnull(row['Coding_sequence']):
                         crispresso_cmd+=' -c %s' % row['Coding_sequence']
 
-                    crispresso_cmd=propagate_options(crispresso_cmd,crispresso_options_for_pooled,args)
-                    info('Running CRISPResso:%s' % crispresso_cmd)
-                    sb.call(crispresso_cmd,shell=True)
+                    crispresso_cmd=CRISPRessoShared.propagate_crispresso_options(crispresso_cmd,crispresso_options_for_pooled,args)
+                    crispresso_cmds.append(crispresso_cmd)
+
                 else:
                     warn('Skipping amplicon [%s] since no reads are aligning to it\n'% idx)
+
+            CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'amplicon')
 
             df_template['n_reads']=n_reads_aligned_amplicons
             df_template['n_reads_aligned_%']=df_template['n_reads']/float(N_READS_ALIGNED)*100
@@ -653,7 +599,8 @@ def main():
         if RUNNING_MODE=='ONLY_GENOME' or RUNNING_MODE=='AMPLICONS_AND_GENOME':
             info('Aligning reads to the provided genome index...')
             bam_filename_genome = _jp('%s_GENOME_ALIGNED.bam' % database_id)
-            aligner_command= 'bowtie2 -x %s -p %s %s -U %s 2>>%s | samtools view -bS - > %s' %(custom_index_filename,args.n_processes,args.bowtie2_options_string,processed_output_filename,log_filename,bam_filename_amplicons)
+            aligner_command= 'bowtie2 -x %s -p %s %s -U %s 2>>%s| samtools view -bS - > %s' %(args.bowtie2_index,args.n_processes,args.bowtie2_options_string,processed_output_filename,log_filename,bam_filename_genome)
+            info('aligning with command: ' + aligner_command)
             sb.call(aligner_command,shell=True)
 
             N_READS_ALIGNED=get_n_aligned_bam(bam_filename_genome)
@@ -685,7 +632,7 @@ def main():
             'BEGIN{chr_id="NA";bpstart=-1;bpend=-1; fastq_filename="NA"}\
             { if ( (chr_id!=$1) || (bpstart!=$2) || (bpend!=$3) )\
                 {\
-                if (fastq_filename!="NA") {close(fastq_filename); system("gzip "fastq_filename)}\
+                if (fastq_filename!="NA") {close(fastq_filename); system("gzip -f "fastq_filename)}\
                 chr_id=$1; bpstart=$2; bpend=$3;\
                 fastq_filename=sprintf("__OUTPUTPATH__REGION_%s_%s_%s.fastq",$1,$2,$3);\
                 }\
@@ -697,7 +644,7 @@ def main():
             sb.call(cmd,shell=True)
 
             #gzip the missing ones
-            sb.call('gzip %s/*.fastq' % MAPPED_REGIONS,shell=True)
+            sb.call('gzip -f %s/*.fastq' % MAPPED_REGIONS,shell=True)
 
         '''
         The most common use case, where many different target sites are pooled into a single
@@ -716,9 +663,10 @@ def main():
             n_reads_aligned_genome=[]
             fastq_region_filenames=[]
 
+            crispresso_cmds = []
             for idx,row in df_template.iterrows():
 
-                info('Processing amplicon:%s' % idx )
+                info('Processing amplicon: %s' % idx )
 
                 #check if we have reads
                 fastq_filename_region=os.path.join(MAPPED_REGIONS,'REGION_%s_%s_%s.fastq.gz' % (row['chr_id'],row['bpstart'],row['bpend']))
@@ -732,7 +680,7 @@ def main():
                     if N_READS>=args.min_reads_to_use_region:
                         info('\nThe amplicon [%s] has enough reads (%d) mapped to it! Running CRISPResso!\n' % (idx,N_READS))
 
-                        crispresso_cmd='CRISPResso -r1 %s -a %s -o %s --name %s' % (fastq_filename_region,row['Amplicon_Sequence'],OUTPUT_DIRECTORY,idx)
+                        crispresso_cmd=CRISPResso_to_call + ' -r1 %s -a %s -o %s --name %s' % (fastq_filename_region,row['Amplicon_Sequence'],OUTPUT_DIRECTORY,idx)
 
                         if row['sgRNA'] and not pd.isnull(row['sgRNA']):
                             crispresso_cmd+=' -g %s' % row['sgRNA']
@@ -743,9 +691,9 @@ def main():
                         if row['Coding_sequence'] and not pd.isnull(row['Coding_sequence']):
                             crispresso_cmd+=' -c %s' % row['Coding_sequence']
 
-                        crispresso_cmd=propagate_options(crispresso_cmd,crispresso_options_for_pooled,args)
+                        crispresso_cmd=CRISPRessoShared.propagate_crispresso_options(crispresso_cmd,crispresso_options_for_pooled,args)
                         info('Running CRISPResso:%s' % crispresso_cmd)
-                        sb.call(crispresso_cmd,shell=True)
+                        crispresso_cmds.append(crispresso_cmd)
 
                     else:
                          warn('The amplicon [%s] has not enough reads (%d) mapped to it! Skipping the execution of CRISPResso!' % (idx,N_READS))
@@ -753,6 +701,8 @@ def main():
                     fastq_region_filenames.append('')
                     n_reads_aligned_genome.append(0)
                     warn("The amplicon %s doesn't have any read mapped to it!\n Please check your amplicon sequence." %  idx)
+
+            CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'amplicon')
 
             df_template['Amplicon_Specific_fastq.gz_filename']=fastq_region_filenames
             df_template['n_reads']=n_reads_aligned_genome
@@ -802,15 +752,12 @@ def main():
             for region in glob.glob(os.path.join(MAPPED_REGIONS,'REGION*.fastq.gz')):
                 coordinates.append(os.path.basename(region).replace('.fastq.gz','').split('_')[1:4]+[region,get_n_reads_fastq(region)])
 
-            print 'C:',coordinates
             df_regions=pd.DataFrame(coordinates,columns=['chr_id','bpstart','bpend','fastq_file','n_reads'])
 
-            print 'D:', df_regions
             df_regions=df_regions.convert_objects(convert_numeric=True)
             df_regions.dropna(inplace=True) #remove regions in chrUn
             df_regions.bpstart=df_regions.bpstart.astype(int)
             df_regions.bpend=df_regions.bpend.astype(int)
-            print df_regions
             df_regions['sequence']=df_regions.apply(lambda row: get_region_from_fa(row.chr_id,row.bpstart,row.bpend,uncompressed_reference),axis=1)
 
             df_regions['n_reads_aligned_%']=df_regions['n_reads']/float(N_READS_ALIGNED)*100
@@ -831,17 +778,17 @@ def main():
             #run CRISPResso
             #demultiplex reads in the amplicons and call crispresso!
             info('Running CRISPResso on the regions discovered...')
+            crispresso_cmds = []
             for idx,row in df_regions.iterrows():
 
                 if row.n_reads > args.min_reads_to_use_region:
                     info('\nRunning CRISPResso on: %s-%d-%d...'%(row.chr_id,row.bpstart,row.bpend ))
-                    crispresso_cmd='CRISPResso -r1 %s -a %s -o %s' %(row.fastq_file,row.sequence,OUTPUT_DIRECTORY)
-                    crispresso_cmd=propagate_options(crispresso_cmd,crispresso_options_for_pooled,args)
-                    info('Running CRISPResso:%s' % crispresso_cmd)
-                    sb.call(crispresso_cmd,shell=True)
+                    crispresso_cmd=CRISPResso_to_call + ' -r1 %s -a %s -o %s' %(row.fastq_file,row.sequence,OUTPUT_DIRECTORY)
+                    crispresso_cmd=CRISPRessoShared.propagate_crispresso_options(crispresso_cmd,crispresso_options_for_pooled,args)
+                    crispresso_cmds.append(crispresso_cmd)
                 else:
                     info('Skipping region: %s-%d-%d , not enough reads (%d)' %(row.chr_id,row.bpstart,row.bpend, row.n_reads))
-
+            CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'region')
 
         #write alignment statistics
         with open(_jp('MAPPING_STATISTICS.txt'),'w+') as outfile:
@@ -856,21 +803,23 @@ def main():
 
         for idx,row in df_final_data.iterrows():
 
+                run_name = idx
                 if RUNNING_MODE=='ONLY_AMPLICONS' or RUNNING_MODE=='AMPLICONS_AND_GENOME':
-                    folder_name='CRISPResso_on_%s' % idx
+                    run_name=idx
                 else:
-                    folder_name='CRISPResso_on_REGION_%s_%d_%d' %(row.chr_id,row.bpstart,row.bpend )
+                    run_name='REGION_%s_%d_%d' %(row.chr_id,row.bpstart,row.bpend )
+                folder_name = 'CRISPResso_on_%s'%run_name
 
                 try:
-                    quantification_file,amplicon_names,amplicon_info=CRISPRessoShared.check_output_folder_quantification(_jp(folder_name))
+                    quantification_file,amplicon_names,amplicon_info=CRISPRessoShared.check_output_folder(_jp(folder_name))
                     for amplicon_name in amplicon_names:
                         N_TOTAL = float(amplicon_info[amplicon_name]['Total'])
                         N_UNMODIFIED = float(amplicon_info[amplicon_name]['Unmodified'])
                         N_MODIFIED = float(amplicon_info[amplicon_name]['Modified'])
-                        quantification_summary.append([idx,amplicon_name,N_UNMODIFIED/N_TOTAL*100,N_MODIFIED/N_TOTAL*100,N_TOTAL,row.n_reads])
-                except OutputFolderIncompleteException:
+                        quantification_summary.append([run_name,amplicon_name,N_UNMODIFIED/N_TOTAL*100,N_MODIFIED/N_TOTAL*100,N_TOTAL,row.n_reads])
+                except CRISPRessoShared.OutputFolderIncompleteException as e:
                     quantification_summary.append([idx,"",np.nan,np.nan,np.nan,row.n_reads])
-                    warn('Skipping the folder %s, not enough reads, incomplete, or empty folder.'% folder_name)
+                    warn('Skipping the folder %s: not enough reads, incomplete, or empty folder.'% folder_name)
 
 
         df_summary_quantification=pd.DataFrame(quantification_summary,columns=['Name','Amplicon','Unmodified%','Modified%','Reads_aligned','Reads_total'])

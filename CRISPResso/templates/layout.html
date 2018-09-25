@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>CRISPResso2 Report</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="description" content="CRISPResso2: Analysis of genome editing outcomes from deep sequencing data">
+		<meta name="author" content="Kendell Clement and Luca Pinello">
+		<link href='http://fonts.googleapis.com/css?family=Montserrat|Ranga:700' rel='stylesheet' type='text/css'>
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css">
+		<!--<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootswatch/4.1.1/materia/bootstrap.min.css">-->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.css" />
+		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+		<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+
+		<style>
+			body {
+				font-family: 'Montserrat', sans-serif !important;
+			}
+			@media (max-width:1550px)
+			{
+				#crispresso_h
+				{
+					font-size:5rem;
+					font-weight:300;
+					line-height:1.2;
+				}
+			}
+			@media (min-width:1550px)
+			{
+				#crispresso_h
+				{
+					font-size:8rem;
+					font-weight:300;
+					line-height:1.2;
+				}
+			}
+		</style>
+
+
+		<!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame
+		Remove this if you use the .htaccess -->
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+		<!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
+		<link rel="shortcut icon" href="favicon.ico">
+
+	{% block head %}{% endblock %}
+
+	</head>
+
+	<body>
+		<div class="container">
+
+			<div class="row pb-2">
+				<div class="col-sm-1"></div>
+				<div class="col-sm-3"> <a href='http://crispresso2.pinellolab.org'><img class='img-fluid' src="CRISPResso_justcup.png" width="80%"></a>
+				</div>
+				<div class="col-sm-7" >
+					<a href='http://crispresso2.pinellolab.org' style="text-decoration:none !important; color:rgb(33, 37, 41)"><h1 id='crispresso_h' style="font-family:'Ranga', sans-serif">CRISPResso2 </h1></a>
+					<h3 style="margin-top: -0.5em;padding-right: 2em;">Analysis of genome editing outcomes from deep sequencing data</h3>
+				</div>
+				<div class="col-sm-1">
+
+				</div>
+			</div>
+
+			<div class="row">
+				{% block content %}{% endblock %}
+
+			</div>
+
+			<div class="row">
+
+
+			<div class="col-sm-1"></div>
+			<footer class="col-sm-10 crispresso_body_div" style='padding-bottom:3em'>
+
+				<h5 class="text-center"> &copy; Copyright <a href="http://pinellolab.org">Kendell Clement and Luca Pinello</a></h5>
+				<div class="text-center" style="margin:2em;">
+				<a href="https://twitter.com/intent/tweet?text=CRISPResso2%3A%20Allele-specific%20quantification%20and%20visualization%20of%20genome%20editing%20events%20from%20Cas9%2C%20Cas12a%2C%20and%20Base%20Editors."
+					class="twitter-share-button" data-via="lucapinello" data-size="large" data-count="none" data-hashtags="CRISPR" data-url="http://crispresso2.pinellolab.org">Tweet about CRISPresso2!</a>
+				</div>
+
+				<!--<h3 class="text-center"> Need to run <b>CRISPResso</b> on your <u>machine or cluster</u>?</br></br><u>Pooled targets</u> or <u>WGS</u> data?</br></br>Compare <u>multiple conditions</u> or with <u>untreated</u> samples?</br></br>We got you covered!
+				</br></br>Try our <b>command line utilities</b> freely available <a href="https://github.com/lucapinello/CRISPResso">here.</a></h3> -->
+
+
+			</footer>
+			<div class="col-sm-1"></div>
+
+
+			<!-- Optional JavaScript -->
+	    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+	    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+	    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" crossorigin="anonymous"></script>
+			<script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.js"></script>
+			{% block foot %}{% endblock %}
+	</body>
+
+</html>

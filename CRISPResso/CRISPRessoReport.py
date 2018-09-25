@@ -1,3 +1,9 @@
+'''
+CRISPResso2 - Kendell Clement and Luca Pinello 2018
+Software pipeline for the analysis of genome editing outcomes from deep sequencing data
+(c) 2018 The General Hospital Corporation. All Rights Reserved.
+'''
+
 import os
 import sys
 from jinja2 import Environment, FileSystemLoader
@@ -53,7 +59,8 @@ def make_report(run_data,crispresso_report_file,crispresso_folder,_ROOT):
     global_fig_names= []
     for fig in ['1a','1b','1c','5a','6a','8a']:
         fig_name = 'plot_'+ fig
-        add_fig_if_exists(fig_name,run_data[fig_name + '_root'],'Figure ' + fig,run_data[fig_name + '_caption'],
+        if fig_name + '_root' in run_data:
+            add_fig_if_exists(fig_name,run_data[fig_name + '_root'],'Figure ' + fig,run_data[fig_name + '_caption'],
                 global_fig_names,fig_locs,fig_titles,fig_captions)
 
 

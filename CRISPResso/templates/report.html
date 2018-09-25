@@ -1,0 +1,640 @@
+{% extends "layout.html" %}
+{% block head %}
+<style>
+.nav-tabs.amp-header {
+  border-bottom:none !important;
+}
+
+.card-header.amp-header {
+  border-bottom:none !important;
+}
+.nav-tabs.amp-header .nav-link.active {
+  background-color:lightsteelblue;
+  border-bottom:lightsteelblue;
+}
+
+.tab-content.amp-body {
+  background-color:lightsteelblue;
+}
+
+@media print {
+   .tab-content > .tab-pane {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+		margin-bottom: 2em !important;
+		page-break-inside: avoid;
+  }
+  .nav-tabs {
+    display:none !important;
+    visibility:hidden !important;
+  }
+  .tab-content.amp-body {
+    background-color:transparent !important;
+  	border:None !important;
+  }
+}
+@media only screen and (max-width: 600px) {
+	.jumbotron img {
+		width:100%
+	}
+}
+</style>
+
+{% endblock %}
+
+{% block content %}
+<div class="col-sm-1"></div>
+<div class="col-sm-10">
+
+	<div class="jumbotron" style="background:rgba(0,0,0,0.0); padding:0px" >
+		<div id='jumbotron_content' >
+
+				<div class='card text-center mb-2'>
+					<div class='card-header'>
+						<h5>CRISPResso2 run information</h5>
+						<ul class="nav nav-tabs justify-content-center card-header-tabs" id="log-tab" role="tablist">
+						  <li class="nav-item">
+						    <a class="nav-link active" id="log_aln-tab" data-toggle="tab" href="#log_aln" role="tab" aria-controls="log_aln" aria-selected="true">Alignment statistics</a>
+						  </li>
+						  <li class="nav-item">
+						    <a class="nav-link" id="log_params-tab" data-toggle="tab" href="#log_params" role="tab" aria-controls="log_params" aria-selected="false">Run Parameters</a>
+						  </li>
+						</ul>
+					</div>
+					<div class='card-body'>
+            <div class='tab-content'>
+  					  <div class="tab-pane fade show active" id="log_aln" role="tabpanel">
+    						<a href="{{report_data['fig_locs']['plot_1a']}}.pdf"><img src="{{report_data['fig_locs']['plot_1a']}}.png" width='40%' ></a>
+    						<label class="labelpadding">{{report_data['fig_captions']['plot_1a']}}</label>
+  						</div>
+  					  <div class="tab-pane fade text-left" id="log_params" role="tabpanel">
+                <p>CRISPResso version: {{report_data['run_data']['version']}}</p>
+                <p>Run completed: {{report_data['run_data']['end_time_string']}}</p>
+                <p>Amplicon sequence: <pre class='pre-scrollable'>{{report_data['run_data']['args']['amplicon_seq']}}</pre></p>
+                {% if report_data['run_data']['args']['guide_seq'] != '' %}
+                  <p>Guide sequence: <pre class='pre-scrollable'>{{report_data['run_data']['args']['guide_seq']}}</pre></p>
+                {% endif %}
+                <p>Command used: <pre class='pre-scrollable'>{{report_data['command_used']}}</pre></p>
+                <p>Parameters: <pre class='pre-scrollable'>{{report_data['params']}}</pre></p>
+  						</div>
+            </div>
+					</div>
+				</div>
+
+				<div class='card text-center mb-2'>
+					<div class='card-header'>
+						<h5>Allele assignments</h5>
+						<ul class="nav nav-tabs justify-content-center card-header-tabs" id="aln-tab" role="tablist">
+						  <li class="nav-item">
+						    <a class="nav-link active" id="aln_pie-tab" data-toggle="tab" href="#aln_pie" role="tab" aria-controls="aln_pie" aria-selected="true">Piechart</a>
+						  </li>
+						  <li class="nav-item">
+						    <a class="nav-link" id="aln_bar-tab" data-toggle="tab" href="#aln_bar" role="tab" aria-controls="aln_bar" aria-selected="false">Barplot</a>
+						  </li>
+						</ul>
+					</div>
+					<div class='card-body'>
+						<div class="tab-content" id="tabContent">
+						  <div class="tab-pane fade show active" id="aln_pie" role="tabpanel" aria-labelledby="aln_pie-tab">
+								<a href="{{report_data['fig_locs']['plot_1b']}}.pdf"><img src="{{report_data['fig_locs']['plot_1b']}}.png" width='50%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions']['plot_1b']}}</label>
+							</div>
+						  <div class="tab-pane fade" id="aln_bar" role="tabpanel" aria-labelledby="aln_bar-tab">
+								<a href="{{report_data['fig_locs']['plot_1c']}}.pdf"><img src="{{report_data['fig_locs']['plot_1c']}}.png" width='40%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions']['plot_1c']}}</label>
+							</div>
+						</div>
+
+					</div>
+				</div> {# end card #}
+
+        {# start global coding sequence report #}
+					{% if report_data['fig_locs']['plot_5a'] %}
+						<div class='card text-center mb-2'>
+							<div class='card-header'>
+    						<h5>Global frameshift analysis</h5>
+							</div>
+					<div class='card-body'>
+							<a href="{{report_data['fig_locs']['plot_5a']}}.pdf"><img src="{{report_data['fig_locs']['plot_5a']}}.png" width='70%' ></a>
+							<label class="labelpadding">{{report_data['fig_captions']['plot_5a']}}</label>
+						</div>
+					</div>
+					{% endif %}
+
+					{% if report_data['fig_locs']['plot_6a'] %}
+						<div class='card text-center mb-2'>
+							<div class='card-header'>
+    						<h5>Global frameshift mutagenesis profiles</h5>
+							</div>
+					<div class='card-body'>
+							<a href="{{report_data['fig_locs']['plot_6a']}}.pdf"><img src="{{report_data['fig_locs']['plot_6a']}}.png" width='95%' ></a>
+							<label class="labelpadding">{{report_data['fig_captions']['plot_6a']}}</label>
+						</div>
+					</div>
+					{% endif %}
+
+					{% if report_data['fig_locs']['plot_8a'] %}
+						<div class='card text-center mb-2'>
+							<div class='card-header'>
+    						<h5>Global splicing analysis</h5>
+							</div>
+					<div class='card-body'>
+							<a href="{{report_data['fig_locs']['plot_8a']}}.pdf"><img src="{{report_data['fig_locs']['plot_8a']}}.png" width='80%' ></a>
+							<label class="labelpadding">{{report_data['fig_captions']['plot_8a']}}</label>
+						</div>
+					</div>
+					{% endif %}
+          {# end of global coding sequence analysis #}
+
+
+					{% if report_data.amplicons|length == 1 %}
+          <div> {# if only one amplicon, just a normal div #}
+          {% else %}
+	        {# If there is more than one amplicon, print a navigation to show each amplicon #}
+					<p>Reads are aligned to each amplicon sequence separately. Quantification and visualization of these reads are shown for each amplicon below:</p>
+				<div id='amplicons-card' class='card text-center mb-2'>
+					<div class='card-header amp-header'>
+						<h5>Amplicons</h5>
+						<ul class="nav nav-tabs amp-header card-header-tabs" id="nav-tab" role="tablist">
+							{% for amplicon_name in report_data.amplicons %}
+								{% if loop.index0 == 0 %}
+								  <li class="nav-item">
+								    <a class="nav-link active" id="pills_{{amplicon_name}}_tab" data-toggle="tab" href="#div_{{amplicon_name}}" role="tab" aria-controls="div_{{amplicon_name}}" aria-selected="true">{{amplicon_name}}</a>
+								  </li>
+								{% else %}
+								<li class="nav-item">
+									<a class="nav-link" id="pills_{{amplicon_name}}_tab" data-toggle="tab" href="#div_{{amplicon_name}}" role="tab" aria-controls="div_{{amplicon_name}}" aria-selected="false">{{amplicon_name}}</a>
+								</li>
+								{% endif%}
+							{% endfor %}
+						</ul>
+				</div>
+					{% endif %} {# end if report contains more than one amplicon #}
+
+
+					{% if report_data.amplicons|length == 1 %} {# if only one amplicon, just a normal div #}
+					<div>
+					{% else %}
+					<div class="tab-content pt-3 pr-3 pl-3 amp-body card-body" id="nav-tabContent">
+					{% endif %}
+
+					{% for amplicon_name in report_data.amplicons %}
+						{% if report_data.amplicons|length == 1 %} {# if only one amplicon, just a normal div #}
+						<div>
+						{% elif loop.index0 == 0 %} {# if more than one amplicon, and the first, this is the active one #}
+						<div class="tab-pane fade show active" id="div_{{amplicon_name}}" role="tabpanel" aria-labelledby="pills_{{amplicon_name}}_tab">
+            <div class="d-none d-print-block"><h3>Reads aligning to {{amplicon_name}}</h3></div> {# this bit appears in print mode #}
+						{% else %} {# otherwise inactive tab #}
+						<div class="tab-pane fade" id="div_{{amplicon_name}}" role="tabpanel" aria-labelledby="pills_{{amplicon_name}}_tab">
+            <div class="d-none d-print-block"><h3>Reads aligning to {{amplicon_name}}</h3> </div>{# this bit appears in print mode #}
+						{% endif %}
+
+      				<div class='card text-center mb-2'>
+      					<div class='card-header'>
+									{% if report_data.amplicons|length == 1 %} {# if only one amplicon #}
+      						<h5>Nucleotide composition</h5>
+									{% else %}
+      						<h5>Nucleotide composition for {{amplicon_name}}</h5>
+									{% endif %}
+      					</div>
+      					<div class='card-body'>
+						{% if report_data['fig_locs'][amplicon_name]['plot_2a'] %}
+<div class='div_zoom_outer d-none d-md-block' style="height:100px;border:1px solid #DDDDDD;position:relative">
+  <div id="zoomview_nucs_{{amplicon_name}}" style="position:absolute;left:0;height:100%;width:100%;background-image: url({{report_data['fig_locs'][amplicon_name]['plot_2a']}}.png);background-size:auto 100%;background-repeat:no-repeat;"></div>
+  <div class="d-lg-none" style="overflow-x:scroll;overflow-y:hidden;position:absolute;width:100%;height:100%">
+    <img src="{{report_data['fig_locs'][amplicon_name]['plot_2a']}}.png" style='height:100%'>
+  </div>
+</div>
+<div style='position:relative;display:inline-block;width:95%'>
+  <a href="{{report_data['fig_locs'][amplicon_name]['plot_2a']}}.pdf">
+    <div id='zoomlens_nucs_{{amplicon_name}}' class="d-none d-lg-block" style='float: left;position: absolute;left: 0px;top: 0px;z-index: 1000;border: 1px solid #DDDDDD;height:100%;width:10%'></div>
+    <img id='tozoom_nucs_{{amplicon_name}}' src="{{report_data['fig_locs'][amplicon_name]['plot_2a']}}.png" width='100%' style='position:relative'>
+  </a>
+</div>
+
+<label class="labelpadding">
+  <span class='d-none d-md-block'>Hover your mouse over the bottom image to zoom in on a specific region.</span><br>
+  {{report_data['fig_captions'][amplicon_name]['plot_2a']}}
+</label>
+
+						<!--
+  								<div id="zoomview_nucs_{{amplicon_name}}" class='d-print-none' style="height:150px;width:95%;background-image: url({{report_data['fig_locs'][amplicon_name]['plot_2a']}}.png);background-size:auto 100%; position:relative"></div>
+
+  								<div style='position:relative;display:inline-block;width:95%'>
+  									<a href="{{report_data['fig_locs'][amplicon_name]['plot_2a']}}.pdf">
+  										<div id='zoomlens_nucs_{{amplicon_name}}' style='d-print-none; float: left;position: absolute;left: 0px;top: 0px;z-index: 1000;border: 1px solid #DDDDDD;height:100%;width:10%'></div>
+  										<img id='tozoom_nucs_{{amplicon_name}}' src="{{report_data['fig_locs'][amplicon_name]['plot_2a']}}.png" width='100%' style='position:relative'>
+  									</a>
+  								</div>
+								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_2a']}} Hover over the image to zoom in on that region.</label>
+              -->
+						{% endif %}
+
+						{% if report_data['fig_2b_names'][amplicon_name] %}
+  							<div>
+  								{% for fig_2b_name in report_data['fig_2b_names'][amplicon_name] %}
+  								<a href="{{report_data['fig_locs'][amplicon_name][fig_2b_name]}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name][fig_2b_name]}}.png" width='95%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name][fig_2b_name]}}</label>
+  								{% endfor %}
+  							</div>
+							{% endif %}
+            </div>
+          </div> {# end card #}
+
+  				<div class='card text-center mb-2'>
+  					<div class='card-header'>
+									{% if report_data.amplicons|length == 1 %} {# if only one amplicon #}
+      						<h5>Modification lengths</h5>
+									{% else %}
+      						<h5>Modification lengths for {{amplicon_name}}</h5>
+									{% endif %}
+  						<ul class="nav nav-tabs justify-content-center card-header-tabs" id="aln-tab" role="tablist">
+						{% if report_data['fig_locs'][amplicon_name]['plot_3a'] %}
+  						  <li class="nav-item">
+						  <a class="nav-link active" data-toggle="tab" href="#{{amplicon_name}}_3a" role="tab" aria-controls="{{amplicon_name}}_3a" aria-selected="true">Summary</a>
+  						  </li>
+            {% endif %}
+						{% if report_data['fig_locs'][amplicon_name]['plot_3b'] %}
+  						  <li class="nav-item">
+						  <a class="nav-link" data-toggle="tab" href="#{{amplicon_name}}_3b" role="tab" aria-controls="{{amplicon_name}}_3b" aria-selected="false">Indels</a>
+  						  </li>
+            {% endif %}
+  						</ul>
+  					</div>
+  					<div class='card-body'>
+  						<div class="tab-content" id="pills-tabContent">
+						{% if report_data['fig_locs'][amplicon_name]['plot_3a'] %}
+  						  <div class="tab-pane fade show active" id="{{amplicon_name}}_3a" role="tabpanel">
+  								<a href="{{report_data['fig_locs'][amplicon_name]['plot_3a']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_3a']}}.png" width='40%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_3a']}}</label>
+  							</div>
+						{% endif %}
+
+						{% if report_data['fig_locs'][amplicon_name]['plot_3b'] %}
+  						  <div class="tab-pane fade" id="{{amplicon_name}}_3b" role="tabpanel">
+  								<a href="{{report_data['fig_locs'][amplicon_name]['plot_3b']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_3b']}}.png" width='95%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_3b']}}</label>
+							</div>
+						{% endif %}
+  							</div>
+  						</div> {# end card_body #}
+  				</div> {# end card #}
+
+  				<div class='card text-center mb-2'>
+  					<div class='card-header'>
+							{% if report_data.amplicons|length == 1 %} {# if only one amplicon #}
+  						<h5>Indel characterization</h5>
+							{% else %}
+  						<h5>Indel characterization for {{amplicon_name}}</h5>
+							{% endif %}
+  						<ul class="nav nav-tabs justify-content-center card-header-tabs" id="aln-tab" role="tablist">
+						{% if report_data['fig_locs'][amplicon_name]['plot_4a'] %}
+  						  <li class="nav-item">
+						  <a class="nav-link" data-toggle="tab" href="#{{amplicon_name}}_4a" role="tab" aria-controls="{{amplicon_name}}_4a" aria-selected="true">All Modifications Combined</a>
+  						  </li>
+            {% endif %}
+						{% if report_data['fig_locs'][amplicon_name]['plot_4b'] %}
+  						  <li class="nav-item">
+						  <a class="nav-link active" data-toggle="tab" href="#{{amplicon_name}}_4b" role="tab" aria-controls="{{amplicon_name}}_4b" aria-selected="false">All Modifications by Type</a>
+  						  </li>
+            {% endif %}
+						{% if report_data['fig_locs'][amplicon_name]['plot_4c'] %}
+  						  <li class="nav-item">
+						  <a class="nav-link" data-toggle="tab" href="#{{amplicon_name}}_4c" role="tab" aria-controls="{{amplicon_name}}_4c" aria-selected="false">Modifications in Quantification Window</a>
+  						  </li>
+            {% endif %}
+						{% if report_data['fig_locs'][amplicon_name]['plot_4d'] %}
+  						  <li class="nav-item">
+						  <a class="nav-link" data-toggle="tab" href="#{{amplicon_name}}_4d" role="tab" aria-controls="{{amplicon_name}}_4d" aria-selected="false">Indel Lengths</a>
+  						  </li>
+            {% endif %}
+						{% if report_data['fig_locs'][amplicon_name]['plot_4e'] %}
+  						  <li class="nav-item">
+						  <a class="nav-link" data-toggle="tab" href="#{{amplicon_name}}_4e" role="tab" aria-controls="{{amplicon_name}}_4e" aria-selected="false">HDR reads aligned to Reference</a>
+  						  </li>
+            {% endif %}
+						{% if report_data['fig_locs'][amplicon_name]['plot_4f'] %}
+  						  <li class="nav-item">
+						  <a class="nav-link" data-toggle="tab" href="#{{amplicon_name}}_4f" role="tab" aria-controls="{{amplicon_name}}_4f" aria-selected="false">All reads aligned to Reference</a>
+  						  </li>
+            {% endif %}
+  						</ul>
+  					</div> {# end card head #}
+  					<div class='card-body'>
+  						<div class="tab-content" id="pills-tabContent">
+						{% if report_data['fig_locs'][amplicon_name]['plot_4a'] %}
+							  <div class="tab-pane fade" id="{{amplicon_name}}_4a" role="tabpanel">
+								<a href="{{report_data['fig_locs'][amplicon_name]['plot_4a']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_4a']}}.png" width='50%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_4a']}}</label>
+							</div>
+						{% endif %}
+						{% if report_data['fig_locs'][amplicon_name]['plot_4b'] %}
+							  <div class="tab-pane fade show active" id="{{amplicon_name}}_4b" role="tabpanel">
+								<a href="{{report_data['fig_locs'][amplicon_name]['plot_4b']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_4b']}}.png" width='50%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_4b']}}</label>
+							</div>
+						{% endif %}
+						{% if report_data['fig_locs'][amplicon_name]['plot_4c'] %}
+							  <div class="tab-pane fade" id="{{amplicon_name}}_4c" role="tabpanel">
+								<a href="{{report_data['fig_locs'][amplicon_name]['plot_4c']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_4c']}}.png" width='50%' ></a>
+
+								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_4c']}}</label>
+							</div>
+						{% endif %}
+
+						{% if report_data['fig_locs'][amplicon_name]['plot_4d'] %}
+							  <div class="tab-pane fade" id="{{amplicon_name}}_4d" role="tabpanel">
+								<a href="{{report_data['fig_locs'][amplicon_name]['plot_4d']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_4d']}}.png" width='100%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_4d']}}</label>
+							</div>
+						{% endif %}
+
+						{% if report_data['fig_locs'][amplicon_name]['plot_4e'] %}
+							  <div class="tab-pane fade" id="{{amplicon_name}}_4e" role="tabpanel">
+								<a href="{{report_data['fig_locs'][amplicon_name]['plot_4e']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_4e']}}.png" width='50%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_4e']}}</label>
+							</div>
+						{% endif %}
+
+						{% if report_data['fig_locs'][amplicon_name]['plot_4f'] %}
+							  <div class="tab-pane fade" id="{{amplicon_name}}_4f" role="tabpanel">
+								<a href="{{report_data['fig_locs'][amplicon_name]['plot_4f']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_4f']}}.png" width='50%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_4f']}}</label>
+							</div>
+						{% endif %}
+  							</div>
+  						</div> {# end card body #}
+  				</div> {# end card #}
+
+
+						{% if report_data['fig_locs'][amplicon_name]['plot_5'] %}
+							<div class='card text-center mb-2'>
+								<div class='card-header'>
+							{% if report_data.amplicons|length == 1 %} {# if only one amplicon #}
+									<h5>Frameshift analysis</h5>
+							{% else %}
+  						<h5>Frameshift analysis for {{amplicon_name}}</h5>
+							{% endif %}
+								</div>
+  					<div class='card-body'>
+								<a href="{{report_data['fig_locs'][amplicon_name]['plot_5']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_5']}}.png" width='70%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_5']}}</label>
+							</div>
+						</div>
+						{% endif %}
+
+						{% if report_data['fig_locs'][amplicon_name]['plot_6'] %}
+							<div class='card text-center mb-2'>
+								<div class='card-header'>
+							{% if report_data.amplicons|length == 1 %} {# if only one amplicon #}
+									<h5>Frameshift mutagenesis profiles</h5>
+							{% else %}
+  						<h5>Frameshift mutagenesis profiles for {{amplicon_name}}</h5>
+							{% endif %}
+								</div>
+  					<div class='card-body'>
+								<a href="{{report_data['fig_locs'][amplicon_name]['plot_6']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_6']}}.png" width='95%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_6']}}</label>
+							</div>
+						</div>
+						{% endif %}
+
+						{% if report_data['fig_locs'][amplicon_name]['plot_7'] %}
+							<div class='card text-center mb-2'>
+								<div class='card-header'>
+							{% if report_data.amplicons|length == 1 %} {# if only one amplicon #}
+									<h5>Non-coding mutations</h5>
+							{% else %}
+  						<h5>Coding mutations for {{amplicon_name}}</h5>
+							{% endif %}
+								</div>
+  					<div class='card-body'>
+								<a href="{{report_data['fig_locs'][amplicon_name]['plot_7']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_7']}}.png" width='40%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_7']}}</label>
+							</div>
+						</div>
+						{% endif %}
+
+						{% if report_data['fig_locs'][amplicon_name]['plot_8'] %}
+							<div class='card text-center mb-2'>
+								<div class='card-header'>
+							{% if report_data.amplicons|length == 1 %} {# if only one amplicon #}
+									<h5>Splicing</h5>
+							{% else %}
+  						<h5>Splicing for {{amplicon_name}}</h5>
+							{% endif %}
+								</div>
+  					<div class='card-body'>
+								<a href="{{report_data['fig_locs'][amplicon_name]['plot_8']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_8']}}.png" width='80%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_8']}}</label>
+							</div>
+						</div>
+						{% endif %}
+
+						{% if report_data['fig_9_names'][amplicon_name] %}
+				<div class='card text-center mb-2'>
+					<div class='card-header'>
+							{% if report_data.amplicons|length == 1 %} {# if only one amplicon #}
+						<h5>Allele plots</h5>
+							{% else %}
+  						<h5>Allele plots for {{amplicon_name}}</h5>
+							{% endif %}
+					</div>
+					<div class='card-body'>
+								{% for fig_9_name in report_data['fig_9_names'][amplicon_name] %}
+								<a href="{{report_data['fig_locs'][amplicon_name][fig_9_name]}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name][fig_9_name]}}.png" width='80%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name][fig_9_name]}}</label>
+								{% endfor %}
+								</label>
+							</div>
+						</div>
+						{% endif %}
+
+					{% if report_data['fig_locs'][amplicon_name]['plot_10a'] %}
+  				<div class='card text-center mb-2'>
+  					<div class='card-header'>
+							{% if report_data.amplicons|length == 1 %} {# if only one amplicon #}
+						<h5>Base editing</h5>
+							{% else %}
+  						<h5>Base editing for {{amplicon_name}}</h5>
+							{% endif %}
+  						<ul class="nav nav-tabs justify-content-center card-header-tabs" id="aln-tab" role="tablist">
+						{% if report_data['fig_locs'][amplicon_name]['plot_10a'] %}
+  						  <li class="nav-item">
+						  <a class="nav-link active" data-toggle="tab" href="#{{amplicon_name}}_10a" role="tab" aria-controls="{{amplicon_name}}_10a" aria-selected="true">Substitution Frequencies</a>
+  						  </li>
+            {% endif %}
+						{% if report_data['fig_locs'][amplicon_name]['plot_10d'] %}
+  						  <li class="nav-item">
+						  <a class="nav-link" data-toggle="tab" href="#{{amplicon_name}}_10d" role="tab" aria-controls="{{amplicon_name}}_10d" aria-selected="false">Nucleotide Frequencies</a>
+  						  </li>
+            {% endif %}
+						{% if report_data['fig_locs'][amplicon_name]['plot_10e'] %}
+  						  <li class="nav-item">
+						  <a class="nav-link" data-toggle="tab" href="#{{amplicon_name}}_10e" role="tab" aria-controls="{{amplicon_name}}_10e" aria-selected="false">Base Proportions</a>
+  						  </li>
+            {% endif %}
+						{% if report_data['fig_locs'][amplicon_name]['plot_10f'] %}
+  						  <li class="nav-item">
+						  <a class="nav-link" data-toggle="tab" href="#{{amplicon_name}}_10f" role="tab" aria-controls="{{amplicon_name}}_10f" aria-selected="false">Non-reference Bases</a>
+  						  </li>
+            {% endif %}
+  						</ul>
+  					</div>
+  					<div class='card-body'>
+  						<div class="tab-content" id="pills-tabContent">
+						{% if report_data['fig_locs'][amplicon_name]['plot_10c'] %}
+							  <div class="tab-pane fade show active" id="{{amplicon_name}}_10a" role="tabpanel">
+                <div class='mb-3'>
+  								<a href="{{report_data['fig_locs'][amplicon_name]['plot_10a']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_10a']}}.png" width='70%' ></a>
+  								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_10a']}}</label>
+                </div>
+                <div>
+								<a href="{{report_data['fig_locs'][amplicon_name]['plot_10b']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_10b']}}.png" width='35%' ></a>
+								<a href="{{report_data['fig_locs'][amplicon_name]['plot_10c']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_10c']}}.png" width='35%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_10b']}}</label>
+                </div>
+							</div>
+						{% else %}
+							  <div class="tab-pane fade show active" id="{{amplicon_name}}_10a" role="tabpanel">
+                <div class='mb-3'>
+								<a href="{{report_data['fig_locs'][amplicon_name]['plot_10a']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_10a']}}.png" width='70%' ></a>
+  								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_10a']}}</label>
+                </div>
+                <div>
+								<a href="{{report_data['fig_locs'][amplicon_name]['plot_10b']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_10b']}}.png" width='35%' ></a>
+								<label class="labelpadding">Figures 10a,b: Substitution frequencies across the entire amplicon (left) and in the quantification window (right).</label>
+              </div>
+							</div>
+						{% endif %}
+						{% if report_data['fig_locs'][amplicon_name]['plot_10d'] %}
+							  <div class="tab-pane fade" id="{{amplicon_name}}_10d" role="tabpanel">
+								<a href="{{report_data['fig_locs'][amplicon_name]['plot_10d']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_10d']}}.png" width='100%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_10d']}}</label>
+							</div>
+						{% endif %}
+						{% if report_data['fig_locs'][amplicon_name]['plot_10e'] %}
+							  <div class="tab-pane fade" id="{{amplicon_name}}_10e" role="tabpanel">
+								<a href="{{report_data['fig_locs'][amplicon_name]['plot_10e']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_10e']}}.png" width='100%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_10e']}}</label>
+							</div>
+						{% endif %}
+
+						{% if report_data['fig_locs'][amplicon_name]['plot_10f'] %}
+							  <div class="tab-pane fade" id="{{amplicon_name}}_10f" role="tabpanel">
+                  <div class='mb-4'>
+								<a href="{{report_data['fig_locs'][amplicon_name]['plot_10f']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_10f']}}.png" width='100%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_10f']}}</label>
+              </div>
+              <div>
+								<a href="{{report_data['fig_locs'][amplicon_name]['plot_10g']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_10g']}}.png" width='100%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_10g']}}</label>
+              </div>
+							</div>
+						{% endif %}
+
+  							</div>
+  						</div>
+  				</div> {# end card #}
+					{% endif %} {# end base editing card #}
+				</div> {# end this amplicon tab #} <!--end amp tab -->
+
+					{% endfor %}
+				</div> {# tab content #} <!-- end tab content -->
+
+			</div> <!-- end card -->
+
+
+	</div> {# jumbotron_content #} <!-- end jumbotron_content -->
+</div> {# jumbrotron #} <!-- end jumbotron -->
+
+</div> {# column #} <!-- end column -->
+
+<div class="col-sm-1"></div>
+{% endblock %}
+
+{% block foot %}
+<script>
+function updateZoom(e) {
+  /*prevent any other actions that may occur when moving over the image:*/
+  e.preventDefault();
+  var img = e.target.imgObj
+  var view = e.target.viewObj
+  var lens = e.target.lensObj
+
+  if (!lens.hasWidthSet)
+  {
+    view_height = $('#'+view.id).height()
+    view_width = $('#'+view.id).width()
+    img_height = $('#'+img.id).height()
+    img_width = $('#'+img.id).width()
+    lens_height = $('#'+lens.id).height()
+    lens_width = $('#'+lens.id).width()
+
+    new_width = img_height * view_width/view_height  //make up for loss of precision
+    $('#'+lens.id).outerWidth(new_width)
+    lens.hasWidthSet = true
+
+    cx = view_width / new_width
+
+    view.view_height = view_height
+    view.view_width = view_width
+    img.img_height = img_height
+    img.img_width = img_width
+    lens.lens_height = lens_height
+    lens.lens_width = new_width
+
+  }
+
+  var pos, x, y;
+  /*get the cursor's x and y positions:*/
+  pos = getCursorPos(e,img);
+  /*calculate the position of the lens:*/
+  x = pos.x - (lens.lens_width / 2);
+  /*prevent the lens from being positioned outside the image:*/
+  if (x > img.img_width - lens.lens_width) {x = img.img_width - lens.lens_width;;
+  }
+  if (x < 0) {x = 0;}
+  lens.style.left = x + "px";
+  view.style.backgroundPosition = "-" + (x * cx) + "px 0px";
+}
+
+function getCursorPos(e,img) {
+  var a, x = 0, y = 0;
+  e = e || window.event;
+  /*get the x and y positions of the image:*/
+  a = img.getBoundingClientRect();
+  /*calculate the cursor's x and y coordinates, relative to the image:*/
+  x = e.pageX - a.left;
+  y = e.pageY - a.top;
+  /*consider any page scrolling:*/
+  x = x - window.pageXOffset;
+  y = y - window.pageYOffset;
+  return {x : x, y : y};
+}
+
+	{% for amplicon_name in report_data.amplicons %}
+		{% if report_data['fig_locs'][amplicon_name]['plot_2a'] %}
+		view = document.getElementById('zoomview_nucs_{{amplicon_name}}');
+		img = document.getElementById('tozoom_nucs_{{amplicon_name}}');
+		lens = document.getElementById('zoomlens_nucs_{{amplicon_name}}')
+
+		img.viewObj = view
+		img.lensObj = lens
+		img.imgObj = img
+
+		lens.viewObj = view
+		lens.lensObj = lens
+		lens.imgObj = img
+
+		lens.addEventListener("mousemove", updateZoom);
+		img.addEventListener("mousemove", updateZoom);
+		/*and also for touch screens:*/
+		lens.addEventListener("touchmove", updateZoom);
+		img.addEventListener("touchmove", updateZoom);
+
+		{% endif %}
+	{% endfor %}
+	</script>
+{% endblock %}

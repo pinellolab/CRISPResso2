@@ -1,7 +1,7 @@
 '''
 CRISPResso2 - Kendell Clement and Luca Pinello 2018
 Software pipeline for the analysis of genome editing outcomes from deep sequencing data
-(c) 2017 The General Hospital Corporation. All Rights Reserved.
+(c) 2018 The General Hospital Corporation. All Rights Reserved.
 '''
 
 import argparse
@@ -27,34 +27,48 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-class CRISPRessoException(Exception):
+__version__ = "2.0.13b"
+
+###EXCEPTIONS############################
+class FlashException(Exception):
     pass
-class BadParameterException(Exception):
+
+class TrimmomaticException(Exception):
     pass
-class OutputFolderIncompleteException(Exception):
+
+class NoReadsAlignedException(Exception):
     pass
+
+class AlignmentException(Exception):
+    pass
+
+class SgRNASequenceException(Exception):
+    pass
+
 class NTException(Exception):
     pass
 
-__version__ = "2.0.09b"
+class ExonSequenceException(Exception):
+    pass
 
-##dict to lookup abbreviated params
-crispresso_options_lookup = {
-    'r1':'fastq_r1',
-    'r2':'fastq_r2',
-    'a':'amplicon_seq',
-    'an':'amplicon_name',
-    'amas':'amplicon_min_alignment_score',
-    'g':'guide_seq',
-    'e':'expected_hdr_amplicon_seq',
-    'c':'coding_seq',
-    'q':'min_average_read_quality',
-    's':'min_single_bp_quality',
-    'n':'name',
-    'o':'output_folder',
-    'w':'quantification_window_size',
-    'wc':'quantification_window_center',
-    }
+class DuplicateSequenceIdException(Exception):
+    pass
+
+class NoReadsAfterQualityFiltering(Exception):
+    pass
+
+class BadParameterException(Exception):
+    pass
+
+class AutoException(Exception):
+    pass
+
+class OutputFolderIncompleteException(Exception):
+    pass
+
+
+#########################################
+
 
 
 def getCRISPRessoArgParser(_ROOT, parserTitle = "CRISPResso Parameters",requiredParams={}):
@@ -74,9 +88,9 @@ def getCRISPRessoArgParser(_ROOT, parserTitle = "CRISPResso Parameters",required
     parser.add_argument('-q','--min_average_read_quality', type=int, help='Minimum average quality score (phred33) to keep a read', default=0)
     parser.add_argument('-s','--min_single_bp_quality', type=int, help='Minimum single bp score (phred33) to keep a read', default=0)
     parser.add_argument('--min_bp_quality_or_N', type=int, help='Bases with a quality score (phred33) less than this value will be set to "N"', default=0)
-    parser.add_argument('-n','--name',  help='Output name', default='')
     parser.add_argument('--file_prefix',  help='File prefix for output plots and tables', default='')
-    parser.add_argument('-o','--output_folder',  help='', default='')
+    parser.add_argument('-n','--name',  help='Output name of the report (default: the names is obtained from the filename of the fastq file/s used in input)', default='')
+    parser.add_argument('-o','--output_folder',  help='Output folder to use for the analysis (default: current folder)', default='')
 
     ## read preprocessing params
     parser.add_argument('--split_paired_end',help='Splits a single fastq file containing paired end reads in two files before running CRISPResso',action='store_true')
@@ -100,8 +114,8 @@ def getCRISPRessoArgParser(_ROOT, parserTitle = "CRISPResso Parameters",required
     parser.add_argument('--needleman_wunsch_gap_extend',type=int,help='Gap extend option for Needleman-Wunsch alignment',default=-2)
     parser.add_argument('--needleman_wunsch_gap_incentive',type=int,help='Gap incentive value for inserting indels at cut sites',default=1)
     parser.add_argument('--needleman_wunsch_aln_matrix_loc',type=str,help='Location of the matrix specifying substitution scores in the NCBI format (see ftp://ftp.ncbi.nih.gov/blast/matrices/)',default='EDNAFULL')
-    parser.add_argument('--aln_seed_count',type=int,default=4,help=argparse.SUPPRESS)#help='Number of seeds to test whether read is forward or reverse',default=4)
-    parser.add_argument('--aln_seed_len',type=int,default=6,help=argparse.SUPPRESS)#help='Length of seeds to test whether read is forward or reverse',default=6)
+    parser.add_argument('--aln_seed_count',type=int,default=5,help=argparse.SUPPRESS)#help='Number of seeds to test whether read is forward or reverse',default=5)
+    parser.add_argument('--aln_seed_len',type=int,default=10,help=argparse.SUPPRESS)#help='Length of seeds to test whether read is forward or reverse',default=10)
     parser.add_argument('--aln_seed_min',type=int,default=2,help=argparse.SUPPRESS)#help='number of seeds that must match to call the read forward/reverse',default=2)
 
     parser.add_argument('--keep_intermediate',help='Keep all the  intermediate files',action='store_true')
@@ -122,13 +136,74 @@ def getCRISPRessoArgParser(_ROOT, parserTitle = "CRISPResso Parameters",required
     parser.add_argument('--debug', help='Show debug messages', action='store_true')
     parser.add_argument('--no_rerun', help="Don't rerun CRISPResso2 if a run using the same parameters has already been finished.", action='store_true')
     parser.add_argument('--suppress_report',  help='Suppress output report', action='store_true')
-    parser.add_argument('--write_cleaned_report', action='store_true',help=argparse.SUPPRESS)#trims working directories from output in report (for web access) 
+    parser.add_argument('--write_cleaned_report', action='store_true',help=argparse.SUPPRESS)#trims working directories from output in report (for web access)
 
 
     #depreciated params
-    parser.add_argument('--save_also_png',default=False,help=argparse.SUPPRESS) #help='Save also .png images additionally to .pdf files') #depreciated
+    parser.add_argument('--save_also_png',default=False,help=argparse.SUPPRESS) #help='Save also .png images in addition to .pdf files') #depreciated -- now pngs are automatically created. Pngs can be suppressed by '--suppress_report'
 
     return parser
+
+def get_crispresso_options():
+    parser = getCRISPRessoArgParser(".", parserTitle = "Temp Params",requiredParams={})
+    crispresso_options = set()
+    d = parser.__dict__['_option_string_actions']
+    for key in d.keys():
+        d2 = d[key].__dict__['dest']
+        crispresso_options.add(d2)
+
+    return crispresso_options
+
+def get_crispresso_options_lookup():
+##dict to lookup abbreviated params
+#    crispresso_options_lookup = {
+#    'r1':'fastq_r1',
+#    'r2':'fastq_r2',
+#    'a':'amplicon_seq',
+#    'an':'amplicon_name',
+#    .....
+#}
+    crispresso_options_lookup = {}
+    parser = getCRISPRessoArgParser(".", parserTitle = "Temp Params",requiredParams={})
+    d = parser.__dict__['_option_string_actions']
+    for key in d.keys():
+        d2 = d[key].__dict__['dest']
+        key_sub = re.sub("^-*","",key)
+        if key_sub != d2:
+            crispresso_options_lookup[key_sub] = d2
+    return crispresso_options_lookup
+
+
+def propagate_crispresso_options(cmd,options,params):
+####
+# cmd - the command to run
+# options - list of options to propagate e.g. crispresso options
+# params - arguments given to this program
+
+    for option in options :
+        if option:
+            if option in params:
+                val = getattr(params,option)
+                if val is None:
+                    pass
+                elif str(val) == "True":
+                    cmd+=' --%s' % option
+                elif str(val) =="False":
+                    pass
+                elif type(val)==str:
+                    if val != "":
+                        if " " in val or "-" in val:
+                            cmd+=' --%s "%s"' % (option,str(val)) # quotes for options with spaces
+                        else:
+                            cmd+=' --%s %s' % (option,str(val))
+                elif type(val)==bool:
+                    if val:
+                        cmd+=' --%s' % option
+                else:
+                    cmd+=' --%s %s' % (option,str(val))
+    return cmd
+
+
 
 #######
 # Nucleotide functions
@@ -357,7 +432,6 @@ def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,max_paired_end
 
     return amplicon_seq_arr
 
-
 ######
 # allele modification functions
 ######
@@ -545,7 +619,7 @@ def get_crispresso_header(description,header_str):
         for i in range(len(logo_lines))[::-1]:
             output_line = (pad_string + logo_lines[i].ljust(max_logo_width) + pad_string).center(term_width) + "\n" + output_line
 
-    output_line += '\n'+('[CRISPresso version ' + __version__ + ']').center(term_width) + '\n' + ('[Kendell Clement and Luca Pinello 2018]').center(term_width) + "\n" + ('[For support, contact kclement@mgh.harvard.edu]').center(term_width) + "\n"
+    output_line += '\n'+('[CRISPresso version ' + __version__ + ']').center(term_width) + '\n' + ('[Kendell Clement and Luca Pinello 2018]').center(term_width) + "\n" + ('[For support contact kclement@mgh.harvard.edu]').center(term_width) + "\n"
 
     description_str = ""
     for str in description:

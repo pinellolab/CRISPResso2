@@ -1,7 +1,7 @@
 '''
 CRISPResso2 - Kendell Clement and Luca Pinello 2018
 Software pipeline for the analysis of genome editing outcomes from deep sequencing data
-(c) 2017 The General Hospital Corporation. All Rights Reserved.
+(c) 2018 The General Hospital Corporation. All Rights Reserved.
 '''
 
 import numpy as np
@@ -409,8 +409,8 @@ def plot_conversion_map(nuc_pct_df,fig_filename_root,conversion_nuc_from,convers
     #title
     plt.title('%s to %s Conversion Percent'%(from_nuc,to_nuc))
 
-    #throws error here in tight_layout...
-    plt.tight_layout()
+    #throws error here in tight_layout... if the selected reference is too small  (e.g. 5bp)
+#    plt.tight_layout()
     fig.savefig(fig_filename_root+'.pdf',bbox_inches='tight')
     if save_also_png:
         fig.savefig(fig_filename_root+'.png',bbox_inches='tight',pad=1)
@@ -982,6 +982,7 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
 
     #ref_seq_around_cut=reference_seq[max(0,cut_point-plot_nuc_len/2+1):min(len(reference_seq),cut_point+plot_nuc_len/2+1)]
 
+#    print('per element anoot kws: ' + per_element_annot_kws)
     if len(per_element_annot_kws) > 1:
         per_element_annot_kws=np.vstack(per_element_annot_kws[::-1])
     else:
@@ -1033,9 +1034,6 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
 
     #print lines
 
-    #cut point vertical line
-    if base_editor_output is False:
-        ax_hm.vlines([plot_nuc_len/2],*ax_hm.get_ylim(),linestyles='dashed')
 
     #create boxes for ins
     for idx,lss in insertion_dict.iteritems():
@@ -1045,6 +1043,10 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
 
             ax_hm.hlines(N_ROWS-idx-1,ls[0],ls[1],color='red',linewidths=3)
             ax_hm.hlines(N_ROWS-idx,ls[0],ls[1],color='red',linewidths=3)
+
+    #cut point vertical line
+    if base_editor_output is False:
+        ax_hm.vlines([plot_nuc_len/2],*ax_hm.get_ylim(),linestyles='dashed')
 
 
     ax_hm_ref.yaxis.tick_right()
