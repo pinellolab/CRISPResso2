@@ -13,6 +13,7 @@ import glob
 import argparse
 import re
 from CRISPResso import CRISPRessoShared
+from CRISPResso import CRISPRessoMultiProcessing
 import traceback
 
 
@@ -86,7 +87,7 @@ def main():
         parser.add_argument('-n1','--sample_1_name',  help='Sample 1 name', default='Sample_1')
         parser.add_argument('-n2','--sample_2_name',  help='Sample 2 name', default='Sample_2')
         parser.add_argument('-o','--output_folder',  help='', default='')
-        parser.add_argument('-p','--n_processes',type=int, help='Number of processes to use for CRISPResso comparison')
+        parser.add_argument('-p','--n_processes',type=int, help='Number of processes to use for CRISPResso comparison',default=1)
         parser.add_argument('--save_also_png',help='Save also .png images additionally to .pdf files',action='store_true')
         parser.add_argument('--debug', help='Show debug messages', action='store_true')
 
