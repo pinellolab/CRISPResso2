@@ -27,7 +27,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.0.13b"
+__version__ = "2.0.14b"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -96,7 +96,7 @@ def getCRISPRessoArgParser(_ROOT, parserTitle = "CRISPResso Parameters",required
     parser.add_argument('--split_paired_end',help='Splits a single fastq file containing paired end reads in two files before running CRISPResso',action='store_true')
     parser.add_argument('--trim_sequences',help='Enable the trimming of Illumina adapters with Trimmomatic',action='store_true')
     parser.add_argument('--trimmomatic_options_string', type=str, help='Override options for Trimmomatic',default=' ILLUMINACLIP:%s:0:90:10:0:true MINLEN:40' % os.path.join(_ROOT, 'data', 'NexteraPE-PE.fa'))
-    parser.add_argument('--min_paired_end_reads_overlap',  type=int, help='Parameter for the FLASH read merging step. Minimum required overlap length between two reads to provide a confident overlap. ', default=4)
+    parser.add_argument('--min_paired_end_reads_overlap',  type=int, help='Parameter for the FLASH read merging step. Minimum required overlap length between two reads to provide a confident overlap. ', default=None)
     parser.add_argument('--max_paired_end_reads_overlap',  type=int, help='Parameter for the FLASH merging step.  Maximum overlap length expected in approximately 90%% of read pairs. Please see the FLASH manual for more information.', default=None)
 
     parser.add_argument('-w', '--quantification_window_size','--window_around_sgrna', type=int, help='Defines the size of the quantification window(s) centered around the position specified by the "--cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence (--sgRNA). Indels overlapping this quantification window are included in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered.', default=1)
@@ -363,7 +363,9 @@ def get_most_frequent_reads(fastq_r1,fastq_r2,number_of_reads_to_consider,max_pa
         max_overlap_param = ""
         if max_paired_end_reads_overlap:
             max_overlap_param = "--max-overlap="+str(max_paired_end_reads_overlap)
-        file_generation_command = "bash -c 'paste <(%s %s) <(%s %s)' | head -n %d | paste - - - - | awk -v OFS=\"\\n\" -v FS=\"\\t\" '{print($1,$3,$5,$7,$2,$4,$6,$8)}' | flash - --interleaved-input %s --min-overlap %d --to-stdout 2>/dev/null " %(view_cmd_1,fastq_r1,view_cmd_2,fastq_r2,number_of_reads_to_consider,max_overlap_param,min_paired_end_reads_overlap)
+        if min_paired_end_reads_overlap:
+            min_overlap_param = "--min-overlap="+str(min_paired_end_reads_overlap)
+        file_generation_command = "bash -c 'paste <(%s %s) <(%s %s)' | head -n %d | paste - - - - | awk -v OFS=\"\\n\" -v FS=\"\\t\" '{print($1,$3,$5,$7,$2,$4,$6,$8)}' | flash - --interleaved-input %s %s --to-stdout 2>/dev/null " %(view_cmd_1,fastq_r1,view_cmd_2,fastq_r2,number_of_reads_to_consider,max_overlap_param,min_overlap_param)
     count_frequent_cmd = file_generation_command + " | awk '((NR-2)%4==0){print $1}' | sort | uniq -c | sort -nr "
     def default_sigpipe():
         signal.signal(signal.SIGPIPE, signal.SIG_DFL)

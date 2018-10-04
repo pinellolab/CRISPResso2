@@ -375,16 +375,19 @@ def main():
                  info('Done!')
 
 
-             max_overlap_param = 100
+             max_overlap_string = ""
+             min_overlap_string = ""
              if args.max_paired_end_reads_overlap:
-                 max_overlap_param = args.max_paired_end_reads_overlap
+                 max_overlap_string = "--max-overlap " + str(args.max_paired_end_reads_overlap)
+             if args.min_paired_end_reads_overlap:
+                 min_overlap_string = args.min_paired_end_reads_overlap
              #Merging with Flash
              info('Merging paired sequences with Flash...')
-             cmd='flash %s %s --min-overlap %d --max-overlap %d -z -d %s >>%s 2>&1' %\
+             cmd='flash %s %s %s %s -z -d %s >>%s 2>&1' %\
              (output_forward_paired_filename,
               output_reverse_paired_filename,
-              args.min_paired_end_reads_overlap,
-              max_overlap_param,
+              max_overlap_string,
+              max_overlap_string,
               OUTPUT_DIRECTORY,log_filename)
 
              FLASH_STATUS=sb.call(cmd,shell=True)

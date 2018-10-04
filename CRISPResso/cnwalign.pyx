@@ -91,6 +91,11 @@ def global_align(char* seqj, char* seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
     cdef PyObject *ai
     cdef PyObject *aj
 
+    #create 3 arrays of scores and 3 arrays of pointers
+    # M array - best alignment so far ending with a match
+    # I array - best alignment so far ending with a gap in Read (J) (insertion in ref, deletion in read)
+    # J array - best alignment so far ending with a gap in Ref (I) (deletion in ref, insertion in read)
+
     cdef int [:,:] mScore = np.empty((max_i + 1, max_j + 1), dtype=np.dtype("i"))
     cdef int [:,:] iScore = np.empty((max_i + 1, max_j + 1), dtype=np.dtype("i"))
     cdef int [:,:] jScore = np.empty((max_i + 1, max_j + 1), dtype=np.dtype("i"))
@@ -152,7 +157,8 @@ def global_align(char* seqj, char* seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
                     iPointer[i,j] = IARRAY
 
             jFromMVal = gap_open + mScore[i - 1, j] + gap_incentive[i-1]
-            jExtendVal = gap_extend + jScore[i - 1, j] + gap_incentive[i-1]
+	    #no gap incentive here -- J already got the gap incentive when it transitioned from M, so don't add it again if we're extending.
+            jExtendVal = gap_extend + jScore[i - 1, j]
             if jFromMVal > jExtendVal:
                     jScore[i,j] =  jFromMVal
                     jPointer[i,j] = MARRAY
@@ -197,7 +203,7 @@ def global_align(char* seqj, char* seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
                 iPointer[i,j] = IARRAY
 
         jFromMVal = gap_extend + mScore[i - 1, j] + gap_incentive[i-1]
-        jExtendVal = gap_extend + jScore[i - 1, j] + gap_incentive[i-1]
+        jExtendVal = gap_extend + jScore[i - 1, j]
         if jFromMVal > jExtendVal:
                 jScore[i,j] =  jFromMVal
                 jPointer[i,j] = MARRAY
@@ -240,7 +246,7 @@ def global_align(char* seqj, char* seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
                 iPointer[i,j] = IARRAY
 
         jFromMVal = gap_extend + mScore[i - 1, j] + gap_incentive[i-1]
-        jExtendVal = gap_extend + jScore[i - 1, j] + gap_incentive[i-1]
+        jExtendVal = gap_extend + jScore[i - 1, j]
         if jFromMVal > jExtendVal:
                 jScore[i,j] =  jFromMVal
                 jPointer[i,j] = MARRAY

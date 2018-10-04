@@ -544,12 +544,15 @@ def main():
         found_coding_seq = [False]*len(coding_seqs)
 
         max_amplicon_len = 0 #for flash
+        min_amplicon_len = 99**99 #for flash
 
         for idx,seq in enumerate(amplicon_seq_arr):
             this_seq = seq.strip().upper()
             this_seq_length = len(this_seq)
             if this_seq_length > max_amplicon_len:
                 max_amplicon_len = this_seq_length
+            if this_seq_length < min_amplicon_len:
+                min_amplicon_len = this_seq_length
 
             this_name = 'Reference'+str(idx)
             if idx < len(amplicon_name_arr):
@@ -946,16 +949,30 @@ def main():
 
             #Merging with Flash
             info('Merging paired sequences with Flash...')
-            max_overlap = max_amplicon_len
+            expected_max_overlap=2*avg_read_length - max_amplicon_len
+            expected_min_overlap=2*avg_read_length - min_amplicon_len
+            indel_overlap_tolerance = 10 # magic number bound on how many bp inserted/deleted in ~90% of reads (for flash)
+            #max overlap is either the entire read (avg_read_length) or the expected amplicon length + indel tolerance
+            max_overlap = min(avg_read_length, expected_max_overlap+indel_overlap_tolerance)
+            #min overlap is either 4bp (as in crispresso1) or the expected amplicon length - indel tolerance
+            min_overlap = max(4,expected_min_overlap-indel_overlap_tolerance)
             if args.max_paired_end_reads_overlap:
                 max_overlap = args.max_paired_end_reads_overlap
-            cmd='flash %s %s --min-overlap %d --max-overlap %d -f %d -z -d %s >>%s 2>&1' %\
+            if args.min_paired_end_reads_overlap:
+                min_overlap = args.min_paired_end_reads_overlap
+            cmd='flash %s %s --min-overlap %d --max-overlap %d -z -d %s >>%s 2>&1' %\
             (output_forward_paired_filename,
                  output_reverse_paired_filename,
-                 args.min_paired_end_reads_overlap,
-                 max_amplicon_len,
-                 avg_read_length,
+                 min_overlap,
+                 max_overlap,
                  OUTPUT_DIRECTORY,log_filename)
+            #cmd='flash %s %s --min-overlap %d --max-overlap %d -f %d -z -d %s >>%s 2>&1' %\
+            #(output_forward_paired_filename,
+            #     output_reverse_paired_filename,
+            #     args.min_paired_end_reads_overlap,
+            #     max_amplicon_len,
+            #     avg_read_length,
+            #     OUTPUT_DIRECTORY,log_filename)
 #            cmd='flash %s %s --min-overlap %d -f %d -r %d -s %d  -z -d %s >>%s 2>&1' %\
 #            (output_forward_paired_filename,
 #                 output_reverse_paired_filename,
@@ -983,8 +1000,6 @@ def main():
         N_READS_AFTER_PREPROCESSING=get_n_reads_fastq(processed_output_filename)
         if N_READS_AFTER_PREPROCESSING == 0:
             raise NoReadsAfterQualityFiltering('No reads in input or no reads survived the average or single bp quality filtering.')
-
-
 
         info('Aligning sequences...')
 
