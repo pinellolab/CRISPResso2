@@ -74,10 +74,11 @@ def make_report(run_data,crispresso_report_file,crispresso_folder,_ROOT):
 
         #fig 2b's
         amplicon_fig_2b_names = []
-        for idx,plot_2b_root in enumerate(run_data['refs'][amplicon_name]['plot_2b_roots']):
-            fig_name = "plot_2b_" + str(idx)
-            add_fig_if_exists(fig_name,plot_2b_root,'Figure ' + fig_name + ' sgRNA ' + str(idx+1),run_data['refs'][amplicon_name]['plot_2b_captions'][idx],
-                amplicon_fig_2b_names,amplicon_fig_locs,amplicon_fig_titles,amplicon_fig_captions)
+        if 'plot_2b_roots' in run_data['refs'][amplicon_name]:
+            for idx,plot_2b_root in enumerate(run_data['refs'][amplicon_name]['plot_2b_roots']):
+                fig_name = "plot_2b_" + str(idx)
+                add_fig_if_exists(fig_name,plot_2b_root,'Figure ' + fig_name + ' sgRNA ' + str(idx+1),run_data['refs'][amplicon_name]['plot_2b_captions'][idx],
+                    amplicon_fig_2b_names,amplicon_fig_locs,amplicon_fig_titles,amplicon_fig_captions)
 
 
         for fig in ['2a','3a','3b','4a','4b','4c','4d','4e','4f','5','6','7','8','10a','10b','10c','10d','10e','10f','10g']:
@@ -88,10 +89,11 @@ def make_report(run_data,crispresso_report_file,crispresso_folder,_ROOT):
 
         #fig 9's
         amplicon_fig_9_names = []
-        for idx,plot_9_root in enumerate(run_data['refs'][amplicon_name]['plot_9_roots']):
-            fig_name = "plot_9_" + str(idx)
-            add_fig_if_exists(fig_name,plot_9_root,'Figure ' + fig_name + ' sgRNA ' + str(idx+1),run_data['refs'][amplicon_name]['plot_9_captions'][idx],
-                amplicon_fig_9_names,amplicon_fig_locs,amplicon_fig_titles,amplicon_fig_captions)
+        if 'plot_9_roots' in run_data['refs'][amplicon_name]:
+            for idx,plot_9_root in enumerate(run_data['refs'][amplicon_name]['plot_9_roots']):
+                fig_name = "plot_9_" + str(idx)
+                add_fig_if_exists(fig_name,plot_9_root,'Figure ' + fig_name + ' sgRNA ' + str(idx+1),run_data['refs'][amplicon_name]['plot_9_captions'][idx],
+                    amplicon_fig_9_names,amplicon_fig_locs,amplicon_fig_titles,amplicon_fig_captions)
 
 
 
@@ -119,3 +121,13 @@ def make_report(run_data,crispresso_report_file,crispresso_folder,_ROOT):
     outfile = open(crispresso_report_file,'w')
     outfile.write(template.render(report_data=report_data))
     outfile.close()
+
+def make_batch_report_from_folder(batch_folder,_ROOT):
+    info_file = os.path.join(crispresso_folder,'CRISPResso2_info.pickle')
+    if not os.path.exists(info_file):
+        raise Exception('CRISPResso run is not complete. Cannot create report for run at ' + crispresso_folder)
+
+    run_data = cp.load(open(info_file,'rb'))
+    make_report(run_data,crispresso_report_file,crispresso_folder,_ROOT)
+
+def make_report(run_data,crispresso_report_file,crispresso_folder,_ROOT):

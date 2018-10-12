@@ -249,7 +249,7 @@ def main():
         args = parser.parse_args()
 
         crispresso_options = CRISPRessoShared.get_crispresso_options()
-        options_to_ignore = set(['fastq_r1','fastq_r2','amplicon_seq','amplicon_name','output_folder'])
+        options_to_ignore = set(['fastq_r1','fastq_r2','amplicon_seq','amplicon_name','output_folder','name'])
         crispresso_options_for_pooled = list(crispresso_options-options_to_ignore)
 
 
@@ -725,8 +725,12 @@ def main():
 
             df_regions=pd.DataFrame(coordinates,columns=['chr_id','bpstart','bpend','fastq_file','n_reads'])
 
-            df_regions=df_regions.convert_objects(convert_numeric=True)
             df_regions.dropna(inplace=True) #remove regions in chrUn
+
+            df_regions['bpstart'] = pd.to_numeric(df_regions['bpstart'])
+            df_regions['bpend'] = pd.to_numeric(df_regions['bpend'])
+            df_regions['n_reads'] = pd.to_numeric(df_regions['n_reads'])
+
             df_regions.bpstart=df_regions.bpstart.astype(int)
             df_regions.bpend=df_regions.bpend.astype(int)
 
@@ -753,12 +757,25 @@ def main():
             info('Parsing the demultiplexed files and extracting locations and reference sequences...')
             coordinates=[]
             for region in glob.glob(os.path.join(MAPPED_REGIONS,'REGION*.fastq.gz')):
-                coordinates.append(os.path.basename(region).replace('.fastq.gz','').split('_')[1:4]+[region,get_n_reads_fastq(region)])
+                coord_from_filename = os.path.basename(region).replace('.fastq.gz','').split('_')[1:4]
+                print('ccord from filename: ' + str(coord_from_filename))
+                if not (coord_from_filename[1].isdigit() and coord_from_filename[2].isdigit()):
+                    warn('Skipping region [%s] because the region name cannot be parsed\n'% region)
+                    continue
+                coordinates.append(coord_from_filename+[region,get_n_reads_fastq(region)])
 
             df_regions=pd.DataFrame(coordinates,columns=['chr_id','bpstart','bpend','fastq_file','n_reads'])
 
-            df_regions=df_regions.convert_objects(convert_numeric=True)
             df_regions.dropna(inplace=True) #remove regions in chrUn
+
+            print('debug 766')
+            print(df_regions)
+            print(df_regions.iloc[550:570,])
+
+            df_regions['bpstart'] = pd.to_numeric(df_regions['bpstart'])
+            df_regions['bpend'] = pd.to_numeric(df_regions['bpend'])
+            df_regions['n_reads'] = pd.to_numeric(df_regions['n_reads'])
+
             df_regions.bpstart=df_regions.bpstart.astype(int)
             df_regions.bpend=df_regions.bpend.astype(int)
             df_regions['sequence']=df_regions.apply(lambda row: get_region_from_fa(row.chr_id,row.bpstart,row.bpend,uncompressed_reference),axis=1)
@@ -815,13 +832,17 @@ def main():
 
                 try:
                     quantification_file,amplicon_names,amplicon_info=CRISPRessoShared.check_output_folder(_jp(folder_name))
+                    print('debug 821')
+                    print('amplicon_info: ' + str(amplicon_info))
                     for amplicon_name in amplicon_names:
                         N_TOTAL = float(amplicon_info[amplicon_name]['Total'])
                         N_UNMODIFIED = float(amplicon_info[amplicon_name]['Unmodified'])
                         N_MODIFIED = float(amplicon_info[amplicon_name]['Modified'])
                         quantification_summary.append([run_name,amplicon_name,N_UNMODIFIED/N_TOTAL*100,N_MODIFIED/N_TOTAL*100,N_TOTAL,row.n_reads])
+                        print('debug 825')
+                        print(quantification_summary)
                 except CRISPRessoShared.OutputFolderIncompleteException as e:
-                    quantification_summary.append([idx,"",np.nan,np.nan,np.nan,row.n_reads])
+                    quantification_summary.append([run_name,"",np.nan,np.nan,np.nan,row.n_reads])
                     warn('Skipping the folder %s: not enough reads, incomplete, or empty folder.'% folder_name)
 
 

@@ -104,6 +104,7 @@ def main():
 
         #batch specific params
         parser.add_argument('-bs','--batch_settings', type=str, help='Settings file for batch. Must be tab-separated text file. The header row contains CRISPResso parameters (e.g., fastq_r1, fastq_r2, amplicon_seq, and other optional parameters). Each following row sets parameters for an additional batch.',required=True)
+        parser.add_argument('--skip_failed',  help='Continue with batch analysis even if one sample fails',action='store_true')
         parser.add_argument('-p','--n_processes',type=int, help='Specify the number of processes to use for quantification.\
         Please use with caution since increasing this parameter will increase the memory required to run CRISPResso.',default=1)
         parser.add_argument('-bo','--batch_output_folder',  help='Directory where batch analysis output will be stored')
@@ -233,7 +234,7 @@ def main():
             crispresso_cmd=propagate_options(crispresso_cmd,crispresso_options_for_batch,batch_params,idx)
             crispresso_cmds.append(crispresso_cmd)
 
-        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'batch')
+        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'batch',args.skip_failed)
 
         run_datas = [] #crispresso2 info from each row
 
@@ -265,6 +266,10 @@ def main():
                     file_prefix = row['file_prefix']
                     folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
                     run_data = run_datas[idx]
+
+                    if 'nuc_freq_filename' not in run_data['refs'][amplicon_name]:
+                        info("Skipping the amplicon '%s' in folder '%s'. Cannot find nucleotide information."%(amplicon_name,folder_name))
+                        continue
 
                     nucleotide_frequency_file = run_data['refs'][amplicon_name]['nuc_freq_filename']
                     ampSeq_nf,nuc_freqs = CRISPRessoShared.parse_count_file(nucleotide_frequency_file)

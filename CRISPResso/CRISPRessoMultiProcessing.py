@@ -34,7 +34,7 @@ def run_crispresso(crispresso_cmds,descriptor,idx):
         logging.info('Finished CRISPResso %s #%d' %(descriptor,idx))
     return return_value
 
-def run_crispresso_cmds(crispresso_cmds,n_processes=1,descriptor = 'region'):
+def run_crispresso_cmds(crispresso_cmds,n_processes=1,descriptor = 'region',continue_on_fail=False):
     """
     input: crispresso_cmds: list of crispresso commands to run
     info_cmd: info command from parent (logger)
@@ -52,7 +52,7 @@ def run_crispresso_cmds(crispresso_cmds,n_processes=1,descriptor = 'region'):
         res = pool.map_async(pFunc,idxs)
         ret_vals = res.get(60*60*10) # Without the timeout this blocking call ignores all signals.
         for idx, ret in enumerate(ret_vals):
-            if ret != 0:
+            if ret != 0 and not continue_on_fail:
                 raise Exception('CRISPResso %s #%d failed',descriptor,idx)
     except KeyboardInterrupt:
         pool.terminate()

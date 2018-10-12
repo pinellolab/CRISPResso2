@@ -949,8 +949,8 @@ def main():
 
             #Merging with Flash
             info('Merging paired sequences with Flash...')
-            expected_max_overlap=2*avg_read_length - max_amplicon_len
-            expected_min_overlap=2*avg_read_length - min_amplicon_len
+            expected_max_overlap=2*avg_read_length - min_amplicon_len
+            expected_min_overlap=2*avg_read_length - max_amplicon_len
             indel_overlap_tolerance = 10 # magic number bound on how many bp inserted/deleted in ~90% of reads (for flash)
             #max overlap is either the entire read (avg_read_length) or the expected amplicon length + indel tolerance
             max_overlap = min(avg_read_length, expected_max_overlap+indel_overlap_tolerance)
@@ -2976,10 +2976,12 @@ def main():
 
                 ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_half_window+1:cut_point+plot_half_window+1]
                 fig_filename_root = _jp('9.%s.Alleles_Frequency_Table_Around_Cut_Site_For_%s' % (ref_name,sgRNA))
-                CRISPRessoPlot.plot_alleles_table(ref_seq_around_cut,df_alleles=df_allele_around_cut,fig_filename_root=fig_filename_root,
-                    MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot,MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot,SAVE_ALSO_PNG=save_png,base_editor_output=args.base_editor_output,sgRNA_intervals=sgRNA_intervals)
-                crispresso2_info['refs'][ref_name]['plot_9_roots'].append(os.path.basename(fig_filename_root))
-                crispresso2_info['refs'][ref_name]['plot_9_captions'].append("Figure 9: Visualization of the distribution of identified alleles around each cleavage site. Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dash line indicates the predicted cleavage site.")
+                n_good = df_allele_around_cut.ix[df_allele_around_cut['%Reads']>=args.min_frequency_alleles_around_cut_to_plot].shape[0]
+                if n_good > 0:
+                    CRISPRessoPlot.plot_alleles_table(ref_seq_around_cut,df_alleles=df_allele_around_cut,fig_filename_root=fig_filename_root,
+                        MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot,MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot,SAVE_ALSO_PNG=save_png,base_editor_output=args.base_editor_output,sgRNA_intervals=sgRNA_intervals)
+                    crispresso2_info['refs'][ref_name]['plot_9_roots'].append(os.path.basename(fig_filename_root))
+                    crispresso2_info['refs'][ref_name]['plot_9_captions'].append("Figure 9: Visualization of the distribution of identified alleles around each cleavage site. Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dash line indicates the predicted cleavage site.")
 
             #(5, 6) GLOBAL frameshift analyses plots
             if args.coding_seq:

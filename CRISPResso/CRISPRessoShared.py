@@ -27,7 +27,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.0.14b"
+__version__ = "2.0.15b"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -361,6 +361,7 @@ def get_most_frequent_reads(fastq_r1,fastq_r2,number_of_reads_to_consider,max_pa
         if fastq_r2.endswith('.gz'):
             view_cmd_2 = 'zcat'
         max_overlap_param = ""
+        min_overlap_param = ""
         if max_paired_end_reads_overlap:
             max_overlap_param = "--max-overlap="+str(max_paired_end_reads_overlap)
         if min_paired_end_reads_overlap:
