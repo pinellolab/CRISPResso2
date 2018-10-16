@@ -18,6 +18,7 @@ import traceback
 from CRISPResso import CRISPRessoShared
 from CRISPResso import CRISPRessoPlot
 from CRISPResso import CRISPRessoMultiProcessing
+from CRISPResso import CRISPRessoReport
 
 running_python3 = False
 if sys.version_info > (3, 0):
@@ -443,6 +444,10 @@ def main():
                             wrote_header = True
                         for line in infile:
                             outfile.write(batchName + "\t" + line)
+
+        if not args.suppress_report:
+            report_name = _jp('CRISPResso2Batch_report.html')
+            CRISPRessoReport.make_batch_report_from_folder(report_name,OUTPUT_DIRECTORY,_ROOT)
 
         info('All Done!')
         print(CRISPRessoShared.get_crispresso_footer())

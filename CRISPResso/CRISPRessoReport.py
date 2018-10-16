@@ -122,12 +122,41 @@ def make_report(run_data,crispresso_report_file,crispresso_folder,_ROOT):
     outfile.write(template.render(report_data=report_data))
     outfile.close()
 
-def make_batch_report_from_folder(batch_folder,_ROOT):
-    info_file = os.path.join(crispresso_folder,'CRISPResso2_info.pickle')
-    if not os.path.exists(info_file):
-        raise Exception('CRISPResso run is not complete. Cannot create report for run at ' + crispresso_folder)
+def make_batch_report_from_folder(crispressoBatch_report_file,batch_folder,_ROOT):
+    all_files = os.listdir(batch_folder)
+    window_nuc_pct_quilts = [os.path.basename(x) for x in all_files if x.endswith('.Quantification_Window_Nucleotide_Percentage_Quilt.pdf')]
+    nuc_pct_quilts = [os.path.basename(x) for x in all_files if x.endswith('.Nucleotide_Percentage_Quilt.pdf')]
 
-    run_data = cp.load(open(info_file,'rb'))
-    make_report(run_data,crispresso_report_file,crispresso_folder,_ROOT)
+    window_nuc_conv_plots = [os.path.basename(x) for x in all_files if x.endswith('.Quantification_Window_Nucleotide_Conversion.pdf')]
+    nuc_conv_plots = [os.path.basename(x) for x in all_files if x.endswith('.Nucleotide_Conversion.pdf')]
 
-def make_report(run_data,crispresso_report_file,crispresso_folder,_ROOT):
+
+    sub_folders = [x for x in all_files if x.startswith('CRISPResso_on_')]
+    sub_html_files = []
+    for sub_folder in sub_folders:
+        info_file = os.path.join(batch_folder,sub_folder,'CRISPResso2_info.pickle')
+        if not os.path.exists(info_file):
+            raise Exception('CRISPResso run %s is not complete. Cannot add to batch report.'% sub_folder)
+        run_data = cp.load(open(info_file,'rb'))
+        if not 'report_filename' in run_data:
+            raise Exception('CRISPResso run %s has no report. Cannot add to batch report.'% sub_folder)
+        sub_html_files.append(os.path.join(sub_folder,os.path.basename(run_data['report_filename'])))
+
+    make_batch_report(window_nuc_pct_quilts,nuc_pct_quilts,window_nuc_conv_plots,nuc_conv_plots,sub_html_files,crispressoBatch_report_file,batch_folder,_ROOT)
+
+def make_batch_report(window_nuc_pct_quilts,nuc_pct_quilts,window_nuc_conv_plots,nuc_conv_plots,sub_html_files,crispressoBatch_report_file,batch_folder,_ROOT):
+
+        def dirname(path):
+            return os.path.basename(os.path.dirname(path))
+        j2_env = Environment(loader=FileSystemLoader(os.path.join(_ROOT,'templates')))
+        j2_env.filters['dirname'] = dirname
+        template = j2_env.get_template('batchReport.html')
+
+        dest_dir = os.path.dirname(crispressoBatch_report_file)
+        shutil.copy2(os.path.join(_ROOT,'templates','CRISPResso_justcup.png'),dest_dir)
+        shutil.copy2(os.path.join(_ROOT,'templates','favicon.ico'),dest_dir)
+
+        outfile = open(crispressoBatch_report_file,'w')
+        outfile.write(template.render(window_nuc_pct_quilts=window_nuc_pct_quilts,nuc_pct_quilts=nuc_pct_quilts,
+            window_nuc_conv_plots=window_nuc_conv_plots,nuc_conv_plots=nuc_conv_plots,sub_html_files=sub_html_files))
+        outfile.close()

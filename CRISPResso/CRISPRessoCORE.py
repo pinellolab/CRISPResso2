@@ -16,6 +16,7 @@ if sys.version_info > (3, 0):
 
 import argparse
 from collections import defaultdict
+from copy import deepcopy
 import errno
 import gzip
 import os
@@ -470,7 +471,7 @@ def main():
         crispresso2_info_file = os.path.join(OUTPUT_DIRECTORY,'CRISPResso2_info.pickle')
         crispresso2_info = {} #keep track of all information for this run to be pickled and saved at the end of the run
         crispresso2_info['version'] = CRISPRessoShared.__version__
-        crispresso2_info['args'] = args
+        crispresso2_info['args'] = deepcopy(args)
 
         log_filename=_jp('CRISPResso_RUNNING_LOG.txt')
         crispresso2_info['log_filename'] = log_filename
@@ -1809,30 +1810,46 @@ def main():
                         ['Insertions','Insertions_Left','Deletions','Substitutions','All_modifications','Total'],
                             refs[ref_name]['sequence'],mod_count_filename)
             crispresso2_info['refs'][ref_name]['mod_count_filename'] = mod_count_filename
+            crispresso2_info['refs'][ref_name]['mod_count_filename_caption'] = "A tab-separated file showing the number of modifications for each position in the amplicon. " \
+                "The first row shows the amplicon sequence, and successive rows show the number of reads with insertions (row 2), insertions_left (row 3), deletions (row 4), substitutions (row 5) and the sum of all modifications (row 6)." \
+                "Additionally, the last row shows the number of reads aligned. If an insertion occurs between bases 5 and 6, the insertions vector will be incremented at bases 5 and 6. " \
+                "However, the insertions_left vector will only be incremented at base 5 so the sum of the insertions_left row represents an accurate count of the number of insertions, " \
+                "whereas the sum of the insertions row will yield twice the number of insertions."
 
             if (refs[ref_name]['contains_coding_seq']): #PERFORM FRAMESHIFT ANALYSIS
                 MODIFIED_FRAMESHIFT = counts_modified_frameshift[ref_name]
                 MODIFIED_NON_FRAMESHIFT = counts_modified_non_frameshift[ref_name]
                 NON_MODIFIED_NON_FRAMESHIFT = counts_non_modified_non_frameshift[ref_name]
                 SPLICING_SITES_MODIFIED = counts_splicing_sites_modified[ref_name]
-                with open(_jp(ref_name+'.Frameshift_analysis.txt'),'w+') as outfile:
+                frameshift_analysis_filename = _jp(ref_name+'.frameshift_analysis.txt')
+                with open(frameshift_analysis_filename,'w+') as outfile:
                         outfile.write('Frameshift analysis:\n\tNoncoding mutation:%d reads\n\tIn-frame mutation:%d reads\n\tFrameshift mutation:%d reads\n' %(NON_MODIFIED_NON_FRAMESHIFT, MODIFIED_NON_FRAMESHIFT ,MODIFIED_FRAMESHIFT))
+                crispresso2_info['refs'][ref_name]['frameshift_analysis_filename'] = frameshift_analysis_filename
+                crispresso2_info['refs'][ref_name]['frameshift_analysis_filename_caption'] = "A text file describing the number of noncoding, in-frame, and frameshift mutations. This report file is produced when the amplicon contains a coding sequence."
 
-                with open(_jp('Splice_sites_analysis.txt'),'w+') as outfile:
+                splice_sites_analysis_filename = _jp(ref_name+'.splice_sites_analysis.txt')
+                with open(splice_sites_analysis_filename,'w+') as outfile:
                         outfile.write('Splice sites analysis:\n\tUnmodified:%d reads\n\tPotential splice sites modified:%d reads\n' %(counts_total[ref_name]- SPLICING_SITES_MODIFIED, SPLICING_SITES_MODIFIED))
-
+                crispresso2_info['refs'][ref_name]['splice_sites_analysis_filename'] = splice_sites_analysis_filename
+                crispresso2_info['refs'][ref_name]['splice_sites_analysis_filename_caption'] = "A text file describing the number of splicing sites that are unmodified and modified. This file report is produced when the amplicon contains a coding sequence."
 
                 ins_pct_vector_noncoding_filename = _jp(ref_name+'.effect_vector_insertion_noncoding.txt')
                 save_vector_to_file(insertion_pct_vectors_noncoding[ref_name],ins_pct_vector_noncoding_filename)
                 crispresso2_info['refs'][ref_name]['insertion_pct_vector_noncoding_filename'] = ins_pct_vector_noncoding_filename
+                crispresso2_info['refs'][ref_name]['insertion_pct_vector_noncoding_filename_caption'] = "A tab-separated text file with a one-row header that shows the percentage of reads with a noncoding insertion at each base in the " + ref_name + " sequence. " \
+                    "The first column shows the 1-based position of the amplicon, and the second column shows the percentage of reads with a noncoding insertion at that location. This report file is produced when the amplicon contains a coding sequence."
 
                 del_pct_vector_noncoding_filename = _jp(ref_name+'.effect_vector_deletion_noncoding.txt')
                 save_vector_to_file(deletion_pct_vectors_noncoding[ref_name],del_pct_vector_noncoding_filename)
                 crispresso2_info['refs'][ref_name]['deletion_pct_vector_noncoding_filename'] = del_pct_vector_noncoding_filename
+                crispresso2_info['refs'][ref_name]['deletion_pct_vector_noncoding_filename_caption'] = "A tab-separated text file with a one-row header that shows the percentage of reads with a noncoding deletion at each base in the " + ref_name + " sequence. " \
+                    "The first column shows the 1-based position of the amplicon, and the second column shows the percentage of reads with a noncoding deletion at that location. This report file is produced when the amplicon contains a coding sequence."
 
                 sub_pct_vector_noncoding_filename = _jp(ref_name+'.effect_vector_substitution_noncoding.txt')
                 save_vector_to_file(substitution_pct_vectors_noncoding[ref_name],sub_pct_vector_noncoding_filename)
                 crispresso2_info['refs'][ref_name]['substitution_pct_vector_noncoding_filename'] = sub_pct_vector_noncoding_filename
+                crispresso2_info['refs'][ref_name]['substitution_pct_vector_noncoding_filename_caption'] = "A tab-separated text file with a one-row header that shows the percentage of reads with a noncoding substitution at each base in the " + ref_name + " sequence. " \
+                    "The first column shows the 1-based position of the amplicon, and the second column shows the percentage of reads with a nondcoding substitution at that location. This report file is produced when the amplicon contains a coding sequence."
 
             if args.dump:
                 if cut_points:
@@ -1857,20 +1874,31 @@ def main():
 
             indel_histogram_file = _jp(ref_name+'.indel_histogram.txt')
             pd.DataFrame(np.vstack([hlengths,hdensity]).T,columns=['indel_size','fq']).to_csv(indel_histogram_file,index=None,sep='\t')
-            crispresso2_info['refs'][ref_name]['indel_histogram_file'] = indel_histogram_file
+            crispresso2_info['refs'][ref_name]['indel_histogram_filename'] = indel_histogram_file
+            crispresso2_info['refs'][ref_name]['indel_histogram_filename_caption'] = "A tab-separated text file that shows a histogram of the length of indels (both insertions and deletions) in the " + ref_name +" sequence in the quantification window. " \
+                        "Indels outside of the quantification window are not included. The indel_size column shows the number of substitutions, and the fq column shows the number of reads having an indel of that length."
+
 
 
             insertion_histogram_file = _jp(ref_name+'.insertion_histogram.txt')
             pd.DataFrame(np.vstack([x_bins_ins[:-1],y_values_ins]).T,columns=['ins_size','fq']).to_csv(insertion_histogram_file,index=None,sep='\t')
-            crispresso2_info['refs'][ref_name]['insertion_histogram_file'] = insertion_histogram_file
+            crispresso2_info['refs'][ref_name]['insertion_histogram_filename'] = insertion_histogram_file
+            crispresso2_info['refs'][ref_name]['insertion_histogram_filename_caption'] = "A tab-separated text file that shows a histogram of the number of insertions in the " + ref_name +" sequence in the quantification window. " \
+                "Insertions outside of the quantification window are not included. The ins_size column shows the number of insertions, and the fq column shows the number of reads having that number of insertions."
+
 
             deletion_histogram_file = _jp(ref_name+'.deletion_histogram.txt')
             pd.DataFrame(np.vstack([-x_bins_del[:-1],y_values_del]).T,columns=['del_size','fq']).to_csv(deletion_histogram_file,index=None,sep='\t')
-            crispresso2_info['refs'][ref_name]['deletion_histogram_file'] = deletion_histogram_file
+            crispresso2_info['refs'][ref_name]['deletion_histogram_filename'] = deletion_histogram_file
+            crispresso2_info['refs'][ref_name]['deletion_histogram_filename_caption'] = "A tab-separated text file that shows a histogram of the number of deletions in the " + ref_name +" sequence in the quantification window. " \
+                "Deletions outside of the quantification window are not included. The del_size column shows the number of deletions, and the fq column shows the number of reads having that number of deletions."
+
 
             substitution_histogram_file = _jp(ref_name+'.substitution_histogram.txt')
-            pd.DataFrame(np.vstack([x_bins_mut[:-1],y_values_mut]).T,columns=['sub_size','fq']).to_csv(substitution_histogram_file,index=None,sep='\t')
-            crispresso2_info['refs'][ref_name]['substitution_histogram_file'] = substitution_histogram_file
+            pd.DataFrame(np.vstack([x_bins_mut[:-1],y_values_mut]).T,columns=['sub_count','fq']).to_csv(substitution_histogram_file,index=None,sep='\t')
+            crispresso2_info['refs'][ref_name]['substitution_histogram_filename'] = substitution_histogram_file
+            crispresso2_info['refs'][ref_name]['substitution_histogram_filename_caption'] = "A tab-separated text file that shows a histogram of the number of substitutions in the " + ref_name +" sequence in the quantification window. " \
+                "Substitutions outside of the quantification window are not included. The sub_size column shows the number of substitutions, and the fq column shows the number of reads having that number of substitutions."
 
 
 
@@ -2210,7 +2238,7 @@ def main():
 
             crispresso2_info['refs'][ref_name]['plot_3a_root'] = os.path.basename(plot_root)
             crispresso2_info['refs'][ref_name]['plot_3a_caption'] = "Figure 3a: Frequency distribution of alleles with indels (blue) and without indels (red)."
-            crispresso2_info['refs'][ref_name]['plot_3a_data'] = [('Indel histogram data',crispresso2_info['refs'][ref_name]['indel_histogram_file'])]
+            crispresso2_info['refs'][ref_name]['plot_3a_data'] = [('Indel histogram data',crispresso2_info['refs'][ref_name]['indel_histogram_filename'])]
             ###############################################################################################################################################
 
             ###############################################################################################################################################
@@ -3181,10 +3209,13 @@ def main():
         crispresso2_info['running_time'] = running_time
         crispresso2_info['running_time_string'] = running_time_string
 
-        cp.dump(crispresso2_info, open(crispresso2_info_file, 'wb' ) )
 
         if not args.suppress_report:
-            CRISPRessoReport.make_report(crispresso2_info,_jp('CRISPResso2_report.html'),OUTPUT_DIRECTORY,_ROOT)
+            report_name = _jp('CRISPResso2_report.html')
+            CRISPRessoReport.make_report(crispresso2_info,report_name,OUTPUT_DIRECTORY,_ROOT)
+            crispresso2_info['report_filename'] = report_name
+
+        cp.dump(crispresso2_info, open(crispresso2_info_file, 'wb' ) )
 
         info('Analysis Complete!')
         print(CRISPRessoShared.get_crispresso_footer())
