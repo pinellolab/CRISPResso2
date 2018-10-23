@@ -39,23 +39,26 @@ CRISPResso2 introduces four key innovations for the analysis of genome editing d
 ## Installation
 CRISPResso2 can be used via the Docker containerization system. This system allows CRISPResso2 to run on your system without configuring and installing additional packages. To run CRISPResso2, first download and install docker: https://docs.docker.com/engine/installation/
 
-Next, Docker must be configured to access your hard drive and to run with sufficient memory. These parameters can be found in the Docker settings menu. To allow Dockerto access your hard drive, select 'Shared Drives' and make sure your drive name is selected. To adjust the memory allocation, select the 'Advanced' tab and allocate at least 4Gb of memory. 
+Next, Docker must be configured to access your hard drive and to run with sufficient memory. These parameters can be found in the Docker settings menu. To allow Dockerto access your hard drive, select 'Shared Drives' and make sure your drive name is selected. To adjust the memory allocation, select the 'Advanced' tab and allocate at least 4G of memory. 
 	
 To run CRISPreso2, make sure Docker is running, then open a command prompt (Mac) or Powershell (Windows). Change directories to the location where your data is, and run the following command: 
+
 ```docker run -v ${PWD}:/DATA -w /DATA -i kclem/CRISPResso2 CRISPResso -h```
 
-The first time you run this command, it will download the docker image. The `-v` parameter mounts the current directory to be accessible by CRISPResso2, and the `-w` parameter sets the CRISPResso2 working directory. As long as you are running the command from the directory containing your data, you should not change the -v or -w parameters. 
+The first time you run this command, it will download the docker image. The `-v` parameter mounts the current directory to be accessible by CRISPResso2, and the `-w` parameter sets the CRISPResso2 working directory. As long as you are running the command from the directory containing your data, you should not change the Docker `-v` or `-w` parameters. 
 
 Additional parameters for CRISPResso2 as described below can be added to this command. For example, 
+
 ```docker run -v ${PWD}:/DATA -w /DATA -i kclem/CRISPResso2 CRISPResso -r1 sample.fastq.gz -a ATTAACCAAG```
 
 
 
-## Usage
+## CRISPResso2 usage
 CRISPResso2 is designed be run on a single amplicon. For experiments involving multiple amplicons in the same fastq, see the instructions for CRISPRessoPooled or CRISPRessoWGS below. 
 
 CRISPresso2 requires only two parameters: input sequences in the form of fastq files, and the amplicon sequence to align to. For example: 
-```CRISPResso -r1 reads.fastq.gz -a AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT
+
+```docker run -v ${PWD}:/DATA -w /DATA -i kclem/CRISPResso2 CRISPResso -r1 reads.fastq.gz -a AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT
 ```
 
 Below is a complete list of parameters:
@@ -157,21 +160,6 @@ Below is a complete list of parameters:
 
 --suppress_report: Suppress output report (default: False)
 
-## Troubleshooting
-Please check that your input file(s) are in FASTQ format (compressed fastq.gz also accepted).
-
-If you get an empty report, please double check that your amplicon sequence is correct and in the right orientation. It can be helpful to inspect the first few lines of your FASTQ file - the start of the amplicon sequence should match the start of your sequences. If not, check to see if the files are trimmed (see point below).
-
-It is important to check if your reads are trimmed or not. CRISPResso2 assumes that the reads ARE ALREADY TRIMMED! If reads are not already trimmed, select the adapters used for trimming under the ‘Trimming Adapter’ heading under the ‘Optional Parameters’. This is FUNDAMENTAL to CRISPResso analysis. Failure to trim adaptors may result in false positives. This will result in a report where you will observe an unrealistic 100% NHEJ in the pie chart in figure 2 and a sharp peak at the edges of the reference amplicon in figure 4.
-
-It is possible to use CRISPResso with single end reads. In this case, select ‘Single end reads’ under the ‘Experimental Design’ heading.
-
-The quality filter assumes that your reads uses the Phred33 scale, and it should be adjusted for each user’s specific application. A reasonable value for this parameter is 30.
-
-If your amplicon sequence is longer than your sequenced read length, the R1 and R2 reads should overlap by at least 10bp. For example, if you sequence using 150bp reads, the maximum amplicon length should be 290 bp.
-
-Especially in repetetive regions, multiple alignments may have the best score. If you want to investigate alternate best-scoring alignments, you can view all alignments using this tool: http://rna.informatik.uni-freiburg.de/Teaching/index.jsp?toolName=Gotoh. As input, sequences from the 'Alleles_frequency_table.txt' can be used. Specifically, for a given row, the value in the 'Aligned_Sequence' should be entered into the 'Sequence a' box after removing any dashes, and the value in the 'Reference_Sequence' should be entered into the 'Sequence b' box after removing any dashes. The alternate alignments can be selected in the 'Results' panel in the Output section.
-
 ## CRISPResso2 output
 The output of CRISPResso2 consists of a set of informative graphs that allow for the quantification and visualization of the position and type of outcomes within an amplicon sequence.
 
@@ -239,4 +227,404 @@ The following report files are produced when the amplicon contains a coding sequ
 *effect_vector_deletion_noncoding.txt* is a tab-separated text file with a one-row header that shows the percentage of reads with a noncoding deletion at each base in the reference sequence. The first column shows the 1-based position of the amplicon, and the second column shows the percentage of reads with a noncoding deletion at that location. This report file is produced when amplicon contains a coding sequence.
 
 *effect_vector_substitution_noncoding.txt* is a tab-separated text file with a one-row header that shows the percentage of reads with a noncoding substitution at each base in the reference sequence. The first column shows the 1-based position of the amplicon, and the second column shows the percentage of reads with a noncoding substitution at that location. This report file is produced when amplicon contains a coding sequence.
+
+## Troubleshooting
+Please check that your input file(s) are in FASTQ format (compressed fastq.gz also accepted).
+
+If you get an empty report, please double check that your amplicon sequence is correct and in the correct orientation. It can be helpful to inspect the first few lines of your FASTQ file - the start of the amplicon sequence should match the start of your sequences. If not, check to see if the files are trimmed (see point below).
+
+It is important to determine whether your reads are trimmed or not. CRISPResso2 assumes that the reads ARE ALREADY TRIMMED! If reads are not already trimmed, select the adapters used for trimming under the ‘Trimming Adapter’ heading under the ‘Optional Parameters’. This is FUNDAMENTAL to CRISPResso analysis. Failure to trim adaptors may result in false positives. This will result in a report where you will observe an unrealistic 100% modified alleles and a sharp peak at the edges of the reference amplicon in figure 4.
+
+The quality filter assumes that your reads uses the Phred33 scale, and it should be adjusted for each user’s specific application. A reasonable value for this parameter is 30.
+
+If your amplicon sequence is longer than your sequenced read length, the R1 and R2 reads should overlap by at least 10bp. For example, if you sequence using 150bp reads, the maximum amplicon length should be 290 bp.
+
+Especially in repetetive regions, multiple alignments may have the best score. If you want to investigate alternate best-scoring alignments, you can view all alignments using this tool: http://rna.informatik.uni-freiburg.de/Teaching/index.jsp?toolName=Gotoh. As input, sequences from the 'Alleles_frequency_table.txt' can be used. Specifically, for a given row, the value in the 'Aligned_Sequence' should be entered into the 'Sequence a' box after removing any dashes, and the value in the 'Reference_Sequence' should be entered into the 'Sequence b' box after removing any dashes. The alternate alignments can be selected in the 'Results' panel in the Output section.
+
+## Alternate running modes
+CRISPResso2 can be run for many fastqs (CRISPRessoBatch), for many amplicons in the same fastq (CRISPRessoPooled), or for whole-genome sequencing (CRISPRessoWGS). 
+
+### CRISPRessoPooled
+CRISPRessoPooled is a utility to analyze and quantify targeted sequencing CRISPR/Cas9 experiments involving sequencing libraries with pooled amplicons. One common experimental strategy is to pool multiple amplicons (e.g. a single on-target site plus a set of potential off-target sites) into a single deep sequencing reaction (briefly, genomic DNA samples for pooled applications can be prepared by first amplifying the target regions for each gene/target of interest with
+regions of 150-400bp depending on the desired coverage. In a second round of PCR, with minimized cycle numbers, barcode and adaptors are added. With optimization, these two rounds of PCR can be merged into a
+single reaction. These reactions are then quantified, normalized, pooled, and undergo quality control before being sequenced).
+CRISPRessoPooled demultiplexes reads from multiple amplicons and runs the CRISPResso utility with appropriate reads for each amplicon separately.
+
+#### Usage
+
+This tool can run in 3 different modes:
+
+**Amplicons mode:** Given a set of amplicon sequences, in this mode the
+tool demultiplexes the reads, aligning each read to the amplicon with
+best alignment, and creates separate compressed FASTQ files, one for
+each amplicon. Reads that do not align to any amplicon are discarded.
+After this preprocessing, CRISPResso is run for each FASTQ file, and
+separated reports are generated, one for each amplicon.
+
+To run the tool in this mode the user must provide:
+
+1.  Paired-end reads (two files) or single-end reads (single file)
+    in [FASTQ
+    format ](http://en.wikipedia.org/wiki/FASTQ_format)(fastq.gz files
+    are also accepted) 
+
+2.  A description file containing the amplicon sequences used to enrich
+    regions in the genome and some additional information. In
+    particular, this file, is a tab delimited text file with up to 5
+    columns (first 2 columns required):
+
+-   *AMPLICON\_NAME*: an identifier for the amplicon (*must be unique*).
+
+-   *AMPLICON\_SEQUENCE*: amplicon sequence used in the design of
+    the experiment.
+
+-   *sgRNA\_SEQUENCE (OPTIONAL)*: sgRNA sequence used for this amplicon
+    *without the PAM sequence.* If not available, enter *NA.*
+
+-   *EXPECTED\_AMPLICON\_AFTER\_HDR (OPTIONAL)*: expected amplicon
+    sequence in case of HDR. If more than one, separate by commas *and
+    not spaces*. If not available, enter *NA.*
+
+-   *CODING\_SEQUENCE (OPTIONAL)*: Subsequence(s) of the amplicon
+    corresponding to coding sequences. If more than one, separate by
+    commas *and not spaces*. If not available, enter *NA.*
+
+A file in the correct format should look like this:
+
+Site1 CACACTGTGGCCCCTGTGCCCAGCCCTGGGCTCTCTGTACATGAAGCAAC CCCTGTGCCCAGCCC NA NA
+ 
+Site2 GTCCTGGTTTTTGGTTTGGGAAATATAGTCATC NA GTCCTGGTTTTTGGTTTAAAAAAATATAGTCATC NA
+ 
+Site 3 TTTCTGGTTTTTGGTTTGGGAAATATAGTCATC NA NA GGAAATATA
+
+Note: *no column titles should be entered.* Also the colors here are used only for illustrative purposes and in a plain text file will be not be present and saved.
+
+The user can easily create this file with *any text editor* or with
+spreadsheet software like Excel (Microsoft), Numbers (Apple) or Sheets
+(Google Docs) and then save it as tab delimited file.
+
+Example:
+
+```docker run -v ${PWD}:/DATA -w /DATA -i kclem/CRISPResso2 CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -f AMPLICONS\_FILE.txt --name ONLY\_AMPLICONS\_SRR1046762 --gene\_annotations gencode\_v19.gz```
+
+The output of CRISPRessoPooled Amplicons mode consists of:
+
+1.  REPORT\_READS\_ALIGNED\_TO\_AMPLICONS.txt: this file contains the
+    same information provided in the input description file, plus some
+    additional columns:
+
+    a.  *Demultiplexed\_fastq.gz\_filename*: name of the files
+        containing the raw reads for each amplicon.
+
+    b.  *n\_reads*: number of reads recovered for each amplicon.
+
+2.  A set of fastq.gz files, one for each amplicon.
+
+3.  A set of folders, one for each amplicon, containing a full
+    CRISPResso report.
+    
+4.  SAMPLES_QUANTIFICATION_SUMMARY.txt: this file contains a summary of the quantification and the alignment statistics for each          region analyzed (read counts and percentages for the various classes: Unmodified, NHEJ, point mutations, and HDR).
+
+5.  *CRISPRessoPooled\_RUNNING\_LOG.txt*:  execution log and messages
+    for the external utilities called.
+
+**Genome mode:** In this mode the tool aligns each read to the best
+location in the genome. Then potential amplicons are discovered looking
+for regions with enough reads (the default setting is to have at least
+1000 reads, but the parameter can be adjusted with the option
+*--min\_reads\_to\_use\_region*). If a gene annotation file from UCSC is
+provided, the tool also reports the overlapping gene/s to the region. In
+this way it is possible to check if the amplified regions map to
+expected genomic locations and/or also to pseudogenes or other
+problematic regions. Finally CRISPResso is run in each region
+discovered.
+
+To run the tool in this mode the user must provide:
+
+1.  Paired-end reads (two files) or single-end reads (single file)
+    in [FASTQ
+    format ](http://en.wikipedia.org/wiki/FASTQ_format)(fastq.gz files
+    are also accepted) 
+
+2.  The full path of the reference genome in bowtie2 format (e.g.
+    /homes/luca/genomes/human\_hg19/hg19). Instructions on how to build
+    a custom index or precomputed index for human and mouse genome
+    assembly can be downloaded from the bowtie2
+    website: http://bowtie-bio.sourceforge.net/bowtie2/index.shtml.
+
+3.  Optionally the full path of a gene annotations file from UCSC. The
+    user can download this file from the UCSC Genome Browser (
+    http://genome.ucsc.edu/cgi-bin/hgTables?command=start ) selecting as
+    table "knowGene", as output format "all fields from selected table"
+    and as file returned "gzip compressed". (e.g.
+    like: homes/luca/genomes/human\_hg19/gencode\_v19.gz)
+
+Example:
+
+```docker run -v ${PWD}:/DATA -w /DATA -i kclem/CRISPResso2 CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -x /gcdata/gcproj/Luca/GENOMES/hg19/hg19 --name ONLY\_GENOME\_SRR1046762 --gene\_annotations gencode\_v19.gz```
+
+The output of CRISPRessoPooled Genome mode consists of:
+
+1.  REPORT\_READS\_ALIGNED\_TO\_GENOME\_ONLY.txt: this file contains the
+    list of all the regions discovered, one per line with the following
+    information:
+
+-   chr\_id: chromosome of the region in the reference genome.
+
+-   bpstart: start coordinate of the region in the reference genome.
+
+-   bpend: end coordinate of the region in the reference genome.
+
+-   fastq\_file: location of the fastq.gz file containing the reads
+    mapped to the region.
+
+-   n\_reads: number of reads mapped to the region.
+
+-   sequence: the sequence, on the reference genome for the region.
+
+1.  MAPPED\_REGIONS (folder): this folder contains all the fastq.gz
+    files for the discovered regions.
+
+2.  A set of folders with the CRISPResso report on the regions with
+    enough reads.
+    
+3.  SAMPLES_QUANTIFICATION_SUMMARY.txt: this file contains a summary of the quantification and the alignment statistics for each          region analyzed (read counts and percentages for the various classes: Unmodified, NHEJ, point mutations, and HDR).
+
+4.  *CRISPRessoPooled\_RUNNING\_LOG.txt*:  execution log and messages
+    for the external utilities called.
+
+    This running mode is particular useful to check if there are mapping
+    artifacts or contaminations in the library. In an optimal
+    experiment, the list of the regions discovered should contain only
+    the regions for which amplicons were designed.
+
+**Mixed mode (Amplicons + Genome)**: in this mode, the tool first aligns
+reads to the genome and, as in the **Genome mode**, discovers aligning
+regions with reads exceeding a tunable threshold. Next it will align the
+amplicon sequences to the reference genome and will use only the reads
+that match both the amplicon locations and the discovered genomic
+locations, excluding spurious reads coming from other regions, or reads
+not properly trimmed. Finally CRISPResso is run using each of the
+surviving regions.
+
+To run the tool in this mode the user must provide:
+
+-   Paired-end reads (two files) or single-end reads (single file)
+    in [FASTQ
+    format ](http://en.wikipedia.org/wiki/FASTQ_format)(fastq.gz files
+    are also accepted) 
+
+-   A description file containing the amplicon sequences used to enrich
+    regions in the genome and some additional information (as described
+    in the Amplicons mode section).
+
+-   The reference genome in bowtie2 format (as described in Genome
+    mode section).
+
+-   Optionally the gene annotations from UCSC (as described in Genome
+    mode section).
+
+Example:
+
+```docker run -v ${PWD}:/DATA -w /DATA -i kclem/CRISPResso2 CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -f AMPLICONS\_FILE.txt -x /gcdata/gcproj/Luca/GENOMES  /hg19/hg19 --name AMPLICONS\_AND\_GENOME\_SRR1046762 --gene\_annotations gencode\_v19.gz```
+
+The output of CRISPRessoPooled Mixed Amplicons + Genome mode consists of
+these files:
+
+1.  REPORT\_READS\_ALIGNED\_TO\_GENOME\_AND\_AMPLICONS.txt: this file
+    contains the same information provided in the input description
+    file, plus some additional columns:
+
+    a.  Amplicon\_Specific\_fastq.gz\_filename: name of the file
+        containing the raw reads recovered for the amplicon.
+
+    b.  *n\_reads*: number of reads recovered for the amplicon.
+
+    c.  *Gene\_overlapping:* gene/s overlapping the amplicon region.
+
+    d.  chr\_id: chromosome of the amplicon in the reference genome.
+
+    e.  bpstart: start coordinate of the amplicon in the
+        reference genome.
+
+    f.  bpend: end coordinate of the amplicon in the reference genome.
+
+    g.  Reference\_Sequence: sequence in the reference genome for the
+        region mapped for the amplicon.
+
+2.  MAPPED\_REGIONS (folder): this folder contains all the fastq.gz
+    files for the discovered regions.
+
+3.  A set of folders with the CRISPResso report on the amplicons with
+    enough reads.
+
+4.  SAMPLES_QUANTIFICATION_SUMMARY.txt: this file contains a summary of the quantification and the alignment statistics for each          region analyzed (read counts and percentages for the various classes: Unmodified, NHEJ, point mutations, and HDR).
+
+5.  *CRISPRessoPooled\_RUNNING\_LOG.txt*:   execution log and messages
+    for the external utilities called.
+
+The Mixed mode combines the benefits of the two previous running modes.
+In this mode it is possible to recover in an unbiased way all the
+genomic regions contained in the library, and hence discover
+contaminations or mapping artifacts. In addition, by knowing the
+location of the amplicon with respect to the reference genome, reads not
+properly trimmed or mapped to pseudogenes or other problematic regions
+will be automatically discarded, providing the cleanest set of reads to
+quantify the mutations in the target regions with CRISPResso.
+
+If the focus of the analysis is to obtain the best quantification of
+editing efficiency for a set of amplicons, we suggest running the tool
+in the Mixed mode. The Genome mode is instead suggested to check
+problematic libraries, since a report is generated for each region
+discovered, even if the region is not mappable to any amplicon (however,
+his may be time consuming). Finally the Amplicon mode is the fastest,
+although the least reliable in terms of quantification accuracy.
+
+
+### CRISPRessoWGS
+
+CRISPRessoWGS is a utility for the analysis of genome editing experiment
+from whole genome sequencing (WGS) data. CRISPRessoWGS allows exploring
+any region of the genome to quantify targeted editing or potentially
+off-target effects.
+
+#### Usage
+To run CRISPRessoWGS you must provide:
+
+1.  A genome aligned *BAM* file. To align reads from a WGS experiment to
+    the genome there are many options available, we suggest using either
+    **Bowtie2 (**<http://bowtie-bio.sourceforge.net/bowtie2/>) or **BWA
+    (**<http://bio-bwa.sourceforge.net/>**).**
+
+2.  A *FASTA* file containing the reference sequence used to align the
+    reads and create the BAM file (the reference files for the most
+    common organism can be download from
+    UCSC: http://hgdownload.soe.ucsc.edu/downloads.html. *Download and
+    uncompress only the file ending with .fa.gz*, for example for the
+    last version of the human genome download and *uncompress* the
+    file hg38.fa.gz)
+
+3.  Descriptions file containing the coordinates of the regions to
+    analyze and some additional information. In particular, this file is
+    a tab delimited text file with up to 7 columns (4 required):
+
+    -   chr\_id: chromosome of the region in the reference genome.
+
+    -   bpstart: start coordinate of the region in the reference genome.
+
+    -   bpend: end coordinate of the region in the reference genome.
+
+    -   *REGION\_NAME*: an identifier for the region (*must be unique*).
+
+    -   *sgRNA\_SEQUENCE (OPTIONAL)*: sgRNA sequence used for this genomic segment *without the PAM sequence.* If not available, enter *NA.*
+
+    -   *EXPECTED\_SEGMENT\_AFTER\_HDR (OPTIONAL)*: expected genomic segment sequence in case of HDR. If more than one, separate by commas *and not spaces*. If not available, enter *NA.*
+
+    -   *CODING\_SEQUENCE (OPTIONAL)*: Subsequence(s) of the genomic segment corresponding to coding sequences. If more than one, separate by commas *and not spaces*. If not available, enter *NA.*
+
+> A file in the correct format should look like this:
+
+chr1 65118211 65118261 R1 CTACAGAGCCCCAGTCCTGG NA NA
+
+chr6 51002798 51002820 R2 NA NA NA
+
+Note: *no column titles should be entered.* As you may have noticed this
+file is just a *BED* file with extra columns. For this reason a normal
+BED file with 4 columns, is also **accepted** by this utility.
+
+4.  Optionally the full path of a gene annotations file from UCSC. You
+    can download the this file from the UCSC Genome
+    Browser (http://genome.ucsc.edu/cgi-bin/hgTables?command=start)
+    selecting as table "knowGene", as output format "all fields from
+    selected table" and as file returned "gzip compressed". (something
+    like: homes/luca/genomes/human\_hg19/gencode\_v19.gz)
+
+Example:
+
+``` docker run -v ${PWD}:/DATA -w /DATA -i kclem/CRISPResso2 CRISPRessoWGS -b WGS/50/50\_sorted\_rmdup\_fixed\_groups.bam -f WGS\_TEST.txt -r /gcdata/gcproj/Luca/GENOMES/mm9/mm9.fa --gene\_annotations ensemble\_mm9.txt.gz --name CRISPR\_WGS\_SRR1542350```
+
+The output from these files will consist of:
+
+1.  REPORT\_READS\_ALIGNED\_TO\_SELECTED\_REGIONS\_WGS.txt: this file
+    contains the same information provided in the input description
+    file, plus some additional columns:
+
+    a.  sequence: sequence in the reference genome for the
+        region specified.
+
+    b.  *gene\_overlapping:* gene/s overlapping the region specified.
+
+    c.  *n\_reads*: number of reads recovered for the region.
+
+    d.  bam\_file\_with\_reads\_in\_region: file containing only the
+        subset of the reads that overlap, also partially, with
+        the region. This file is indexed and can be easily loaded for
+        example on IGV for visualization of single reads or for the
+        comparison of two conditions. For example, in the figure below
+        (fig X) we show reads mapped to a region inside the coding
+        sequence of the gene Crygc subjected to
+        NHEJ (CRISPR\_WGS\_SRR1542350) vs reads from a control
+        experiment (CONTROL\_WGS\_SRR1542349).
+
+    e.  fastq.gz\_file\_trimmed\_reads\_in\_region: file containing only
+        the subset of reads fully covering the specified regions, and
+        trimmed to match the sequence in that region. These reads are
+        used for the subsequent analysis with CRISPResso.
+
+2.  ANALYZED\_REGIONS (folder): this folder contains all the BAM and
+    FASTQ files, one for each region analyzed.
+
+3.  A set of folders with the CRISPResso report on the regions provided
+    in input with enough reads (the default setting is to have at least
+    10 reads, but the parameter can be adjusted with the option
+
+    *--min\_reads\_to\_use\_region*).
+
+4.  *CRISPRessoPooled\_RUNNING\_LOG.txt*:   execution log and messages
+    for the external utilities called.
+
+This utility is particular useful to investigate and quantify mutation
+frequency in a list of potential target or off-target sites, coming for
+example from prediction tools, or from other orthogonal assays.
+
+### CRISPRessoCompare
+
+CRISPRessoCompare is a utility for the comparison of a pair of CRISPResso analyses. CRISPRessoCompare produces a summary of differences between two conditions, for example a CRISPR treated and an untreated control sample (see figure below). Informative plots are generated showing the differences in editing rates and localization within the reference amplicon,
+
+#### Usage
+
+To run CRISPRessoCompare you must provide:
+
+1.	Two output folders generated with CRISPResso using the same reference amplicon and settings but on different datasets.
+2.	Optionally a name for each condition to use for the plots, and the name of the output folder
+
+Example:
+
+```docker run -v ${PWD}:/DATA -w /DATA -i kclem/CRISPResso2 CRISPRessoCompare -n1 "VEGFA CRISPR" -n2 "VEGFA CONTROL"  -n VEGFA_Site_1_SRR10467_VS_SRR1046787 CRISPResso_on_VEGFA_Site_1_SRR1046762/ CRISPResso_on_VEGFA_Site_1_SRR1046787/```
+
+The output will consist of:
+
+1.	Comparison_Efficiency.pdf: a figure containing a comparison of the edit frequencies for each category (NHEJ, MIXED NHEJ-HDR and HDR) and as well the net effect subtracting the second sample (second folder in the command line) provided in the analysis from the first sample (first folder in the command line). 
+2.	Comparison_Combined_Insertion_Deletion_Substitution_Locations.pdf: a figure showing the average profile for the mutations for the two samples in the same scale and their difference with the same convention used in the previous figure (first sample – second sample).
+3.	CRISPRessoCompare_RUNNING_LOG.txt: detailed execution log. 
+
+### CRISPRessoPooledWGSCompare
+
+CRISPRessoPooledWGSCompare is an extension of the CRIPRessoCompare utility allowing the user to run and summarize multiple CRISPRessoCompare analyses where several regions are analyzed in two different conditions, as in the case of the CRISPRessoPooled or CRISPRessoWGS utilities.
+
+
+#### Usage
+
+To run CRISPRessoPooledWGSCompare you must provide:
+1.	Two output folders generated with CRISPRessoPooled or CRISPRessoWGS using the same reference amplicon and settings but on different datasets.
+2.	Optionally a name for each condition to use for the plots, and the name of the output folder
+
+Example:
+
+```docker run -v ${PWD}:/DATA -w /DATA -i kclem/CRISPResso2 CRISPRessoPooledWGSCompare CRISPRessoPooled_on_AMPLICONS_AND_GENOME_SRR1046762/ CRISPRessoPooled_on_AMPLICONS_AND_GENOME_SRR1046787/ -n1 SRR1046762 -n2 SRR1046787 -n AMPLICONS_AND_GENOME_SRR1046762_VS_SRR1046787```
+
+The output from these files will consist of:
+1.	COMPARISON_SAMPLES_QUANTIFICATION_SUMMARIES.txt: this file contains a summary of the quantification for each of the two conditions for each region and their difference (read counts and percentages for the various classes: Unmodified, NHEJ, MIXED NHEJ-HDR  and HDR).
+2.	A set of folders with CRISPRessoCompare reports on the common regions with enough reads in both conditions.
+3.	CRISPRessoPooledWGSCompare_RUNNING_LOG.txt: detailed execution log. 
 
