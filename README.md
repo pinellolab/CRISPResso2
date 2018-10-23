@@ -199,7 +199,7 @@ The output of CRISPResso2 consists of a set of informative graphs that allow for
 
 *CRISPResso_mapping_statistics.txt* is a tab-delimited text file showing the number of reads in the input ('READS IN INPUTS') the number of reads after filtering, trimming and merging (READS AFTER PREPROCESSING), the number of reads aligned (READS ALIGNED) and the number of reads for which the alignment had to be computed vs read from cache. 
 
-*CRISPResso_quantification_of_editing_frequency.txt* is a tab-delimited text file showing the number of reads aligning to each reference amplicon, as well as the status (modified/unmodified, number of insertions, deletions, and/or substitions) of those reads. 
+*CRISPResso_quantification_of_editing_frequency.txt* is a tab-delimited text file showing the number of reads aligning to each reference amplicon, as well as the status (modified/unmodified, number of insertions, deletions, and/or substitutions) of those reads. 
 
 *CRISPResso_RUNNING_LOG.txt* shows a log of the CRISPResso run.
 
@@ -268,7 +268,7 @@ The quality filter assumes that your reads uses the Phred33 scale, and it should
 
 If your amplicon sequence is longer than your sequenced read length, the R1 and R2 reads should overlap by at least 10bp. For example, if you sequence using 150bp reads, the maximum amplicon length should be 290 bp.
 
-Especially in repetetive regions, multiple alignments may have the best score. If you want to investigate alternate best-scoring alignments, you can view all alignments using this tool: http://rna.informatik.uni-freiburg.de/Teaching/index.jsp?toolName=Gotoh. As input, sequences from the 'Alleles_frequency_table.txt' can be used. Specifically, for a given row, the value in the 'Aligned_Sequence' should be entered into the 'Sequence a' box after removing any dashes, and the value in the 'Reference_Sequence' should be entered into the 'Sequence b' box after removing any dashes. The alternate alignments can be selected in the 'Results' panel in the Output section.
+Especially in repetitive regions, multiple alignments may have the best score. If you want to investigate alternate best-scoring alignments, you can view all alignments using this tool: http://rna.informatik.uni-freiburg.de/Teaching/index.jsp?toolName=Gotoh. As input, sequences from the 'Alleles_frequency_table.txt' can be used. Specifically, for a given row, the value in the 'Aligned_Sequence' should be entered into the 'Sequence a' box after removing any dashes, and the value in the 'Reference_Sequence' should be entered into the 'Sequence b' box after removing any dashes. The alternate alignments can be selected in the 'Results' panel in the Output section.
 
 ## Alternate running modes
 CRISPResso2 can be run for many fastqs (CRISPRessoBatch), for many amplicons in the same fastq (CRISPRessoPooled), or for whole-genome sequencing (CRISPRessoWGS). 
@@ -426,7 +426,7 @@ To run the tool in this mode the user must provide:
 3.  Optionally the full path of a gene annotations file from UCSC. The
     user can download this file from the UCSC Genome Browser (
     http://genome.ucsc.edu/cgi-bin/hgTables?command=start ) selecting as
-    table "knowGene", as output format "all fields from selected table"
+    table "knownGene", as output format "all fields from selected table"
     and as file returned "gzip compressed". (e.g.
     like: homes/luca/genomes/human\_hg19/gencode\_v19.gz)
 
@@ -612,7 +612,7 @@ BED file with 4 columns, is also **accepted** by this utility.
 4.  Optionally the full path of a gene annotations file from UCSC. You
     can download the this file from the UCSC Genome
     Browser (http://genome.ucsc.edu/cgi-bin/hgTables?command=start)
-    selecting as table "knowGene", as output format "all fields from
+    selecting as table "knownGene", as output format "all fields from
     selected table" and as file returned "gzip compressed". (something
     like: homes/luca/genomes/human\_hg19/gencode\_v19.gz)
 
