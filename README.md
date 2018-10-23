@@ -17,7 +17,7 @@ CRISPResso2 can be used to analyze genome editing outcomes using cleaving nuclea
 - visualization of distribution and position of substitutions (for base editors)
 - visualization of alleles and their frequencies
 
-## CRISPResso processing
+## CRISPResso2 processing
 #### Quality filtering
 Input reads are first filtered based on the quality score (phred33) in order to remove potentially false positive indels. The filtering based on the phred33 quality score can be modulated by adjusting the optimal parameters (see additional notes below).
 #### Adapter trimming
@@ -58,7 +58,8 @@ CRISPResso2 is designed be run on a single amplicon. For experiments involving m
 
 CRISPresso2 requires only two parameters: input sequences in the form of fastq files, and the amplicon sequence to align to. For example: 
 
-```docker run -v ${PWD}:/DATA -w /DATA -i kclem/CRISPResso2 CRISPResso -r1 reads.fastq.gz -a AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT
+```
+docker run -v ${PWD}:/DATA -w /DATA -i kclem/CRISPResso2 CRISPResso -r1 reads.fastq.gz -a AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT
 ```
 
 Below is a complete list of parameters:
@@ -522,11 +523,13 @@ To run CRISPRessoWGS you must provide:
 
     -   *CODING\_SEQUENCE (OPTIONAL)*: Subsequence(s) of the genomic segment corresponding to coding sequences. If more than one, separate by commas *and not spaces*. If not available, enter *NA.*
 
-> A file in the correct format should look like this:
+A file in the correct format should look like this:
 
+```
 chr1 65118211 65118261 R1 CTACAGAGCCCCAGTCCTGG NA NA
 
-chr6 51002798 51002820 R2 NA NA NA
+chr6 51002798 51002820 R2 NA NA NA 
+```
 
 Note: *no column titles should be entered.* As you may have noticed this
 file is just a *BED* file with extra columns. For this reason a normal
