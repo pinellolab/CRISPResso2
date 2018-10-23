@@ -1,5 +1,5 @@
 # CRISPResso2
-CRISPResso2 is a software pipeline for the analysis of genome editing experiments. It is designed to enable rapid and intuitive interpretation of results produced by amplicon sequencing. 
+CRISPResso2 is a software pipeline designed to enable rapid and intuitive interpretation of genome editing experiments. 
 
 Briefly, CRISPResso2:
 - aligns sequencing reads to a reference sequence
@@ -41,28 +41,38 @@ CRISPResso2 can be used via the Docker containerization system. This system allo
 
 Next, Docker must be configured to access your hard drive and to run with sufficient memory. These parameters can be found in the Docker settings menu. To allow Dockerto access your hard drive, select 'Shared Drives' and make sure your drive name is selected. To adjust the memory allocation, select the 'Advanced' tab and allocate at least 4G of memory. 
 	
-To run CRISPreso2, make sure Docker is running, then open a command prompt (Mac) or Powershell (Windows). Change directories to the location where your data is, and run the following command: 
+To run CRISPresso2, make sure Docker is running, then open a command prompt (Mac) or Powershell (Windows). Change directories to the location where your data is, and run the following command: 
 
-```docker run -v ${PWD}:/DATA -w /DATA -i kclem/CRISPResso2 CRISPResso -h```
+```
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPResso -h
+```
 
 The first time you run this command, it will download the docker image. The `-v` parameter mounts the current directory to be accessible by CRISPResso2, and the `-w` parameter sets the CRISPResso2 working directory. As long as you are running the command from the directory containing your data, you should not change the Docker `-v` or `-w` parameters. 
 
 Additional parameters for CRISPResso2 as described below can be added to this command. For example, 
 
-```docker run -v ${PWD}:/DATA -w /DATA -i kclem/CRISPResso2 CRISPResso -r1 sample.fastq.gz -a ATTAACCAAG```
+```
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPResso -r1 sample.fastq.gz -a ATTAACCAAG
+```
 
 
 
 ## CRISPResso2 usage
 CRISPResso2 is designed be run on a single amplicon. For experiments involving multiple amplicons in the same fastq, see the instructions for CRISPRessoPooled or CRISPRessoWGS below. 
 
-CRISPresso2 requires only two parameters: input sequences in the form of fastq files, and the amplicon sequence to align to. For example: 
+CRISPresso2 requires only two parameters: input sequences in the form of fastq files (given by the `--fastq_r1` and `--fastq_r2`) parameters, and the amplicon sequence to align to (given by the `--amplicon_seq` parameter). For example: 
 
 ```
-docker run -v ${PWD}:/DATA -w /DATA -i kclem/CRISPResso2 CRISPResso -r1 reads.fastq.gz -a AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPResso --fastq_r1 reads.fastq.gz --amplicon_seq AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT
+```
+**Example run**
+To run an example, download the test dataset [base_editor.fastq.gz]( http://crispresso.pinellolab.partners.org/static/demo/base_editor.fastq.gz) to your current directory. This is the first 25,000 sequences from an editing experiment performed at the EMX1 locus. To analyze this experiment, run the following command:
+```
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPResso --fastq_r1 base_editor.fastq.gz --amplicon_seq GGCCCCAGTGGCTGCTCTGGGGGCCTCCTGAGTTTCTCATCTGTGCCCCTCCCTCCCTGGCCCAGGTGAAGGTGTGGTTCCAGAACCGGAGGACAAAGTACAAACGGCAGAAGCTGGAGGAGGAAGGGCCTGAGTCCGAGCAGAAGAAGAAGGGCTCCCATCACATCAACCGGTGGCGCATTGCCACGAAGCAGGCCAATGGGGAGGACATCGATGTCACCTCCAATGACTAGGGTGG --guide_seq GAGTCCGAGCAGAAGAAGAA --quantification_window_size 20 --quantification_window_center -10 --base_editor_output
 ```
 
-Below is a complete list of parameters:
+This should produce a folder called 'CRISPResso_on_base_editor'. Open the file called CRISPResso_on_base_editor/CRISPResso2_report.html in a web browser, and you should see an output like this: [CRISPResso2_report.html](http://crispresso.pinellolab.partners.org/static/demo/CRISPResso_on_base_editor/CRISPResso2_report.html).
+
 
 ### Parameter list
 -h or --help: show a help message and exit.
@@ -151,7 +161,7 @@ Below is a complete list of parameters:
 
 -qwc or --quantification_window_coordinates: Bp positions in the amplicon sequence specifying the quantification window. This parameter overrides values of the "--quantification_window_center", "-- cleavage_offset", "--window_around_sgrna" or "-- window_around_sgrna" values. Any indels outside this window are excluded. Ranges are separted by the dash sign like "start-stop", and multiple ranges can be separated by the underscore (\_). A value of 0 disables this filter. (can be comma-separated list of values, corresponding to amplicon sequences given in --amplicon_seq e.g. 5-10,5-10_20-30 would specify the 5th-10th bp in the first reference and the 5th-10th and 20th-30th bp in the second reference) (default: None)
 
---crispresso1_mode: Parameter usage as in CRISPResso 1. In particular, if this flag is set the plot window length will be twice the value 'plot_window_size' (whereas in CRISPResso2 the window length will be plot_window_size) and the old output files 'Mapping_statistics.txt', and 'Quantification_of_editing_frequency.txt' are created, and the new files 'nucleotide_frequency_table.txt' and 'substitution_frequency_table.txt' and figure 2a and 2b are suppressed, and the files 'selected_nucleotide_percentage_table.txt' are not produced hen the flag `--base_editor_output` is set (default: False)
+--crispresso1_mode: Parameter usage as in CRISPResso 1. In particular, if this flag is set the plot window length will be twice the value 'plot_window_size' (whereas in CRISPResso2 the window length will be plot_window_size) and the old output files 'Mapping_statistics.txt', and 'Quantification_of_editing_frequency.txt' are created, and the new files 'nucleotide_frequency_table.txt' and 'substitution_frequency_table.txt' and figure 2a and 2b are suppressed, and the files 'selected_nucleotide_percentage_table.txt' are not produced when the flag `--base_editor_output` is set (default: False)
 
 --auto: Infer amplicon sequence from most common reads (default: False)
 
@@ -306,7 +316,9 @@ spreadsheet software like Excel (Microsoft), Numbers (Apple) or Sheets
 
 Example:
 
-```docker run -v ${PWD}:/DATA -w /DATA -i kclem/CRISPResso2 CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -f AMPLICONS\_FILE.txt --name ONLY\_AMPLICONS\_SRR1046762 --gene\_annotations gencode\_v19.gz```
+```
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -f AMPLICONS\_FILE.txt --name ONLY\_AMPLICONS\_SRR1046762 --gene\_annotations gencode\_v19.gz
+```
 
 The output of CRISPRessoPooled Amplicons mode consists of:
 
@@ -362,7 +374,9 @@ To run the tool in this mode the user must provide:
 
 Example:
 
-```docker run -v ${PWD}:/DATA -w /DATA -i kclem/CRISPResso2 CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -x /gcdata/gcproj/Luca/GENOMES/hg19/hg19 --name ONLY\_GENOME\_SRR1046762 --gene\_annotations gencode\_v19.gz```
+```
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -x /gcdata/gcproj/Luca/GENOMES/hg19/hg19 --name ONLY\_GENOME\_SRR1046762 --gene\_annotations gencode\_v19.gz
+```
 
 The output of CRISPRessoPooled Genome mode consists of:
 
@@ -427,7 +441,9 @@ To run the tool in this mode the user must provide:
 
 Example:
 
-```docker run -v ${PWD}:/DATA -w /DATA -i kclem/CRISPResso2 CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -f AMPLICONS\_FILE.txt -x /gcdata/gcproj/Luca/GENOMES  /hg19/hg19 --name AMPLICONS\_AND\_GENOME\_SRR1046762 --gene\_annotations gencode\_v19.gz```
+```
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -f AMPLICONS\_FILE.txt -x /gcdata/gcproj/Luca/GENOMES  /hg19/hg19 --name AMPLICONS\_AND\_GENOME\_SRR1046762 --gene\_annotations gencode\_v19.gz
+```
 
 The output of CRISPRessoPooled Mixed Amplicons + Genome mode consists of
 these files:
@@ -544,7 +560,9 @@ BED file with 4 columns, is also **accepted** by this utility.
 
 Example:
 
-``` docker run -v ${PWD}:/DATA -w /DATA -i kclem/CRISPResso2 CRISPRessoWGS -b WGS/50/50\_sorted\_rmdup\_fixed\_groups.bam -f WGS\_TEST.txt -r /gcdata/gcproj/Luca/GENOMES/mm9/mm9.fa --gene\_annotations ensemble\_mm9.txt.gz --name CRISPR\_WGS\_SRR1542350```
+``` 
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoWGS -b WGS/50/50\_sorted\_rmdup\_fixed\_groups.bam -f WGS\_TEST.txt -r /gcdata/gcproj/Luca/GENOMES/mm9/mm9.fa --gene\_annotations ensemble\_mm9.txt.gz --name CRISPR\_WGS\_SRR1542350
+```
 
 The output from these files will consist of:
 
@@ -603,7 +621,9 @@ To run CRISPRessoCompare you must provide:
 
 Example:
 
-```docker run -v ${PWD}:/DATA -w /DATA -i kclem/CRISPResso2 CRISPRessoCompare -n1 "VEGFA CRISPR" -n2 "VEGFA CONTROL"  -n VEGFA_Site_1_SRR10467_VS_SRR1046787 CRISPResso_on_VEGFA_Site_1_SRR1046762/ CRISPResso_on_VEGFA_Site_1_SRR1046787/```
+```
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoCompare -n1 "VEGFA CRISPR" -n2 "VEGFA CONTROL"  -n VEGFA_Site_1_SRR10467_VS_SRR1046787 CRISPResso_on_VEGFA_Site_1_SRR1046762/ CRISPResso_on_VEGFA_Site_1_SRR1046787/
+```
 
 The output will consist of:
 
@@ -624,7 +644,9 @@ To run CRISPRessoPooledWGSCompare you must provide:
 
 Example:
 
-```docker run -v ${PWD}:/DATA -w /DATA -i kclem/CRISPResso2 CRISPRessoPooledWGSCompare CRISPRessoPooled_on_AMPLICONS_AND_GENOME_SRR1046762/ CRISPRessoPooled_on_AMPLICONS_AND_GENOME_SRR1046787/ -n1 SRR1046762 -n2 SRR1046787 -n AMPLICONS_AND_GENOME_SRR1046762_VS_SRR1046787```
+```
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoPooledWGSCompare CRISPRessoPooled_on_AMPLICONS_AND_GENOME_SRR1046762/ CRISPRessoPooled_on_AMPLICONS_AND_GENOME_SRR1046787/ -n1 SRR1046762 -n2 SRR1046787 -n AMPLICONS_AND_GENOME_SRR1046762_VS_SRR1046787
+```
 
 The output from these files will consist of:
 1.	COMPARISON_SAMPLES_QUANTIFICATION_SUMMARIES.txt: this file contains a summary of the quantification for each of the two conditions for each region and their difference (read counts and percentages for the various classes: Unmodified, NHEJ, MIXED NHEJ-HDR  and HDR).
