@@ -37,14 +37,18 @@ CRISPResso2 introduces four key innovations for the analysis of genome editing d
 4) Ultra-fast processing time.
 
 ## Installation
-CRISPResso2 can be used via the Docker virtualization system. To run CRISPResso2, first download and install docker: https://docs.docker.com/engine/installation/
+CRISPResso2 can be used via the Docker containerization system. This system allows CRISPResso2 to run on your system without configuring and installing additional packages. To run CRISPResso2, first download and install docker: https://docs.docker.com/engine/installation/
+
+Next, Docker must be configured to access your hard drive and to run with sufficient memory. These parameters can be found in the Docker settings menu. To allow Dockerto access your hard drive, select 'Shared Drives' and make sure your drive name is selected. To adjust the memory allocation, select the 'Advanced' tab and allocate at least 4Gb of memory. 
 	
+To run CRISPreso2, make sure Docker is running, then open a command prompt (Mac) or Powershell (Windows). Change directories to the location where your data is, and run the following command: 
+```docker run -v ${PWD}:/DATA -w /DATA -i kclem/CRISPResso2 CRISPResso -h```
 
-Then type the command:
+The first time you run this command, it will download the docker image. The `-v` parameter mounts the current directory to be accessible by CRISPResso2, and the `-w` parameter sets the CRISPResso2 working directory. As long as you are running the command from the directory containing your data, you should not change the -v or -w parameters. 
 
-	docker pull lucapinello/crispresso
+Additional parameters for CRISPResso2 as described below can be added to this command. For example, 
+```docker run -v ${PWD}:/DATA -w /DATA -i kclem/CRISPResso2 CRISPResso -r1 sample.fastq.gz -a ATTAACCAAG```
 
-See an example on how to run CRISPResso from a Docker image in the section **TESTING CRISPResso** below.
 
 
 ## Usage
