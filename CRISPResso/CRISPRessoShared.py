@@ -15,6 +15,7 @@ import shutil
 import signal
 import subprocess as sb
 import sys
+import unicodedata
 
 from CRISPResso import cnwalign
 
@@ -27,7 +28,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.0.16b"
+__version__ = "2.0.17b"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -54,7 +55,7 @@ class ExonSequenceException(Exception):
 class DuplicateSequenceIdException(Exception):
     pass
 
-class NoReadsAfterQualityFiltering(Exception):
+class NoReadsAfterQualityFilteringException(Exception):
     pass
 
 class BadParameterException(Exception):
@@ -228,7 +229,9 @@ def capitalize_sequence(x):
 
 def clean_filename(filename):
     #get a clean name that we can use for a filename
-    validFilenameChars = "+-_.() %s%s" % (string.ascii_letters, string.digits)
+    #validFilenameChars = "+-_.() %s%s" % (string.ascii_letters, string.digits)
+    filename = filename.replace(' ','_')
+    validFilenameChars = "_.%s%s" % (string.ascii_letters, string.digits)
 
     cleanedFilename = unicodedata.normalize('NFKD', unicode(filename)).encode('ASCII', 'ignore')
     return ''.join(c for c in cleanedFilename if c in validFilenameChars)
@@ -504,14 +507,12 @@ def get_amplicon_info_for_guides(ref_seq,guides,quantification_window_center,qua
         offset_fw=quantification_window_center+len(current_guide_seq)-1
         offset_rc=(-quantification_window_center)-1
         new_cut_points=[m.start() + offset_fw for m in re.finditer(current_guide_seq, ref_seq)]+\
-                         [m.start() + offset_rc for m in re.finditer(reverse_complement(current_guide_seq), ref_seq)]+\
-                         [m.start() + offset_rc for m in re.finditer(reverse(current_guide_seq), ref_seq)]
+                         [m.start() + offset_rc for m in re.finditer(reverse_complement(current_guide_seq), ref_seq)]
 
         if (new_cut_points):
             this_cut_points += new_cut_points
             this_sgRNA_intervals+=[(m.start(),m.start()+len(current_guide_seq)-1) for m in re.finditer(current_guide_seq, ref_seq)]+\
-                                  [(m.start(),m.start()+len(current_guide_seq)-1) for m in re.finditer(reverse_complement(current_guide_seq), ref_seq)]+\
-                                  [(m.start(),m.start()+len(current_guide_seq)-1) for m in re.finditer(reverse(current_guide_seq), ref_seq)]
+                                  [(m.start(),m.start()+len(current_guide_seq)-1) for m in re.finditer(reverse_complement(current_guide_seq), ref_seq)]
             this_sgRNA_sequences.append(current_guide_seq)
 
             if current_guide_seq in ref_seq: #if the guide is present in the forward direction
