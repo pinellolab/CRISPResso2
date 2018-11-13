@@ -11,7 +11,6 @@ import sys
 import subprocess as sb
 import glob
 import argparse
-import unicodedata
 import re
 import string
 import traceback
@@ -115,7 +114,7 @@ def main():
         debug_flag = args.debug
 
         crispresso_options = CRISPRessoShared.get_crispresso_options()
-        options_to_ignore = set(['output_folder'])
+        options_to_ignore = set(['name','output_folder'])
         crispresso_options_for_batch = list(crispresso_options-options_to_ignore)
 
         CRISPRessoShared.check_file(args.batch_settings)
@@ -173,6 +172,9 @@ def main():
             if row.fastq_r2 != "":
                 CRISPRessoShared.check_file(row.fastq_r2)
 
+            if args.auto:
+                continue
+
             curr_amplicon_seq_str = row.amplicon_seq
             if curr_amplicon_seq_str is None:
                 raise CRISPRessoShared.BadParameterException("Amplicon sequence must be given as a command line parameter or be specified in the batch settings file with the heading 'amplicon_seq' (Amplicon seq on row %s '%s' is invalid)"%(int(idx)+1,curr_amplicon_seq_str))
@@ -208,6 +210,8 @@ def main():
                     warn('\nThe guide sequence provided on row %d (%s) is not present in any amplicon sequence:%s! \nNOTE: The guide will be ignored for the analysis. Please check your input!' % (idx+1,row.guide_seq,curr_amplicon_seq))
 
         batch_folder_name = os.path.splitext(os.path.basename(args.batch_settings))[0]
+        if args.name and args.name != "":
+            batch_folder_name = args.name
 
         OUTPUT_DIRECTORY='CRISPRessoBatch_on_%s' % batch_folder_name
 
@@ -239,211 +243,253 @@ def main():
 
         run_datas = [] #crispresso2 info from each row
 
+        all_amplicons = set()
+        amplicon_names = {}
+        amplicon_counts = {}
         for idx,row in batch_params.iterrows():
             batchName = row["name"]
             file_prefix = row['file_prefix']
             folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
             run_data = cp.load(open(os.path.join(folder_name,'CRISPResso2_info.pickle'),'rb'))
             run_datas.append(run_data)
+            for ref_name in run_data['ref_names']:
+                ref_seq = run_data['refs'][ref_name]['sequence']
+                all_amplicons.add(ref_seq)
+                #if this amplicon is called something else in another sample, just call it the amplicon
+                if ref_name in amplicon_names and amplicon_names[ref_seq] != ref_name:
+                    amplicon_names[ref_seq] = ref_seq
+                else:
+                    amplicon_names[ref_seq] = ref_name
+                if ref_seq not in amplicon_counts:
+                    amplicon_counts[ref_seq] = 0
+                amplicon_counts[ref_seq]+= 1
+
+        #make sure no duplicate names
+        seen_names = {}
+        for amplicon in all_amplicons:
+            if amplicon_names[amplicon] in seen_names:
+                amplicon_names[amplicon] = amplicon
+            else:
+                seen_names[amplicon_names[amplicon]] = 1
 
         save_png = True
         if args.suppress_report:
             save_png = False
 
-        #if amplicons are all the same, merge substitutions and perform base editor comparison
-        if batch_params.drop_duplicates('amplicon_seq').shape[0]  == 1:
-            info("All amplicons are equal. Performing comparison of batches")
+        def report_nucleotide_summary(amplicon_seq,amplicon_name,amplicon_index):
+            consensus_sequence = ""
+            nucleotide_frequency_summary = []
+            nucleotide_percentage_summary = []
+            modification_frequency_summary = []
+            modification_percentage_summary = []
 
-            def report_nucleotide_summary(amplicon_seq,amplicon_name,amplicon_index):
-                consensus_sequence = ""
-                nucleotide_frequency_summary = []
-                nucleotide_percentage_summary = []
-                modification_frequency_summary = []
-                modification_percentage_summary = []
+            amp_found_count = 0 #how many folders had information for this amplicon
+            consensus_guides = []
+            consensus_include_idxs = []
+            consensus_sgRNA_intervals = []
+            guides_all_same = True
+            batches_with_this_amplicon = []
+            for idx,row in batch_params.iterrows():
+                batchName = row["name"]
+                file_prefix = row['file_prefix']
+                folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
+                run_data = run_datas[idx]
+                batch_has_amplicon = False
+                batch_amplicon_name = ''
+                for ref_name in run_data['ref_names']:
+                    if amplicon_seq == run_data['refs'][ref_name]['sequence']:
+                        batch_has_amplicon = True
+                        batch_amplicon_name = ref_name
+                if not batch_has_amplicon:
+                    continue
+                batches_with_this_amplicon.append(idx)
 
-                amp_found_count = 0 #how many folders had information for this amplicon
-                for idx,row in batch_params.iterrows():
-                    batchName = row["name"]
-                    file_prefix = row['file_prefix']
-                    folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
-                    run_data = run_datas[idx]
+                if consensus_guides == []:
+                    consensus_guides = run_data['refs'][batch_amplicon_name]['sgRNA_sequences']
+                    consensus_include_idxs = run_data['refs'][batch_amplicon_name]['include_idxs']
+                    consensus_sgRNA_intervals = run_data['refs'][batch_amplicon_name]['sgRNA_intervals']
 
-                    if 'nuc_freq_filename' not in run_data['refs'][amplicon_name]:
-                        info("Skipping the amplicon '%s' in folder '%s'. Cannot find nucleotide information."%(amplicon_name,folder_name))
+                if run_data['refs'][batch_amplicon_name]['sgRNA_sequences'] != consensus_guides:
+                    guides_all_same = False
+
+                if 'nuc_freq_filename' not in run_data['refs'][batch_amplicon_name]:
+                    info("Skipping the amplicon '%s' in folder '%s'. Cannot find nucleotide information."%(batch_amplicon_name,folder_name))
+                    continue
+
+                nucleotide_frequency_file = run_data['refs'][batch_amplicon_name]['nuc_freq_filename']
+                ampSeq_nf,nuc_freqs = CRISPRessoShared.parse_count_file(nucleotide_frequency_file)
+
+                nucleotide_pct_file=run_data['refs'][batch_amplicon_name]['nuc_pct_filename']
+                ampSeq_np,nuc_pcts = CRISPRessoShared.parse_count_file(nucleotide_pct_file)
+
+                count_file=run_data['refs'][batch_amplicon_name]['mod_count_filename']
+                ampSeq_cf,mod_freqs = CRISPRessoShared.parse_count_file(count_file)
+
+                if ampSeq_nf is None or ampSeq_np is None or ampSeq_cf is None:
+                    info("Skipping the amplicon '%s' in folder '%s'. Could not parse batch output."%(batch_amplicon_name,folder_name))
+                    info("Nucleotide frequency amplicon: '%s', Nucleotide percentage amplicon: '%s', Count vectors amplicon: '%s'"%(ampSeq_nf,ampSeq_np,ampSeq_cf))
+                    continue
+                if ampSeq_nf != ampSeq_np or ampSeq_np != ampSeq_cf:
+                    warn("Skipping the amplicon '%s' in folder '%s'. Parsed amplicon sequences do not match\nnf:%s\nnp:%s\ncf:%s\nrf:%s"%(batch_amplicon_name,folder_name,ampSeq_nf,ampSeq_np,ampSeq_cf,amplicon_seq))
+                    continue
+                if consensus_sequence == "":
+                    consensus_sequence = ampSeq_nf
+                if ampSeq_nf != consensus_sequence:
+                    info("Skipping the amplicon '%s' in folder '%s'. Amplicon sequences do not match."%(batch_amplicon_name,folder_name))
+                    continue
+                if 'Total' not in mod_freqs:
+                    info("Skipping the amplicon '%s' in folder '%s'. Processing did not complete."%(batch_amplicon_name,folder_name))
+                    continue
+                if mod_freqs['Total'][0] == 0 or mod_freqs['Total'][0] == "0":
+                    info("Skipping the amplicon '%s' in folder '%s'. Got no reads for amplicon."%(batch_amplicon_name,folder_name))
+                    continue
+
+                mod_pcts = {}
+                for key in mod_freqs:
+                    mod_pcts[key] = np.array(mod_freqs[key]).astype(np.float)/float(mod_freqs['Total'][0])
+
+                amp_found_count += 1
+
+                for nuc in ['A','T','C','G','N','-']:
+                    row = [batchName,nuc]
+                    row.extend(nuc_freqs[nuc])
+                    nucleotide_frequency_summary.append(row)
+
+                    pct_row = [batchName,nuc]
+                    pct_row.extend(nuc_pcts[nuc])
+                    nucleotide_percentage_summary.append(pct_row)
+
+                for mod in ['Insertions','Insertions_Left','Deletions','Substitutions','All_modifications']:
+                    row = [batchName,mod]
+                    row.extend(mod_freqs[mod])
+                    modification_frequency_summary.append(row)
+
+                    pct_row = [batchName,mod]
+                    pct_row.extend(mod_pcts[mod])
+                    modification_percentage_summary.append(pct_row)
+
+            if amp_found_count == 0:
+                info("Couldn't find any data for amplicon '%s'. Not compiling results."%amplicon_name)
+                return()
+
+            colnames = ['Batch','Nucleotide']
+            colnames.extend(list(consensus_sequence))
+            nucleotide_frequency_summary_df = pd.DataFrame(nucleotide_frequency_summary,columns=colnames)
+            nucleotide_frequency_summary_df = pd.concat([nucleotide_frequency_summary_df.iloc[:,0:2],
+                                                        nucleotide_frequency_summary_df.iloc[:,2:].apply(pd.to_numeric)],axis=1)
+            nucleotide_frequency_summary_df.to_csv(_jp(amplicon_name + '.NUCLEOTIDE_FREQUENCY_SUMMARY.txt'),sep='\t',index=None)
+
+            nucleotide_percentage_summary_df = pd.DataFrame(nucleotide_percentage_summary,columns=colnames)
+            nucleotide_percentage_summary_df = pd.concat([nucleotide_percentage_summary_df.iloc[:,0:2],
+                                                    nucleotide_percentage_summary_df.iloc[:,2:].apply(pd.to_numeric)],axis=1)
+            nucleotide_percentage_summary_df.to_csv(_jp(amplicon_name + '.NUCLEOTIDE_PERCENTAGE_SUMMARY.txt'),sep='\t',index=None)
+
+            colnames = ['Batch','Modification']
+            colnames.extend(list(consensus_sequence))
+            modification_frequency_summary_df = pd.DataFrame(modification_frequency_summary,columns=colnames)
+            modification_frequency_summary_df = pd.concat([modification_frequency_summary_df.iloc[:,0:2],
+                                                        modification_frequency_summary_df.iloc[:,2:].apply(pd.to_numeric)],axis=1)
+            modification_frequency_summary_df.to_csv(_jp(amplicon_name + '.MODIFICATION_FREQUENCY_SUMMARY.txt'),sep='\t',index=None)
+
+            modification_percentage_summary_df = pd.DataFrame(modification_percentage_summary,columns=colnames)
+            modification_percentage_summary_df = pd.concat([modification_percentage_summary_df.iloc[:,0:2],
+                                                    modification_percentage_summary_df.iloc[:,2:].apply(pd.to_numeric)],axis=1)
+            modification_percentage_summary_df.to_csv(_jp(amplicon_name + '.MODIFICATION_PERCENTAGE_SUMMARY.txt'),sep='\t',index=None)
+
+
+
+            #if guides are all the same, merge substitutions and perform base editor comparison at guide quantification window
+            if guides_all_same and consensus_guides != []:
+                include_idxs = consensus_include_idxs
+                sgRNA_intervals = consensus_sgRNA_intervals
+                info("All guides are equal. Performing comparison of batches for amplicon '%s'"% amplicon_name)
+                include_idxs_flat = [0,1] # guide, nucleotide
+                include_idxs_flat.extend([cutidx + 2 for cutidx in include_idxs])
+                sub_nucleotide_frequency_summary_df = nucleotide_frequency_summary_df.iloc[:,include_idxs_flat]
+                sub_nucleotide_percentage_summary_df = nucleotide_percentage_summary_df.iloc[:,include_idxs_flat]
+                sub_modification_percentage_summary_df = modification_percentage_summary_df.iloc[:,include_idxs_flat]
+                sub_sgRNA_intervals = []
+                for sgRNA_interval in sgRNA_intervals:
+                    newstart = None
+                    newend = None
+                    for idx,i in enumerate(include_idxs):
+                        if i <= sgRNA_interval[0]:
+                            newstart = idx
+                        if newend is None and i >= sgRNA_interval[1]:
+                            newend = idx
+
+                    #if guide doesn't overlap with include indexes
+                    if newend == 0 or newstart == len(include_idxs):
                         continue
+                    #otherwise, correct partial overlaps
+                    elif newstart == None and newend == None:
+                        newstart = 0
+                        newend = len(include_idxs) -1
+                    elif newstart == None:
+                        newstart = 0
+                    elif newend == None:
+                        newend = len(include_idxs) -1
+                    #and add it to the list
+                    sub_sgRNA_intervals.append((newstart,newend))
 
-                    nucleotide_frequency_file = run_data['refs'][amplicon_name]['nuc_freq_filename']
-                    ampSeq_nf,nuc_freqs = CRISPRessoShared.parse_count_file(nucleotide_frequency_file)
+                CRISPRessoPlot.plot_nucleotide_quilt(sub_nucleotide_percentage_summary_df,sub_modification_percentage_summary_df,_jp(amplicon_name
+                    + '.Quantification_Window_Nucleotide_Percentage_Quilt'),save_png,sgRNA_intervals=sub_sgRNA_intervals)
+                if args.base_editor_output:
+                    CRISPRessoPlot.plot_conversion_map(sub_nucleotide_percentage_summary_df,_jp(amplicon_name + '.Quantification_Window_Nucleotide_Conversion'),args.conversion_nuc_from,args.conversion_nuc_to,save_png,sgRNA_intervals=sub_sgRNA_intervals)
 
-                    nucleotide_pct_file=run_data['refs'][amplicon_name]['nuc_pct_filename']
-                    ampSeq_np,nuc_pcts = CRISPRessoShared.parse_count_file(nucleotide_pct_file)
+                CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df,modification_percentage_summary_df,_jp(amplicon_name + '.Nucleotide_Percentage_Quilt'),save_png,sgRNA_intervals=sgRNA_intervals,quantification_window_idxs=include_idxs)
+                if args.base_editor_output:
+                    CRISPRessoPlot.plot_conversion_map(nucleotide_percentage_summary_df,_jp(amplicon_name + '.Nucleotide_Conversion'),args.conversion_nuc_from,args.conversion_nuc_to,save_png,sgRNA_intervals=sgRNA_intervals)
+            else: #guides are not the same
+                CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df,modification_percentage_summary_df,_jp(amplicon_name + '.Nucleotide_Percentage_Quilt'),save_png)
+                if args.base_editor_output:
+                    CRISPRessoPlot.plot_conversion_map(nucleotide_percentage_summary_df,_jp(amplicon_name + '.Nucleotide_Conversion'),args.conversion_nuc_from,args.conversion_nuc_to,save_png)
 
-                    count_file=run_data['refs'][amplicon_name]['mod_count_filename']
-                    ampSeq_cf,mod_freqs = CRISPRessoShared.parse_count_file(count_file)
+        #report for amplicons that appear multiple times
+        for amplicon_seq in all_amplicons:
+            #only perform comparison if amplicon seen in more than one sample
+            if amplicon_counts[amplicon_seq] < 2:
+                continue
 
-                    if ampSeq_nf is None or ampSeq_np is None or ampSeq_cf is None:
-                        info("Skipping the amplicon '%s' in folder '%s'. Could not parse batch output."%(amplicon_name,folder_name))
-                        info("Nucleotide frequency amplicon: '%s', Nucleotide percentage amplicon: '%s', Count vectors amplicon: '%s'"%(ampSeq_nf,ampSeq_np,ampSeq_cf))
-                        continue
-                    if ampSeq_nf != ampSeq_np or ampSeq_np != ampSeq_cf:
-                        warn("Skipping the amplicon '%s' in folder '%s'. Parsed amplicon sequences do not match\nnf:%s\nnp:%s\ncf:%s\nrf:%s"%(amplicon_name,folder_name,ampSeq_nf,ampSeq_np,ampSeq_cf,amplicon_seq))
-                        continue
-                    if consensus_sequence == "":
-                        consensus_sequence = ampSeq_nf
-                    if ampSeq_nf != consensus_sequence:
-                        info("Skipping the amplicon '%s' in folder '%s'. Amplicon sequences do not match."%(amplicon_name,folder_name))
-                        continue
-                    if 'Total' not in mod_freqs:
-                        info("Skipping the amplicon '%s' in folder '%s'. Processing did not complete."%(amplicon_name,folder_name))
-                        continue
-                    if mod_freqs['Total'][0] == 0 or mod_freqs['Total'][0] == "0":
-                        info("Skipping the amplicon '%s' in folder '%s'. Got no reads for amplicon."%(amplicon_name,folder_name))
-                        continue
-
-                    mod_pcts = {}
-                    for key in mod_freqs:
-                        mod_pcts[key] = np.array(mod_freqs[key]).astype(np.float)/float(mod_freqs['Total'][0])
-
-                    amp_found_count += 1
-
-                    for nuc in ['A','T','C','G','N','-']:
-                        row = [batchName,nuc]
-                        row.extend(nuc_freqs[nuc])
-                        nucleotide_frequency_summary.append(row)
-
-                        pct_row = [batchName,nuc]
-                        pct_row.extend(nuc_pcts[nuc])
-                        nucleotide_percentage_summary.append(pct_row)
-
-                    for mod in ['Insertions','Insertions_Left','Deletions','Substitutions','All_modifications']:
-                        row = [batchName,mod]
-                        row.extend(mod_freqs[mod])
-                        modification_frequency_summary.append(row)
-
-                        pct_row = [batchName,mod]
-                        pct_row.extend(mod_pcts[mod])
-                        modification_percentage_summary.append(pct_row)
-
-                if amp_found_count == 0:
-                    info("Couldn't find any data for amplicon '%s'. Not compiling results."%amplicon_name)
-                    return()
-
-                colnames = ['Batch','Nucleotide']
-                colnames.extend(list(consensus_sequence))
-                nucleotide_frequency_summary_df = pd.DataFrame(nucleotide_frequency_summary,columns=colnames)
-                nucleotide_frequency_summary_df = pd.concat([nucleotide_frequency_summary_df.iloc[:,0:2],
-                                                            nucleotide_frequency_summary_df.iloc[:,2:].apply(pd.to_numeric)],axis=1)
-                nucleotide_frequency_summary_df.to_csv(_jp(amplicon_name + '.NUCLEOTIDE_FREQUENCY_SUMMARY.txt'),sep='\t',index=None)
-
-                nucleotide_percentage_summary_df = pd.DataFrame(nucleotide_percentage_summary,columns=colnames)
-                nucleotide_percentage_summary_df = pd.concat([nucleotide_percentage_summary_df.iloc[:,0:2],
-                                                        nucleotide_percentage_summary_df.iloc[:,2:].apply(pd.to_numeric)],axis=1)
-                nucleotide_percentage_summary_df.to_csv(_jp(amplicon_name + '.NUCLEOTIDE_PERCENTAGE_SUMMARY.txt'),sep='\t',index=None)
-
-                colnames = ['Batch','Modification']
-                colnames.extend(list(consensus_sequence))
-                modification_frequency_summary_df = pd.DataFrame(modification_frequency_summary,columns=colnames)
-                modification_frequency_summary_df = pd.concat([modification_frequency_summary_df.iloc[:,0:2],
-                                                            modification_frequency_summary_df.iloc[:,2:].apply(pd.to_numeric)],axis=1)
-                modification_frequency_summary_df.to_csv(_jp(amplicon_name + '.MODIFICATION_FREQUENCY_SUMMARY.txt'),sep='\t',index=None)
-
-                modification_percentage_summary_df = pd.DataFrame(modification_percentage_summary,columns=colnames)
-                modification_percentage_summary_df = pd.concat([modification_percentage_summary_df.iloc[:,0:2],
-                                                        modification_percentage_summary_df.iloc[:,2:].apply(pd.to_numeric)],axis=1)
-                modification_percentage_summary_df.to_csv(_jp(amplicon_name + '.MODIFICATION_PERCENTAGE_SUMMARY.txt'),sep='\t',index=None)
+            amplicon_name = amplicon_names[amplicon_seq]
+            info('Plotting summary for amplicon: "' + amplicon_name + '"')
+            report_nucleotide_summary(amplicon_seq,amplicon_name,i)
 
 
+        #summarize amplicon modifications
+        with open(_jp('CRISPRessoBatch_quantification_of_editing_frequency.txt'),'w') as outfile:
+            wrote_header = False
+            for idx,row in batch_params.iterrows():
+                batchName = row["name"]
+                file_prefix = row['file_prefix']
+                folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
+                run_data = run_datas[idx]
 
-                #if guides are all the same, merge substitutions and perform base editor comparison at guide quantification window
-                if batch_params.drop_duplicates('guide_seq').shape[0]  == 1 and batch_params.ix[0,"cut_point_include_idx"][amplicon_index]:
-                    include_idxs = batch_params.ix[0,"cut_point_include_idx"][amplicon_index]
-                    sgRNA_intervals = batch_params.ix[0,"sgRNA_intervals"][amplicon_index]
-                    info("All guides are equal. Performing comparison of batches for amplicon '%s'"% amplicon_name)
-                    include_idxs_flat = [0,1] # guide, nucleotide
-                    include_idxs_flat.extend([cutidx + 2 for cutidx in include_idxs])
-                    sub_nucleotide_frequency_summary_df = nucleotide_frequency_summary_df.iloc[:,include_idxs_flat]
-                    sub_nucleotide_percentage_summary_df = nucleotide_percentage_summary_df.iloc[:,include_idxs_flat]
-                    sub_modification_percentage_summary_df = modification_percentage_summary_df.iloc[:,include_idxs_flat]
-                    sub_sgRNA_intervals = []
-                    for sgRNA_interval in sgRNA_intervals:
-                        newstart = None
-                        newend = None
-                        for idx,i in enumerate(include_idxs):
-                            if i <= sgRNA_interval[0]:
-                                newstart = idx
-                            if newend is None and i >= sgRNA_interval[1]:
-                                newend = idx
+                amplicon_modification_file=run_data['quant_of_editing_freq_filename']
+                with open(amplicon_modification_file,'r') as infile:
+                    file_head = infile.readline()
+                    if not wrote_header:
+                        outfile.write('Batch\t' + file_head)
+                        wrote_header = True
+                    for line in infile:
+                        outfile.write(batchName + "\t" + line)
 
-                        #if guide doesn't overlap with include indexes
-                        if newend == 0 or newstart == len(include_idxs):
-                            continue
-                        #otherwise, correct partial overlaps
-                        elif newstart == None and newend == None:
-                            newstart = 0
-                            newend = len(include_idxs) -1
-                        elif newstart == None:
-                            newstart = 0
-                        elif newend == None:
-                            newend = len(include_idxs) -1
-                        #and add it to the list
-                        sub_sgRNA_intervals.append((newstart,newend))
+        #summarize alignment
+        with open(_jp('CRISPRessoBatch_mapping_statistics.txt'),'w') as outfile:
+            wrote_header = False
+            for idx,row in batch_params.iterrows():
+                batchName = row["name"]
+                folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
 
-                    CRISPRessoPlot.plot_nucleotide_quilt(sub_nucleotide_percentage_summary_df,sub_modification_percentage_summary_df,_jp(amplicon_name
-                        + '.Quantification_Window_Nucleotide_Percentage_Quilt'),save_png,sgRNA_intervals=sub_sgRNA_intervals)
-                    if args.base_editor_output:
-                        CRISPRessoPlot.plot_conversion_map(sub_nucleotide_percentage_summary_df,_jp(amplicon_name + '.Quantification_Window_Nucleotide_Conversion'),args.conversion_nuc_from,args.conversion_nuc_to,save_png,sgRNA_intervals=sub_sgRNA_intervals)
-
-                    CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df,modification_percentage_summary_df,_jp(amplicon_name + '.Nucleotide_Percentage_Quilt'),save_png,sgRNA_intervals=sgRNA_intervals,quantification_window_idxs=include_idxs)
-                    if args.base_editor_output:
-                        CRISPRessoPlot.plot_conversion_map(nucleotide_percentage_summary_df,_jp(amplicon_name + '.Nucleotide_Conversion'),args.conversion_nuc_from,args.conversion_nuc_to,save_png,sgRNA_intervals=sgRNA_intervals)
-                else: #guides are not the same
-                    CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df,modification_percentage_summary_df,_jp(amplicon_name + '.Nucleotide_Percentage_Quilt'),save_png)
-                    if args.base_editor_output:
-                        CRISPRessoPlot.plot_conversion_map(nucleotide_percentage_summary_df,_jp(amplicon_name + '.Nucleotide_Conversion'),args.conversion_nuc_from,args.conversion_nuc_to,save_png)
-
-            amplicon_seqs = row.amplicon_seq.split(',')
-            amplicon_names = row.amplicon_name.split(',')
-            for i in range(len(amplicon_seqs)):
-                this_amplicon_seq = amplicon_seqs[i]
-                this_amplicon_name = amplicon_names[i]
-                info('Plotting for amplicon ' + str(i+1) + ": '" + this_amplicon_name + "'" )
-                report_nucleotide_summary(this_amplicon_seq,this_amplicon_name,i)
-
-
-            #summarize amplicon modifications
-            with open(_jp('CRISPRessoBatch_quantification_of_editing_frequency.txt'),'w') as outfile:
-                wrote_header = False
-                for idx,row in batch_params.iterrows():
-                    batchName = row["name"]
-                    file_prefix = row['file_prefix']
-                    folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
-                    run_data = run_datas[idx]
-
-                    amplicon_modification_file=run_data['quant_of_editing_freq_filename']
-                    with open(amplicon_modification_file,'r') as infile:
-                        file_head = infile.readline()
-                        if not wrote_header:
-                            outfile.write('Batch\t' + file_head)
-                            wrote_header = True
-                        for line in infile:
-                            outfile.write(batchName + "\t" + line)
-
-            #summarize alignment
-            with open(_jp('CRISPRessoBatch_mapping_statistics.txt'),'w') as outfile:
-                wrote_header = False
-                for idx,row in batch_params.iterrows():
-                    batchName = row["name"]
-                    folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
-
-                    run_data = run_datas[idx]
-                    amplicon_modification_file=run_data['mapping_stats_filename']
-                    with open(amplicon_modification_file,'r') as infile:
-                        file_head = infile.readline()
-                        if not wrote_header:
-                            outfile.write('Batch\t' + file_head)
-                            wrote_header = True
-                        for line in infile:
-                            outfile.write(batchName + "\t" + line)
+                run_data = run_datas[idx]
+                amplicon_modification_file=run_data['mapping_stats_filename']
+                with open(amplicon_modification_file,'r') as infile:
+                    file_head = infile.readline()
+                    if not wrote_header:
+                        outfile.write('Batch\t' + file_head)
+                        wrote_header = True
+                    for line in infile:
+                        outfile.write(batchName + "\t" + line)
 
         if not args.suppress_report:
             report_name = _jp('CRISPResso2Batch_report.html')

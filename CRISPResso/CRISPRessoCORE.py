@@ -38,7 +38,7 @@ from CRISPResso import cnwalign
 
 from datetime import datetime
 present = datetime.now()
-d1 = datetime.strptime('21/11/2018','%d/%m/%Y')
+d1 = datetime.strptime('21/12/2018','%d/%m/%Y')
 if present > d1:
     print('\nYour version of CRISPResso2 is out of date. Please download a new version.\n')
     sys.exit(1)
@@ -186,12 +186,12 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
                 # 'sequence'
                 # 'sequence_length'
                 # 'min_aln_score' #sequence must align with at least this score
-                # 'cut_points'
                 # 'gap_incentive' #incentive for gaps at each position of the reference - to force gaps at the cut points, the indices of these cut points are set to 1  i.e. gap_incentive[4] = 1 would incentivise alignments with insertions to the right of the 4th character in the reference, or deletions of the 4th character in the reference.
+                # 'contains_guide'
                 # 'sgRNA_plot_offsets' #for each sgRNA, if it is on the forward strand it needs to be offset by 1 in the plots. So this is an array of 1's and 0's corresponding to each guide
                 # 'sgRNA_intervals'
                 # 'sgRNA_sequences'
-                # 'contains_guide'
+                # 'cut_points'
                 # 'contains_coding_seq'
                 # 'exon_positions'
                 # 'exon_intervals'
@@ -622,17 +622,20 @@ def main():
                 while potentialSeed in seq_rc or potentialSeed in seeds:
                     attemptsToFindSeed += 1
                     if attemptsToFindSeed > 100:
-                        raise CRISPRessoShared.AlignmentException("Can't find alignment seed that is unique to the forward sequence")
+                        #raise CRISPRessoShared.AlignmentException("Can't find alignment seed that is unique to the forward sequence")
+                        break
                     # if this seed would extend past the end of the sequence, reset to position 0 (possibly in the excluded region, but hey, we're desperate)
                     if (seedStart > this_seq_length - args.aln_seed_len):
                         thisSeedStart = 0
                     thisSeedStart += 1
                     potentialSeed = this_seq[thisSeedStart:thisSeedStart+args.aln_seed_len]
-                seeds.append(potentialSeed)
                 seed_rc = CRISPRessoShared.reverse_complement(potentialSeed)
                 if seed_rc in this_seq:
-                    raise CRISPRessoShared.AlignmentException("Reverse compliment of seed %s is in amplicon %s even though seed is not in reverse compliment of amplicon"%(seed,amplicon))
-                rc_seeds.append(seed_rc)
+                    #raise CRISPRessoShared.AlignmentException("Reverse compliment of seed %s is in amplicon %s even though seed is not in reverse compliment of amplicon"%(seed,amplicon))
+                    continue
+                if potentialSeed not in seq_rc:
+                    seeds.append(potentialSeed)
+                    rc_seeds.append(seed_rc)
 
 
             refObj = {'name':this_name,
@@ -749,7 +752,7 @@ def main():
 
                 if (needs_cut_points or needs_sgRNA_intervals) and clone_has_cut_points:
                     this_cut_points = [s1inds[X] for X in refs[clone_ref_name]['cut_points']]
-                    this_gap_incentive = np.zeros(len(seq)+1,dtype=np.int)
+                    this_gap_incentive = np.zeros(refs[ref_name]['sequence_length']+1,dtype=np.int)
                     for cut_point in this_cut_points:
                         this_gap_incentive[cut_point + 1] = args.needleman_wunsch_gap_incentive
 
@@ -946,7 +949,7 @@ def main():
             if get_n_reads_fastq(output_forward_paired_filename):
                 avg_read_length=get_avg_read_length_fastq(output_forward_paired_filename)
             else:
-               raise NoReadsAfterQualityFiltering('No reads survived the average or single bp quality filtering.')
+               raise CRISPRessoShared.NoReadsAfterQualityFilteringException('No reads survived the average or single bp quality filtering.')
 
             #Merging with Flash
             info('Merging paired sequences with Flash...')
@@ -1000,7 +1003,7 @@ def main():
         #count reads
         N_READS_AFTER_PREPROCESSING=get_n_reads_fastq(processed_output_filename)
         if N_READS_AFTER_PREPROCESSING == 0:
-            raise NoReadsAfterQualityFiltering('No reads in input or no reads survived the average or single bp quality filtering.')
+            raise CRISPRessoShared.NoReadsAfterQualityFilteringException('No reads in input or no reads survived the average or single bp quality filtering.')
 
         info('Aligning sequences...')
 
@@ -1695,26 +1698,28 @@ def main():
         #crispresso2Cols = ["Aligned_Sequence","Reference_Sequence","Reference_Name","Read_Status","n_deleted","n_inserted","n_mutated","#Reads","%Reads"]
 #        crispresso2Cols = ["Aligned_Sequence","Reference_Sequence","Reference_Name","Read_Status","n_deleted","n_inserted","n_mutated","#Reads","%Reads","Aligned_Reference_Names","Aligned_Reference_Scores"]
         crispresso2Cols = ["Aligned_Sequence","Reference_Sequence","Reference_Name","Read_Status","n_deleted","n_inserted","n_mutated","#Reads","%Reads"]
-        allele_frequency_table_filename = _jp('Alleles_frequency_table.txt')
+        allele_frequency_table_filename = _jp('Alleles_frequency_table.txt.zip')
+        #df_alleles.ix[:,crispresso2Cols].to_csv(allele_frequency_table_filename,sep='\t',header=True,index=None,compression='zip')
         df_alleles.ix[:,crispresso2Cols].to_csv(allele_frequency_table_filename,sep='\t',header=True,index=None)
         crispresso2_info['allele_frequency_table_filename'] = allele_frequency_table_filename
 
 
-        with open(_jp('Quantification_of_editing_frequency.txt'),'w+') as outfile:
-            outfile.write("Quantification of editing frequency:\n")
-            for ref_name in ref_names:
-                n_unmod = counts_unmodified[ref_name]
-                n_mod = counts_modified[ref_name]
-                n_discarded = counts_discarded[ref_name]
+        if args.crispresso1_mode:
+            with open(_jp('Quantification_of_editing_frequency.txt'),'w+') as outfile:
+                outfile.write("Quantification of editing frequency:\n")
+                for ref_name in ref_names:
+                    n_unmod = counts_unmodified[ref_name]
+                    n_mod = counts_modified[ref_name]
+                    n_discarded = counts_discarded[ref_name]
 
-                n_insertion = counts_insertion[ref_name]
-                n_deletion = counts_deletion[ref_name]
-                n_substitution = counts_substitution[ref_name]
+                    n_insertion = counts_insertion[ref_name]
+                    n_deletion = counts_deletion[ref_name]
+                    n_substitution = counts_substitution[ref_name]
 
-                outfile.write("%s: Unmodified: %d Modified: %d Discarded: %d\n" % (ref_name,n_unmod,n_mod,n_discarded))
-                outfile.write("(%d reads with insertions, %d reads with deletions, %d reads with substitutions)\n" % (n_insertion,n_deletion,n_substitution))
+                    outfile.write("%s: Unmodified: %d Modified: %d Discarded: %d\n" % (ref_name,n_unmod,n_mod,n_discarded))
+                    outfile.write("(%d reads with insertions, %d reads with deletions, %d reads with substitutions)\n" % (n_insertion,n_deletion,n_substitution))
 
-            outfile.write('Total Aligned:%d reads ' % N_TOTAL)
+                outfile.write('Total Aligned:%d reads ' % N_TOTAL)
 
         quant_of_editing_freq_filename =_jp('CRISPResso_quantification_of_editing_frequency.txt')
         with open(quant_of_editing_freq_filename,'w+') as outfile:
@@ -1744,8 +1749,9 @@ def main():
 
 
         #write statistics
-        with open(_jp('Mapping_statistics.txt'),'w+') as outfile:
-            outfile.write('READS IN INPUTS:%d\nREADS AFTER PREPROCESSING:%d\nREADS ALIGNED:%d\n' % (N_READS_INPUT,N_READS_AFTER_PREPROCESSING,N_TOTAL))
+        if args.crispresso1_mode:
+            with open(_jp('Mapping_statistics.txt'),'w+') as outfile:
+                outfile.write('READS IN INPUTS:%d\nREADS AFTER PREPROCESSING:%d\nREADS ALIGNED:%d\n' % (N_READS_INPUT,N_READS_AFTER_PREPROCESSING,N_TOTAL))
 
         mapping_stats_filename = _jp('CRISPResso_mapping_statistics.txt')
         with open(mapping_stats_filename,'w+') as outfile:
@@ -3262,7 +3268,7 @@ def main():
         print_stacktrace_if_debug()
         error('Fastq file error, please check your input.\n\nERROR: %s' % e)
         sys.exit(12)
-    except CRISPRessoShared.NoReadsAfterQualityFiltering as e:
+    except CRISPRessoShared.NoReadsAfterQualityFilteringException as e:
         print_stacktrace_if_debug()
         error('Filtering error, please check your input.\n\nERROR: %s' % e)
         sys.exit(13)

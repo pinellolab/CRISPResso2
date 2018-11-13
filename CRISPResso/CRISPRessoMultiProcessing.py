@@ -27,8 +27,9 @@ def run_crispresso(crispresso_cmds,descriptor,idx):
 
     return_value = sb.call(crispresso_cmd,shell=True)
 
-
-    if return_value != 0:
+    if return_value == 137:
+        logging.warn('CRISPResso was killed by your system (return value %d) on %s #%d: "%s"\nPlease reduce the number of processes (-p) and run again.'%(return_value,descriptor,idx,crispresso_cmd))
+    elif return_value != 0:
         logging.warn('CRISPResso command failed (return value %d) on %s #%d: "%s"'%(return_value,descriptor,idx,crispresso_cmd))
     else:
         logging.info('Finished CRISPResso %s #%d' %(descriptor,idx))
@@ -52,6 +53,8 @@ def run_crispresso_cmds(crispresso_cmds,n_processes=1,descriptor = 'region',cont
         res = pool.map_async(pFunc,idxs)
         ret_vals = res.get(60*60*10) # Without the timeout this blocking call ignores all signals.
         for idx, ret in enumerate(ret_vals):
+            if ret == 137:
+                raise Exception('CRISPResso %s #%d was killed by your system. Please decrease the number of processes (-p) and run again.',descriptor,idx)
             if ret != 0 and not continue_on_fail:
                 raise Exception('CRISPResso %s #%d failed',descriptor,idx)
     except KeyboardInterrupt:
