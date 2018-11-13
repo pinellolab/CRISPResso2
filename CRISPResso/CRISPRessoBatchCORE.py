@@ -143,10 +143,12 @@ def main():
                     batch_params[arg].fillna(value=getattr(args,arg), inplace=True)
 
         #assert that all names are unique
+        #and clean names
 
         for i in range(batch_count):
             if batch_params.loc[i,'name'] == '':
                 batch_params.at[i,'name'] = i
+            batch_params.at[i,'name'] = CRISPRessoShared.clean_filename(batch_params.loc[i,'name'])
 
         if batch_params.drop_duplicates('name').shape[0] != batch_params.shape[0]:
             raise CRISPRessoShared.BadParameterException('Batch input names must be unique. The given names are not unique: ' + str(batch_params.loc[:,'name']))

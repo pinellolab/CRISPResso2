@@ -299,7 +299,7 @@ def plot_conversion_map(nuc_pct_df,fig_filename_root,conversion_nuc_from,convers
 
     max_pct_conversion = 1 # default
     if sum(from_nuc_indices) == 1: #if only one row where nuc_pct_conversion is from_nuc...
-        max_pct_conversion = nuc_pct_conversion_df.iloc[:,from_nuc_indices].max()
+        max_pct_conversion = float(nuc_pct_conversion_df.iloc[:,from_nuc_indices].max())
     elif sum(from_nuc_indices) > 1: #if multiple rows
         max_pct_conversion = nuc_pct_conversion_df.iloc[:,from_nuc_indices].max().max() #one max returns column-based max, second takes max of those
     if (max_pct_conversion < 0.01): # the min conversion perctent is 0.01. The legend axis are rounded to the nearest 0.01, so if this lower limit isn't set, the max will appear as 0.00%
