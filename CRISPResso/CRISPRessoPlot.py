@@ -16,6 +16,10 @@ from collections import defaultdict
 import re
 from matplotlib import colors as colors_mpl
 import seaborn as sns
+sns.set_style("white")
+sns.set_context('poster')
+sns.set(font_scale=2.2)
+
 
 
 
