@@ -31,6 +31,7 @@ def setMatplotlibDefaults():
     matplotlib.rcParams['ps.fonttype'] = 42
     matplotlib.rcParams["font.sans-serif"] = ["Arial", "Liberation Sans", "Bitstream Vera Sans"]
     matplotlib.rcParams["font.family"] = "sans-serif"
+    matplotlib.rcParams['axes.facecolor'] = 'white'
 
 setMatplotlibDefaults()
 
@@ -1000,8 +1001,6 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
         annot=annot[::-1]
         X=X[::-1]
 
-    sns.set_context('poster')
-
     N_ROWS=len(X)
     N_COLUMNS=plot_nuc_len
 
@@ -1062,7 +1061,7 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
     gs2.update(left=0,right=1, hspace=0.05,wspace=0,top=1*(((N_ROWS)*1.13))/(N_ROWS))
     gs1.update(left=0,right=1, hspace=0.05,wspace=0,)
 
-    sns.set_context(rc={'lines.markeredgewidth': 1,'mathtext.fontset' : 'stix','text.usetex':True,'text.latex.unicode':True} )
+    sns.set_context(rc={'axes.facecolor':'white','lines.markeredgewidth': 1,'mathtext.fontset' : 'stix','text.usetex':True,'text.latex.unicode':True} )
 
     proxies = [matplotlib.lines.Line2D([0], [0], linestyle='none', mfc='black',
                     mec='none', marker=r'$\mathbf{{{}}}$'.format('bold'),ms=18),
@@ -1129,8 +1128,6 @@ def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,i
         annot=annot[::-1]
         X=X[::-1]
 
-    sns.set_context('poster')
-
     N_ROWS=len(X)
     N_COLUMNS=plot_nuc_len
 
@@ -1190,7 +1187,7 @@ def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,i
 #    gs2.update(left=0,right=1, hspace=0.05,wspace=0,top=1*(((N_ROWS)*1.13))/(N_ROWS))
 #    gs1.update(left=0,right=1, hspace=0.05,wspace=0,)
 
-    sns.set_context(rc={'lines.markeredgewidth': 1,'mathtext.fontset' : 'stix','text.usetex':True,'text.latex.unicode':True} )
+    sns.set_context(rc={'axes.facecolor':'white','lines.markeredgewidth': 1,'mathtext.fontset' : 'stix','text.usetex':True,'text.latex.unicode':True} )
 
     proxies = [matplotlib.lines.Line2D([0], [0], linestyle='none', mfc='black',
                     mec='none', marker=r'$\mathbf{{{}}}$'.format('bold'),ms=18),
