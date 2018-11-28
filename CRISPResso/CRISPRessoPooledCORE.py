@@ -832,15 +832,11 @@ def main():
 
                 try:
                     quantification_file,amplicon_names,amplicon_info=CRISPRessoShared.check_output_folder(_jp(folder_name))
-                    print('debug 821')
-                    print('amplicon_info: ' + str(amplicon_info))
                     for amplicon_name in amplicon_names:
                         N_TOTAL = float(amplicon_info[amplicon_name]['Total'])
                         N_UNMODIFIED = float(amplicon_info[amplicon_name]['Unmodified'])
                         N_MODIFIED = float(amplicon_info[amplicon_name]['Modified'])
                         quantification_summary.append([run_name,amplicon_name,N_UNMODIFIED/N_TOTAL*100,N_MODIFIED/N_TOTAL*100,N_TOTAL,row.n_reads])
-                        print('debug 825')
-                        print(quantification_summary)
                 except CRISPRessoShared.OutputFolderIncompleteException as e:
                     quantification_summary.append([run_name,"",np.nan,np.nan,np.nan,row.n_reads])
                     warn('Skipping the folder %s: not enough reads, incomplete, or empty folder.'% folder_name)

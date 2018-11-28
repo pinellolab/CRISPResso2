@@ -28,7 +28,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.0.17b"
+__version__ = "2.0.18b"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -137,6 +137,7 @@ def getCRISPRessoArgParser(_ROOT, parserTitle = "CRISPResso Parameters",required
     parser.add_argument('--debug', help='Show debug messages', action='store_true')
     parser.add_argument('--no_rerun', help="Don't rerun CRISPResso2 if a run using the same parameters has already been finished.", action='store_true')
     parser.add_argument('--suppress_report',  help='Suppress output report', action='store_true')
+    parser.add_argument('--suppress_plots',  help='Suppress output plots', action='store_true')
     parser.add_argument('--write_cleaned_report', action='store_true',help=argparse.SUPPRESS)#trims working directories from output in report (for web access)
 
 
@@ -230,7 +231,7 @@ def capitalize_sequence(x):
 def clean_filename(filename):
     #get a clean name that we can use for a filename
     #validFilenameChars = "+-_.() %s%s" % (string.ascii_letters, string.digits)
-    filename = filename.replace(' ','_')
+    filename = str(filename).replace(' ','_')
     validFilenameChars = "_.%s%s" % (string.ascii_letters, string.digits)
 
     cleanedFilename = unicodedata.normalize('NFKD', unicode(filename)).encode('ASCII', 'ignore')

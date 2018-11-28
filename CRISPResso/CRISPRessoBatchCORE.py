@@ -434,18 +434,20 @@ def main():
                     #and add it to the list
                     sub_sgRNA_intervals.append((newstart,newend))
 
-                CRISPRessoPlot.plot_nucleotide_quilt(sub_nucleotide_percentage_summary_df,sub_modification_percentage_summary_df,_jp(amplicon_name
-                    + '.Quantification_Window_Nucleotide_Percentage_Quilt'),save_png,sgRNA_intervals=sub_sgRNA_intervals)
-                if args.base_editor_output:
-                    CRISPRessoPlot.plot_conversion_map(sub_nucleotide_percentage_summary_df,_jp(amplicon_name + '.Quantification_Window_Nucleotide_Conversion'),args.conversion_nuc_from,args.conversion_nuc_to,save_png,sgRNA_intervals=sub_sgRNA_intervals)
+                if not args.suppress_plots:
+                    CRISPRessoPlot.plot_nucleotide_quilt(sub_nucleotide_percentage_summary_df,sub_modification_percentage_summary_df,_jp(amplicon_name
+                        + '.Quantification_Window_Nucleotide_Percentage_Quilt'),save_png,sgRNA_intervals=sub_sgRNA_intervals)
+                    if args.base_editor_output:
+                        CRISPRessoPlot.plot_conversion_map(sub_nucleotide_percentage_summary_df,_jp(amplicon_name + '.Quantification_Window_Nucleotide_Conversion'),args.conversion_nuc_from,args.conversion_nuc_to,save_png,sgRNA_intervals=sub_sgRNA_intervals)
 
-                CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df,modification_percentage_summary_df,_jp(amplicon_name + '.Nucleotide_Percentage_Quilt'),save_png,sgRNA_intervals=sgRNA_intervals,quantification_window_idxs=include_idxs)
-                if args.base_editor_output:
-                    CRISPRessoPlot.plot_conversion_map(nucleotide_percentage_summary_df,_jp(amplicon_name + '.Nucleotide_Conversion'),args.conversion_nuc_from,args.conversion_nuc_to,save_png,sgRNA_intervals=sgRNA_intervals)
+                    CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df,modification_percentage_summary_df,_jp(amplicon_name + '.Nucleotide_Percentage_Quilt'),save_png,sgRNA_intervals=sgRNA_intervals,quantification_window_idxs=include_idxs)
+                    if args.base_editor_output:
+                        CRISPRessoPlot.plot_conversion_map(nucleotide_percentage_summary_df,_jp(amplicon_name + '.Nucleotide_Conversion'),args.conversion_nuc_from,args.conversion_nuc_to,save_png,sgRNA_intervals=sgRNA_intervals)
             else: #guides are not the same
-                CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df,modification_percentage_summary_df,_jp(amplicon_name + '.Nucleotide_Percentage_Quilt'),save_png)
-                if args.base_editor_output:
-                    CRISPRessoPlot.plot_conversion_map(nucleotide_percentage_summary_df,_jp(amplicon_name + '.Nucleotide_Conversion'),args.conversion_nuc_from,args.conversion_nuc_to,save_png)
+                if not args.suppress_plots:
+                    CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df,modification_percentage_summary_df,_jp(amplicon_name + '.Nucleotide_Percentage_Quilt'),save_png)
+                    if args.base_editor_output:
+                        CRISPRessoPlot.plot_conversion_map(nucleotide_percentage_summary_df,_jp(amplicon_name + '.Nucleotide_Conversion'),args.conversion_nuc_from,args.conversion_nuc_to,save_png)
 
         #report for amplicons that appear multiple times
         for amplicon_seq in all_amplicons:
@@ -454,7 +456,7 @@ def main():
                 continue
 
             amplicon_name = amplicon_names[amplicon_seq]
-            info('Plotting summary for amplicon: "' + amplicon_name + '"')
+            info('Reporting summary for amplicon: "' + amplicon_name + '"')
             report_nucleotide_summary(amplicon_seq,amplicon_name,i)
 
 
