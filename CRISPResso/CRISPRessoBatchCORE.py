@@ -215,7 +215,7 @@ def main():
         if args.name and args.name != "":
             batch_folder_name = args.name
 
-        OUTPUT_DIRECTORY='CRISPRessoBatch_on_%s' % batch_folder_name
+        OUTPUT_DIRECTORY=os.path.abspath('CRISPRessoBatch_on_%s' % batch_folder_name)
 
         if args.batch_output_folder:
                  OUTPUT_DIRECTORY=os.path.join(os.path.abspath(args.batch_output_folder),OUTPUT_DIRECTORY)
