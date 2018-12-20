@@ -28,7 +28,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.0.18b"
+__version__ = "2.0.19b"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -80,10 +80,10 @@ def getCRISPRessoArgParser(_ROOT, parserTitle = "CRISPResso Parameters",required
     parser.add_argument('-a','--amplicon_seq', type=str,  help='Amplicon Sequence (can be comma-separated list of multiple sequences)', required='amplicon_seq' in requiredParams)
 
     parser.add_argument('-an','--amplicon_name', type=str,  help='Amplicon Name (can be comma-separated list of multiple names, corresponding to amplicon sequences given in --amplicon_seq', default='Reference')
-    parser.add_argument('-amas','--amplicon_min_alignment_score', type=str,  help='Amplicon Minimum Alignment Score; score between 0 and 100; sequences must have at least this homology score with the amplicon to be aligned (can be comma-separated list of multiple scores, corresponding to amplicon sequences given in --amplicon_seq)', default="60")
+    parser.add_argument('-amas','--amplicon_min_alignment_score', type=str,  help='Amplicon Minimum Alignment Score; score between 0 and 100; sequences must have at least this homology score with the amplicon to be aligned (can be comma-separated list of multiple scores, corresponding to amplicon sequences given in --amplicon_seq)', default="")
     parser.add_argument('--default_min_aln_score','--min_identity_score',  type=int, help='Default minimum homology score for a read to align to a reference amplicon', default=60)
     parser.add_argument('--expand_ambiguous_alignments', help='If more than one reference amplicon is given, reads that align to multiple reference amplicons will count equally toward each amplicon. Default behavior is to exclude ambiguous alignments.', action='store_true')
-    parser.add_argument('-g','--guide_seq', help="sgRNA sequence, if more than one, please separate by commas. Note that the sgRNA needs to be input as the guide RNA sequence (usually 20 nt) immediately adjacent to but not including the PAM sequence (5' of NGG for SpCas9). If the PAM is found on the opposite strand with respect to the Amplicon Sequence, ensure the sgRNA sequence is also found on the opposite strand. The CRISPResso convention is to depict the expected cleavage position using the value of the parameter '--quantification_window_center' nucleotides from the 3' end of the guide. In addition, the use of alternate nucleases besides SpCas9 is supported. For example, if using the Cpf1 system, enter the sequence (usually 20 nt) immediately 3' of the PAM sequence and explicitly set the '--cleavage_offset' parameter to 1, since the default setting of -3 is suitable only for SpCas9.", default='')
+    parser.add_argument('-g','--guide_seq','--sgRNA', help="sgRNA sequence, if more than one, please separate by commas. Note that the sgRNA needs to be input as the guide RNA sequence (usually 20 nt) immediately adjacent to but not including the PAM sequence (5' of NGG for SpCas9). If the PAM is found on the opposite strand with respect to the Amplicon Sequence, ensure the sgRNA sequence is also found on the opposite strand. The CRISPResso convention is to depict the expected cleavage position using the value of the parameter '--quantification_window_center' nucleotides from the 3' end of the guide. In addition, the use of alternate nucleases besides SpCas9 is supported. For example, if using the Cpf1 system, enter the sequence (usually 20 nt) immediately 3' of the PAM sequence and explicitly set the '--cleavage_offset' parameter to 1, since the default setting of -3 is suitable only for SpCas9.", default='')
     parser.add_argument('-e','--expected_hdr_amplicon_seq', help='Amplicon sequence expected after HDR', default='')
     parser.add_argument('-c','--coding_seq',  help='Subsequence/s of the amplicon sequence covering one or more coding sequences for frameshift analysis. If more than one (for example, split by intron/s), please separate by commas.', default='')
     parser.add_argument('-q','--min_average_read_quality', type=int, help='Minimum average quality score (phred33) to keep a read', default=0)
@@ -554,10 +554,14 @@ def get_amplicon_info_for_guides(ref_seq,guides,quantification_window_center,qua
     #flatten the arrays to avoid errors with old numpy library
     this_include_idxs=np.ravel(this_include_idxs)
     this_exclude_idxs=np.ravel(this_exclude_idxs)
+    pre_exclude_include_idxs = this_include_idxs.copy()
 
     this_include_idxs=set(np.setdiff1d(this_include_idxs,this_exclude_idxs))
     if len(this_include_idxs) == 0:
-        raise BadParameterException('The entire sequence has been excluded. Please enter a longer amplicon, or decrease the exclude_bp_from_right and exclude_bp_from_left parameters')
+        if len(pre_exclude_include_idxs) > 0:
+            raise BadParameterException('The computation window around the sgRNA is excluded. Please decrease the exclude_bp_from_right and exclude_bp_from_left parameters.')
+        else:
+            raise BadParameterException('The entire sequence has been excluded. Please enter a longer amplicon, or decrease the exclude_bp_from_right and exclude_bp_from_left parameters')
 
     if this_cut_points and plot_window_size>0:
         window_around_cut=max(1,plot_window_size/2)
