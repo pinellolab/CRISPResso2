@@ -20,10 +20,10 @@ RUN conda config --add channels bioconda
 #RUN conda install -c anaconda seaborn
 
 #Add build tools
-RUN apt-get update && apt-get install build-essential default-jre samtools bowtie2 make gcc g++ zlib1g-dev zlib1g unzip -y 
+RUN apt-get update && apt-get install build-essential default-jre samtools bowtie2 make gcc g++ zlib1g-dev zlib1g unzip -y
 
 RUN conda install biopython
-RUN conda install -c bioconda flash 
+RUN conda install -c bioconda flash
 RUN conda update matplotlib
 RUN conda install -c bioconda trimmomatic
 
@@ -37,7 +37,7 @@ RUN mv CRISPResso/*.so .
 RUN rmdir CRISPResso/
 
 WORKDIR /CRISPResso
+RUN python CRISPResso.py --h
 
 
-# Reroute to enable the STREAM CLI and STREAM webapp
 ENTRYPOINT ["/opt/conda/bin/python", "/CRISPResso/CRISPResso2_router.py"]

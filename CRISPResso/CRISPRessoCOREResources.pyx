@@ -6,9 +6,9 @@ import re
 
 re_find_indels=re.compile("(-*-)")
 
-#@cython.boundscheck(False)
-#@cython.nonecheck(False)
-#@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.nonecheck(False)
+@cython.wraparound(False)
 def find_indels_substitutions(_read_seq_al,_ref_seq_al,_include_indx):
 
     cdef char* ref_seq_al = _ref_seq_al
@@ -21,6 +21,15 @@ def find_indels_substitutions(_read_seq_al,_ref_seq_al,_include_indx):
     cdef int idx_c
     cdef int idx
 
+    #ref_positions holds the indices for which positions map back to the original reference
+    # for example,
+    #     1 2 3 4 5 6 7 8
+    # ref A A T T G G C C
+    #
+    # and for a given alignment
+    # ref A A T T - G G C C
+    # aln A - T T T G G C C
+    #     1 2 3 4-4 5 6 7 8 <ref positions. Note that the negative values/indices represent places that don't map back to the original reference
     ref_positions=[]
     all_substitution_positions=[]
     substitution_positions=[]
@@ -60,6 +69,8 @@ def find_indels_substitutions(_read_seq_al,_ref_seq_al,_include_indx):
 
     substitution_n = len(substitution_positions)
 
+
+    #the remainder of positions are with reference to the original reference sequence indexes we calculated above
     all_deletion_positions=[]
     deletion_positions=[]
     deletion_coordinates=[]

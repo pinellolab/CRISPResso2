@@ -6,14 +6,15 @@ Software pipeline for the analysis of genome editing outcomes from deep sequenci
 '''
 
 
-import os
-import sys
-import subprocess as sb
-import gzip
 import argparse
-import unicodedata
-import string
+import gzip
+import os
 import re
+import string
+import subprocess as sb
+import sys
+import traceback
+import unicodedata
 from CRISPResso import CRISPRessoShared
 from CRISPResso import CRISPRessoMultiProcessing
 
@@ -209,6 +210,14 @@ class ExonSequenceException(Exception):
     pass
 
 def main():
+    def print_stacktrace_if_debug():
+        debug_flag = False
+        if 'args' in vars() and 'debug' in args:
+            debug_flag = args.debug
+
+        if debug_flag:
+            traceback.print_exc(file=sys.stdout)
+            error(traceback.format_exc())
     try:
         description = ['~~~CRISPRessoWGS~~~','-Analysis of CRISPR/Cas9 outcomes from WGS data-']
         wgs_string = r'''
@@ -356,8 +365,8 @@ def main():
                     if wrong_nt:
                         raise NTException('The sgRNA sequence %s contains wrong characters:%s'  % (current_guide_seq, ' '.join(wrong_nt)))
 
-                    offset_fw=args.cleavage_offset+len(current_guide_seq)-1
-                    offset_rc=(-args.cleavage_offset)-1
+                    offset_fw=args.quantification_window_center+len(current_guide_seq)-1
+                    offset_rc=(-args.quantification_window_center)-1
                     cut_points+=[m.start() + offset_fw for \
                                 m in re.finditer(current_guide_seq,  row.sequence)]+[m.start() + offset_rc for m in re.finditer(CRISPRessoShared.reverse_complement(current_guide_seq),  row.sequence)]
 
@@ -475,6 +484,7 @@ def main():
         sys.exit(0)
 
     except Exception as e:
+        print_stacktrace_if_debug()
         error('\n\nERROR: %s' % e)
         sys.exit(-1)
 

@@ -536,7 +536,8 @@ def main():
         else: #not auto
             amplicon_seq_arr = args.amplicon_seq.split(",")
             amplicon_name_arr = args.amplicon_name.split(",")
-            amplicon_min_alignment_score_arr = args.amplicon_min_alignment_score.split(",")
+            #split on commas, only accept empty values
+            amplicon_min_alignment_score_arr = [float(x) for x in args.amplicon_min_alignment_score.split(",") if x]
 
         if args.expected_hdr_amplicon_seq != "":
             amplicon_seq_arr.append(args.expected_hdr_amplicon_seq)
@@ -566,7 +567,7 @@ def main():
 
             this_min_aln_score = args.default_min_aln_score
             if idx < len(amplicon_min_alignment_score_arr):
-                this_min_aln_score = float(amplicon_min_alignment_score_arr[idx])
+                this_min_aln_score = amplicon_min_alignment_score_arr[idx]
 
 
             # Calculate cut sites for this reference
@@ -1438,16 +1439,18 @@ def main():
 
         # For HDR work, create a few more arrays, where all reads are aligned to ref1 (the first reference) and the indels are computed with regard to ref1
         if args.expected_hdr_amplicon_seq != "":
+            ref1_name = ref_names[0]
+            ref1_len = refs[ref1_name]['sequence_length']
+
             ref1_all_insertion_count_vectors = {} #all insertions (including quantification window bases) with respect to ref1
             ref1_all_deletion_count_vectors = {}
             ref1_all_substitution_count_vectors = {}
-            ref1_len = refs[ref_names[0]]['sequence_length']
             for ref_name in ref_names:
                 ref1_all_insertion_count_vectors[ref_name] = np.zeros(ref1_len)
                 ref1_all_deletion_count_vectors[ref_name] = np.zeros(ref1_len)
                 ref1_all_substitution_count_vectors[ref_name] = np.zeros(ref1_len)
 
-            #for ref1 we will add all other indels to it..
+            #for ref1 we will add all other indels to indels that have already been found..
             ref1_all_insertion_count_vectors[ref_names[0]] = all_insertion_count_vectors[ref_names[0]].copy()
             ref1_all_deletion_count_vectors[ref_names[0]] = all_deletion_count_vectors[ref_names[0]].copy()
             ref1_all_substitution_count_vectors[ref_names[0]] = all_substitution_count_vectors[ref_names[0]].copy()
@@ -1460,11 +1463,12 @@ def main():
                     continue
 
                 aln_ref_names = variantCache[variant]['aln_ref_names'] #list of references this seq aligned to
-                if len(aln_ref_names) == 0 and ref_names[0] == aln_ref_names[0]: #if this read was only aligned to ref1, skip it
+                if len(aln_ref_names) == 1 and ref_names[0] == aln_ref_names[0]: #if this read was only aligned to ref1, skip it because we already included the indels when we initialized the ref1_all_deletion_count_vectors array
                     continue
 
-                fws1,fws2,fwscore=cnwalign.global_align(variant, refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
-                rvs1,rvs2,rvscore=cnwalign.global_align(CRISPRessoShared.reverse_complement(variant), refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
+                #align this variant to ref1 sequence
+                fws1,fws2,fwscore=cnwalign.global_align(variant, refs[ref1_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref1_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
+                rvs1,rvs2,rvscore=cnwalign.global_align(CRISPRessoShared.reverse_complement(variant), refs[ref1_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref1_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
                 s1 = fws1
                 s2 = fws2
                 score = fwscore
@@ -1472,14 +1476,19 @@ def main():
                     s1 = rvs1
                     s2 = rvs2
                     score = rvscore
-                payload=CRISPRessoCOREResources.find_indels_substitutions(s1,s2,refs[ref_names[0]]['include_idxs'])
+                payload=CRISPRessoCOREResources.find_indels_substitutions(s1,s2,refs[ref1_name]['include_idxs'])
 
+                #indels in this alignment against ref1 should be recorded for each ref it was originally assigned to, as well as for ref1
+                #for example, if this read aligned to ref3, align this read to ref1, and add the resulting indels to ref1_all_insertion_count_vectors[ref3] as well as ref1_all_insertion_count_vectors[ref1]
+                #   Thus, ref1_all_insertion_count_vectors[ref3] will show the position of indels of reads that aligned to ref3, but mapped onto ref1
+                #   And ref1_alle_insertion_count_vectors[ref1] will show the position of indels of all reads, mapped onto ref1
                 for ref_name in aln_ref_names:
                     if ref_name == ref_names[0]:
                         continue
                     ref1_all_insertion_count_vectors[ref_name][payload['all_insertion_positions']]+=variantCount
                     ref1_all_deletion_count_vectors[ref_name][payload['all_deletion_positions']]+=variantCount
                     ref1_all_substitution_count_vectors[ref_name][payload['all_substitution_positions']]+=variantCount
+
                 #add these indel counts to the ref1
                 ref1_all_insertion_count_vectors[ref_names[0]][payload['all_insertion_positions']]+=variantCount
                 ref1_all_deletion_count_vectors[ref_names[0]][payload['all_deletion_positions']]+=variantCount
@@ -2207,7 +2216,7 @@ def main():
                         sel_cols = [0,1]
                         plot_half_window = max(1,args.plot_window_size/2)
                         new_sel_cols_start = max(2,cut_point-plot_half_window+1)
-                        new_sel_cols_end = min(ref_len+1,cut_point+plot_half_window+1)
+                        new_sel_cols_end = min(ref_len,cut_point+plot_half_window+1)
                         sel_cols.extend(range(new_sel_cols_start+2,new_sel_cols_end+2))
                         #get new intervals
                         new_sgRNA_intervals = []
