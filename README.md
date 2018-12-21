@@ -129,7 +129,9 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --split_paired_end: Splits a single fastq file containing paired end reads in two files before running CRISPResso (default: False)
 
---trim_sequences: Enable the trimming of Illumina adapters with Trimmomatic (default: False)
+--trim_sequences: Enable the trimming of Illumina adapters with [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) (default: False)
+
+--trimmomatic_command: Command to run [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic). Alternate executables for Trimmomatic should be specified here. The default uses the conda-installed trimmomatic. (default: trimmomatic)
 
 --trimmomatic_options_string: Override options for Trimmomatic (default: ILLUMINACLIP:/Users/luca/anaconda/lib/python2.7/site-packages/CRISPResso-0.8.0-py2.7.egg/CRISPResso/data/NexteraPE-PE.fa:0:90:10:0:true). This parameter is useful to specify different adaptor sequences used in the experiment if you need to trim them.
 
