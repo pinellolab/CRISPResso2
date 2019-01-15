@@ -107,10 +107,6 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --default_min_aln_score or --min_identity_score: Default minimum homology score for a read to align to a reference amplicon (default: 60)
 
- -amaxsub or --amplicon_max_substitutions_outside_qw: Amplicon Maximum allowed Substitutions allowed outside the quantification window; reads aligning with more than this number of substitutions outside of the quantification window will be discarded (can be comma-separated list of multiple scores, corresponding  to amplicon sequences given in --amplicon_seq) (default: )
-
---default_max_subs_outside_qw: Default maximum number of substitutions outside of the quantification window allowed for a read to align to a reference amplicon. If multiple amplicons are specified, this parameter can be specified for each amplicon separately using the -amaxsub parameter. Amplicons for which the -amaxsub parameter is not explicitly specified will be assigned this value. (default: 5)
-
 --expand_ambiguous_alignments: If more than one reference amplicon is given, reads that align to multiple reference amplicons will count equally toward each amplicon. Default behavior is to exclude ambiguous alignments. (default: False)
 
 -g or --guide_seq: sgRNA sequence, if more than one, please separate by commas. Note that the sgRNA needs to be input as the guide RNA sequence (usually 20 nt) immediately adjacent to but not including the PAM sequence (5' of NGG for SpCas9). If the PAM is found on the opposite strand with respect to the Amplicon Sequence, ensure the sgRNA sequence is also found on the opposite strand. The CRISPResso convention is to depict the expected cleavage position using the value of the parameter '--quantification_window_center' nucleotides from the 3' end of the guide. In addition, the use of alternate nucleases besides SpCas9 is supported. For example, if using the Cpf1 system, enter the sequence (usually 20 nt) immediately 3' of the PAM sequence and explicitly set the '--cleavage_offset' parameter to 1, since the default setting of -3 is suitable only for SpCas9. (default: )
