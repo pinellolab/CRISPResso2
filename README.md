@@ -29,7 +29,7 @@ If paired-end reads are provided, reads are merged using FLASh . This produces a
 #### Alignment
 The preprocessed reads are then aligned to the reference sequence with a global sequence alignment algorithm that takes into account our biological knowledge of nuclease function. If multiple alleles are present at the editing site, each allele can be passed to CRISPResso2 and sequenced reads will be assigned to the reference sequence or origin.
 #### Visualization and analysis
-Finally, after analyzing the aligned reads,	a set of informative graphs are generated, allowing for the quantification and visualization of the position and type of outcomes within the amplicon sequence.
+Finally, after analyzing the aligned reads, a set of informative graphs are generated, allowing for the quantification and visualization of the position and type of outcomes within the amplicon sequence.
 
 ## How is CRISPResso2 different from CRISPResso?
 CRISPResso2 introduces four key innovations for the analysis of genome editing data:
@@ -106,6 +106,10 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 -amas or --amplicon_min_alignment_score: Amplicon Minimum Alignment Score; score between 0 and 100; sequences must have at least this homology score with the amplicon to be aligned (can be comma-separated list of multiple scores, corresponding to amplicon sequences given in --amplicon_seq) After reads are aligned to a reference sequence, the homology is calculated as the number of bp they have in common. If the aligned read has a homology less than this parameter, it is discarded. This is useful for filtering erroneous reads that do not align to the target amplicon, for example arising from alternate primer locations. (default: 60)
 
 --default_min_aln_score or --min_identity_score: Default minimum homology score for a read to align to a reference amplicon (default: 60)
+
+ -amaxsub or --amplicon_max_substitutions: Amplicon Maximum allowed Substitutions allowed outside the quantification window; reads aligning with more than this number of substitutions outside of the quantification window will be discarded (can be comma-separated list of multiple scores, corresponding  to amplicon sequences given in --amplicon_seq) (default: )
+
+--default_max_sub_score: Default maximum number of substitutions outside of the quantification window allowed for a read to align to a reference amplicon. If multiple amplicons are specified, this parameter can be specified for each amplicon separately using the -amaxsub parameter. Amplicons for which the -amaxsub parameter is not explicitly specified will be assigned this value. (default: 5)
 
 --expand_ambiguous_alignments: If more than one reference amplicon is given, reads that align to multiple reference amplicons will count equally toward each amplicon. Default behavior is to exclude ambiguous alignments. (default: False)
 
