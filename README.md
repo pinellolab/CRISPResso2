@@ -107,9 +107,9 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --default_min_aln_score or --min_identity_score: Default minimum homology score for a read to align to a reference amplicon (default: 60)
 
- -amaxsub or --amplicon_max_substitutions: Amplicon Maximum allowed Substitutions allowed outside the quantification window; reads aligning with more than this number of substitutions outside of the quantification window will be discarded (can be comma-separated list of multiple scores, corresponding  to amplicon sequences given in --amplicon_seq) (default: )
+ -amaxsub or --amplicon_max_substitutions_outside_qw: Amplicon Maximum allowed Substitutions allowed outside the quantification window; reads aligning with more than this number of substitutions outside of the quantification window will be discarded (can be comma-separated list of multiple scores, corresponding  to amplicon sequences given in --amplicon_seq) (default: )
 
---default_max_sub_score: Default maximum number of substitutions outside of the quantification window allowed for a read to align to a reference amplicon. If multiple amplicons are specified, this parameter can be specified for each amplicon separately using the -amaxsub parameter. Amplicons for which the -amaxsub parameter is not explicitly specified will be assigned this value. (default: 5)
+--default_max_subs_outside_qw: Default maximum number of substitutions outside of the quantification window allowed for a read to align to a reference amplicon. If multiple amplicons are specified, this parameter can be specified for each amplicon separately using the -amaxsub parameter. Amplicons for which the -amaxsub parameter is not explicitly specified will be assigned this value. (default: 5)
 
 --expand_ambiguous_alignments: If more than one reference amplicon is given, reads that align to multiple reference amplicons will count equally toward each amplicon. Default behavior is to exclude ambiguous alignments. (default: False)
 
