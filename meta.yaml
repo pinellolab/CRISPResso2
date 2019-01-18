@@ -1,13 +1,13 @@
 package:
   name: crispresso2
-  version: "2.0.19b"
+  version: "2.0.20b"
 
 build:
   number: 1
   skip: True # [not py27]
 
 source:
-  git_rev: v2.0.19b
+  git_rev: v2.0.20b
   git_url: https://github.com/pinellolab/CRISPResso2.git
 
 requirements:
