@@ -60,15 +60,15 @@ def read_matrix(path):
 
 @cython.boundscheck(False)
 @cython.nonecheck(False)
-def global_align(char* seqj, char* seqi, np.ndarray[DTYPE_INT, ndim=2] matrix, 
-          np.ndarray[DTYPE_INT,ndim=1] gap_incentive, int gap_open=-1, 
+def global_align(char* seqj, char* seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
+          np.ndarray[DTYPE_INT,ndim=1] gap_incentive, int gap_open=-1,
           int gap_extend=-1):
     """
-    Global sequence alignment (needleman-wunsch) on seq i and j. 
+    Global sequence alignment (needleman-wunsch) on seq i and j.
     Reference is seq_i, sequenced read is seq_j
-    Match and mismatch values are read from matrix object 
+    Match and mismatch values are read from matrix object
     where matrix is of the format provided in the ncbi/data directory.
-    gap_incentive is the incentive for having a gap at each position in seqi - 
+    gap_incentive is the incentive for having a gap at each position in seqi -
       this allows for the preferential location of gaps to be at the predicted
       cut site in genome editing experiments.
 
@@ -184,7 +184,7 @@ def global_align(char* seqj, char* seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
                     mScore[i, j] = iVal
                     mPointer[i, j] = IARRAY
 
-#            print('mScore['+str(i) + ',' + str(j) +']: ' + str(mScore[i,j]) + ': max(' + str(mScore[i - 1, j - 1])+ '+ (' + str(ci)+ ',' + str(cj) + ') ' + str(matrix[ci,cj]) + ', i:'+str(iVal) + ',j:' + str(jVal)) 
+#            print('mScore['+str(i) + ',' + str(j) +']: ' + str(mScore[i,j]) + ': max(' + str(mScore[i - 1, j - 1])+ '+ (' + str(ci)+ ',' + str(cj) + ') ' + str(matrix[ci,cj]) + ', i:'+str(iVal) + ',j:' + str(jVal))
 
     #for last column and last row, ignore gap opening penalty
     #last column
@@ -228,7 +228,7 @@ def global_align(char* seqj, char* seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
             else:
                 mScore[i, j] = iVal
                 mPointer[i, j] = IARRAY
-#        print('lastCol: mScore['+str(i) + ',' + str(j) +']: ' + str(mScore[i,j]) + ': max(' + str(mScore[i - 1, j - 1])+ '+ (' + str(ci)+ ',' + str(cj) + ') ' + str(matrix[ci,cj]) + ', i:'+str(iVal) + ',j:' + str(jVal)) 
+#        print('lastCol: mScore['+str(i) + ',' + str(j) +']: ' + str(mScore[i,j]) + ': max(' + str(mScore[i - 1, j - 1])+ '+ (' + str(ci)+ ',' + str(cj) + ') ' + str(matrix[ci,cj]) + ', i:'+str(iVal) + ',j:' + str(jVal))
 
     #last row
     i = max_i
@@ -272,7 +272,7 @@ def global_align(char* seqj, char* seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
             else:
                 mScore[i, j] = iVal
                 mPointer[i, j] = IARRAY
-#        print('lastRow: mScore['+str(i) + ',' + str(j) +']: ' + str(mScore[i,j]) + ': max(' + str(mScore[i - 1, j - 1])+ '+ (' + str(ci)+ ',' + str(cj) + ') ' + str(matrix[ci,cj]) + ', i:'+str(iVal) + ',j:' + str(jVal)) 
+#        print('lastRow: mScore['+str(i) + ',' + str(j) +']: ' + str(mScore[i,j]) + ': max(' + str(mScore[i - 1, j - 1])+ '+ (' + str(ci)+ ',' + str(cj) + ') ' + str(matrix[ci,cj]) + ', i:'+str(iVal) + ',j:' + str(jVal))
 
 
     seqlen = max_i + max_j

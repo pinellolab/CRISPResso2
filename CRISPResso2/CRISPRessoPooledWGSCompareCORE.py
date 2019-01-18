@@ -12,8 +12,8 @@ import subprocess as sb
 import glob
 import argparse
 import re
-from CRISPResso import CRISPRessoShared
-from CRISPResso import CRISPRessoMultiProcessing
+from CRISPResso2 import CRISPRessoShared
+from CRISPResso2 import CRISPRessoMultiProcessing
 import traceback
 
 

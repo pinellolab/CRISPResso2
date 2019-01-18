@@ -23,21 +23,20 @@ RUN conda config --add channels bioconda
 RUN apt-get update && apt-get install build-essential default-jre samtools bowtie2 make gcc g++ zlib1g-dev zlib1g unzip -y
 
 RUN conda install biopython
-RUN conda install -c bioconda flash
 RUN conda update matplotlib
-RUN conda install -c bioconda trimmomatic
+RUN conda install -c bioconda trimmomatic flash
 
-COPY . /CRISPResso
+COPY . /CRISPResso2
 
 ENV PYTHONPATH /opt/conda/lib/python2.7/site-packages/numpy/core/include
 
-WORKDIR /CRISPResso/CRISPResso
+WORKDIR /CRISPResso2/CRISPResso2
 RUN /opt/conda/bin/python setup.py build_ext --inplace
-RUN mv CRISPResso/*.so .
-RUN rmdir CRISPResso/
+RUN mv CRISPResso2/*.so .
+RUN rmdir CRISPResso2/
 
-WORKDIR /CRISPResso
+WORKDIR /CRISPResso2
 RUN python CRISPResso.py --h
 
 
-ENTRYPOINT ["/opt/conda/bin/python", "/CRISPResso/CRISPResso2_router.py"]
+ENTRYPOINT ["/opt/conda/bin/python", "/CRISPResso2/CRISPResso2_router.py"]

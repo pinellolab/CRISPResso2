@@ -14,10 +14,10 @@ import argparse
 import re
 import string
 import traceback
-from CRISPResso import CRISPRessoShared
-from CRISPResso import CRISPRessoPlot
-from CRISPResso import CRISPRessoMultiProcessing
-from CRISPResso import CRISPRessoReport
+from CRISPResso2 import CRISPRessoShared
+from CRISPResso2 import CRISPRessoPlot
+from CRISPResso2 import CRISPRessoMultiProcessing
+from CRISPResso2 import CRISPRessoReport
 
 running_python3 = False
 if sys.version_info > (3, 0):

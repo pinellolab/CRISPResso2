@@ -11,8 +11,8 @@ import traceback
 import argparse
 import re
 import cPickle as cp
-from CRISPResso import CRISPRessoShared
-from CRISPResso import CRISPRessoPlot
+from CRISPResso2 import CRISPRessoShared
+from CRISPResso2 import CRISPRessoPlot
 
 
 

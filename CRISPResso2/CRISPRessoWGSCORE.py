@@ -15,8 +15,8 @@ import subprocess as sb
 import sys
 import traceback
 import unicodedata
-from CRISPResso import CRISPRessoShared
-from CRISPResso import CRISPRessoMultiProcessing
+from CRISPResso2 import CRISPRessoShared
+from CRISPResso2 import CRISPRessoMultiProcessing
 
 
 import logging
