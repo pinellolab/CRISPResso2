@@ -31,11 +31,11 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-from CRISPResso import CRISPRessoCOREResources
-from CRISPResso import CRISPRessoReport
-from CRISPResso import CRISPRessoShared
-from CRISPResso import CRISPRessoPlot
-from CRISPResso import cnwalign
+from CRISPResso2 import CRISPRessoCOREResources
+from CRISPResso2 import CRISPRessoReport
+from CRISPResso2 import CRISPRessoShared
+from CRISPResso2 import CRISPRessoPlot
+from CRISPResso2 import CRISPResso2Align
 
 from datetime import datetime
 present = datetime.now()
@@ -60,9 +60,6 @@ info    = logging.info
 ####Support functions###
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
-
-def get_data(path):
-    return os.path.join(_ROOT, 'data', path)
 
 def check_library(library_name):
     try:
@@ -126,8 +123,6 @@ import matplotlib.gridspec as gridspec
 
 pd=check_library('pandas')
 np=check_library('numpy')
-
-check_program('java')
 check_program('flash')
 
 #start = time.time()
@@ -217,7 +212,7 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
 
     aln_matrix_loc = os.path.join(_ROOT,args.needleman_wunsch_aln_matrix_loc)
     CRISPRessoShared.check_file(aln_matrix_loc)
-    aln_matrix = cnwalign.read_matrix(aln_matrix_loc)
+    aln_matrix = CRISPResso2Align.read_matrix(aln_matrix_loc)
 
     if (args.needleman_wunsch_gap_open > 0):
         raise CRISPRessoShared.BadParameterException("Needleman Wunsch gap open penalty must be <= 0")
@@ -278,21 +273,21 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
                         found_reverse_count += 1
                     seed_i += 1
                 if found_forward_count > args.aln_seed_min and found_reverse_count == 0:
-                    fws1,fws2,fwscore=cnwalign.global_align(fastq_seq, refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
+                    fws1,fws2,fwscore=CRISPResso2Align.global_align(fastq_seq, refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
                     s1 = fws1
                     s2 = fws2
                     score = fwscore
                     count_seed_fw += 1
                 elif found_forward_count == 0 and found_reverse_count > args.aln_seed_min:
-                    rvs1,rvs2,rvscore=cnwalign.global_align(CRISPRessoShared.reverse_complement(fastq_seq), refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
+                    rvs1,rvs2,rvscore=CRISPResso2Align.global_align(CRISPRessoShared.reverse_complement(fastq_seq), refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
                     s1 = rvs1
                     s2 = rvs2
                     score = rvscore
                     count_seed_rv += 1
                 else:
                     count_seed_both += 1
-                    fws1,fws2,fwscore=cnwalign.global_align(fastq_seq, refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
-                    rvs1,rvs2,rvscore=cnwalign.global_align(CRISPRessoShared.reverse_complement(fastq_seq), refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
+                    fws1,fws2,fwscore=CRISPResso2Align.global_align(fastq_seq, refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
+                    rvs1,rvs2,rvscore=CRISPResso2Align.global_align(CRISPRessoShared.reverse_complement(fastq_seq), refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
                     s1 = fws1
                     s2 = fws2
                     score = fwscore
@@ -428,7 +423,7 @@ def main():
 
         aln_matrix_loc = os.path.join(_ROOT,"EDNAFULL")
         CRISPRessoShared.check_file(aln_matrix_loc)
-        aln_matrix = cnwalign.read_matrix(aln_matrix_loc)
+        aln_matrix = CRISPResso2Align.read_matrix(aln_matrix_loc)
 
         #check files
         CRISPRessoShared.check_file(args.fastq_r1)
@@ -731,7 +726,7 @@ def main():
                 if not needs_cut_points and not needs_sgRNA_intervals and not needs_exon_positions:
                     continue
 
-                fws1,fws2,fwscore=cnwalign.global_align(refs[ref_name]['sequence'], refs[clone_ref_name]['sequence'],matrix=aln_matrix,gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,gap_incentive=refs[clone_ref_name]['gap_incentive'])
+                fws1,fws2,fwscore=CRISPResso2Align.global_align(refs[ref_name]['sequence'], refs[clone_ref_name]['sequence'],matrix=aln_matrix,gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,gap_incentive=refs[clone_ref_name]['gap_incentive'])
                 if fwscore < 60:
                     continue
 
@@ -905,8 +900,8 @@ def main():
             else:
                 output_forward_filename=_jp('reads.trimmed.fq.gz')
                 #Trimming with trimmomatic
-                cmd='java -jar %s SE -phred33 %s  %s %s >>%s 2>&1'\
-                % (get_data('trimmomatic-0.33.jar'),args.fastq_r1,
+                cmd='%s SE -phred33 %s  %s %s >>%s 2>&1'\
+                % (args.trimmomatic_command,args.fastq_r1,
                    output_forward_filename,
                    args.trimmomatic_options_string.replace('NexteraPE-PE.fa','TruSeq3-SE.fa'),
                    log_filename)
@@ -933,8 +928,8 @@ def main():
                 output_reverse_unpaired_filename=_jp('output_reverse_unpaired.fq.gz')
 
                 #Trimming with trimmomatic
-                cmd='java -jar %s PE -phred33 %s  %s %s  %s  %s  %s %s >>%s 2>&1'\
-                    % (get_data('trimmomatic-0.33.jar'),
+                cmd='%s PE -phred33 %s  %s %s  %s  %s  %s %s >>%s 2>&1'\
+                    % (args.trimmomatic_command,
                         args.fastq_r1,args.fastq_r2,output_forward_paired_filename,
                         output_forward_unpaired_filename,output_reverse_paired_filename,
                         output_reverse_unpaired_filename,args.trimmomatic_options_string,log_filename)
@@ -1467,8 +1462,8 @@ def main():
                     continue
 
                 #align this variant to ref1 sequence
-                fws1,fws2,fwscore=cnwalign.global_align(variant, refs[ref1_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref1_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
-                rvs1,rvs2,rvscore=cnwalign.global_align(CRISPRessoShared.reverse_complement(variant), refs[ref1_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref1_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
+                fws1,fws2,fwscore=CRISPResso2Align.global_align(variant, refs[ref1_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref1_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
+                rvs1,rvs2,rvscore=CRISPResso2Align.global_align(CRISPRessoShared.reverse_complement(variant), refs[ref1_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref1_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
                 s1 = fws1
                 s2 = fws2
                 score = fwscore
