@@ -490,6 +490,8 @@ def main():
                     if args_are_same:
                         info('Analysis already completed on %s!'%previous_run_data['end_time_string'])
                         sys.exit(0)
+                else:
+                    info('The no_rerun flag is set, but this analysis will be rerun because the existing run was performed using an old version of CRISPResso (' + str(previous_run_data['version']) + ').')
 
         #### ASSERT GUIDE(S)
         guides = []

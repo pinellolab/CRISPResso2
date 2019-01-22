@@ -245,6 +245,7 @@ def main():
         parser.add_argument('-x','--bowtie2_index', type=str, help='Basename of Bowtie2 index for the reference genome', default='')
         parser.add_argument('--bowtie2_options_string', type=str, help='Override options for the Bowtie2 alignment command',default=' -k 1 --end-to-end -N 0 --np 0 ')
         parser.add_argument('--min_reads_to_use_region',  type=float, help='Minimum number of reads that align to a region to perform the CRISPResso analysis', default=1000)
+        parser.add_argument('--skip_failed',  help='Continue with pooled analysis even if one sample fails',action='store_true')
 
         args = parser.parse_args()
 
@@ -537,9 +538,9 @@ def main():
                     crispresso_cmds.append(crispresso_cmd)
 
                 else:
-                    warn('Skipping amplicon [%s] since no reads are aligning to it\n'% idx)
+                    warn('Skipping amplicon [%s] because no reads align to it\n'% idx)
 
-            CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'amplicon')
+            CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'amplicon',args.skip_failed)
 
             df_template['n_reads']=n_reads_aligned_amplicons
             df_template['n_reads_aligned_%']=df_template['n_reads']/float(N_READS_ALIGNED)*100
@@ -705,7 +706,7 @@ def main():
                     n_reads_aligned_genome.append(0)
                     warn("The amplicon %s doesn't have any read mapped to it!\n Please check your amplicon sequence." %  idx)
 
-            CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'amplicon')
+            CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'amplicon',args.skip_failed)
 
             df_template['Amplicon_Specific_fastq.gz_filename']=fastq_region_filenames
             df_template['n_reads']=n_reads_aligned_genome
@@ -768,10 +769,6 @@ def main():
 
             df_regions.dropna(inplace=True) #remove regions in chrUn
 
-            print('debug 766')
-            print(df_regions)
-            print(df_regions.iloc[550:570,])
-
             df_regions['bpstart'] = pd.to_numeric(df_regions['bpstart'])
             df_regions['bpend'] = pd.to_numeric(df_regions['bpend'])
             df_regions['n_reads'] = pd.to_numeric(df_regions['n_reads'])
@@ -808,7 +805,7 @@ def main():
                     crispresso_cmds.append(crispresso_cmd)
                 else:
                     info('Skipping region: %s-%d-%d , not enough reads (%d)' %(row.chr_id,row.bpstart,row.bpend, row.n_reads))
-            CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'region')
+            CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'region',args.skip_failed)
 
         #write alignment statistics
         with open(_jp('MAPPING_STATISTICS.txt'),'w+') as outfile:
