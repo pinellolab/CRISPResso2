@@ -229,7 +229,7 @@ def main():
         '''
         print(CRISPRessoShared.get_crispresso_header(description,wgs_string))
 
-        parser = CRISPRessoShared.getCRISPRessoArgParser(_ROOT, parserTitle = 'CRISPRessoWGS Parameters',requiredParams={})
+        parser = CRISPRessoShared.getCRISPRessoArgParser(parserTitle = 'CRISPRessoWGS Parameters',requiredParams={})
 
         #tool specific optional
         parser.add_argument('-b','--bam_file', type=str,  help='WGS aligned bam file', required=True,default='bam filename' )

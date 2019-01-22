@@ -39,7 +39,7 @@ from CRISPResso2 import CRISPResso2Align
 
 from datetime import datetime
 present = datetime.now()
-d1 = datetime.strptime('21/02/2019','%d/%m/%Y')
+d1 = datetime.strptime('21/03/2019','%d/%m/%Y')
 if present > d1:
     print('\nYour version of CRISPResso2 is out of date. Please download a new version.\n')
     sys.exit(1)
@@ -419,7 +419,7 @@ def main():
         header = CRISPRessoShared.get_crispresso_header(description=description,header_str=None)
         print(header)
 
-        args = CRISPRessoShared.getCRISPRessoArgParser(_ROOT,requiredParams={'fastq_r1':True}).parse_args()
+        args = CRISPRessoShared.getCRISPRessoArgParser(requiredParams={'fastq_r1':True}).parse_args()
 
         aln_matrix_loc = os.path.join(_ROOT,"EDNAFULL")
         CRISPRessoShared.check_file(aln_matrix_loc)
