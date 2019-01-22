@@ -28,7 +28,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.0.20b"
+__version__ = "2.0.21"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -72,7 +72,7 @@ class OutputFolderIncompleteException(Exception):
 
 
 
-def getCRISPRessoArgParser(_ROOT, parserTitle = "CRISPResso Parameters",requiredParams={}):
+def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams={}):
     parser = argparse.ArgumentParser(description=parserTitle,formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-r1','--fastq_r1', type=str,  help='First fastq file',default='Fastq filename',required='fastq_r1' in requiredParams)
     parser.add_argument('-r2','--fastq_r2', type=str,  help='Second fastq file for paired end reads',default='')
@@ -148,7 +148,7 @@ def getCRISPRessoArgParser(_ROOT, parserTitle = "CRISPResso Parameters",required
     return parser
 
 def get_crispresso_options():
-    parser = getCRISPRessoArgParser(".", parserTitle = "Temp Params",requiredParams={})
+    parser = getCRISPRessoArgParser(parserTitle = "Temp Params",requiredParams={})
     crispresso_options = set()
     d = parser.__dict__['_option_string_actions']
     for key in d.keys():
@@ -167,7 +167,7 @@ def get_crispresso_options_lookup():
 #    .....
 #}
     crispresso_options_lookup = {}
-    parser = getCRISPRessoArgParser(".", parserTitle = "Temp Params",requiredParams={})
+    parser = getCRISPRessoArgParser(parserTitle = "Temp Params",requiredParams={})
     d = parser.__dict__['_option_string_actions']
     for key in d.keys():
         d2 = d[key].__dict__['dest']

@@ -100,7 +100,7 @@ def main():
         '''
         print(CRISPRessoShared.get_crispresso_header(description,batch_string))
 
-        parser = CRISPRessoShared.getCRISPRessoArgParser(_ROOT, parserTitle = 'CRISPRessoBatch Parameters')
+        parser = CRISPRessoShared.getCRISPRessoArgParser(parserTitle = 'CRISPRessoBatch Parameters')
 
         #batch specific params
         parser.add_argument('-bs','--batch_settings', type=str, help='Settings file for batch. Must be tab-separated text file. The header row contains CRISPResso parameters (e.g., fastq_r1, fastq_r2, amplicon_seq, and other optional parameters). Each following row sets parameters for an additional batch.',required=True)
