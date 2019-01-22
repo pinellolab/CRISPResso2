@@ -105,6 +105,7 @@ def main():
         #batch specific params
         parser.add_argument('-bs','--batch_settings', type=str, help='Settings file for batch. Must be tab-separated text file. The header row contains CRISPResso parameters (e.g., fastq_r1, fastq_r2, amplicon_seq, and other optional parameters). Each following row sets parameters for an additional batch.',required=True)
         parser.add_argument('--skip_failed',  help='Continue with batch analysis even if one sample fails',action='store_true')
+        parser.add_argument('--min_reads_for_inclusion',  help='Minimum number of reads for a batch to be included in the batch summary', type=int)
         parser.add_argument('-p','--n_processes',type=int, help='Specify the number of processes to use for quantification.\
         Please use with caution since increasing this parameter will increase the memory required to run CRISPResso.',default=1)
         parser.add_argument('-bo','--batch_output_folder',  help='Directory where batch analysis output will be stored')
@@ -252,7 +253,13 @@ def main():
             batchName = row["name"]
             file_prefix = row['file_prefix']
             folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
-            run_data = cp.load(open(os.path.join(folder_name,'CRISPResso2_info.pickle'),'rb'))
+            run_data_file = os.path.join(folder_name,'CRISPResso2_info.pickle')
+            if os.path.isfile(run_data_file) is False:
+                info("Skipping folder '%s'. Cannot find run data."%(folder_name))
+                run_datas.append(None)
+                continue
+
+            run_data = cp.load(open(run_data_file,'rb'))
             run_datas.append(run_data)
             for ref_name in run_data['ref_names']:
                 ref_seq = run_data['refs'][ref_name]['sequence']
@@ -266,13 +273,20 @@ def main():
                     amplicon_counts[ref_seq] = 0
                 amplicon_counts[ref_seq]+= 1
 
-        #make sure no duplicate names
+        #make sure amplicon names aren't super long
+        for amplicon in all_amplicons:
+            if length(amplicon_names[amplicon]) > 20:
+                amplicon_names[amplicon] = amplicon_names[amplicon][0:20]
+
+        #make sure no duplicate names (same name for the different amplicons)
         seen_names = {}
         for amplicon in all_amplicons:
-            if amplicon_names[amplicon] in seen_names:
-                amplicon_names[amplicon] = amplicon
-            else:
-                seen_names[amplicon_names[amplicon]] = 1
+            suffix_counter = 2
+            while amplicon_names[amplicon] in seen_names:
+                amplicon_names[amplicon] = amplicon_names[amplicon]+"_"+suffix_counter
+                suffix_counter += 1
+            seen_names[amplicon_names[amplicon]] = 1
+
 
         save_png = True
         if args.suppress_report:
@@ -296,6 +310,8 @@ def main():
                 file_prefix = row['file_prefix']
                 folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
                 run_data = run_datas[idx]
+                if run_data is None:
+                    continue
                 batch_has_amplicon = False
                 batch_amplicon_name = ''
                 for ref_name in run_data['ref_names']:
@@ -344,6 +360,9 @@ def main():
                     continue
                 if mod_freqs['Total'][0] == 0 or mod_freqs['Total'][0] == "0":
                     info("Skipping the amplicon '%s' in folder '%s'. Got no reads for amplicon."%(batch_amplicon_name,folder_name))
+                    continue
+                if (args.min_reads_for_inclusion is not None) and (int(mod_freqs['Total'][0]) < args.min_reads_for_inclusion):
+                    info("Skipping the amplicon '%s' in folder '%s'. Got %s reads (min_reads_for_inclusion is %d)."%(batch_amplicon_name,folder_name,str(mod_freqs['Total'][0]),args.min_reads_for_inclusion))
                     continue
 
                 mod_pcts = {}
@@ -468,6 +487,8 @@ def main():
                 file_prefix = row['file_prefix']
                 folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
                 run_data = run_datas[idx]
+                if run_data is None:
+                    continue
 
                 amplicon_modification_file=run_data['quant_of_editing_freq_filename']
                 with open(amplicon_modification_file,'r') as infile:
@@ -486,6 +507,8 @@ def main():
                 folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
 
                 run_data = run_datas[idx]
+                if run_data is None:
+                    continue
                 amplicon_modification_file=run_data['mapping_stats_filename']
                 with open(amplicon_modification_file,'r') as infile:
                     file_head = infile.readline()

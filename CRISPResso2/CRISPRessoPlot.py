@@ -194,6 +194,11 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=
         sgRNA_y_height = 0.2
         min_sgRNA_x = None
         for idx,sgRNA_int in enumerate(sgRNA_intervals):
+            this_sgRNA_start = sgRNA_int[0]
+            this_sgRNA_end = sgRNA_int[1]
+            print('this sgRNA_start is ' + str(this_sgRNA_start))
+            print('this sgRNA_end is ' + str(this_sgRNA_end))
+            print(nuc_pct_df)
             ax.add_patch(
                 patches.Rectangle((2+sgRNA_int[0], sgRNA_y_start), 1+sgRNA_int[1]-sgRNA_int[0], sgRNA_y_height,facecolor=(0,0,0,0.15))
                 )
