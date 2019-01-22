@@ -97,7 +97,7 @@ def getCRISPRessoArgParser(_ROOT, parserTitle = "CRISPResso Parameters",required
     parser.add_argument('--split_paired_end',help='Splits a single fastq file containing paired end reads in two files before running CRISPResso',action='store_true')
     parser.add_argument('--trim_sequences',help='Enable the trimming of Illumina adapters with Trimmomatic',action='store_true')
     parser.add_argument('--trimmomatic_command', type=str, help='Command to run trimmomatic',default='trimmomatic')
-    parser.add_argument('--trimmomatic_options_string', type=str, help='Override options for Trimmomatic',default=''))
+    parser.add_argument('--trimmomatic_options_string', type=str, help='Override options for Trimmomatic',default='')
     parser.add_argument('--min_paired_end_reads_overlap',  type=int, help='Parameter for the FLASH read merging step. Minimum required overlap length between two reads to provide a confident overlap. ', default=None)
     parser.add_argument('--max_paired_end_reads_overlap',  type=int, help='Parameter for the FLASH merging step.  Maximum overlap length expected in approximately 90%% of read pairs. Please see the FLASH manual for more information.', default=None)
 
