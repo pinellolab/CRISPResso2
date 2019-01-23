@@ -1,4 +1,6 @@
-CRISPResso2 is made available for free to academic researchers under this limited license for non-commercial use. If you plan to use the CRISPResso2 for-profit, you will need to purchase a license. Please contact crispresso2licensing@pinellolab.org for more information. 
+CRISPResso2 is made available for free to academic researchers under this limited license for non-commercial use.
+
+IMPORTANT: If you plan to use the CRISPResso2 for-profit, you will need to purchase a license. Please contact crispresso2licensing@pinellolab.org for more information. 
 
 CRISPResso2
 END USER LICENSE AGREEMENT
@@ -15,11 +17,11 @@ The Software Tool is free for your use subject to the terms and conditions set f
 
 MGH owns all right, title and interest in the Software Tool. MGH grants to you, the “Licensee,” a royalty-free, non-exclusive, non-transferable, revocable license to use the Software Tool for non-commercial research or academic purposes only; it is NOT made available here as a free tool or download for any commercial or clinical use. You may not copy or distribute the Software Tool in any form. This license is limited to the individual that accesses the Software Tool. No right to sublicense or assign this EULA is granted herein.
 
-The Software Tool optionally makes calls to unmodified versions of 
-FLASh (https://ccb.jhu.edu/software/FLASH/) and 
+The Software Tool optionally makes calls to unmodified versions of
+FLASh (https://ccb.jhu.edu/software/FLASH/) and
 Trimmomatic (http://www.usadellab.org/cms/?page=trimmomatic) software, both of which are covered under their own licenses (GPLv3).
 
-By using this Software Tool, you agree to allow MGH the right to collect data and statistics (i) on system usage patterns and (ii) to improve this Software Tool. 
+By using this Software Tool, you agree to allow MGH the right to collect data and statistics (i) on system usage patterns and (ii) to improve this Software Tool.
 
 3. Limitations on Use.
 THE SOFTWARE TOOL HAS NOT BEEN REGISTERED OR APPROVED BY THE U.S. FOOD AND DRUG AGENCY, OR ANY OTHER GOVERNMENTAL AGENCY.  THE SOFTWARE TOOL MAY BE USED ONLY AS A REFERENCE TOOL AND FOR CLINICAL EDUCATION, SIMILAR TO THE USE OF A TEXTBOOK OR A JOURNAL ARTICLE.   THE SOFTWARE TOOL SHALL NOT BE USED AS A DIAGNOSTIC DECISION MAKING SYSTEM AND MUST NOT BE USED TO MAKE A CLINICAL DIAGNOSIS OR REPLACE OR OVERRULE A LICENSED HEALTH CARE PROFESSIONAL'S JUDGMENT OR CLINICAL DIAGNOSIS.
@@ -38,12 +40,12 @@ In consideration of MGH providing access to the Software Tool free of charge, yo
 7. No Other Rights.
 You do not have the right to use the name, trademark, service mark, logo or other identifying characteristics of MGH or any of its affiliates or employees.  All rights not expressly granted herein are reserved by MGH.
 
-MGH may terminate your access to and use of the Software Tool at any time, with or without notice, for any reason or for no reason at all.  
+MGH may terminate your access to and use of the Software Tool at any time, with or without notice, for any reason or for no reason at all.
 
 8. Governing Law.
-The construction and performance of this EULA will be governed by the laws of the Commonwealth of Massachusetts, without regard to conflicts of laws principles. 
+The construction and performance of this EULA will be governed by the laws of the Commonwealth of Massachusetts, without regard to conflicts of laws principles.
 
 9. Entire Agreement.
 This EULA sets forth all of the covenants, provisions, agreements, conditions, and understandings between the parties regarding the subject matter herein, and there are no covenants, promises, agreements, conditions, or understandings, either oral or written, between them other than those set forth herein.
 
-Should you have any concerns regarding this EULA contact us at crispresso2licensing@pinellolab.org. 
+Should you have any concerns regarding this EULA contact us at crispresso2licensing@pinellolab.org.
