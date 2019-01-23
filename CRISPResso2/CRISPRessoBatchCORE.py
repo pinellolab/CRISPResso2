@@ -275,7 +275,7 @@ def main():
 
         #make sure amplicon names aren't super long
         for amplicon in all_amplicons:
-            if length(amplicon_names[amplicon]) > 20:
+            if len(amplicon_names[amplicon]) > 20:
                 amplicon_names[amplicon] = amplicon_names[amplicon][0:20]
 
         #make sure no duplicate names (same name for the different amplicons)

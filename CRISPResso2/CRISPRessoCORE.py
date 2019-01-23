@@ -2117,6 +2117,7 @@ def main():
             quantification_window_ref_seq = [list(ref_seq)[x] for x in ref_include_idx]
             ref_plot_idxs = refs[ref_name]['plot_idxs']
             sgRNA_sequences = refs[ref_name]['sgRNA_sequences']
+            print('debug 2120 here: '+str(sgRNA_sequences))
             cut_points = refs[ref_name]['cut_points']
             sgRNA_plot_offsets = refs[ref_name]['sgRNA_plot_offsets']
             sgRNA_intervals = refs[ref_name]['sgRNA_intervals']
