@@ -55,6 +55,7 @@ def main():
           author_email='kclement@mgh.harvard.edu',
           url='http://github.com/pinellolab/CRISPResso2',
           package_dir={'CRISPResso2' : 'CRISPResso2'},
+          include_package_data = True,
           packages=['CRISPResso2'],
       	  entry_points = {
         	"console_scripts": ['CRISPResso = CRISPResso2.CRISPRessoCORE:main',
