@@ -8,7 +8,7 @@ build:
 
 source:
   url: https://github.com/pinellolab/CRISPResso2/archive/v2.0.22.tar.gz
-  md5: 050277864e3311b076bd92d0e4b5cd8a
+  md5: d741471e09a8df4351b0540a8d12f3cd
 
 requirements:
   build:

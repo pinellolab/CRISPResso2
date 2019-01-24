@@ -79,7 +79,6 @@ def main():
               'Programming Language :: Cython',
               ],
           install_requires=[
-              'cython>=0.25',
               'numpy>=1.9',
               'pandas>=0.15',
               'matplotlib>=1.3.1',
