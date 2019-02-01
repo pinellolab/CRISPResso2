@@ -432,12 +432,12 @@ Example:
 
 *Using Bioconda:*
 ```
-CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -f AMPLICONS\_FILE.txt --name ONLY\_AMPLICONS\_SRR1046762 --gene\_annotations gencode\_v19.gz
+CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -f AMPLICONS_FILE.txt --name ONLY_AMPLICONS_SRR1046762 --gene_annotations gencode_v19.gz
 ```
 
 *Using Docker:*
 ```
-docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -f AMPLICONS\_FILE.txt --name ONLY\_AMPLICONS\_SRR1046762 --gene\_annotations gencode\_v19.gz
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -f AMPLICONS_FILE.txt --name ONLY_AMPLICONS_SRR1046762 --gene_annotations gencode_v19.gz
 ```
 
 The output of CRISPRessoPooled Amplicons mode consists of:
@@ -480,7 +480,7 @@ To run the tool in this mode the user must provide:
     are also accepted) 
 
 2.  The full path of the reference genome in bowtie2 format (e.g.
-    /homes/luca/genomes/human\_hg19/hg19). Instructions on how to build
+    /genomes/human\_hg19/hg19). Instructions on how to build
     a custom index or precomputed index for human and mouse genome
     assembly can be downloaded from the bowtie2
     website: http://bowtie-bio.sourceforge.net/bowtie2/index.shtml.
@@ -489,19 +489,18 @@ To run the tool in this mode the user must provide:
     user can download this file from the UCSC Genome Browser (
     http://genome.ucsc.edu/cgi-bin/hgTables?command=start ) selecting as
     table "knownGene", as output format "all fields from selected table"
-    and as file returned "gzip compressed". (e.g.
-    like: homes/luca/genomes/human\_hg19/gencode\_v19.gz)
+    and as file returned "gzip compressed". (e.g. /genomes/human\_hg19/gencode\_v19.gz)
 
 Example:
 
 *Using Bioconda:*
 ```
-CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -x /gcdata/gcproj/Luca/GENOMES/hg19/hg19 --name ONLY\_GENOME\_SRR1046762 --gene\_annotations gencode\_v19.gz
+CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -x /GENOMES/hg19/hg19 --name ONLY_GENOME_SRR1046762 --gene_annotations gencode_v19.gz
 ```
 
 *Using Docker:*
 ```
-docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -x /gcdata/gcproj/Luca/GENOMES/hg19/hg19 --name ONLY\_GENOME\_SRR1046762 --gene\_annotations gencode\_v19.gz
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -x /GENOMES/hg19/hg19 --name ONLY_GENOME_SRR1046762 --gene_annotations gencode_v19.gz
 ```
 
 The output of CRISPRessoPooled Genome mode consists of:
@@ -534,8 +533,8 @@ The output of CRISPRessoPooled Genome mode consists of:
 4.  *CRISPRessoPooled\_RUNNING\_LOG.txt*:  execution log and messages
     for the external utilities called.
 
-    This running mode is particular useful to check if there are mapping
-    artifacts or contaminations in the library. In an optimal
+    This running mode is particularly useful to check for mapping
+    artifacts or contamination in the library. In an optimal
     experiment, the list of the regions discovered should contain only
     the regions for which amplicons were designed.
 
@@ -569,12 +568,12 @@ Example:
 
 *Using Bioconda:*
 ```
-CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -f AMPLICONS\_FILE.txt -x /gcdata/gcproj/Luca/GENOMES  /hg19/hg19 --name AMPLICONS\_AND\_GENOME\_SRR1046762 --gene\_annotations gencode\_v19.gz
+CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -f AMPLICONS_FILE.txt -x /GENOMES/hg19/hg19 --name AMPLICONS_AND_GENOME_SRR1046762 --gene_annotations gencode_v19.gz
 ```
 
 *Using Docker:*
 ```
-docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -f AMPLICONS\_FILE.txt -x /gcdata/gcproj/Luca/GENOMES  /hg19/hg19 --name AMPLICONS\_AND\_GENOME\_SRR1046762 --gene\_annotations gencode\_v19.gz
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -f AMPLICONS_FILE.txt -x /GENOMES/hg19/hg19 --name AMPLICONS_AND_GENOME_SRR1046762 --gene_annotations gencode_v19.gz
 ```
 
 The output of CRISPRessoPooled Mixed Amplicons + Genome mode consists of
@@ -688,18 +687,18 @@ BED file with 4 columns, is also **accepted** by this utility.
     Browser (http://genome.ucsc.edu/cgi-bin/hgTables?command=start)
     selecting as table "knownGene", as output format "all fields from
     selected table" and as file returned "gzip compressed". (something
-    like: homes/luca/genomes/human\_hg19/gencode\_v19.gz)
+    like: /genomes/human\_hg19/gencode\_v19.gz)
 
 Example:
 
 *Using Bioconda:*
 ``` 
-CRISPRessoWGS -b WGS/50/50\_sorted\_rmdup\_fixed\_groups.bam -f WGS\_TEST.txt -r /gcdata/gcproj/Luca/GENOMES/mm9/mm9.fa --gene\_annotations ensemble\_mm9.txt.gz --name CRISPR\_WGS\_SRR1542350
+CRISPRessoWGS -b WGS/50/50_sorted_rmdup_fixed_groups.bam -f WGS_TEST.txt -r /GENOMES/mm9/mm9.fa --gene_annotations ensemble_mm9.txt.gz --name CRISPR_WGS_SRR1542350
 ```
 
 *Using Docker:*
 ``` 
-docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoWGS -b WGS/50/50\_sorted\_rmdup\_fixed\_groups.bam -f WGS\_TEST.txt -r /gcdata/gcproj/Luca/GENOMES/mm9/mm9.fa --gene\_annotations ensemble\_mm9.txt.gz --name CRISPR\_WGS\_SRR1542350
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoWGS -b WGS/50/50_sorted_rmdup_fixed_groups.bam -f WGS_TEST.txt -r /GENOMES/mm9/mm9.fa --gene_annotations ensemble_mm9.txt.gz --name CRISPR_WGS_SRR1542350
 ```
 
 The output from these files will consist of:
