@@ -28,7 +28,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.0.22"
+__version__ = "2.0.23"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
