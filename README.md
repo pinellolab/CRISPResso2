@@ -39,9 +39,31 @@ CRISPResso2 introduces four key innovations for the analysis of genome editing d
 4) Ultra-fast processing time.
 
 ## Installation
+CRISPResso2 can be installed using the [conda](http://conda.pydata.org/docs/intro.html) package manager [Bioconda](https://bioconda.github.io/), or it can be run using the [Docker](https://www.docker.com/) containerization system. 
+
+### Bioconda
+To install CRISPResso2 using Bioconda, download and install Anaconda Python 2.7, following the instructions at: http://continuum.io/downloads.
+
+Open a terminal and type:
+
+```
+conda config --add channels defaults
+conda config --add channels bioconda
+conda config --add channels conda-forge
+
+conda install CRISPResso2
+```
+
+Verify that CRISPResso is installed using the command:
+
+```
+CRISPResso -h
+```
+
+### Docker
 CRISPResso2 can be used via the Docker containerization system. This system allows CRISPResso2 to run on your system without configuring and installing additional packages. To run CRISPResso2, first download and install docker: https://docs.docker.com/engine/installation/
 
-Next, Docker must be configured to access your hard drive and to run with sufficient memory. These parameters can be found in the Docker settings menu. To allow Dockerto access your hard drive, select 'Shared Drives' and make sure your drive name is selected. To adjust the memory allocation, select the 'Advanced' tab and allocate at least 4G of memory. 
+Next, Docker must be configured to access your hard drive and to run with sufficient memory. These parameters can be found in the Docker settings menu. To allow Docker to access your hard drive, select 'Shared Drives' and make sure your drive name is selected. To adjust the memory allocation, select the 'Advanced' tab and allocate at least 4G of memory. 
 	
 To run CRISPresso2, make sure Docker is running, then open a command prompt (Mac) or Powershell (Windows). Change directories to the location where your data is, and run the following command: 
 
@@ -49,7 +71,7 @@ To run CRISPresso2, make sure Docker is running, then open a command prompt (Mac
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPResso -h
 ```
 
-The first time you run this command, it will download the docker image. The `-v` parameter mounts the current directory to be accessible by CRISPResso2, and the `-w` parameter sets the CRISPResso2 working directory. As long as you are running the command from the directory containing your data, you should not change the Docker `-v` or `-w` parameters. 
+The first time you run this command, it will download the Docker image. The `-v` parameter mounts the current directory to be accessible by CRISPResso2, and the `-w` parameter sets the CRISPResso2 working directory. As long as you are running the command from the directory containing your data, you should not change the Docker `-v` or `-w` parameters. 
 
 Additional parameters for CRISPResso2 as described below can be added to this command. For example, 
 
@@ -57,19 +79,30 @@ Additional parameters for CRISPResso2 as described below can be added to this co
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPResso -r1 sample.fastq.gz -a ATTAACCAAG
 ```
 
-
-
 ## CRISPResso2 usage
 CRISPResso2 is designed be run on a single amplicon. For experiments involving multiple amplicons in the same fastq, see the instructions for CRISPRessoPooled or CRISPRessoWGS below. 
 
 CRISPresso2 requires only two parameters: input sequences in the form of fastq files (given by the `--fastq_r1` and `--fastq_r2`) parameters, and the amplicon sequence to align to (given by the `--amplicon_seq` parameter). For example: 
 
+*Using Bioconda:*
+```
+CRISPResso --fastq_r1 reads.fastq.gz --amplicon_seq AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT
+```
+
+*Using Docker:*
 ```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPResso --fastq_r1 reads.fastq.gz --amplicon_seq AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT
 ```
 
 ### Example run: Non-homologous end joining (NHEJ)
-Download the test datasets [nhej.r1.fastq.gz]( http://crispresso.pinellolab.partners.org/static/demo/nhej.r1.fastq.gz) and [nhej.r2.fastq.gz]( http://crispresso.pinellolab.partners.org/static/demo/nhej.r2.fastq.gz) to your current directory. This is the first 25,000 sequences from a paired-end sequencing experiment. To analyze this experiment, run the following command:
+Download the test datasets [nhej.r1.fastq.gz]( http://crispresso.pinellolab.partners.org/static/demo/nhej.r1.fastq.gz) and [nhej.r2.fastq.gz]( http://crispresso.pinellolab.partners.org/static/demo/nhej.r2.fastq.gz) to your current directory. This is the first 25,000 sequences from a paired-end sequencing experiment. To analyze this experiment, run the command:
+
+*Using Bioconda:*
+```
+CRISPResso --fastq_r1 nhej.r1.fastq.gz --fastq_r2 nhej.r2.fastq.gz --amplicon_seq AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT -n nhej
+```
+
+*Using Docker:*
 ```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPResso --fastq_r1 nhej.r1.fastq.gz --fastq_r2 nhej.r2.fastq.gz --amplicon_seq AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT -n nhej
 ```
@@ -78,6 +111,13 @@ This should produce a folder called 'CRISPResso_on_nhej'. Open the file called C
 
 ### Example run: Multiple alleles
 Download the test dataset [allele_specific.fastq.gz]( http://crispresso.pinellolab.partners.org/static/demo/allele_specific.fastq.gz) to your current directory. This is the first 25,000 sequences from a editing experiment targeting one allele. To analyze this experiment, run the following command:
+
+*Using Bioconda:*
+```
+CRISPResso --fastq_r1 allele_specific.fastq.gz --amplicon_seq CGAGAGCCGCAGCCATGAACGGCACAGAGGGCCCCAATTTTTATGTGCCCTTCTCCAACGTCACAGGCGTGGTGCGGAGCCACTTCGAGCAGCCGCAGTACTACCTGGCGGAACCATGGCAGTTCTCCATGCTGGCAGCGTACATGTTCCTGCTCATCGTGCTGGG,CGAGAGCCGCAGCCATGAACGGCACAGAGGGCCCCAATTTTTATGTGCCCTTCTCCAACGTCACAGGCGTGGTGCGGAGCCCCTTCGAGCAGCCGCAGTACTACCTGGCGGAACCATGGCAGTTCTCCATGCTGGCAGCGTACATGTTCCTGCTCATCGTGCTGGG --amplicon_name P23H,WT --guide_seq GTGCGGAGCCACTTCGAGCAGC
+```
+
+*Using Docker:*
 ```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPResso --fastq_r1 allele_specific.fastq.gz --amplicon_seq CGAGAGCCGCAGCCATGAACGGCACAGAGGGCCCCAATTTTTATGTGCCCTTCTCCAACGTCACAGGCGTGGTGCGGAGCCACTTCGAGCAGCCGCAGTACTACCTGGCGGAACCATGGCAGTTCTCCATGCTGGCAGCGTACATGTTCCTGCTCATCGTGCTGGG,CGAGAGCCGCAGCCATGAACGGCACAGAGGGCCCCAATTTTTATGTGCCCTTCTCCAACGTCACAGGCGTGGTGCGGAGCCCCTTCGAGCAGCCGCAGTACTACCTGGCGGAACCATGGCAGTTCTCCATGCTGGCAGCGTACATGTTCCTGCTCATCGTGCTGGG --amplicon_name P23H,WT --guide_seq GTGCGGAGCCACTTCGAGCAGC
 ```
@@ -86,6 +126,13 @@ This should produce a folder called 'CRISPResso_on_allele_specific'. Open the fi
 
 ### Example run: Base editing experiment
 Download the test dataset [base_editor.fastq.gz]( http://crispresso.pinellolab.partners.org/static/demo/base_editor.fastq.gz) to your current directory. This is the first 25,000 sequences from an editing experiment performed at the EMX1 locus. To analyze this experiment, run the following command:
+
+*Using Bioconda:*
+```
+CRISPResso --fastq_r1 base_editor.fastq.gz --amplicon_seq GGCCCCAGTGGCTGCTCTGGGGGCCTCCTGAGTTTCTCATCTGTGCCCCTCCCTCCCTGGCCCAGGTGAAGGTGTGGTTCCAGAACCGGAGGACAAAGTACAAACGGCAGAAGCTGGAGGAGGAAGGGCCTGAGTCCGAGCAGAAGAAGAAGGGCTCCCATCACATCAACCGGTGGCGCATTGCCACGAAGCAGGCCAATGGGGAGGACATCGATGTCACCTCCAATGACTAGGGTGG --guide_seq GAGTCCGAGCAGAAGAAGAA --quantification_window_size 20 --quantification_window_center -10 --base_editor_output
+```
+
+*Using Docker:*
 ```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPResso --fastq_r1 base_editor.fastq.gz --amplicon_seq GGCCCCAGTGGCTGCTCTGGGGGCCTCCTGAGTTTCTCATCTGTGCCCCTCCCTCCCTGGCCCAGGTGAAGGTGTGGTTCCAGAACCGGAGGACAAAGTACAAACGGCAGAAGCTGGAGGAGGAAGGGCCTGAGTCCGAGCAGAAGAAGAAGGGCTCCCATCACATCAACCGGTGGCGCATTGCCACGAAGCAGGCCAATGGGGAGGACATCGATGTCACCTCCAATGACTAGGGTGG --guide_seq GAGTCCGAGCAGAAGAAGAA --quantification_window_size 20 --quantification_window_center -10 --base_editor_output
 ```
@@ -133,7 +180,7 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --trimmomatic_command: Command to run [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic). Alternate executables for Trimmomatic should be specified here. The default uses the conda-installed trimmomatic. (default: trimmomatic)
 
---trimmomatic_options_string: Override options for Trimmomatic (default: ILLUMINACLIP:/Users/luca/anaconda/lib/python2.7/site-packages/CRISPResso-0.8.0-py2.7.egg/CRISPResso/data/NexteraPE-PE.fa:0:90:10:0:true). This parameter is useful to specify different adaptor sequences used in the experiment if you need to trim them.
+--trimmomatic_options_string: Override options for Trimmomatic (default: ). This parameter can be used to specify different adaptor sequences used in the experiment if you need to trim them. For example: ```ILLUMINACLIP:NexteraPE-PE.fa:0:90:10:0:true```, where NexteraPE-PE.fa is a file containing sequences of adapters to be trimmed.
 
 --min_paired_end_reads_overlap: Parameter for the FLASH read merging step. Minimum required overlap length between two reads to provide a confident overlap. (default: None)
 
@@ -309,6 +356,13 @@ For each amplicon, the following files are produced with the name of the amplico
 
 #### Example run: Batch mode
 Download the test dataset files [SRR3305543.fastq.gz]( http://crispresso.pinellolab.partners.org/static/demo/SRR3305543.fastq.gz), [SRR3305544.fastq.gz](http://crispresso.pinellolab.partners.org/static/demo/SRR3305544.fastq.gz), [SRR3305545.fastq.gz]( http://crispresso.pinellolab.partners.org/static/demo/SRR3305545.fastq.gz), and [SRR3305546.fastq.gz]( http://crispresso.pinellolab.partners.org/static/demo/SRR3305546.fastq.gz) to your current directory. These are files are the first 25,000 sequences from an editing experiment performed on several base editors. Also include a batch file that lists these files and the sample names: [batch.batch](http://crispresso.pinellolab.partners.org/static/demo/batch.batch) To analyze this experiment, run the following command:
+
+*Using Bioconda:*
+```
+CRISPRessoBatch --batch_settings batch.batch --amplicon_seq CATTGCAGAGAGGCGTATCATTTCGCGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCC -p 4 --base_edit -g GGAATCCCTTCTGCAGCACC -wc -10 -w 20
+```
+
+*Using Docker:*
 ```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoBatch --batch_settings batch.batch --amplicon_seq CATTGCAGAGAGGCGTATCATTTCGCGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCC -p 4 --base_edit -g GGAATCCCTTCTGCAGCACC -wc -10 -w 20
 ```
@@ -376,8 +430,14 @@ spreadsheet software like Excel (Microsoft), Numbers (Apple) or Sheets
 
 Example:
 
+*Using Bioconda:*
 ```
-docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -f AMPLICONS\_FILE.txt --name ONLY\_AMPLICONS\_SRR1046762 --gene\_annotations gencode\_v19.gz
+CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -f AMPLICONS_FILE.txt --name ONLY_AMPLICONS_SRR1046762 --gene_annotations gencode_v19.gz
+```
+
+*Using Docker:*
+```
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -f AMPLICONS_FILE.txt --name ONLY_AMPLICONS_SRR1046762 --gene_annotations gencode_v19.gz
 ```
 
 The output of CRISPRessoPooled Amplicons mode consists of:
@@ -420,7 +480,7 @@ To run the tool in this mode the user must provide:
     are also accepted) 
 
 2.  The full path of the reference genome in bowtie2 format (e.g.
-    /homes/luca/genomes/human\_hg19/hg19). Instructions on how to build
+    /genomes/human\_hg19/hg19). Instructions on how to build
     a custom index or precomputed index for human and mouse genome
     assembly can be downloaded from the bowtie2
     website: http://bowtie-bio.sourceforge.net/bowtie2/index.shtml.
@@ -429,13 +489,18 @@ To run the tool in this mode the user must provide:
     user can download this file from the UCSC Genome Browser (
     http://genome.ucsc.edu/cgi-bin/hgTables?command=start ) selecting as
     table "knownGene", as output format "all fields from selected table"
-    and as file returned "gzip compressed". (e.g.
-    like: homes/luca/genomes/human\_hg19/gencode\_v19.gz)
+    and as file returned "gzip compressed". (e.g. /genomes/human\_hg19/gencode\_v19.gz)
 
 Example:
 
+*Using Bioconda:*
 ```
-docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -x /gcdata/gcproj/Luca/GENOMES/hg19/hg19 --name ONLY\_GENOME\_SRR1046762 --gene\_annotations gencode\_v19.gz
+CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -x /GENOMES/hg19/hg19 --name ONLY_GENOME_SRR1046762 --gene_annotations gencode_v19.gz
+```
+
+*Using Docker:*
+```
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -x /GENOMES/hg19/hg19 --name ONLY_GENOME_SRR1046762 --gene_annotations gencode_v19.gz
 ```
 
 The output of CRISPRessoPooled Genome mode consists of:
@@ -468,8 +533,8 @@ The output of CRISPRessoPooled Genome mode consists of:
 4.  *CRISPRessoPooled\_RUNNING\_LOG.txt*:  execution log and messages
     for the external utilities called.
 
-    This running mode is particular useful to check if there are mapping
-    artifacts or contaminations in the library. In an optimal
+    This running mode is particularly useful to check for mapping
+    artifacts or contamination in the library. In an optimal
     experiment, the list of the regions discovered should contain only
     the regions for which amplicons were designed.
 
@@ -501,8 +566,14 @@ To run the tool in this mode the user must provide:
 
 Example:
 
+*Using Bioconda:*
 ```
-docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -f AMPLICONS\_FILE.txt -x /gcdata/gcproj/Luca/GENOMES  /hg19/hg19 --name AMPLICONS\_AND\_GENOME\_SRR1046762 --gene\_annotations gencode\_v19.gz
+CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -f AMPLICONS_FILE.txt -x /GENOMES/hg19/hg19 --name AMPLICONS_AND_GENOME_SRR1046762 --gene_annotations gencode_v19.gz
+```
+
+*Using Docker:*
+```
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -f AMPLICONS_FILE.txt -x /GENOMES/hg19/hg19 --name AMPLICONS_AND_GENOME_SRR1046762 --gene_annotations gencode_v19.gz
 ```
 
 The output of CRISPRessoPooled Mixed Amplicons + Genome mode consists of
@@ -616,12 +687,18 @@ BED file with 4 columns, is also **accepted** by this utility.
     Browser (http://genome.ucsc.edu/cgi-bin/hgTables?command=start)
     selecting as table "knownGene", as output format "all fields from
     selected table" and as file returned "gzip compressed". (something
-    like: homes/luca/genomes/human\_hg19/gencode\_v19.gz)
+    like: /genomes/human\_hg19/gencode\_v19.gz)
 
 Example:
 
+*Using Bioconda:*
 ``` 
-docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoWGS -b WGS/50/50\_sorted\_rmdup\_fixed\_groups.bam -f WGS\_TEST.txt -r /gcdata/gcproj/Luca/GENOMES/mm9/mm9.fa --gene\_annotations ensemble\_mm9.txt.gz --name CRISPR\_WGS\_SRR1542350
+CRISPRessoWGS -b WGS/50/50_sorted_rmdup_fixed_groups.bam -f WGS_TEST.txt -r /GENOMES/mm9/mm9.fa --gene_annotations ensemble_mm9.txt.gz --name CRISPR_WGS_SRR1542350
+```
+
+*Using Docker:*
+``` 
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoWGS -b WGS/50/50_sorted_rmdup_fixed_groups.bam -f WGS_TEST.txt -r /GENOMES/mm9/mm9.fa --gene_annotations ensemble_mm9.txt.gz --name CRISPR_WGS_SRR1542350
 ```
 
 The output from these files will consist of:
@@ -681,6 +758,12 @@ To run CRISPRessoCompare you must provide:
 
 Example:
 
+*Using Bioconda:*
+```
+CRISPRessoCompare -n1 "VEGFA CRISPR" -n2 "VEGFA CONTROL"  -n VEGFA_Site_1_SRR10467_VS_SRR1046787 CRISPResso_on_VEGFA_Site_1_SRR1046762/ CRISPResso_on_VEGFA_Site_1_SRR1046787/
+```
+
+*Using Docker:*
 ```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoCompare -n1 "VEGFA CRISPR" -n2 "VEGFA CONTROL"  -n VEGFA_Site_1_SRR10467_VS_SRR1046787 CRISPResso_on_VEGFA_Site_1_SRR1046762/ CRISPResso_on_VEGFA_Site_1_SRR1046787/
 ```
@@ -704,6 +787,12 @@ To run CRISPRessoPooledWGSCompare you must provide:
 
 Example:
 
+*Using Bioconda:*
+```
+CRISPRessoPooledWGSCompare CRISPRessoPooled_on_AMPLICONS_AND_GENOME_SRR1046762/ CRISPRessoPooled_on_AMPLICONS_AND_GENOME_SRR1046787/ -n1 SRR1046762 -n2 SRR1046787 -n AMPLICONS_AND_GENOME_SRR1046762_VS_SRR1046787
+```
+
+*Using Docker:*
 ```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoPooledWGSCompare CRISPRessoPooled_on_AMPLICONS_AND_GENOME_SRR1046762/ CRISPRessoPooled_on_AMPLICONS_AND_GENOME_SRR1046787/ -n1 SRR1046762 -n2 SRR1046787 -n AMPLICONS_AND_GENOME_SRR1046762_VS_SRR1046787
 ```

@@ -21,7 +21,7 @@ elif sys.argv[1]=='CRISPRessoWGS':
 elif sys.argv[1]=='CRISPRessoPooledWGSCompare':
     sb.call(["/opt/conda/bin/python", "/CRISPResso/CRISPRessoPooledWGSCompare.py"]+ sys.argv[2:])
 elif sys.argv[1]=='License':
-    with open("EULA_for_CRISPResso2.txt", 'r') as fin:
+    with open("LICENSE.txt", 'r') as fin:
         print fin.read()
 else:
     print usage
