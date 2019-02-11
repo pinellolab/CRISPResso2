@@ -74,6 +74,7 @@ class OutputFolderIncompleteException(Exception):
 
 def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams={}):
     parser = argparse.ArgumentParser(description=parserTitle,formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--version', action='version', version='%(prog)s'+__version__)
     parser.add_argument('-r1','--fastq_r1', type=str,  help='First fastq file',default='Fastq filename',required='fastq_r1' in requiredParams)
     parser.add_argument('-r2','--fastq_r2', type=str,  help='Second fastq file for paired end reads',default='')
 
@@ -98,6 +99,7 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('--trim_sequences',help='Enable the trimming of Illumina adapters with Trimmomatic',action='store_true')
     parser.add_argument('--trimmomatic_command', type=str, help='Command to run trimmomatic',default='trimmomatic')
     parser.add_argument('--trimmomatic_options_string', type=str, help='Override options for Trimmomatic',default='')
+    parser.add_argument('--flash_command', type=str, help='Command to run flash',default='flash')
     parser.add_argument('--min_paired_end_reads_overlap',  type=int, help='Parameter for the FLASH read merging step. Minimum required overlap length between two reads to provide a confident overlap. ', default=None)
     parser.add_argument('--max_paired_end_reads_overlap',  type=int, help='Parameter for the FLASH merging step.  Maximum overlap length expected in approximately 90%% of read pairs. Please see the FLASH manual for more information.', default=None)
 
@@ -209,7 +211,7 @@ def propagate_crispresso_options(cmd,options,params):
 
 
 #######
-# Nucleotide functions
+# Sequence functions
 #######
 nt_complement=dict({'A':'T','C':'G','G':'C','T':'A','N':'N','_':'_','-':'-'})
 def reverse_complement(seq):
@@ -223,6 +225,14 @@ def find_wrong_nt(sequence):
 
 def capitalize_sequence(x):
     return str(x).upper() if not pd.isnull(x) else x
+
+def slugify(value): #adapted from the Django project
+
+    value = unicodedata.normalize('NFKD', unicode(value)).encode('ascii', 'ignore')
+    value = unicode(re.sub('[^\w\s-]', '_', value).strip())
+    value = unicode(re.sub('[-\s]+', '-', value))
+
+    return str(value)
 
 
 ######
@@ -340,7 +350,7 @@ def check_output_folder(output_folder):
     else:
         raise OutputFolderIncompleteException("The folder %s  is not a valid CRISPResso2 output folder. Cannot find quantification file '%s'." %(output_folder,quantification_file))
 
-def get_most_frequent_reads(fastq_r1,fastq_r2,number_of_reads_to_consider,max_paired_end_reads_overlap,min_paired_end_reads_overlap):
+def get_most_frequent_reads(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,min_paired_end_reads_overlap):
     """
     Gets the most frequent amplicon from a fastq file (or after merging a r1 and r2 fastq file)
     input:
@@ -371,7 +381,7 @@ def get_most_frequent_reads(fastq_r1,fastq_r2,number_of_reads_to_consider,max_pa
             max_overlap_param = "--max-overlap="+str(max_paired_end_reads_overlap)
         if min_paired_end_reads_overlap:
             min_overlap_param = "--min-overlap="+str(min_paired_end_reads_overlap)
-        file_generation_command = "bash -c 'paste <(%s %s) <(%s %s)' | head -n %d | paste - - - - | awk -v OFS=\"\\n\" -v FS=\"\\t\" '{print($1,$3,$5,$7,$2,$4,$6,$8)}' | flash - --interleaved-input %s %s --to-stdout 2>/dev/null " %(view_cmd_1,fastq_r1,view_cmd_2,fastq_r2,number_of_reads_to_consider,max_overlap_param,min_overlap_param)
+        file_generation_command = "bash -c 'paste <(%s %s) <(%s %s)' | head -n %d | paste - - - - | awk -v OFS=\"\\n\" -v FS=\"\\t\" '{print($1,$3,$5,$7,$2,$4,$6,$8)}' | %s - --interleaved-input %s %s --to-stdout 2>/dev/null " %(view_cmd_1,fastq_r1,view_cmd_2,fastq_r2,number_of_reads_to_consider,flash_command,max_overlap_param,min_overlap_param)
     count_frequent_cmd = file_generation_command + " | awk '((NR-2)%4==0){print $1}' | sort | uniq -c | sort -nr "
     def default_sigpipe():
         signal.signal(signal.SIGPIPE, signal.SIG_DFL)
@@ -390,13 +400,14 @@ def get_most_frequent_reads(fastq_r1,fastq_r2,number_of_reads_to_consider,max_pa
         raise AutoException('Cannot parse any frequent amplicons sequences.')
     return seq_lines
 
-def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,max_paired_end_reads_overlap,min_paired_end_reads_overlap,aln_matrix,needleman_wunsch_gap_open,needleman_wunsch_gap_extend,min_freq_to_consider=0.01,amplicon_similarity_cutoff=0.95):
+def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,min_paired_end_reads_overlap,aln_matrix,needleman_wunsch_gap_open,needleman_wunsch_gap_extend,min_freq_to_consider=0.01,amplicon_similarity_cutoff=0.95):
     """
     guesses the amplicons used in an experiment by examining the most frequent read (giant caveat -- most frequent read should be unmodified)
     input:
     fastq_r1: path to fastq r1 (can be gzipped)
     fastq_r2: path to fastq r2 (can be gzipped)
     number_of_reads_to_consider: number of reads from the top of the file to examine
+    flash_command: command to call flash
     min_paired_end_reads_overlap: min overlap in bp for flashing (merging) r1 and r2
     max_paired_end_reads_overlap: max overlap in bp for flashing (merging) r1 and r2
     needleman_wunsch_gap_open: alignment penalty assignment used to determine similarity of two sequences
@@ -407,7 +418,7 @@ def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,max_paired_end
     returns:
     list of putative amplicons
     """
-    seq_lines = get_most_frequent_reads(fastq_r1,fastq_r2,number_of_reads_to_consider,max_paired_end_reads_overlap,min_paired_end_reads_overlap)
+    seq_lines = get_most_frequent_reads(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,min_paired_end_reads_overlap)
 
     curr_amplicon_id = 1
 

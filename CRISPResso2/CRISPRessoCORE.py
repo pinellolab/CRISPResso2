@@ -39,7 +39,7 @@ from CRISPResso2 import CRISPResso2Align
 
 from datetime import datetime
 present = datetime.now()
-d1 = datetime.strptime('21/03/2019','%d/%m/%Y')
+d1 = datetime.strptime('21/05/2019','%d/%m/%Y')
 if present > d1:
     print('\nYour version of CRISPResso2 is out of date. Please download a new version.\n')
     sys.exit(1)
@@ -374,13 +374,6 @@ def add_hist(hist_to_add,hist_global):
     return hist_global
 
 
-def slugify(value): #adapted from the Django project
-
-    value = unicodedata.normalize('NFKD', unicode(value)).encode('ascii', 'ignore')
-    value = unicode(re.sub('[^\w\s-]', '_', value).strip())
-    value = unicode(re.sub('[-\s]+', '-', value))
-
-    return str(value)
 
 def split_paired_end_reads_single_file(fastq_filename,output_filename_r1,output_filename_r2):
 
@@ -445,14 +438,14 @@ def main():
                 database_id='%s' % get_name_from_fasta(args.fastq_r1)
 
         else:
-            clean_name=slugify(args.name)
+            clean_name=CRISPRessoShared.slugify(args.name)
             if args.name!= clean_name:
                 warn('The specified name %s contained invalid characters and was changed to: %s' % (args.name,clean_name))
             database_id=clean_name
 
         clean_file_prefix = ""
         if args.file_prefix != "":
-            clean_file_prefix = slugify(args.file_prefix)
+            clean_file_prefix = CRISPRessoShared.slugify(args.file_prefix)
             if not clean_file_prefix.endswith("."):
                 clean_file_prefix += "."
 
@@ -522,7 +515,7 @@ def main():
         if args.auto:
             number_of_reads_to_consider = 1000 * 4 #1000 fastq sequences (4 lines each)
 
-            amplicon_seq_arr = CRISPRessoShared.guess_amplicons(args.fastq_r1,args.fastq_r2,number_of_reads_to_consider,args.max_paired_end_reads_overlap,args.min_paired_end_reads_overlap,aln_matrix,args.needleman_wunsch_gap_open,args.needleman_wunsch_gap_extend)
+            amplicon_seq_arr = CRISPRessoShared.guess_amplicons(args.fastq_r1,args.fastq_r2,number_of_reads_to_consider,args.flash_command,args.max_paired_end_reads_overlap,args.min_paired_end_reads_overlap,aln_matrix,args.needleman_wunsch_gap_open,args.needleman_wunsch_gap_extend)
             amplicon_name_arr = ['Amplicon'+str(x) for x in ['',range(1,len(amplicon_seq_arr))]]
 
             amplicon_min_alignment_score_arr = []
@@ -963,8 +956,9 @@ def main():
                 max_overlap = args.max_paired_end_reads_overlap
             if args.min_paired_end_reads_overlap:
                 min_overlap = args.min_paired_end_reads_overlap
-            cmd='flash %s %s --min-overlap %d --max-overlap %d -z -d %s >>%s 2>&1' %\
-            (output_forward_paired_filename,
+            cmd='%s %s %s --min-overlap %d --max-overlap %d -z -d %s >>%s 2>&1' %\
+            (args.flash_command,
+                 output_forward_paired_filename,
                  output_reverse_paired_filename,
                  min_overlap,
                  max_overlap,
@@ -1793,21 +1787,22 @@ def main():
             #if n_this_category < 1:
             #    continue
 
-            ins_pct_vector_filename = _jp(ref_name+'.effect_vector_insertion.txt')
-            save_vector_to_file(insertion_pct_vectors[ref_name],ins_pct_vector_filename)
-            crispresso2_info['refs'][ref_name]['insertion_pct_vector_filename'] = ins_pct_vector_filename
+            if not args.suppress_plots:
+                ins_pct_vector_filename = _jp(ref_name+'.effect_vector_insertion.txt')
+                save_vector_to_file(insertion_pct_vectors[ref_name],ins_pct_vector_filename)
+                crispresso2_info['refs'][ref_name]['insertion_pct_vector_filename'] = ins_pct_vector_filename
 
-            del_pct_vector_filename = _jp(ref_name+'.effect_vector_deletion.txt')
-            save_vector_to_file(deletion_pct_vectors[ref_name],del_pct_vector_filename)
-            crispresso2_info['refs'][ref_name]['deletion_pct_vector_filename'] = del_pct_vector_filename
+                del_pct_vector_filename = _jp(ref_name+'.effect_vector_deletion.txt')
+                save_vector_to_file(deletion_pct_vectors[ref_name],del_pct_vector_filename)
+                crispresso2_info['refs'][ref_name]['deletion_pct_vector_filename'] = del_pct_vector_filename
 
-            sub_pct_vector_filename = _jp(ref_name+'.effect_vector_substitution.txt')
-            save_vector_to_file(substitution_pct_vectors[ref_name],sub_pct_vector_filename)
-            crispresso2_info['refs'][ref_name]['substitution_pct_vector_filename'] = sub_pct_vector_filename
+                sub_pct_vector_filename = _jp(ref_name+'.effect_vector_substitution.txt')
+                save_vector_to_file(substitution_pct_vectors[ref_name],sub_pct_vector_filename)
+                crispresso2_info['refs'][ref_name]['substitution_pct_vector_filename'] = sub_pct_vector_filename
 
-            indelsub_pct_vector_filename = _jp(ref_name+'.effect_vector_combined.txt')
-            save_vector_to_file(indelsub_pct_vectors[ref_name],indelsub_pct_vector_filename)
-            crispresso2_info['refs'][ref_name]['combined_pct_vector_filename'] = indelsub_pct_vector_filename
+                indelsub_pct_vector_filename = _jp(ref_name+'.effect_vector_combined.txt')
+                save_vector_to_file(indelsub_pct_vectors[ref_name],indelsub_pct_vector_filename)
+                crispresso2_info['refs'][ref_name]['combined_pct_vector_filename'] = indelsub_pct_vector_filename
 
             #save mods in quantification window
             quant_window_mod_count_filename = _jp(ref_name+'.quantification_window_modification_count_vectors.txt')
@@ -1893,32 +1888,34 @@ def main():
             y_values_del = refs[ref_name]['y_values_del']
             x_bins_del = refs[ref_name]['x_bins_del']
 
-            indel_histogram_file = _jp(ref_name+'.indel_histogram.txt')
-            pd.DataFrame(np.vstack([hlengths,hdensity]).T,columns=['indel_size','fq']).to_csv(indel_histogram_file,index=None,sep='\t')
-            crispresso2_info['refs'][ref_name]['indel_histogram_filename'] = indel_histogram_file
-            crispresso2_info['refs'][ref_name]['indel_histogram_filename_caption'] = "A tab-separated text file that shows a histogram of the length of indels (both insertions and deletions) in the " + ref_name +" sequence in the quantification window. " \
-                        "Indels outside of the quantification window are not included. The indel_size column shows the number of substitutions, and the fq column shows the number of reads having an indel of that length."
+            if not args.suppress_plots:
+
+                indel_histogram_file = _jp(ref_name+'.indel_histogram.txt')
+                pd.DataFrame(np.vstack([hlengths,hdensity]).T,columns=['indel_size','fq']).to_csv(indel_histogram_file,index=None,sep='\t')
+                crispresso2_info['refs'][ref_name]['indel_histogram_filename'] = indel_histogram_file
+                crispresso2_info['refs'][ref_name]['indel_histogram_filename_caption'] = "A tab-separated text file that shows a histogram of the length of indels (both insertions and deletions) in the " + ref_name +" sequence in the quantification window. " \
+                            "Indels outside of the quantification window are not included. The indel_size column shows the number of substitutions, and the fq column shows the number of reads having an indel of that length."
 
 
 
-            insertion_histogram_file = _jp(ref_name+'.insertion_histogram.txt')
-            pd.DataFrame(np.vstack([x_bins_ins[:-1],y_values_ins]).T,columns=['ins_size','fq']).to_csv(insertion_histogram_file,index=None,sep='\t')
-            crispresso2_info['refs'][ref_name]['insertion_histogram_filename'] = insertion_histogram_file
-            crispresso2_info['refs'][ref_name]['insertion_histogram_filename_caption'] = "A tab-separated text file that shows a histogram of the number of insertions in the " + ref_name +" sequence in the quantification window. " \
-                "Insertions outside of the quantification window are not included. The ins_size column shows the number of insertions, and the fq column shows the number of reads having that number of insertions."
+                insertion_histogram_file = _jp(ref_name+'.insertion_histogram.txt')
+                pd.DataFrame(np.vstack([x_bins_ins[:-1],y_values_ins]).T,columns=['ins_size','fq']).to_csv(insertion_histogram_file,index=None,sep='\t')
+                crispresso2_info['refs'][ref_name]['insertion_histogram_filename'] = insertion_histogram_file
+                crispresso2_info['refs'][ref_name]['insertion_histogram_filename_caption'] = "A tab-separated text file that shows a histogram of the number of insertions in the " + ref_name +" sequence in the quantification window. " \
+                    "Insertions outside of the quantification window are not included. The ins_size column shows the number of insertions, and the fq column shows the number of reads having that number of insertions."
 
 
-            deletion_histogram_file = _jp(ref_name+'.deletion_histogram.txt')
-            pd.DataFrame(np.vstack([-x_bins_del[:-1],y_values_del]).T,columns=['del_size','fq']).to_csv(deletion_histogram_file,index=None,sep='\t')
-            crispresso2_info['refs'][ref_name]['deletion_histogram_filename'] = deletion_histogram_file
-            crispresso2_info['refs'][ref_name]['deletion_histogram_filename_caption'] = "A tab-separated text file that shows a histogram of the number of deletions in the " + ref_name +" sequence in the quantification window. " \
+                deletion_histogram_file = _jp(ref_name+'.deletion_histogram.txt')
+                pd.DataFrame(np.vstack([-x_bins_del[:-1],y_values_del]).T,columns=['del_size','fq']).to_csv(deletion_histogram_file,index=None,sep='\t')
+                crispresso2_info['refs'][ref_name]['deletion_histogram_filename'] = deletion_histogram_file
+                crispresso2_info['refs'][ref_name]['deletion_histogram_filename_caption'] = "A tab-separated text file that shows a histogram of the number of deletions in the " + ref_name +" sequence in the quantification window. " \
                 "Deletions outside of the quantification window are not included. The del_size column shows the number of deletions, and the fq column shows the number of reads having that number of deletions."
 
 
-            substitution_histogram_file = _jp(ref_name+'.substitution_histogram.txt')
-            pd.DataFrame(np.vstack([x_bins_mut[:-1],y_values_mut]).T,columns=['sub_count','fq']).to_csv(substitution_histogram_file,index=None,sep='\t')
-            crispresso2_info['refs'][ref_name]['substitution_histogram_filename'] = substitution_histogram_file
-            crispresso2_info['refs'][ref_name]['substitution_histogram_filename_caption'] = "A tab-separated text file that shows a histogram of the number of substitutions in the " + ref_name +" sequence in the quantification window. " \
+                substitution_histogram_file = _jp(ref_name+'.substitution_histogram.txt')
+                pd.DataFrame(np.vstack([x_bins_mut[:-1],y_values_mut]).T,columns=['sub_count','fq']).to_csv(substitution_histogram_file,index=None,sep='\t')
+                crispresso2_info['refs'][ref_name]['substitution_histogram_filename'] = substitution_histogram_file
+                crispresso2_info['refs'][ref_name]['substitution_histogram_filename_caption'] = "A tab-separated text file that shows a histogram of the number of substitutions in the " + ref_name +" sequence in the quantification window. " \
                 "Substitutions outside of the quantification window are not included. The sub_size column shows the number of substitutions, and the fq column shows the number of reads having that number of substitutions."
 
 

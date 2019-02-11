@@ -237,7 +237,7 @@ def main():
 
         crispresso_cmds = []
         for idx,row in batch_params.iterrows():
-            batchName = row["name"]
+            batchName = CRISPRessoShared.slugify(row["name"])
             crispresso_cmd=CRISPResso_to_call + ' -o %s --name %s' % (OUTPUT_DIRECTORY,batchName)
             crispresso_cmd=propagate_options(crispresso_cmd,crispresso_options_for_batch,batch_params,idx)
             crispresso_cmds.append(crispresso_cmd)
@@ -250,12 +250,12 @@ def main():
         amplicon_names = {}
         amplicon_counts = {}
         for idx,row in batch_params.iterrows():
-            batchName = row["name"]
+            batchName = CRISPRessoShared.slugify(row["name"])
             file_prefix = row['file_prefix']
             folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
             run_data_file = os.path.join(folder_name,'CRISPResso2_info.pickle')
             if os.path.isfile(run_data_file) is False:
-                info("Skipping folder '%s'. Cannot find run data."%(folder_name))
+                info("Skipping folder '%s'. Cannot find run data at '%s'."%(folder_name,run_data_file))
                 run_datas.append(None)
                 continue
 
@@ -283,7 +283,7 @@ def main():
         for amplicon in all_amplicons:
             suffix_counter = 2
             while amplicon_names[amplicon] in seen_names:
-                amplicon_names[amplicon] = amplicon_names[amplicon]+"_"+suffix_counter
+                amplicon_names[amplicon] = amplicon_names[amplicon]+"_"+str(suffix_counter)
                 suffix_counter += 1
             seen_names[amplicon_names[amplicon]] = 1
 
@@ -306,7 +306,7 @@ def main():
             guides_all_same = True
             batches_with_this_amplicon = []
             for idx,row in batch_params.iterrows():
-                batchName = row["name"]
+                batchName = CRISPRessoShared.slugify(row["name"])
                 file_prefix = row['file_prefix']
                 folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
                 run_data = run_datas[idx]
@@ -483,7 +483,7 @@ def main():
         with open(_jp('CRISPRessoBatch_quantification_of_editing_frequency.txt'),'w') as outfile:
             wrote_header = False
             for idx,row in batch_params.iterrows():
-                batchName = row["name"]
+                batchName = CRISPRessoShared.slugify(row["name"])
                 file_prefix = row['file_prefix']
                 folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
                 run_data = run_datas[idx]
@@ -503,7 +503,7 @@ def main():
         with open(_jp('CRISPRessoBatch_mapping_statistics.txt'),'w') as outfile:
             wrote_header = False
             for idx,row in batch_params.iterrows():
-                batchName = row["name"]
+                batchName = CRISPRessoShared.slugify(row["name"])
                 folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
 
                 run_data = run_datas[idx]
