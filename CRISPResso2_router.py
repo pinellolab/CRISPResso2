@@ -1,3 +1,11 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+'''
+CRISPResso2 - Kendell Clement and Luca Pinello 2018
+Software pipeline for the analysis of genome editing outcomes from deep sequencing data
+(c) 2018 The General Hospital Corporation. All Rights Reserved.
+'''
+
 import os
 import subprocess as sb
 import sys
@@ -9,17 +17,17 @@ if len(sys.argv)==1:
     sys.exit(1)
 
 if sys.argv[1]=='CRISPResso':
-    sb.call(["/opt/conda/bin/python", "/CRISPResso/CRISPResso.py"]+ sys.argv[2:])
+    sb.call(["CRISPResso"]+ sys.argv[2:])
 elif sys.argv[1]=='CRISPRessoBatch':
-    sb.call(["/opt/conda/bin/python", "/CRISPResso/CRISPRessoBatch.py"]+ sys.argv[2:])
+    sb.call(["CRISPRessoBatch"]+ sys.argv[2:])
 elif sys.argv[1]=='CRISPRessoCompare':
-    sb.call(["/opt/conda/bin/python", "/CRISPResso/CRISPRessoCompare.py"]+ sys.argv[2:])
+    sb.call(["CRISPRessoCompare"]+ sys.argv[2:])
 elif sys.argv[1]=='CRISPRessoPooled':
-    sb.call(["/opt/conda/bin/python", "/CRISPResso/CRISPRessoPooled.py"]+ sys.argv[2:])
+    sb.call(["CRISPRessoPooled"]+ sys.argv[2:])
 elif sys.argv[1]=='CRISPRessoWGS':
-    sb.call(["/opt/conda/bin/python", "/CRISPResso/CRISPRessoWGS.py"]+ sys.argv[2:])
+    sb.call(["CRISPRessoWGS"]+ sys.argv[2:])
 elif sys.argv[1]=='CRISPRessoPooledWGSCompare':
-    sb.call(["/opt/conda/bin/python", "/CRISPResso/CRISPRessoPooledWGSCompare.py"]+ sys.argv[2:])
+    sb.call(["CRISPRessoPooledWGSCompare"]+ sys.argv[2:])
 elif sys.argv[1]=='License':
     with open("LICENSE.txt", 'r') as fin:
         print fin.read()
