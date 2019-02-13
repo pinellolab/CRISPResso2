@@ -34,7 +34,6 @@ info    = logging.info
 
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
-CRISPResso_to_call = os.path.join(os.path.dirname(_ROOT),'CRISPResso.py')
 
 ####Support functions###
 def get_data(path):
@@ -246,6 +245,7 @@ def main():
         parser.add_argument('--bowtie2_options_string', type=str, help='Override options for the Bowtie2 alignment command',default=' -k 1 --end-to-end -N 0 --np 0 ')
         parser.add_argument('--min_reads_to_use_region',  type=float, help='Minimum number of reads that align to a region to perform the CRISPResso analysis', default=1000)
         parser.add_argument('--skip_failed',  help='Continue with pooled analysis even if one sample fails',action='store_true')
+        parser.add_argument('--crispresso_command', help='CRISPResso command to call',default='CRISPResso')
 
         args = parser.parse_args()
 
@@ -522,7 +522,7 @@ def main():
             for idx,row in df_template.iterrows():
                 info('\n Processing:%s' %idx)
                 n_reads_aligned_amplicons.append(get_n_reads_fastq(row['Demultiplexed_fastq.gz_filename']))
-                crispresso_cmd= CRISPResso_to_call + ' -r1 %s -a %s -o %s --name %s' % (row['Demultiplexed_fastq.gz_filename'],row['Amplicon_Sequence'],OUTPUT_DIRECTORY,idx)
+                crispresso_cmd= args.crispresso_command + ' -r1 %s -a %s -o %s --name %s' % (row['Demultiplexed_fastq.gz_filename'],row['Amplicon_Sequence'],OUTPUT_DIRECTORY,idx)
 
                 if n_reads_aligned_amplicons[-1]>args.min_reads_to_use_region:
                     if row['sgRNA'] and not pd.isnull(row['sgRNA']):
@@ -684,7 +684,7 @@ def main():
                     if N_READS>=args.min_reads_to_use_region:
                         info('\nThe amplicon [%s] has enough reads (%d) mapped to it! Running CRISPResso!\n' % (idx,N_READS))
 
-                        crispresso_cmd=CRISPResso_to_call + ' -r1 %s -a %s -o %s --name %s' % (fastq_filename_region,row['Amplicon_Sequence'],OUTPUT_DIRECTORY,idx)
+                        crispresso_cmd= args.crispresso_command + ' -r1 %s -a %s -o %s --name %s' % (fastq_filename_region,row['Amplicon_Sequence'],OUTPUT_DIRECTORY,idx)
 
                         if row['sgRNA'] and not pd.isnull(row['sgRNA']):
                             crispresso_cmd+=' -g %s' % row['sgRNA']
@@ -800,7 +800,7 @@ def main():
 
                 if row.n_reads > args.min_reads_to_use_region:
                     info('\nRunning CRISPResso on: %s-%d-%d...'%(row.chr_id,row.bpstart,row.bpend ))
-                    crispresso_cmd=CRISPResso_to_call + ' -r1 %s -a %s -o %s' %(row.fastq_file,row.sequence,OUTPUT_DIRECTORY)
+                    crispresso_cmd= args.crispresso_command + ' -r1 %s -a %s -o %s' %(row.fastq_file,row.sequence,OUTPUT_DIRECTORY)
                     crispresso_cmd=CRISPRessoShared.propagate_crispresso_options(crispresso_cmd,crispresso_options_for_pooled,args)
                     crispresso_cmds.append(crispresso_cmd)
                 else:

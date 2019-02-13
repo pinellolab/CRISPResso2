@@ -33,7 +33,6 @@ info    = logging.info
 
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
-CRISPResso_to_call = os.path.join(os.path.dirname(_ROOT),'CRISPResso.py')
 
 
 ####Support functions###
@@ -237,10 +236,12 @@ def main():
         columns are: chr_id(chromosome name), bpstart(start position), bpend(end position), the optional columns are:name (an unique indentifier for the region), guide_seq, expected_hdr_amplicon_seq,coding_seq, see CRISPResso help for more details on these last 3 parameters)', required=True)
         parser.add_argument('-r','--reference_file', type=str, help='A FASTA format reference file (for example hg19.fa for the human genome)', default='',required=True)
         parser.add_argument('--min_reads_to_use_region',  type=float, help='Minimum number of reads that align to a region to perform the CRISPResso analysis', default=10)
+        parser.add_argument('--skip_failed',  help='Continue with pooled analysis even if one sample fails',action='store_true')
         parser.add_argument('--gene_annotations', type=str, help='Gene Annotation Table from UCSC Genome Browser Tables (http://genome.ucsc.edu/cgi-bin/hgTables?command=start), \
         please select as table "knowGene", as output format "all fields from selected table" and as file returned "gzip compressed"', default='')
         parser.add_argument('-p','--n_processes',type=int, help='Specify the number of processes to use for the quantification.\
         Please use with caution since increasing this parameter will increase the memory required to run CRISPResso.',default=1)
+        parser.add_argument('--crispresso_command', help='CRISPResso command to call',default='CRISPResso')
 
         args = parser.parse_args()
 
@@ -437,7 +438,7 @@ def main():
                if row['n_reads']>=args.min_reads_to_use_region:
                     info('\nThe region [%s] has enough reads (%d) mapped to it!' % (idx,row['n_reads']))
 
-                    crispresso_cmd= CRISPResso_to_call + ' -r1 %s -a %s -o %s --name %s' %\
+                    crispresso_cmd= args.crispresso_command + ' -r1 %s -a %s -o %s --name %s' %\
                     (row['fastq.gz_file_trimmed_reads_in_region'],row['sequence'],OUTPUT_DIRECTORY,idx)
 
                     if row['sgRNA'] and not pd.isnull(row['sgRNA']):
@@ -457,7 +458,7 @@ def main():
                else:
                     info('\nThe region [%s] has too few reads mapped to it (%d)! Skipping the running of CRISPResso!' % (idx,row['n_reads']))
 
-        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'region')
+        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'region',args.skip_failed)
 
         quantification_summary=[]
 

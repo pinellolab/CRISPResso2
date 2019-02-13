@@ -42,7 +42,6 @@ debug   = logging.debug
 info    = logging.info
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
-CRISPResso_to_call = os.path.join(os.path.dirname(_ROOT),'CRISPResso.py')
 
 ####Support functions###
 def propagate_options(cmd,options,params,paramInd):
@@ -109,6 +108,7 @@ def main():
         parser.add_argument('-p','--n_processes',type=int, help='Specify the number of processes to use for quantification.\
         Please use with caution since increasing this parameter will increase the memory required to run CRISPResso.',default=1)
         parser.add_argument('-bo','--batch_output_folder',  help='Directory where batch analysis output will be stored')
+        parser.add_argument('--crispresso_command', help='CRISPResso command to call',default='CRISPResso')
 
         args = parser.parse_args()
 
@@ -216,10 +216,11 @@ def main():
         if args.name and args.name != "":
             batch_folder_name = args.name
 
-        OUTPUT_DIRECTORY=os.path.abspath('CRISPRessoBatch_on_%s' % batch_folder_name)
+        output_folder_name='CRISPRessoBatch_on_%s' % batch_folder_name
+        OUTPUT_DIRECTORY=os.path.abspath(output_folder_name)
 
         if args.batch_output_folder:
-                 OUTPUT_DIRECTORY=os.path.join(os.path.abspath(args.batch_output_folder),OUTPUT_DIRECTORY)
+                 OUTPUT_DIRECTORY=os.path.join(os.path.abspath(args.batch_output_folder),output_folder_name)
 
         _jp=lambda filename: os.path.join(OUTPUT_DIRECTORY,filename) #handy function to put a file in the output directory
 
@@ -238,7 +239,7 @@ def main():
         crispresso_cmds = []
         for idx,row in batch_params.iterrows():
             batchName = CRISPRessoShared.slugify(row["name"])
-            crispresso_cmd=CRISPResso_to_call + ' -o %s --name %s' % (OUTPUT_DIRECTORY,batchName)
+            crispresso_cmd= args.crispresso_command + ' -o %s --name %s' % (OUTPUT_DIRECTORY,batchName)
             crispresso_cmd=propagate_options(crispresso_cmd,crispresso_options_for_batch,batch_params,idx)
             crispresso_cmds.append(crispresso_cmd)
 
