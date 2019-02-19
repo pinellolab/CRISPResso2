@@ -535,8 +535,8 @@ def get_amplicon_info_for_guides(ref_seq,guides,quantification_window_center,qua
 
     #create mask of positions in which to include/exclude indels for the quantification window
     #first, if exact coordinates have been given, set those
-    if quantification_window_coordinates is not None and len(quantification_window_coordinates.split(",")) > idx :
-        theseCoords = quantification_window_coordinates.split(",")[idx].split("_")
+    if quantification_window_coordinates is not None:
+        theseCoords = quantification_window_coordinates.split("_")
         for coord in theseCoords:
             coordRE = re.match(r'^(\d+)-(\d+)$',coord)
             if coordRE:

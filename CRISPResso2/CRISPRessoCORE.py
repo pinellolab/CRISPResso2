@@ -539,6 +539,8 @@ def main():
         max_amplicon_len = 0 #for flash
         min_amplicon_len = 99**99 #for flash
 
+        quant_window_coordinates_arr = args.quantification_window_coordinates.split(",")
+
         for idx,seq in enumerate(amplicon_seq_arr):
             this_seq = seq.strip().upper()
             this_seq_length = len(this_seq)
@@ -559,12 +561,16 @@ def main():
             if idx < len(amplicon_min_alignment_score_arr):
                 this_min_aln_score = amplicon_min_alignment_score_arr[idx]
 
+            this_quant_window_coordinates = None
+            if idx < len(quant_window_coordinates_arr) and quant_window_coordinates_arr[idx] != "":
+                this_quant_window_coordinates = quant_window_coordinates_arr[idx]
+
 
             # Calculate cut sites for this reference
             #this_sgRNA_plot_offsets = [] #whether each guide is on the forward strand or the reverse strand -- if it's on the reverse strand, it needs to be offset by 1 in the plot
             (this_sgRNA_sequences, this_sgRNA_intervals, this_cut_points, this_sgRNA_plot_offsets, this_include_idxs,
                 this_exclude_idxs, this_plot_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(this_seq,guides,args.quantification_window_center,
-                args.quantification_window_size,args.quantification_window_coordinates,args.exclude_bp_from_left,args.exclude_bp_from_right,args.plot_window_size)
+                args.quantification_window_size,this_quant_window_coordinates,args.exclude_bp_from_left,args.exclude_bp_from_right,args.plot_window_size)
 
             this_contains_guide = False
             if len(this_sgRNA_sequences) > 0:
@@ -956,7 +962,7 @@ def main():
                 max_overlap = args.max_paired_end_reads_overlap
             if args.min_paired_end_reads_overlap:
                 min_overlap = args.min_paired_end_reads_overlap
-            cmd='%s %s %s --min-overlap %d --max-overlap %d -z -d %s >>%s 2>&1' %\
+            cmd='%s %s %s --min-overlap %d --max-overlap %d --allow_outies -z -d %s >>%s 2>&1' %\
             (args.flash_command,
                  output_forward_paired_filename,
                  output_reverse_paired_filename,
@@ -1868,14 +1874,14 @@ def main():
                     "The first column shows the 1-based position of the amplicon, and the second column shows the percentage of reads with a nondcoding substitution at that location. This report file is produced when the amplicon contains a coding sequence."
 
             if args.dump:
-                if cut_points:
-                    cp.dump(sgRNA_intervals, open( _jp(ref_name+'.sgRNA_intervals.pickle'), 'wb' ) )
+                if refs[ref_name]['cut_points']:
+                    cp.dump(refs[ref_name]['cut_points'], open( _jp(ref_name+'.cut_points.pickle'), 'wb' ) )
 
-                if sgRNA_intervals:
-                    cp.dump( cut_points, open( _jp(ref_name+'.cut_points.pickle'), 'wb' ) )
+                if refs[ref_name]['sgRNA_intervals']:
+                    cp.dump(refs[ref_name]['sgRNA_intervals'], open( _jp(ref_name+'.sgRNA_intervals.pickle'), 'wb' ) )
 
-                if sgRNA_plot_offsets.any():
-                    cp.dump(sgRNA_plot_offsets,open( _jp(ref_name+'.sgRNA_plot_offsets.pickle'), 'wb' ) )
+                if refs[ref_name]['sgRNA_plot_offsets']:
+                    cp.dump(refs[ref_name]['sgRNA_plot_offsets'], open( _jp(ref_name+'.sgRNA_plot_offsets.pickle'), 'wb' ) )
 
             hdensity = refs[ref_name]['hdensity']
             hlengths = refs[ref_name]['hlengths']
