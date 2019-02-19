@@ -23,4 +23,4 @@ COPY . /CRISPResso2
 WORKDIR /CRISPResso2
 RUN python setup.py install
 
-ENTRYPOINT ["/CRISPResso2/CRISPResso2_router.py"]
+ENTRYPOINT ["python","/CRISPResso2/CRISPResso2_router.py"]
