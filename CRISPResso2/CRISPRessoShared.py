@@ -18,6 +18,7 @@ import sys
 import unicodedata
 
 from CRISPResso2 import CRISPResso2Align
+from CRISPResso2 import CRISPRessoCOREResources
 
 running_python3 = False
 if sys.version_info > (3, 0):
@@ -28,7 +29,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.0.24"
+__version__ = "2.0.25"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -98,7 +99,7 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('--split_paired_end',help='Splits a single fastq file containing paired end reads in two files before running CRISPResso',action='store_true')
     parser.add_argument('--trim_sequences',help='Enable the trimming of Illumina adapters with Trimmomatic',action='store_true')
     parser.add_argument('--trimmomatic_command', type=str, help='Command to run trimmomatic',default='trimmomatic')
-    parser.add_argument('--trimmomatic_options_string', type=str, help='Override options for Trimmomatic',default='')
+    parser.add_argument('--trimmomatic_options_string', type=str, help='Override options for Trimmomatic, e.g. "ILLUMINACLIP:/data/NexteraPE-PE.fa:0:90:10:0:true"',default='')
     parser.add_argument('--flash_command', type=str, help='Command to run flash',default='flash')
     parser.add_argument('--min_paired_end_reads_overlap',  type=int, help='Parameter for the FLASH read merging step. Minimum required overlap length between two reads to provide a confident overlap. ', default=None)
     parser.add_argument('--max_paired_end_reads_overlap',  type=int, help='Parameter for the FLASH merging step.  Maximum overlap length expected in approximately 90%% of read pairs. Please see the FLASH manual for more information.', default=None)
@@ -353,6 +354,7 @@ def check_output_folder(output_folder):
 def get_most_frequent_reads(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,min_paired_end_reads_overlap):
     """
     Gets the most frequent amplicon from a fastq file (or after merging a r1 and r2 fastq file)
+    Note: only works on paired end or single end reads (not interleaved)
     input:
     fastq_r1: path to fastq r1 (can be gzipped)
     fastq_r2: path to fastq r2 (can be gzipped)
@@ -450,6 +452,111 @@ def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,
             break
 
     return amplicon_seq_arr
+
+def guess_guides(amplicon_sequence,fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,
+            min_paired_end_reads_overlap,aln_matrix,needleman_wunsch_gap_open,needleman_wunsch_gap_extend,min_edit_freq_to_consider=0.1,pam_seq="NGG",min_pct_subs_in_base_editor_win=0.8):
+    """
+    guesses the guides used in an experiment by identifying the most-frequently edited positions, editing types, and PAM sites
+    input:
+    ampilcon_sequence - amplicon to analyze
+    fastq_r1: path to fastq r1 (can be gzipped)
+    fastq_r2: path to fastq r2 (can be gzipped)
+    number_of_reads_to_consider: number of reads from the top of the file to examine
+    flash_command: command to call flash
+    min_paired_end_reads_overlap: min overlap in bp for flashing (merging) r1 and r2
+    max_paired_end_reads_overlap: max overlap in bp for flashing (merging) r1 and r2
+    needleman_wunsch_gap_open: alignment penalty assignment used to determine similarity of two sequences
+    needleman_wunsch_gap_extend: alignment penalty assignment used to determine similarity of two sequences
+    min_edit_freq_to_consider: edits must be at least this frequency for consideration
+    pam_seq: pam sequence to look for (can be regex or contain degenerate bases)
+    min_pct_subs_in_base_editor_win: if at least this percent of substitutions happen in the predicted base editor window, return base editor flag
+
+    returns:
+    tuple of (putative guide, boolean is_base_editor)
+    or (None, None)
+    """
+    seq_lines = get_most_frequent_reads(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,min_paired_end_reads_overlap)
+
+    amp_len = len(amplicon_sequence)
+    gap_incentive = np.zeros(amp_len+1,dtype=np.int)
+    include_idxs = set(range(0,amp_len))
+
+    all_indel_count_vector = np.zeros(amp_len)
+    all_sub_count_vector = np.zeros(amp_len)
+    tot_count = 0;
+    for i in range(len(seq_lines)):
+        count,seq = seq_lines[i].strip().split()
+        count = int(count)
+        tot_count += count
+        fws1,fws2,fwscore=CRISPResso2Align.global_align(seq, amplicon_sequence,matrix=aln_matrix,gap_incentive=gap_incentive,
+            gap_open=needleman_wunsch_gap_open,gap_extend=needleman_wunsch_gap_extend,)
+        payload=CRISPRessoCOREResources.find_indels_substitutions(fws1,fws2,include_idxs)
+        all_indel_count_vector[payload['all_insertion_positions']]+=count
+        all_indel_count_vector[payload['all_deletion_positions']]+=count
+        all_sub_count_vector[payload['all_substitution_positions']]+=count
+
+    max_loc = np.argmax(all_indel_count_vector)
+    max_val = all_indel_count_vector[max_loc]
+
+    #return nothing if the max edit doesn't break threshold
+    if max_val/float(tot_count) < min_edit_freq_to_consider:
+        return (None,None)
+
+
+    pam_regex_string = pam_seq.upper()
+    pam_regex_string = pam_regex_string.replace('I','[ATCG]')
+    pam_regex_string = pam_regex_string.replace('N','[ATCG]')
+    pam_regex_string = pam_regex_string.replace('R','[AG]')
+    pam_regex_string = pam_regex_string.replace('Y','[CT]')
+    pam_regex_string = pam_regex_string.replace('S','[GC]')
+    pam_regex_string = pam_regex_string.replace('W','[AT]')
+    pam_regex_string = pam_regex_string.replace('K','[GT]')
+    pam_regex_string = pam_regex_string.replace('M','[AC]')
+    pam_regex_string = pam_regex_string.replace('B','[CGT]')
+    pam_regex_string = pam_regex_string.replace('D','[AGT]')
+    pam_regex_string = pam_regex_string.replace('H','[ACT]')
+    pam_regex_string = pam_regex_string.replace('V','[ACG]')
+
+    is_base_editor = False
+    #offset from expected position
+    for offset in (0,+1,-1,+2,+3,+4,-2):
+        #forward direction
+        #find pam near max edit loc
+        pam_start = max_loc+4 + offset
+        pam_end = max_loc+7 + offset
+        guide_start = max_loc-16 + offset
+        guide_end = max_loc+4 + offset
+        base_edit_start = max_loc-16 + offset
+        base_edit_end = max_loc-6 + offset
+        if pam_start > 0 and guide_end < amp_len:
+            if re.match(pam_regex_string, amplicon_sequence[pam_start:pam_end]):
+                guide_seq = amplicon_sequence[guide_start:guide_end]
+                sum_base_edits = sum(all_sub_count_vector[base_edit_start:base_edit_end])
+                #if a lot of edits are in the predicted base editor window, set base editor true
+                #specifically, if at least min_pct_subs_in_base_editor_win % of substitutions happen in the predicted base editor window
+                if sum_base_edits > min_pct_subs_in_base_editor_win * sum(all_sub_count_vector):
+                    is_base_editor = True
+                return(guide_seq,is_base_editor)
+
+        #reverse direction
+        pam_start = max_loc-5 - offset
+        pam_end = max_loc-2 - offset
+        guide_start = max_loc-2 - offset
+        guide_end = max_loc+18 - offset
+        base_edit_start = max_loc+8 - offset
+        base_edit_end = max_loc+18 - offset
+        if pam_start > 0 and guide_end < amp_len:
+            if re.match(pam_regex_string, amplicon_sequence[pam_start:pam_end]):
+                guide_seq = amplicon_sequence[guide_start:guide_end]
+                sum_base_edits = sum(all_sub_count_vector[base_edit_start:base_edit_end])
+                #if a lot of edits are in the predicted base editor window, set base editor true
+                #specifically, if at least min_pct_subs_in_base_editor_win % of substitutions happen in the predicted base editor window
+                if sum_base_edits > min_pct_subs_in_base_editor_win * sum(all_sub_count_vector):
+                    is_base_editor = True
+                return(guide_seq,is_base_editor)
+
+    return (None,None)
+
 
 ######
 # allele modification functions

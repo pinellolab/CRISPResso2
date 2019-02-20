@@ -517,12 +517,30 @@ def main():
 
             amplicon_seq_arr = CRISPRessoShared.guess_amplicons(args.fastq_r1,args.fastq_r2,number_of_reads_to_consider,args.flash_command,args.max_paired_end_reads_overlap,args.min_paired_end_reads_overlap,aln_matrix,args.needleman_wunsch_gap_open,args.needleman_wunsch_gap_extend)
             amplicon_name_arr = ['Amplicon'+str(x) for x in ['',range(1,len(amplicon_seq_arr))]]
+            if len(guides) == 0:
+                for amplicon_seq in amplicon_seq_arr:
+                    (potential_guide,is_base_editor) = CRISPRessoShared.guess_guides(amplicon_seq,args.fastq_r1,args.fastq_r2,number_of_reads_to_consider,args.flash_command,
+                        args.max_paired_end_reads_overlap,args.min_paired_end_reads_overlap,aln_matrix,args.needleman_wunsch_gap_open,args.needleman_wunsch_gap_extend)
+                    if potential_guide is not None and potential_guide not in guides:
+                        guides.append(potential_guide)
 
             amplicon_min_alignment_score_arr = []
             plural_string = ""
             if len(amplicon_seq_arr) > 1:
                 plural_string = "s"
             info("Auto-detected %d reference amplicon%s"%(len(amplicon_seq_arr),plural_string))
+
+            if args.debug:
+                for idx,seq in enumerate(amplicon_seq_arr):
+                    print('Detected amplicon ' + str(idx) + ":" + str(seq))
+
+            if len(guides) > 1:
+                plural_string = "s"
+            info("Auto-detected %d guide%s"%(len(guides),plural_string))
+            if args.debug:
+                for idx,seq in enumerate(guides):
+                    print('Detected guide ' + str(idx) + ":" + str(seq))
+
         else: #not auto
             amplicon_seq_arr = args.amplicon_seq.split(",")
             amplicon_name_arr = args.amplicon_name.split(",")
@@ -964,7 +982,7 @@ def main():
                 max_overlap = args.max_paired_end_reads_overlap
             if args.min_paired_end_reads_overlap:
                 min_overlap = args.min_paired_end_reads_overlap
-            cmd='%s %s %s --min-overlap %d --max-overlap %d --allow_outies -z -d %s >>%s 2>&1' %\
+            cmd='%s %s %s --min-overlap %d --max-overlap %d --allow-outies -z -d %s >>%s 2>&1' %\
             (args.flash_command,
                  output_forward_paired_filename,
                  output_reverse_paired_filename,
