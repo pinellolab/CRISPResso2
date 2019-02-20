@@ -539,7 +539,9 @@ def main():
         max_amplicon_len = 0 #for flash
         min_amplicon_len = 99**99 #for flash
 
-        quant_window_coordinates_arr = args.quantification_window_coordinates.split(",")
+        quant_window_coordinates_arr = []
+        if args.quantification_window_coordinates is not None:
+            quant_window_coordinates_arr = args.quantification_window_coordinates.split(",")
 
         for idx,seq in enumerate(amplicon_seq_arr):
             this_seq = seq.strip().upper()
