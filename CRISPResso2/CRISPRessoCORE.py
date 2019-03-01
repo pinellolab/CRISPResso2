@@ -982,13 +982,18 @@ def main():
                 max_overlap = args.max_paired_end_reads_overlap
             if args.min_paired_end_reads_overlap:
                 min_overlap = args.min_paired_end_reads_overlap
-            cmd='%s %s %s --min-overlap %d --max-overlap %d --allow-outies -z -d %s >>%s 2>&1' %\
+            output_prefix = "out"
+            if clean_file_prefix != "":
+                output_prefix = clean_file_prefix + "out"
+            cmd='%s %s %s --min-overlap %d --max-overlap %d --allow-outies -z -d %s -o %s >>%s 2>&1' %\
             (args.flash_command,
                  output_forward_paired_filename,
                  output_reverse_paired_filename,
                  min_overlap,
                  max_overlap,
-                 OUTPUT_DIRECTORY,log_filename)
+                 OUTPUT_DIRECTORY,
+                 output_prefix,
+                 log_filename)
             #cmd='flash %s %s --min-overlap %d --max-overlap %d -f %d -z -d %s >>%s 2>&1' %\
             #(output_forward_paired_filename,
             #     output_reverse_paired_filename,
@@ -1018,6 +1023,8 @@ def main():
             flash_not_combined_2_filename=_jp('out.notCombined_2.fastq.gz')
 
             processed_output_filename=_jp('out.extendedFrags.fastq.gz')
+            if os.path.isfile(processed_output_filename) is False:
+                raise CRISPRessoShared.FlashException('Flash failed to produce merged reads file, please check the log file.')
 
         #count reads
         N_READS_AFTER_PREPROCESSING=get_n_reads_fastq(processed_output_filename)
