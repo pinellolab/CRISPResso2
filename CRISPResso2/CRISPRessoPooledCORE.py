@@ -17,6 +17,7 @@ import string
 import re
 from CRISPResso2 import CRISPRessoShared
 from CRISPResso2 import CRISPRessoMultiProcessing
+from CRISPResso2 import CRISPRessoReport
 import traceback
 
 import logging
@@ -323,7 +324,7 @@ def main():
         logging.getLogger().addHandler(logging.FileHandler(log_filename))
 
         with open(log_filename,'w+') as outfile:
-                  outfile.write('[Command used]:\nCRISPRessoPooled %s\n\n[Execution log]:\n' % ' '.join(sys.argv))
+                  outfile.write('[Command used]:\n%s\n\n[Execution log]:\n' % ' '.join(sys.argv))
 
         if args.fastq_r2=='': #single end reads
 
@@ -906,6 +907,11 @@ def main():
                              os.remove(file_to_remove)
                  except:
                          warn('Skipping:%s' %file_to_remove)
+
+
+        if not args.suppress_report:
+            report_name = _jp('CRISPResso2Pooled_report.html')
+            CRISPRessoReport.make_pooled_report_from_folder(report_name,OUTPUT_DIRECTORY,_ROOT)
 
 
         info('All Done!')

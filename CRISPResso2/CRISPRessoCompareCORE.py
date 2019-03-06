@@ -42,7 +42,7 @@ def get_amplicon_output(amplicon_name,output_folder):
     if os.path.exists(quantification_file) and profile_file:
         return quantification_file,profile_file
     else:
-        raise CRISPRessoShared.OutputFolderIncompleteException('The folder %s  is not a valid CRISPResso2 output folder. Cannot find profile file %s for amplicon %s.' % (output_folder,profile_file,amplicon_name))
+        raise CRISPRessoShared.OutputFolderIncompleteException('The folder %s is not a valid CRISPResso2 output folder. Cannot find profile file %s for amplicon %s.' % (output_folder,profile_file,amplicon_name))
 
 def parse_profile(profile_file):
     return np.loadtxt(profile_file,skiprows=1)
@@ -77,10 +77,7 @@ class DifferentAmpliconLengthException(Exception):
 
 
 matplotlib=check_library('matplotlib')
-from matplotlib import font_manager as fm
-font = {'size'   : 20}
-matplotlib.rc('font', **font)
-matplotlib.use('Agg')
+CRISPRessoPlot.setMatplotlibDefaults()
 
 plt=check_library('pylab')
 np=check_library('numpy')

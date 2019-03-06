@@ -294,7 +294,7 @@ def main():
         logging.getLogger().addHandler(logging.FileHandler(log_filename))
 
         with open(log_filename,'w+') as outfile:
-                  outfile.write('[Command used]:\nCRISPRessoWGS %s\n\n[Execution log]:\n' % ' '.join(sys.argv))
+                  outfile.write('[Command used]:\n%s\n\n[Execution log]:\n' % ' '.join(sys.argv))
 
         #check if bam has the index already
         if os.path.exists(args.bam_file+'.bai'):
