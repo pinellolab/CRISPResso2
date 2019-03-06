@@ -29,7 +29,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.0.25"
+__version__ = "2.0.26"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -323,7 +323,7 @@ def check_output_folder(output_folder):
     amplicon_info = {}
     amplicons = run_data['ref_names']
 
-    quantification_file=run_data['quant_of_editing_freq_filename']
+    quantification_file=os.path.join(output_folder,run_data['quant_of_editing_freq_filename'])
     if os.path.exists(quantification_file):
         with open(quantification_file) as quant_file:
             head_line = quant_file.readline()
@@ -332,17 +332,17 @@ def check_output_folder(output_folder):
                 line_els = line.split("\t")
                 amplicon_name = line_els[0]
                 amplicon_info[amplicon_name] = {}
-                amplicon_quant_file = run_data['refs'][amplicon_name]['combined_pct_vector_filename']
+                amplicon_quant_file = os.path.join(output_folder,run_data['refs'][amplicon_name]['combined_pct_vector_filename'])
                 if not os.path.exists(amplicon_quant_file):
-                    raise OutputFolderIncompleteException('The folder %s  is not a valid CRISPResso2 output folder. Cannot find quantification file %s for amplicon %s.' % (output_folder,amplicon_quant_file,amplicon_name))
+                    raise OutputFolderIncompleteException('The folder %s is not a valid CRISPResso2 output folder. Cannot find quantification file %s for amplicon %s.' % (output_folder,amplicon_quant_file,amplicon_name))
                 amplicon_info[amplicon_name]['quantification_file'] = amplicon_quant_file
 
-                amplicon_mod_count_file = run_data['refs'][amplicon_name]['quant_window_mod_count_filename']
+                amplicon_mod_count_file = os.path.join(output_folder,run_data['refs'][amplicon_name]['quant_window_mod_count_filename'])
                 if not os.path.exists(amplicon_mod_count_file):
                     raise OutputFolderIncompleteException('The folder %s  is not a valid CRISPResso2 output folder. Cannot find modification count vector file %s for amplicon %s.' % (output_folder,amplicon_mod_count_file,amplicon_name))
                 amplicon_info[amplicon_name]['modification_count_file'] = amplicon_mod_count_file
 
-                amplicon_info[amplicon_name]['allele_files'] = run_data['refs'][amplicon_name]['allele_frequency_files']
+                amplicon_info[amplicon_name]['allele_files'] = [os.path.join(output_folder,x) for x in run_data['refs'][amplicon_name]['allele_frequency_files']]
 
                 for idx,el in enumerate(head_line_els):
                     amplicon_info[amplicon_name][el] = line_els[idx]
@@ -747,7 +747,7 @@ def get_crispresso_header(description,header_str):
         for i in range(len(logo_lines))[::-1]:
             output_line = (pad_string + logo_lines[i].ljust(max_logo_width) + pad_string).center(term_width) + "\n" + output_line
 
-    output_line += '\n'+('[CRISPresso version ' + __version__ + ']').center(term_width) + '\n' + ('[Kendell Clement and Luca Pinello 2018]').center(term_width) + "\n" + ('[For support contact kclement@mgh.harvard.edu]').center(term_width) + "\n"
+    output_line += '\n'+('[CRISPresso version ' + __version__ + ']').center(term_width) + '\n' + ('[Kendell Clement and Luca Pinello 2019]').center(term_width) + "\n" + ('[For support contact kclement@mgh.harvard.edu]').center(term_width) + "\n"
 
     description_str = ""
     for str in description:

@@ -6,7 +6,7 @@ FROM continuumio/miniconda:4.5.12
 
 # File Author / Maintainer
 MAINTAINER Kendell Clement
-RUN apt-get update && apt-get install gcc g++ python-matplotlib python-numpy bowtie2 samtools \
+RUN apt-get update && apt-get install gcc g++ python-numpy bowtie2 samtools \
   -y --no-install-recommends \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* \
@@ -14,13 +14,26 @@ RUN apt-get update && apt-get install gcc g++ python-matplotlib python-numpy bow
   && conda config --add channels defaults \
   && conda config --add channels conda-forge \
   && conda config --add channels bioconda \
+  && conda config --set remote_connect_timeout_secs 60 \
+  && conda config --set ssl_verify no \
   && conda install --debug biopython \
   && conda install --debug -c bioconda trimmomatic flash \
   && conda clean -ay
+
+#install ms fonts
+RUN echo "deb http://httpredir.debian.org/debian jessie main contrib" > /etc/apt/sources.list \
+  && echo "deb http://security.debian.org/ jessie/updates main contrib" >> /etc/apt/sources.list \
+  && echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections \
+  && apt-get update \
+  && apt-get install -y ttf-mscorefonts-installer \
+  && apt-get clean \
+  && apt-get autoremove -y \
+  && rm -rf /var/lib/apt/lists/*
 
 # install crispresso
 COPY . /CRISPResso2
 WORKDIR /CRISPResso2
 RUN python setup.py install
+RUN CRISPResso -h
 
 ENTRYPOINT ["python","/CRISPResso2/CRISPResso2_router.py"]

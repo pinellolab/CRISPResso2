@@ -114,16 +114,15 @@
             </div>
           {% endif %}
 
-          {% if sub_html_files|length > 0 %}
+          {% if run_names|length > 0 %}
             <div class='card text-center mb-2'>
               <div class='card-header'>
-                <h5>CRISPResso batch output</h5>
+                <h5>{{crispresso_mode}} output</h5>
               </div>
               <div class='card-body p-0'>
                 <div class="list-group list-group-flush">
-              {% for file in sub_html_files %}
-                {% set run_name = file | replace("CRISPResso_on_","") | dirname %}
-                <a href="{{file}}" class="list-group-item list-group-item-action">{{run_name}}</a>
+              {% for run_name in run_names %}
+                <a href="{{sub_html_files[run_name]}}" class="list-group-item list-group-item-action">{{run_name}}</a>
                 {% endfor %}
               </div>
             </div>

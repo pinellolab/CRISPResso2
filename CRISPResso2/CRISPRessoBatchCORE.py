@@ -335,13 +335,13 @@ def main():
                     info("Skipping the amplicon '%s' in folder '%s'. Cannot find nucleotide information."%(batch_amplicon_name,folder_name))
                     continue
 
-                nucleotide_frequency_file = run_data['refs'][batch_amplicon_name]['nuc_freq_filename']
+                nucleotide_frequency_file = os.path.join(folder_name,run_data['refs'][batch_amplicon_name]['nuc_freq_filename'])
                 ampSeq_nf,nuc_freqs = CRISPRessoShared.parse_count_file(nucleotide_frequency_file)
 
-                nucleotide_pct_file=run_data['refs'][batch_amplicon_name]['nuc_pct_filename']
+                nucleotide_pct_file = os.path.join(folder_name,run_data['refs'][batch_amplicon_name]['nuc_pct_filename'])
                 ampSeq_np,nuc_pcts = CRISPRessoShared.parse_count_file(nucleotide_pct_file)
 
-                count_file=run_data['refs'][batch_amplicon_name]['mod_count_filename']
+                count_file = os.path.join(folder_name,run_data['refs'][batch_amplicon_name]['mod_count_filename'])
                 ampSeq_cf,mod_freqs = CRISPRessoShared.parse_count_file(count_file)
 
                 if ampSeq_nf is None or ampSeq_np is None or ampSeq_cf is None:
@@ -491,7 +491,7 @@ def main():
                 if run_data is None:
                     continue
 
-                amplicon_modification_file=run_data['quant_of_editing_freq_filename']
+                amplicon_modification_file=os.path.join(folder_name,run_data['quant_of_editing_freq_filename'])
                 with open(amplicon_modification_file,'r') as infile:
                     file_head = infile.readline()
                     if not wrote_header:
@@ -510,7 +510,7 @@ def main():
                 run_data = run_datas[idx]
                 if run_data is None:
                     continue
-                amplicon_modification_file=run_data['mapping_stats_filename']
+                amplicon_modification_file=os.path.join(folder_name,run_data['mapping_stats_filename'])
                 with open(amplicon_modification_file,'r') as infile:
                     file_head = infile.readline()
                     if not wrote_header:

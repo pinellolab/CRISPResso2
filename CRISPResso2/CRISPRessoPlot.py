@@ -7,7 +7,7 @@ Software pipeline for the analysis of genome editing outcomes from deep sequenci
 import numpy as np
 import pandas as pd
 import matplotlib
-matplotlib.use('Agg')
+matplotlib.use('AGG')
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.cm as cm
@@ -26,7 +26,7 @@ sns.set(font_scale=2.2)
 def setMatplotlibDefaults():
     font = {'size'   : 22}
     matplotlib.rc('font', **font)
-    matplotlib.use('Agg')
+    matplotlib.use('AGG')
     matplotlib.rcParams['pdf.fonttype'] = 42
     matplotlib.rcParams['ps.fonttype'] = 42
     matplotlib.rcParams["font.sans-serif"] = ["Arial", "Liberation Sans", "Bitstream Vera Sans"]
@@ -88,7 +88,6 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=
     min_text_pct: add text annotation if the percent is greater than this number
     max_text_pct: add text annotation if the percent is less than this number
     """
-
     plotPct = 0.9 #percent of vertical space to plot in (the rest will be white)
     min_plot_pct = 0.01 #if value is less than this, it won't plot the rectangle (with white boundary)
 
@@ -185,7 +184,6 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=
 #    sampleReadCounts = list(nuc_pct_df.iloc[[((nSamples-1)-x)*nNucs for x in range(0,nSamples)],0]))
     ax.set_yticklabels(['Reference'] + list(nuc_pct_df.iloc[[((nSamples-1)-x)*nNucs for x in range(0,nSamples)],0]))
 
-
     plot_y_start = ref_y_start
 
     if sgRNA_intervals:
@@ -194,19 +192,27 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=
         sgRNA_y_height = 0.2
         min_sgRNA_x = None
         for idx,sgRNA_int in enumerate(sgRNA_intervals):
-            this_sgRNA_start = sgRNA_int[0]
-            this_sgRNA_end = sgRNA_int[1]
-#            print('this sgRNA_start is ' + str(this_sgRNA_start))
-#            print('this sgRNA_end is ' + str(this_sgRNA_end))
-#            print(nuc_pct_df)
+            this_sgRNA_start = max(0,sgRNA_int[0])
+            this_sgRNA_end = min(sgRNA_int[1],amp_len - 1)
             ax.add_patch(
-                patches.Rectangle((2+sgRNA_int[0], sgRNA_y_start), 1+sgRNA_int[1]-sgRNA_int[0], sgRNA_y_height,facecolor=(0,0,0,0.15))
+                patches.Rectangle((2+this_sgRNA_start, sgRNA_y_start), 1+this_sgRNA_end-this_sgRNA_start, sgRNA_y_height,facecolor=(0,0,0,0.15))
                 )
+
+            #if plot has trimmed the sgRNA, add a mark
+            if this_sgRNA_start != sgRNA_int[0]:
+                ax.add_patch(
+                    patches.Rectangle((2.1+this_sgRNA_start, sgRNA_y_start), 0.1, sgRNA_y_height,facecolor='w')
+                    )
+            if this_sgRNA_end != sgRNA_int[1]:
+                ax.add_patch(
+                    patches.Rectangle((2.8+this_sgRNA_end, sgRNA_y_start), 0.1, sgRNA_y_height,facecolor='w')
+                    )
+
             #set left-most sgrna start
             if not min_sgRNA_x:
-                min_sgRNA_x = sgRNA_int[0]
-            if sgRNA_int[0] < min_sgRNA_x:
-                min_sgRNA_x = sgRNA_int[0]
+                min_sgRNA_x = this_sgRNA_start
+            if this_sgRNA_start < min_sgRNA_x:
+                min_sgRNA_x = this_sgRNA_start
         ax.text(2+min_sgRNA_x,sgRNA_y_start + sgRNA_y_height/2,'sgRNA ',horizontalalignment='right',verticalalignment='center')
 
     if quantification_window_idxs is not None:
@@ -394,14 +400,27 @@ def plot_conversion_map(nuc_pct_df,fig_filename_root,conversion_nuc_from,convers
         sgRNA_y_height = 0.1
         min_sgRNA_x = None
         for idx,sgRNA_int in enumerate(sgRNA_intervals):
+            this_sgRNA_start = max(0,sgRNA_int[0])
+            this_sgRNA_end = min(sgRNA_int[1],amp_len - 1)
             ax.add_patch(
-                patches.Rectangle((2+sgRNA_int[0], sgRNA_y_start), 1+sgRNA_int[1]-sgRNA_int[0], sgRNA_y_height,facecolor=(0,0,0,0.15))
+                patches.Rectangle((2+this_sgRNA_start, sgRNA_y_start), 1+this_sgRNA_end-this_sgRNA_start, sgRNA_y_height,facecolor=(0,0,0,0.15))
                 )
+
+            #if plot has trimmed the sgRNA, add a mark
+            if this_sgRNA_start != sgRNA_int[0]:
+                ax.add_patch(
+                    patches.Rectangle((2.1+this_sgRNA_start, sgRNA_y_start), 0.1, sgRNA_y_height,facecolor='w')
+                    )
+            if this_sgRNA_end != sgRNA_int[1]:
+                ax.add_patch(
+                    patches.Rectangle((2.8+this_sgRNA_end, sgRNA_y_start), 0.1, sgRNA_y_height,facecolor='w')
+                    )
+
             #set left-most sgrna start
             if not min_sgRNA_x:
-                min_sgRNA_x = sgRNA_int[0]
-            if sgRNA_int[0] < min_sgRNA_x:
-                min_sgRNA_x = sgRNA_int[0]
+                min_sgRNA_x = this_sgRNA_start
+            if this_sgRNA_start < min_sgRNA_x:
+                min_sgRNA_x = this_sgRNA_start
         ax.text(2+min_sgRNA_x,sgRNA_y_start + sgRNA_y_height/2,'sgRNA ',horizontalalignment='right',verticalalignment='center')
 
     #legend
@@ -1026,11 +1045,13 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
 
 # todo -- add sgRNAs below reference plot
 #    if sgRNA_intervals:
+#        ax_hm_anno=plt.subplot(gs3[2, :])
 #        sgRNA_y_start = 0.3
-#        sgRNA_y_height = 0.1
+##        sgRNA_y_height = 0.1
+#        sgRNA_y_height = 10
 #        min_sgRNA_x = None
 #        for idx,sgRNA_int in enumerate(sgRNA_intervals):
-#            ax_hm_ref.add_patch(
+#            ax_hm_anno.add_patch(
 #                patches.Rectangle((2+sgRNA_int[0], sgRNA_y_start), 1+sgRNA_int[1]-sgRNA_int[0], sgRNA_y_height,facecolor=(0,0,0,0.15))
 #                )
 #            #set left-most sgrna start
@@ -1038,7 +1059,7 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
 #                min_sgRNA_x = sgRNA_int[0]
 #            if sgRNA_int[0] < min_sgRNA_x:
 #                min_sgRNA_x = sgRNA_int[0]
-#        ax_hm_ref.text(2+min_sgRNA_x,sgRNA_y_start + sgRNA_y_height/2,'sgRNA ',horizontalalignment='right',verticalalignment='center')
+#        ax_hm_anno.text(2+min_sgRNA_x,sgRNA_y_start + sgRNA_y_height/2,'sgRNA ',horizontalalignment='right',verticalalignment='center')
 
     #print lines
 
