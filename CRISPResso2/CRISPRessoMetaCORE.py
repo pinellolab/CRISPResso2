@@ -14,6 +14,7 @@ import argparse
 import re
 import string
 import traceback
+import json
 from CRISPResso2 import CRISPRessoShared
 from CRISPResso2 import CRISPRessoPlot
 from CRISPResso2 import CRISPRessoMultiProcessing
@@ -79,7 +80,7 @@ def check_library(library_name):
         try:
                 return __import__(library_name)
         except:
-                error('You need to install %s module to use CRISPRessoBatch!' % library_name)
+                error('You need to install %s module to use CRISPRessoMeta!' % library_name)
                 sys.exit(1)
 
 
@@ -89,25 +90,20 @@ np=check_library('numpy')
 
 def main():
     try:
-        description = ['~~~CRISPRessoBatch~~~','-Analysis of CRISPR/Cas9 outcomes from batch deep sequencing data-']
+        description = ['~~~CRISPRessoMeta~~~','-Analysis of CRISPR/Cas9 outcomes from deep sequencing data using a metadata file-']
         batch_string = r'''
  _________________
-| __    ___ __    |
-||__) /\ | /  |__||
-||__)/--\| \__|  ||
+ META
 |_________________|
         '''
         print(CRISPRessoShared.get_crispresso_header(description,batch_string))
 
-        parser = CRISPRessoShared.getCRISPRessoArgParser(parserTitle = 'CRISPRessoBatch Parameters')
+        parser = CRISPRessoShared.getCRISPRessoArgParser(parserTitle = 'CRISPRessoMeta Parameters')
 
         #batch specific params
-        parser.add_argument('-bs','--batch_settings', type=str, help='Settings file for batch. Must be tab-separated text file. The header row contains CRISPResso parameters (e.g., fastq_r1, fastq_r2, amplicon_seq, and other optional parameters). Each following row sets parameters for an additional batch.',required=True)
-        parser.add_argument('--skip_failed',  help='Continue with batch analysis even if one sample fails',action='store_true')
-        parser.add_argument('--min_reads_for_inclusion',  help='Minimum number of reads for a batch to be included in the batch summary', type=int)
+        parser.add_argument('--metadata', type=str, help='Metadata file according to NIST specification',required=True)
         parser.add_argument('-p','--n_processes',type=int, help='Specify the number of processes to use for quantification.\
         Please use with caution since increasing this parameter will increase the memory required to run CRISPResso.',default=1)
-        parser.add_argument('-bo','--batch_output_folder',  help='Directory where batch analysis output will be stored')
         parser.add_argument('--crispresso_command', help='CRISPResso command to call',default='CRISPResso')
 
         args = parser.parse_args()
@@ -118,14 +114,22 @@ def main():
         options_to_ignore = set(['name','output_folder'])
         crispresso_options_for_batch = list(crispresso_options-options_to_ignore)
 
-        CRISPRessoShared.check_file(args.batch_settings)
+        CRISPRessoShared.check_file(args.metadata)
 
-        ##parse excel sheet
-        batch_params=pd.read_csv(args.batch_settings,comment='#',sep='\t')
-        #pandas either allows for auto-detect sep or for comment. not both
-#        batch_params=pd.read_csv(args.batch_settings,sep=None,engine='python',error_bad_lines=False)
-        batch_params.columns = batch_params.columns.str.strip(' -\xd0')
+        batch_params = pd.DataFrame(columns=['name','guide_seq','amplicon_seq']
+        with open(args.metadata) as metadata_file:
+            metadata = json.load(metadata_file)
 
+            exp = metadata['Experiment']
+            for guide in data['Experiment']:
+                print('Guide: ' + guide['name'])
+                print('Sequence: ' + guide['sequence'])
+                print('Amplicon: ' + guide['amplicon'])
+                batch_params.append({'name':guide['name'],'guide_seq':guide['sequence'],'amplicon_seq':guide['amplicon']})
+
+
+        print('table:')
+        print(batch_params)
         #rename column "a" to "amplicon_seq", etc
         batch_params.rename(index=str,columns=CRISPRessoShared.get_crispresso_options_lookup(),inplace=True)
         batch_count = batch_params.shape[0]
