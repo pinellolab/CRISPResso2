@@ -2400,11 +2400,11 @@ def main():
                         if include_idxs_list[idx] == lastIdx + 1:
                             lastIdx = include_idxs_list[idx]
                         else:
-                            p = matplotlib.patches.Rectangle((lastStart, 0), 1+(lastIdx-lastStart), y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
+                            p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart)-0.5, y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
                             plt.gca().add_patch(p) #gca = get current axis
                             lastStart = include_idxs_list[idx]
                             lastIdx = include_idxs_list[idx]
-                    p = matplotlib.patches.Rectangle((lastStart, 0), 1+(lastIdx-lastStart), y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
+                    p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart)-0.5, y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
                     plt.gca().add_patch(p)
 
                 plt.plot(all_indelsub_count_vectors[ref_name],'r',lw=3,label=get_plot_title_with_ref_name('Combined Insertions/Deletions/Substitutions',ref_name))
@@ -2413,9 +2413,9 @@ def main():
                 if cut_points:
                     for idx,cut_point in enumerate(cut_points):
                         if idx==0:
-                            plt.plot([cut_point+1,cut_point+1],[0,y_max],'--k',lw=2,label='Predicted cleavage position')
+                            plt.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',lw=2,label='Predicted cleavage position')
                         else:
-                            plt.plot([cut_point+1,cut_point+1],[0,y_max],'--k',lw=2,label='_nolegend_')
+                            plt.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',lw=2,label='_nolegend_')
 
                     for idx,sgRNA_int in enumerate(sgRNA_intervals):
                         if idx==0:
@@ -2462,11 +2462,11 @@ def main():
                         if include_idxs_list[idx] == lastIdx + 1:
                             lastIdx = include_idxs_list[idx]
                         else:
-                            p = matplotlib.patches.Rectangle((lastStart, 0), 1+(lastIdx-lastStart), y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
+                            p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart)-0.5, y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
                             plt.gca().add_patch(p) #gca = get current axis
                             lastStart = include_idxs_list[idx]
                             lastIdx = include_idxs_list[idx]
-                    p = matplotlib.patches.Rectangle((lastStart, 0), 1+(lastIdx-lastStart), y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
+                    p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart)-0.5, y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
                     plt.gca().add_patch(p)
 
                 plt.plot(all_insertion_count_vectors[ref_name],'r',lw=3,label='Insertions')
@@ -2480,9 +2480,9 @@ def main():
                 if cut_points:
                     for idx,cut_point in enumerate(cut_points):
                         if idx==0:
-                            plt.plot([cut_point+1,cut_point+1],[0,y_max],'--k',lw=2,label='Predicted cleavage position')
+                            plt.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',lw=2,label='Predicted cleavage position')
                         else:
-                            plt.plot([cut_point+1,cut_point+1],[0,y_max],'--k',lw=2,label='_nolegend_')
+                            plt.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',lw=2,label='_nolegend_')
 
                     for idx,sgRNA_int in enumerate(sgRNA_intervals):
                         if idx==0:
@@ -2532,11 +2532,11 @@ def main():
                         if include_idxs_list[idx] == lastIdx + 1:
                             lastIdx = include_idxs_list[idx]
                         else:
-                            p = matplotlib.patches.Rectangle((lastStart, 0), 1+(lastIdx-lastStart), y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
+                            p = matplotlib.patches.Rectangle((lastStart -0.5, 0), 1+(lastIdx-lastStart)-0.5, y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
                             plt.gca().add_patch(p) #gca = get current axis
                             lastStart = include_idxs_list[idx]
                             lastIdx = include_idxs_list[idx]
-                    p = matplotlib.patches.Rectangle((lastStart, 0), 1+(lastIdx-lastStart), y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
+                    p = matplotlib.patches.Rectangle((lastStart -0.5, 0), 1+(lastIdx-lastStart)-0.5, y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
                     plt.gca().add_patch(p)
 
 
@@ -2549,9 +2549,9 @@ def main():
                 if cut_points:
                     for idx,cut_point in enumerate(cut_points):
                         if idx==0:
-                            plt.plot([cut_point+1,cut_point+1],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
+                            plt.plot([cut_point+.5,cut_point+.5],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
                         else:
-                            plt.plot([cut_point+1,cut_point+1],[0,y_max],'--k',linewidth=2,label='_nolegend_')
+                            plt.plot([cut_point+.5,cut_point+.5],[0,y_max],'--k',linewidth=2,label='_nolegend_')
 
 
                     for idx,sgRNA_int in enumerate(sgRNA_intervals):
@@ -2603,9 +2603,9 @@ def main():
 
                     for idx,cut_point in enumerate(cut_points):
                         if idx==0:
-                            ax1.plot([cut_point+1,cut_point+1],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
+                            ax1.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
                         else:
-                            ax1.plot([cut_point+1,cut_point+1],[0,y_max],'--k',linewidth=2,label='_nolegend_')
+                            ax1.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='_nolegend_')
 
                 plt.xticks(np.arange(0,ref_len,max(3,(ref_len/6) - (ref_len/6)%5)).astype(int) )
                 plt.xlabel('Reference amplicon position (bp)')
@@ -2626,9 +2626,9 @@ def main():
 
                     for idx,cut_point in enumerate(cut_points):
                         if idx==0:
-                            ax2.plot([cut_point+1,cut_point+1],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
+                            ax2.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
                         else:
-                            ax2.plot([cut_point+1,cut_point+1],[0,y_max],'--k',linewidth=2,label='_nolegend_')
+                            ax2.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='_nolegend_')
 
                 plt.xticks(np.arange(0,ref_len,max(3,(ref_len/6) - (ref_len/6)%5)).astype(int) )
                 plt.xlabel('Reference amplicon position (bp)')
@@ -2680,19 +2680,19 @@ def main():
                             if include_idxs_list[idx] == lastIdx + 1:
                                 lastIdx = include_idxs_list[idx]
                             else:
-                                p = matplotlib.patches.Rectangle((lastStart, 0), 1+(lastIdx-lastStart), y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
+                                p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart)-0.5, y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
                                 plt.gca().add_patch(p) #gca = get current axis
                                 lastStart = include_idxs_list[idx]
                                 lastIdx = include_idxs_list[idx]
-                        p = matplotlib.patches.Rectangle((lastStart, 0), 1+(lastIdx-lastStart), y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
+                        p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart)-0.5, y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
                         plt.gca().add_patch(p)
 
                     if ref1_cut_points:
                         for idx,ref1_cut_point in enumerate(ref1_cut_points):
                             if idx==0:
-                                plt.plot([ref1_cut_point+1,ref1_cut_point+1],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
+                                plt.plot([ref1_cut_point+0.5,ref1_cut_point+0.5],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
                             else:
-                                plt.plot([ref1_cut_point+1,ref1_cut_point+1],[0,y_max],'--k',linewidth=2,label='_nolegend_')
+                                plt.plot([ref1_cut_point+0.5,ref1_cut_point+0.5],[0,y_max],'--k',linewidth=2,label='_nolegend_')
 
 
                         for idx,sgRNA_int in enumerate(ref1_sgRNA_intervals):
@@ -2782,9 +2782,9 @@ def main():
                         for idx,cut_point in enumerate(cut_points):
                             if not args.base_editor_output:
                                 if idx==0:
-                                        ax2.plot([cut_point+1,cut_point+1],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
+                                        ax2.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
                                 else:
-                                        ax2.plot([cut_point+1,cut_point+1],[0,y_max],'--k',linewidth=2,label='_nolegend_')
+                                        ax2.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='_nolegend_')
 
                             for idx,sgRNA_int in enumerate(sgRNA_intervals):
                                 if idx==0:
@@ -2917,20 +2917,20 @@ def main():
                             if include_idxs_list[idx] == lastIdx + 1:
                                 lastIdx = include_idxs_list[idx]
                             else:
-                                p = matplotlib.patches.Rectangle((lastStart, 0), 1+(lastIdx-lastStart), y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
+                                p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart)-0.5, y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
                                 plt.gca().add_patch(p) #gca = get current axis
                                 lastStart = include_idxs_list[idx]
                                 lastIdx = include_idxs_list[idx]
-                        p = matplotlib.patches.Rectangle((lastStart, 0), 1+(lastIdx-lastStart), y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
+                        p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart)-0.5, y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
                         plt.gca().add_patch(p)
 
                     if cut_points:
                         for idx,cut_point in enumerate(cut_points):
                             if not args.base_editor_output:
                                 if idx==0:
-                                        plt.plot([cut_point+1,cut_point+1],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
+                                        plt.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
                                 else:
-                                        plt.plot([cut_point+1,cut_point+1],[0,y_max],'--k',linewidth=2,label='_nolegend_')
+                                        plt.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='_nolegend_')
 
                             for idx,sgRNA_int in enumerate(sgRNA_intervals):
                                 if idx==0:
