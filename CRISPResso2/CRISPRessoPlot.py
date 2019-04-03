@@ -270,6 +270,21 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=
 
     plt.legend(handles=legend_patches,loc='center left',ncol=1,bbox_to_anchor=(1,0.5))
 
+
+    ### todo -- if the plot_around_cut is really small (e.g. 2) the plots are blown out of proportion.. this could be fixed here, but not easily
+#    bbox = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+#    width = bbox.width
+#    height = bbox.height
+#    print('width is ' + str(width) + ' and height is ' + str(height))
+#    if (width < 50):
+#        print('setting here!!')
+##        fig.set_figwidth(50)
+##        fig.tight_layout(w_pad=0.5)
+#        fig.tight_layout(h_pad=0.5)
+#    else:
+#        fig.tight_layout()
+
+    fig.savefig(fig_filename_root+'.pdf')
     fig.savefig(fig_filename_root+'.pdf',bbox_inches='tight')
     if save_also_png:
         fig.savefig(fig_filename_root+'.png',bbox_inches='tight',pad=1)
@@ -1292,3 +1307,71 @@ def plot_alleles_table_compare(reference_seq,df_alleles,sample_name_1,sample_nam
     """
     X,annot,y_labels,insertion_dict,per_element_annot_kws = prep_alleles_table_compare(df_alleles,sample_name_1,sample_name_2,MAX_N_ROWS,MIN_FREQUENCY)
     plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,base_editor_output,sgRNA_intervals)
+
+def plot_unmod_mod_pcts(fig_filename_root,df_summary_quantification,save_png,cutoff=None,max_samples_to_include_unprocessed=20):
+    """
+    plots a stacked horizontal barplot for summarizing number of reads, and the percent that are modified and unmodified
+    params:
+    fig_filename: name of figure (without .png or .pdf)
+    df_summary_quantification: pandas df with columns 'Unmodified','Modified','Modified%','Reads_aligned', and 'Reads_total' from CRISPResso quantification
+    save_png: boolean to save png as well as pdf
+    cutoff: threshold of number of reads for quantification -- will show up as dotted vertical line
+    max_samples_to_include_unprocessed: int, if more than this number of samples are included, only processed samples are shown. Otherwise, processed and unprocessed samples are shown (only total reads for unprocessed)
+    """
+    df = df_summary_quantification.fillna(0)[::-1]
+    if df.shape[0] > max_samples_to_include_unprocessed:
+        df = df[df.Reads_aligned > 0]
+
+    fig=plt.figure(figsize=(12,12))
+    ax = plt.subplot(111)
+    xs = range(df.shape[0])
+    p0 = plt.barh(xs,df['Reads_total'],color='0.8')
+    p1 = plt.barh(xs,df['Unmodified'])
+    p2 = plt.barh(xs,df['Modified'],left=df['Unmodified'])
+    plt.ylabel('Sample')
+    plt.xlabel('Number of reads')
+    plt.yticks(xs,(df['Name']))
+
+    if cutoff is not None:
+        plt.axvline(cutoff,ls='dashed')
+
+    max_val = max(df['Reads_total'])
+    space_val = max_val*0.02
+    pct_labels = []
+    for mod_pct,num_reads in zip(df['Modified%'],df['Reads_aligned']):
+        if np.isreal(num_reads) and num_reads > cutoff:
+            pct_labels.append(str(round(mod_pct,2))+"%")
+        else:
+            pct_labels.append("")
+
+    for rect, label in zip(p2.patches,pct_labels):
+        ax.text(rect.get_x()+rect.get_width()+space_val,rect.get_y()+rect.get_height()/2.0, label,ha='left',va='center')
+
+    plt.legend((p0[0], p1[0], p2[0]), ('Total Reads', 'Unmodified', 'Modified'),loc='center', bbox_to_anchor=(0.5, -0.22),ncol=1, fancybox=True, shadow=True)
+    plt.tight_layout()
+
+    plt.savefig(fig_filename_root+'.pdf',pad_inches=1,bbox_inches='tight')
+    if save_png:
+        plt.savefig(fig_filename_root+'.png',bbox_inches='tight')
+    plt.close()
+
+def plot_reads_total(fig_filename_root,df_summary_quantification,save_png,cutoff=None):
+    """
+    plots a horizontal barplot for summarizing number of reads aligned to each sample
+    """
+    df = df_summary_quantification.fillna(0)[::-1]
+    fig=plt.figure(figsize=(12,12))
+    ax = plt.subplot(111)
+    xs = range(df.shape[0])
+    p1 = plt.barh(xs,df['Reads_total'])
+    plt.ylabel('Sample')
+    plt.xlabel('Number of reads')
+    plt.yticks(xs,(df['Name']))
+    if cutoff is not None:
+        plt.axvline(cutoff,ls='dashed')
+    plt.tight_layout()
+
+    plt.savefig(fig_filename_root+'.pdf',pad_inches=1,bbox_inches='tight')
+    if save_png:
+        plt.savefig(fig_filename_root+'.png',bbox_inches='tight')
+    plt.close()

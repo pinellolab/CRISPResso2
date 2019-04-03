@@ -50,6 +50,21 @@
 	<div class="jumbotron" style="background:rgba(0,0,0,0.0); padding:0px" >
 		<div id='jumbotron_content' >
 
+          {% if run_names|length > 0 %}
+            <div class='card text-center mb-2'>
+              <div class='card-header'>
+                <h5>{{report_name}}</h5>
+              </div>
+              <div class='card-body p-0'>
+                <div class="list-group list-group-flush">
+              {% for run_name in run_names %}
+                <a href="{{sub_html_files[run_name]}}" class="list-group-item list-group-item-action">{{run_name}}</a>
+                {% endfor %}
+              </div>
+            </div>
+            </div>
+          {% endif %}
+
           {% if window_nuc_pct_quilts|length > 0 %}
             <div class='card text-center mb-2'>
               <div class='card-header'>
@@ -114,20 +129,23 @@
             </div>
           {% endif %}
 
-          {% if run_names|length > 0 %}
+          {% if summary_plot_names|length > 0 %}
+            {% for plot_name in summary_plot_names %}
             <div class='card text-center mb-2'>
               <div class='card-header'>
-                <h5>{{crispresso_mode}} output</h5>
+                <h5>{{summary_plot_titles[plot_name]}}</h5>
               </div>
-              <div class='card-body p-0'>
-                <div class="list-group list-group-flush">
-              {% for run_name in run_names %}
-                <a href="{{sub_html_files[run_name]}}" class="list-group-item list-group-item-action">{{run_name}}</a>
+              <div class='card-body'>
+                <a href="{{plot_name}}.pdf"><img src="{{plot_name}}.png" width='80%' ></a>
+                <label class="labelpadding">{{summary_plot_labels[plot_name]}}</label>
+							  {% for (data_label,data_path) in summary_plot_datas[plot_name] %}
+                  <p class="m-0"><small>Download: <a href="{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
               </div>
             </div>
-            </div>
+            {% endfor %}
           {% endif %}
+
 
           </div>
 

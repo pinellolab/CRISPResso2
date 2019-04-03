@@ -9,6 +9,7 @@ Software pipeline for the analysis of genome editing outcomes from deep sequenci
 import os
 import errno
 import sys
+from copy import deepcopy
 import subprocess as sb
 import glob
 import argparse
@@ -18,7 +19,17 @@ import re
 from CRISPResso2 import CRISPRessoShared
 from CRISPResso2 import CRISPRessoMultiProcessing
 from CRISPResso2 import CRISPRessoReport
+from CRISPResso2 import CRISPRessoPlot
 import traceback
+
+running_python3 = False
+if sys.version_info > (3, 0):
+    running_python3 = True
+
+if running_python3:
+    import pickle as cp #python 3
+else:
+    import cPickle as cp #python 2.7
 
 import logging
 logging.basicConfig(level=logging.INFO,
@@ -323,6 +334,13 @@ def main():
         log_filename=_jp('CRISPRessoPooled_RUNNING_LOG.txt')
         logging.getLogger().addHandler(logging.FileHandler(log_filename))
 
+        crispresso2WGS_info_file = os.path.join(OUTPUT_DIRECTORY,'CRISPResso2Pooled_info.pickle')
+        crispresso2_info = {} #keep track of all information for this run to be pickled and saved at the end of the run
+        crispresso2_info['version'] = CRISPRessoShared.__version__
+        crispresso2_info['args'] = deepcopy(args)
+
+        crispresso2_info['log_filename'] = os.path.basename(log_filename)
+
         with open(log_filename,'w+') as outfile:
                   outfile.write('[Command used]:\n%s\n\n[Execution log]:\n' % ' '.join(sys.argv))
 
@@ -340,7 +358,7 @@ def main():
                  cmd='java -jar %s SE -phred33 %s  %s %s >>%s 2>&1'\
                  % (get_data('trimmomatic-0.33.jar'),args.fastq_r1,
                     output_forward_filename,
-                    args.trimmomatic_options_string.replace('NexteraPE-PE.fa','TruSeq3-SE.fa'),
+                    args.trimmomatic_options_string,
                     log_filename)
                  #print cmd
                  TRIMMOMATIC_STATUS=sb.call(cmd,shell=True)
@@ -385,7 +403,7 @@ def main():
                  min_overlap_string = args.min_paired_end_reads_overlap
              #Merging with Flash
              info('Merging paired sequences with Flash...')
-             cmd='flash %s %s %s %s -z -d %s >>%s 2>&1' %\
+             cmd=args.flash_command+' --allow-outies %s %s %s %s -z -d %s >>%s 2>&1' %\
              (output_forward_paired_filename,
               output_reverse_paired_filename,
               max_overlap_string,
@@ -819,6 +837,15 @@ def main():
         else:
             df_final_data=df_regions
 
+        all_region_names = []
+        all_region_read_counts = {}
+        good_region_names = []
+        good_region_folders = {}
+        header = 'Name\tUnmodified%\tModified%\tReads_aligned\tReads_total\tUnmodified\tModified\tDiscarded\tInsertions\tDeletions\tSubstitutions\tOnly Insertions\tOnly Deletions\tOnly Substitutions\tInsertions and Deletions\tInsertions and Substitutions\tDeletions and Substitutions\tInsertions Deletions and Substitutions'
+        header_els = header.split("\t")
+        header_el_count = len(header_els)
+        empty_line_els = [np.nan]*(header_el_count-2)
+        n_reads_index = header_els.index('Reads_total') - 1
         for idx,row in df_final_data.iterrows():
 
                 run_name = idx
@@ -828,21 +855,103 @@ def main():
                     run_name='REGION_%s_%d_%d' %(row.chr_id,row.bpstart,row.bpend )
                 folder_name = 'CRISPResso_on_%s'%run_name
 
-                try:
-                    quantification_file,amplicon_names,amplicon_info=CRISPRessoShared.check_output_folder(_jp(folder_name))
-                    for amplicon_name in amplicon_names:
-                        N_TOTAL = float(amplicon_info[amplicon_name]['Total'])
-                        N_UNMODIFIED = float(amplicon_info[amplicon_name]['Unmodified'])
-                        N_MODIFIED = float(amplicon_info[amplicon_name]['Modified'])
-                        quantification_summary.append([run_name,amplicon_name,N_UNMODIFIED/N_TOTAL*100,N_MODIFIED/N_TOTAL*100,N_TOTAL,row.n_reads])
-                except CRISPRessoShared.OutputFolderIncompleteException as e:
-                    quantification_summary.append([run_name,"",np.nan,np.nan,np.nan,row.n_reads])
+                all_region_names.append(run_name)
+                all_region_read_counts[run_name] = row.n_reads
+
+                run_file = os.path.join(_jp(folder_name),'CRISPResso2_info.pickle')
+                if not os.path.exists(run_file):
                     warn('Skipping the folder %s: not enough reads, incomplete, or empty folder.'% folder_name)
+                    this_els = empty_line_els[:]
+                    this_els[n_reads_index] = row.n_reads
+                    to_add = [run_name]
+                    to_add.extend(this_els)
+                    quantification_summary.append(to_add)
+                else:
+                    run_data = cp.load(open(run_file,'rb'))
+                    ref_name = run_data['ref_names'][0] #only expect one amplicon sequence
+                    n_tot = row.n_reads
+                    n_aligned = run_data['counts_total'][ref_name]
+                    n_unmod = run_data['counts_unmodified'][ref_name]
+                    n_mod = run_data['counts_modified'][ref_name]
+                    n_discarded = run_data['counts_discarded'][ref_name]
+
+                    n_insertion = run_data['counts_insertion'][ref_name]
+                    n_deletion = run_data['counts_deletion'][ref_name]
+                    n_substitution = run_data['counts_substitution'][ref_name]
+                    n_only_insertion = run_data['counts_only_insertion'][ref_name]
+                    n_only_deletion = run_data['counts_only_deletion'][ref_name]
+                    n_only_substitution = run_data['counts_only_substitution'][ref_name]
+                    n_insertion_and_deletion = run_data['counts_insertion_and_deletion'][ref_name]
+                    n_insertion_and_substitution = run_data['counts_insertion_and_substitution'][ref_name]
+                    n_deletion_and_substitution = run_data['counts_deletion_and_substitution'][ref_name]
+                    n_insertion_and_deletion_and_substitution = run_data['counts_insertion_and_deletion_and_substitution'][ref_name]
+
+                    unmod_pct = np.nan
+                    mod_pct = np.nan
+                    if n_aligned > 0:
+                        unmod_pct = 100*n_unmod/float(n_aligned)
+                        mod_pct = 100*n_mod/float(n_aligned)
 
 
-        df_summary_quantification=pd.DataFrame(quantification_summary,columns=['Name','Amplicon','Unmodified%','Modified%','Reads_aligned','Reads_total'])
-        df_summary_quantification.fillna('NA').to_csv(_jp('SAMPLES_QUANTIFICATION_SUMMARY.txt'),sep='\t',index=None)
+                    vals = [run_name]
+                    vals.extend([unmod_pct,mod_pct,n_aligned,n_tot,n_unmod,n_mod,n_discarded,n_insertion,n_deletion,n_substitution,n_only_insertion,n_only_deletion,n_only_substitution,n_insertion_and_deletion,n_insertion_and_substitution,n_deletion_and_substitution,n_insertion_and_deletion_and_substitution])
+                    quantification_summary.append(vals)
 
+                    good_region_names.append(idx)
+                    good_region_folders[idx] = folder_name
+
+
+        samples_quantification_summary_filename = _jp('SAMPLES_QUANTIFICATION_SUMMARY.txt')
+
+        df_summary_quantification=pd.DataFrame(quantification_summary,columns=header_els)
+        if args.crispresso1_mode:
+            crispresso1_columns=['Name','Unmodified%','Modified%','Reads_aligned','Reads_total']
+            df_summary_quantification.fillna('NA').to_csv(samples_quantification_summary_filename,sep='\t',index=None,columns=crispresso1_columns)
+        else:
+            df_summary_quantification.fillna('NA').to_csv(samples_quantification_summary_filename,sep='\t',index=None)
+
+        crispresso2_info['samples_quantification_summary_filename'] = os.path.basename(samples_quantification_summary_filename)
+        crispresso2_info['final_data'] = df_final_data
+        crispresso2_info['all_region_names'] = all_region_names
+        crispresso2_info['all_region_read_counts'] = all_region_read_counts
+        crispresso2_info['good_region_names'] = good_region_names
+        crispresso2_info['good_region_folders'] = good_region_folders
+        crispresso2_info['running_mode'] = RUNNING_MODE
+
+        crispresso2_info['summary_plot_names'] = []
+        crispresso2_info['summary_plot_titles'] = {}
+        crispresso2_info['summary_plot_labels'] = {}
+        crispresso2_info['summary_plot_datas'] = {}
+
+
+        df_summary_quantification.set_index('Name')
+
+        save_png = True
+        if args.suppress_report:
+            save_png = False
+
+        plot_root = _jp("CRISPRessoPooled_reads_summary")
+        CRISPRessoPlot.plot_reads_total(plot_root,df_summary_quantification,save_png,args.min_reads_to_use_region)
+        plot_name = os.path.basename(plot_root)
+        crispresso2_info['summary_plot_root'] = plot_name
+        crispresso2_info['summary_plot_names'].append(plot_name)
+        crispresso2_info['summary_plot_titles'][plot_name] = 'CRISPRessoPooled Read Allocation Summary'
+        crispresso2_info['summary_plot_labels'][plot_name] = 'Each bar shows the total number of reads allocated to each amplicon. The vertical line shows the cutoff for analysis, set using the --min_reads_to_use_region parameter.'
+        crispresso2_info['summary_plot_datas'][plot_name] = [('CRISPRessoPooled summary',os.path.basename(samples_quantification_summary_filename))]
+
+        plot_root = _jp("CRISPRessoPooled_modification_summary")
+        CRISPRessoPlot.plot_unmod_mod_pcts(plot_root,df_summary_quantification,save_png,args.min_reads_to_use_region)
+        plot_name = os.path.basename(plot_root)
+        crispresso2_info['summary_plot_root'] = plot_name
+        crispresso2_info['summary_plot_names'].append(plot_name)
+        crispresso2_info['summary_plot_titles'][plot_name] = 'CRISPRessoPooled Modification Summary'
+        crispresso2_info['summary_plot_labels'][plot_name] = 'Each bar shows the total number of reads aligned to each amplicon, divided into the reads that are modified and unmodified. The vertical line shows the cutoff for analysis, set using the --min_reads_to_use_region parameter.'
+        crispresso2_info['summary_plot_datas'][plot_name] = [('CRISPRessoPooled summary',os.path.basename(samples_quantification_summary_filename))]
+
+
+
+
+        #if many reads weren't aligned, print those out for the user
         if RUNNING_MODE != 'ONLY_GENOME':
     		tot_reads_aligned = df_summary_quantification['Reads_aligned'].fillna(0).sum()
     		tot_reads = df_summary_quantification['Reads_total'].sum()
@@ -908,11 +1017,11 @@ def main():
                  except:
                          warn('Skipping:%s' %file_to_remove)
 
-
         if not args.suppress_report:
-            report_name = _jp('CRISPResso2Pooled_report.html')
-            CRISPRessoReport.make_pooled_report_from_folder(report_name,OUTPUT_DIRECTORY,_ROOT)
+            crispresso_report_file = _jp('CRISPResso2Pooled_report.html')
+            CRISPRessoReport.make_pooled_report_from_folder(crispresso_report_file,crispresso2_info,OUTPUT_DIRECTORY,_ROOT)
 
+        cp.dump(crispresso2_info, open(crispresso2WGS_info_file, 'wb' ) )
 
         info('All Done!')
         print CRISPRessoShared.get_crispresso_footer()

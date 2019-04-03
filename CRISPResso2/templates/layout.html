@@ -42,8 +42,9 @@
 		Remove this if you use the .htaccess -->
 		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 
-		<!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
-		<link rel="shortcut icon" href="favicon.ico">
+		<link rel="shortcut icon" href="data:image/x-icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAABILAAASCwAAAAAAAAAAAAD//////////////////////v7+//v7+//7+vr/8/Ly//v6+v/7+/v//v7+/////////////////////////////////////////////v7+///////AwcH/gYSE/3t+fv9+gYD/paWl//39/f/+/v7//v7+/////////////////////////////v7+///////z8/P/hYiI/5adnP+Xn57/lZ6d/42Tk//X19f///////39/f/+/v7///////////////////////39/f//////ury7/5GWlv+psK//nqWk/6Cnpv+osa//kpeW/8rMy//+/v7//////////////////////////////////////5ibm/+orq3/o6mo/5+mpf+gpqT/rLOx/5Wbmf95fnz/oKSj/+7u7v///////v7+///////+/v7///////Hy8v+boKD/s7q5/6yzsf+qsbD/q7Gw/7K5uP+gpqT/mZub/7i7u/+mqan///////7+/v///////v7+///////d3t7/lpyb/5abmv90enn/cXZ2/3N4d/+Ijo7/pKup/4uQj/+Znpz/s7W0///////+/v7///////7+/v//////4+Pj/4aKh/+Ahn//a3Fq/2dtZv9tcmz/i5GK/42Sjv+goaH/5Obl//b29v///////////////////////v7+///////t7u7/1tfW/8nMyf/Ex8T/yczJ/83Qzf/a29r/+fn5///////+/v7/////////////////////////////////+fn5//z8/P/m5ub/9vb2//n5+f/y8vL//f39///////9/f3////////////////////////////4+Pj/5+fn/+np6f//////5OTk/+/v7//k5OT/+vr6/+fn5//l5eX/+vr6//////////////////7+/v//////5ubm//X19f///////f39/+Tk5P//////5eXl//j4+P//////8fHx/+Tk5P///////v7+////////////2dnZ/8nJyf///////////+/v7//IyMj///////Pz8//m5ub///////////+9vb3/09PT////////////+fn5/9DQ0P/39/f////////////c3Nz/sLCw///////7+/v/sLCw//n5+f//////+Pj4/+Hh4f/+/v7/////////////////////////////////8/Pz//X19f///////////8/Pz//o6Oj///////39/f///////////////////////f39///////////////////////+/v7////////////+/v7//v7+/////////////v7+////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==" />
+		<!--<link rel="shortcut icon" href="favicon.ico">-->
+		<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
 
 	{% block head %}{% endblock %}
 
@@ -54,7 +55,7 @@
 
 			<div class="row pb-2">
 				<div class="col-sm-1"></div>
-				<div class="col-sm-3"> <a href='http://crispresso2.pinellolab.org'><img class='img-fluid' src="CRISPResso_justcup.png" width="80%"></a>
+				<div class="col-sm-3"> <a href='http://crispresso2.pinellolab.org'><img class='img-fluid' src="http://crispresso.pinellolab.partners.org/static/imgs/CRISPResso_justcup.png" width="80%"></a>
 				</div>
 				<div class="col-sm-7" >
 					<a href='http://crispresso2.pinellolab.org' style="text-decoration:none !important; color:rgb(33, 37, 41)"><h1 id='crispresso_h' style="font-family:'Ranga', sans-serif">CRISPResso2 </h1></a>
@@ -76,14 +77,12 @@
 			<div class="col-sm-1"></div>
 			<footer class="col-sm-10 crispresso_body_div" style='padding-bottom:3em'>
 
-
 				<p class="text-center">
-					{% set short_citation = "Clement et al. Nat Biotechnol 2019" %}
-					{% set long_citation = "Clement K, Rees H, Canver MC, Gehrke JM, Farouni R, Hsu JY, Cole MA, Liu DR, Joung JK, Bauer DE, Pinello L. <br>CRISPResso2 provides accurate and rapid genome editing sequence analysis. <br>Nat Biotechnol. 2019 Feb 26. doi: 10.1038/s41587-019-0032-3. [Epub ahead of print] PubMed PMID: 30809026." %}
       If you like CRISPResso2 please support us by citing it in your work: <br>
-					<a href="https://rdcu.be/boxVG" target='_blank'>{{long_citation}}</a>
+					Clement K, Rees H, Canver MC, Gehrke JM, Farouni R, Hsu JY, Cole MA, Liu DR, Joung JK, Bauer DE, Pinello L.<br>
+					<a href="https://rdcu.be/boxVG" target="_blank">CRISPResso2 provides accurate and rapid genome editing sequence analysis. </a><br>
+					Nat Biotechnol. 2019 Mar; 37(3):224-226. doi: 10.1038/s41587-019-0032-3. PubMed PMID: 30809026.
 				</p>
-
 				<p class="text-center"><small> &copy; Copyright <a href="http://pinellolab.org">Kendell Clement and Luca Pinello</a></small></p>
 				<p class="text-center">
 					<small>
