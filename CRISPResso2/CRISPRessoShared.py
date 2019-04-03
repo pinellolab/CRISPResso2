@@ -29,7 +29,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.0.26"
+__version__ = "2.0.27"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -104,7 +104,7 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('--min_paired_end_reads_overlap',  type=int, help='Parameter for the FLASH read merging step. Minimum required overlap length between two reads to provide a confident overlap. ', default=None)
     parser.add_argument('--max_paired_end_reads_overlap',  type=int, help='Parameter for the FLASH merging step.  Maximum overlap length expected in approximately 90%% of read pairs. Please see the FLASH manual for more information.', default=None)
 
-    parser.add_argument('-w', '--quantification_window_size','--window_around_sgrna', type=int, help='Defines the size of the quantification window(s) centered around the position specified by the "--cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence (--sgRNA). Indels overlapping this quantification window are included in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered.', default=1)
+    parser.add_argument('-w', '--quantification_window_size','--window_around_sgrna', type=int, help='Defines the size of the quantification window(s) centered around the position specified by the "--cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence (--sgRNA). Indels overlapping this quantification window are included in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 2bp, one on each side of the cleavage position.', default=2)
     parser.add_argument('-wc','--quantification_window_center','--cleavage_offset', type=int, help="Center of quantification window to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17.", default=-3)
 #    parser.add_argument('--cleavage_offset', type=str, help="Predicted cleavage position for cleaving nucleases with respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. The default value of -3 is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. To suppress the cleavage offset, enter 'N'.", default=-3)
     parser.add_argument('--exclude_bp_from_left', type=int, help='Exclude bp from the left side of the amplicon sequence for the quantification of the indels', default=15)
@@ -133,7 +133,7 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('--conversion_nuc_to',  help='For base editor plots, this is the nucleotide produced by the base editor',default='T')
 
     parser.add_argument('--base_editor_output', help='Outputs plots and tables to aid in analysis of base editor studies.',action='store_true')
-    parser.add_argument('-qwc','--quantification_window_coordinates', type=str, help='Bp positions in the amplicon sequence specifying the quantification window. This parameter overrides values of the "--quantification_window_center", "--cleavage_offset", "--window_around_sgrna" or "--window_around_sgrna" values. Any indels outside this window are excluded. Ranges are separted by the dash sign like "start-stop", and multiple ranges can be separated by the underscore (_). ' +
+    parser.add_argument('-qwc','--quantification_window_coordinates', type=str, help='Bp positions in the amplicon sequence specifying the quantification window. This parameter overrides values of the "--quantification_window_center", "--cleavage_offset", "--window_around_sgrna" or "--window_around_sgrna" values. Any indels/substitutions outside this window are excluded. Indexes are 0-based, meaning that the first nucleotide is position 0. Ranges are separted by the dash sign (e.g. "start-stop"), and multiple ranges can be separated by the underscore (_). ' +
         'A value of 0 disables this filter. (can be comma-separated list of values, corresponding to amplicon sequences given in --amplicon_seq e.g. 5-10,5-10_20-30 would specify the 5th-10th bp in the first reference and the 5th-10th and 20th-30th bp in the second reference)', default=None)
 
     parser.add_argument('--crispresso1_mode', help='Parameter usage as in CRISPResso 1',action='store_true')
@@ -568,6 +568,11 @@ def get_row_around_cut(row,cut_point,offset):
 
 
 def get_dataframe_around_cut(df_alleles, cut_point,offset):
+    ref1 = df_alleles['Reference_Sequence'].iloc[0]
+    ref1 = ref1.replace('-','')
+    if (cut_point + offset + 1 > len(ref1)):
+        raise(BadParameterException('The plotting window cannot extend past the end of the amplicon. Amplicon length is ' + str(len(ref1)) + ' but plot extends to ' + str(cut_point+offset+1)))
+
     df_alleles_around_cut=pd.DataFrame(list(df_alleles.apply(lambda row: get_row_around_cut(row,cut_point,offset),axis=1).values),
                     columns=['Aligned_Sequence','Reference_Sequence','Unedited','n_deleted','n_inserted','n_mutated','#Reads','%Reads'])
     df_alleles_around_cut=df_alleles_around_cut.groupby(['Aligned_Sequence','Reference_Sequence','Unedited','n_deleted','n_inserted','n_mutated']).sum().reset_index().set_index('Aligned_Sequence')
@@ -608,7 +613,6 @@ def get_amplicon_info_for_guides(ref_seq,guides,quantification_window_center,qua
     this_sgRNA_sequences : list of sgRNAs that are in this amplicon
     this_sgRNA_intervals : indices of each guide
     this_cut_points : cut points for each guide (defined by quantification_window_center)
-    this_sgRNA_plot_offsets : whether each guide is on the forward strand or the reverse strand -- if it's on the reverse strand, it needs to be offset by 1 in the plot
     this_include_idxs : indices to be included in quantification
     this_exclude_idxs : indices to be excluded from quantification
     this_plot_idxs : indices to be plotted
@@ -618,7 +622,6 @@ def get_amplicon_info_for_guides(ref_seq,guides,quantification_window_center,qua
     this_sgRNA_sequences = []
     this_sgRNA_intervals = []
     this_cut_points = []
-    this_sgRNA_plot_offsets = [] #whether each guide is on the forward strand or the reverse strand -- if it's on the reverse strand, it needs to be offset by 1 in the plot
     this_include_idxs=[]
     this_exclude_idxs=[]
     this_plot_idxs=[]
@@ -635,13 +638,9 @@ def get_amplicon_info_for_guides(ref_seq,guides,quantification_window_center,qua
                                   [(m.start(),m.start()+len(current_guide_seq)-1) for m in re.finditer(reverse_complement(current_guide_seq), ref_seq)]
             this_sgRNA_sequences.append(current_guide_seq)
 
-            if current_guide_seq in ref_seq: #if the guide is present in the forward direction
-                this_sgRNA_plot_offsets.append(1)
-            else:
-                this_sgRNA_plot_offsets.append(0)
-
     #create mask of positions in which to include/exclude indels for the quantification window
     #first, if exact coordinates have been given, set those
+    given_include_idxs = []
     if quantification_window_coordinates is not None:
         theseCoords = quantification_window_coordinates.split("_")
         for coord in theseCoords:
@@ -654,15 +653,16 @@ def get_amplicon_info_for_guides(ref_seq,guides,quantification_window_center,qua
                 this_include_idxs.extend(range(start,end))
             else:
                 raise NTException("Cannot parse analysis window coordinate '" + str(coord) + "' in '" + str(theseCoords) + "'. Coordinates must be given in the form start-end e.g. 5-10 . Please check the --analysis_window_coordinate parameter.")
+        given_include_idxs = this_include_idxs
     elif this_cut_points and quantification_window_size>0:
         half_window=max(1,quantification_window_size/2)
         for cut_p in this_cut_points:
             st=max(0,cut_p-half_window+1)
             en=min(ref_seq_length-1,cut_p+half_window+1)
             this_include_idxs.extend(range(st,en))
+        given_include_idxs = this_include_idxs
     else:
        this_include_idxs=range(ref_seq_length)
-
 
     if exclude_bp_from_left:
        this_exclude_idxs+=range(exclude_bp_from_left)
@@ -673,12 +673,15 @@ def get_amplicon_info_for_guides(ref_seq,guides,quantification_window_center,qua
     #flatten the arrays to avoid errors with old numpy library
     this_include_idxs=np.ravel(this_include_idxs)
     this_exclude_idxs=np.ravel(this_exclude_idxs)
+    given_include_idxs=np.ravel(given_include_idxs)
     pre_exclude_include_idxs = this_include_idxs.copy()
 
     this_include_idxs=set(np.setdiff1d(this_include_idxs,this_exclude_idxs))
+    if len(np.setdiff1d(given_include_idxs,list(this_include_idxs))) > 0:
+        raise BadParameterException('The quantification window has been partially exluded by the --exclude_bp_from_left or --exclude_bp_from_right parameters. Given: ' + str(given_include_idxs) + ' Pre: ' + str(pre_exclude_include_idxs) + ' Post: ' + str(this_include_idxs))
     if len(this_include_idxs) == 0:
         if len(pre_exclude_include_idxs) > 0:
-            raise BadParameterException('The computation window around the sgRNA is excluded. Please decrease the exclude_bp_from_right and exclude_bp_from_left parameters.')
+            raise BadParameterException('The quantification window around the sgRNA is excluded. Please decrease the exclude_bp_from_right and exclude_bp_from_left parameters.')
         else:
             raise BadParameterException('The entire sequence has been excluded. Please enter a longer amplicon, or decrease the exclude_bp_from_right and exclude_bp_from_left parameters')
 
@@ -686,9 +689,9 @@ def get_amplicon_info_for_guides(ref_seq,guides,quantification_window_center,qua
         window_around_cut=max(1,plot_window_size/2)
         for cut_p in this_cut_points:
             if cut_p - window_around_cut + 1 < 0:
-                raise BadParameterException('Offset around cut would extend to the left of the amplicon. Please decrease plot_window_size parameter. Cut point: ' + str(cut_p) + ' window: ' + str(window_around_cut))
-            if cut_p - window_around_cut > ref_seq_length-1:
-                raise BadParameterException('Offset around cut would be greater than sequence length . Please decrease plot_window_size parameter. Cut point: ' + str(cut_p) + ' window: ' + str(window_around_cut))
+                raise BadParameterException('Offset around cut would extend to the left of the amplicon. Please decrease plot_window_size parameter. Cut point: ' + str(cut_p) + ' window: ' + str(window_around_cut) + ' reference: ' + str(ref_seq_length))
+            if cut_p + window_around_cut > ref_seq_length-1:
+                raise BadParameterException('Offset around cut would be greater than reference sequence length. Please decrease plot_window_size parameter. Cut point: ' + str(cut_p) + ' window: ' + str(window_around_cut) + ' reference: ' + str(ref_seq_length))
             st=max(0,cut_p-window_around_cut+1)
             en=min(ref_seq_length-1,cut_p+window_around_cut+1)
             this_plot_idxs.append(range(st,en))
@@ -697,7 +700,7 @@ def get_amplicon_info_for_guides(ref_seq,guides,quantification_window_center,qua
 
     this_plot_idxs = np.ravel(this_plot_idxs)
 
-    return this_sgRNA_sequences, this_sgRNA_intervals, this_cut_points, this_sgRNA_plot_offsets, this_include_idxs, this_exclude_idxs, this_plot_idxs
+    return this_sgRNA_sequences, this_sgRNA_intervals, this_cut_points, this_include_idxs, this_exclude_idxs, this_plot_idxs
 
 
 ######

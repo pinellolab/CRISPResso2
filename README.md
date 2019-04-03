@@ -1,5 +1,5 @@
 # CRISPResso2
-CRISPResso2 is a software pipeline designed to enable rapid and intuitive interpretation of genome editing experiments. 
+CRISPResso2 is a software pipeline designed to enable rapid and intuitive interpretation of genome editing experiments.
 
 Briefly, CRISPResso2:
 - aligns sequencing reads to a reference sequence
@@ -34,12 +34,12 @@ Finally, after analyzing the aligned reads, a set of informative graphs are gene
 ## How is CRISPResso2 different from CRISPResso?
 CRISPResso2 introduces four key innovations for the analysis of genome editing data:
 1) Comprehensive analysis of sequencing data from base editors. We have added additional analysis and visualization capabilities especially for experiments using base editors.
-2) Allele specific quantification of heterozygous references. If the targeted editing region has more than one allele, reads arising from each allele can be deconvoluted. 
+2) Allele specific quantification of heterozygous references. If the targeted editing region has more than one allele, reads arising from each allele can be deconvoluted.
 3) A novel biologically-informed alignment algorithm. This algorithm incorporates knowledge about the mutations produced by gene editing tools to create more biologically-likely alignments.
 4) Ultra-fast processing time.
 
 ## Installation
-CRISPResso2 can be installed using the [conda](http://conda.pydata.org/docs/intro.html) package manager [Bioconda](https://bioconda.github.io/), or it can be run using the [Docker](https://www.docker.com/) containerization system. 
+CRISPResso2 can be installed using the [conda](http://conda.pydata.org/docs/intro.html) package manager [Bioconda](https://bioconda.github.io/), or it can be run using the [Docker](https://www.docker.com/) containerization system.
 
 ### Bioconda
 To install CRISPResso2 using Bioconda, download and install Anaconda Python 2.7, following the instructions at: http://continuum.io/downloads.
@@ -63,26 +63,26 @@ CRISPResso -h
 ### Docker
 CRISPResso2 can be used via the Docker containerization system. This system allows CRISPResso2 to run on your system without configuring and installing additional packages. To run CRISPResso2, first download and install docker: https://docs.docker.com/engine/installation/
 
-Next, Docker must be configured to access your hard drive and to run with sufficient memory. These parameters can be found in the Docker settings menu. To allow Docker to access your hard drive, select 'Shared Drives' and make sure your drive name is selected. To adjust the memory allocation, select the 'Advanced' tab and allocate at least 4G of memory. 
-	
-To run CRISPresso2, make sure Docker is running, then open a command prompt (Mac) or Powershell (Windows). Change directories to the location where your data is, and run the following command: 
+Next, Docker must be configured to access your hard drive and to run with sufficient memory. These parameters can be found in the Docker settings menu. To allow Docker to access your hard drive, select 'Shared Drives' and make sure your drive name is selected. To adjust the memory allocation, select the 'Advanced' tab and allocate at least 4G of memory.
+
+To run CRISPresso2, make sure Docker is running, then open a command prompt (Mac) or Powershell (Windows). Change directories to the location where your data is, and run the following command:
 
 ```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPResso -h
 ```
 
-The first time you run this command, it will download the Docker image. The `-v` parameter mounts the current directory to be accessible by CRISPResso2, and the `-w` parameter sets the CRISPResso2 working directory. As long as you are running the command from the directory containing your data, you should not change the Docker `-v` or `-w` parameters. 
+The first time you run this command, it will download the Docker image. The `-v` parameter mounts the current directory to be accessible by CRISPResso2, and the `-w` parameter sets the CRISPResso2 working directory. As long as you are running the command from the directory containing your data, you should not change the Docker `-v` or `-w` parameters.
 
-Additional parameters for CRISPResso2 as described below can be added to this command. For example, 
+Additional parameters for CRISPResso2 as described below can be added to this command. For example,
 
 ```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPResso -r1 sample.fastq.gz -a ATTAACCAAG
 ```
 
 ## CRISPResso2 usage
-CRISPResso2 is designed be run on a single amplicon. For experiments involving multiple amplicons in the same fastq, see the instructions for CRISPRessoPooled or CRISPRessoWGS below. 
+CRISPResso2 is designed be run on a single amplicon. For experiments involving multiple amplicons in the same fastq, see the instructions for CRISPRessoPooled or CRISPRessoWGS below.
 
-CRISPresso2 requires only two parameters: input sequences in the form of fastq files (given by the `--fastq_r1` and `--fastq_r2`) parameters, and the amplicon sequence to align to (given by the `--amplicon_seq` parameter). For example: 
+CRISPresso2 requires only two parameters: input sequences in the form of fastq files (given by the `--fastq_r1` and `--fastq_r2`) parameters, and the amplicon sequence to align to (given by the `--amplicon_seq` parameter). For example:
 
 *Using Bioconda:*
 ```
@@ -186,7 +186,7 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --max_paired_end_reads_overlap: Parameter for the FLASH merging step. Maximum overlap length expected in approximately 90% of read pairs.  Please see the FLASH manual for more information.  (default: None)
 
--w or --quantification_window_size or --window_around_sgrna: Defines the size of the quantification window(s) centered around the position specified by the "-- cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence (--sgRNA). Indels overlapping this quantification window are included in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. (default: 1)
+-w or --quantification_window_size or --window_around_sgrna: Defines the size of the quantification window(s) centered around the position specified by the "-- cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence (--sgRNA). Indels overlapping this quantification window are included in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default size is 2bp, which is 1bp up- and 1bp downstream from the quantification window center. (default: 2)
 
 -wc or --quantification_window_center or --cleavage_offset: Center of quantification window to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17. (default: -3)
 
@@ -226,7 +226,7 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --base_editor_output: Outputs plots and tables to aid in analysis of base editor studies. If base editor output is selected, plots showing the frequency of substitutions in the quantification window are generated. The target and result bases can also be set to measure the rate of on-target conversion at bases in the quantification window. (default: False)
 
--qwc or --quantification_window_coordinates: Bp positions in the amplicon sequence specifying the quantification window. This parameter overrides values of the "--quantification_window_center", "-- cleavage_offset", "--window_around_sgrna" or "-- window_around_sgrna" values. Any indels outside this window are excluded. Ranges are separted by the dash sign like "start-stop", and multiple ranges can be separated by the underscore (\_). A value of 0 disables this filter. (can be comma-separated list of values, corresponding to amplicon sequences given in --amplicon_seq e.g. 5-10,5-10_20-30 would specify the 5th-10th bp in the first reference and the 5th-10th and 20th-30th bp in the second reference) (default: None)
+-qwc or --quantification_window_coordinates: Bp positions in the amplicon sequence specifying the quantification window. This parameter overrides values of the "--quantification_window_center", "-- cleavage_offset", "--window_around_sgrna" or "-- window_around_sgrna" values. Any indels/substitutions outside this window are excluded. Indexes are 0-based, meaning that the first nucleotide is position 0. Ranges are separated by the dash sign like "start-stop", and multiple ranges can be separated by the underscore (\_). A value of 0 disables this filter. (can be comma-separated list of values, corresponding to amplicon sequences given in --amplicon_seq e.g. 5-10,5-10_20-30 would specify the 5th-10th bp in the first reference and the 5th-10th and 20th-30th bp in the second reference) (default: None)
 
 --crispresso1_mode: Parameter usage as in CRISPResso 1. In particular, if this flag is set the plot window length will be twice the value 'plot_window_size' (whereas in CRISPResso2 the window length will be plot_window_size) and the old output files 'Mapping_statistics.txt', and 'Quantification_of_editing_frequency.txt' are created, and the new files 'nucleotide_frequency_table.txt' and 'substitution_frequency_table.txt' and figure 2a and 2b are suppressed, and the files 'selected_nucleotide_percentage_table.txt' are not produced when the flag `--base_editor_output` is set (default: False)
 
@@ -242,13 +242,13 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 The output of CRISPResso2 consists of a set of informative graphs that allow for the quantification and visualization of the position and type of outcomes within an amplicon sequence.
 
 ### Data file descriptions
-*CRISPResso2_report.html* is a summary report that can be viewed in a web browser containing all of the output plots and summary statistics. 
+*CRISPResso2_report.html* is a summary report that can be viewed in a web browser containing all of the output plots and summary statistics.
 
 *Alleles_frequency_table.txt* is a tab-separated text file that shows all reads and alignments to references. The first column shows the aligned sequence of the sequenced read. The second column shows the aligned sequence of the reference sequence. Gaps in each of these columns represent insertions and deletions. The next column 'Reference_Name' shows the name of the reference that the read aligned to. The fourth column, 'Read_Status' shows whether the read was modified or unmodified. The fifth through seventh columns ('n_deleted', 'n_inserted', 'n_substituted') show the number of bases deleted, inserted, and substituted as compared to the reference sequence. The eighth column shows the number of reads having that sequence, and the ninth column shows the percentage of all reads having that sequence.
 
-*CRISPResso_mapping_statistics.txt* is a tab-delimited text file showing the number of reads in the input ('READS IN INPUTS') the number of reads after filtering, trimming and merging (READS AFTER PREPROCESSING), the number of reads aligned (READS ALIGNED) and the number of reads for which the alignment had to be computed vs read from cache. 
+*CRISPResso_mapping_statistics.txt* is a tab-delimited text file showing the number of reads in the input ('READS IN INPUTS') the number of reads after filtering, trimming and merging (READS AFTER PREPROCESSING), the number of reads aligned (READS ALIGNED) and the number of reads for which the alignment had to be computed vs read from cache.
 
-*CRISPResso_quantification_of_editing_frequency.txt* is a tab-delimited text file showing the number of reads aligning to each reference amplicon, as well as the status (modified/unmodified, number of insertions, deletions, and/or substitutions) of those reads. 
+*CRISPResso_quantification_of_editing_frequency.txt* is a tab-delimited text file showing the number of reads aligning to each reference amplicon, as well as the status (modified/unmodified, number of insertions, deletions, and/or substitutions) of those reads.
 
 *CRISPResso_RUNNING_LOG.txt* shows a log of the CRISPResso run.
 
@@ -320,12 +320,12 @@ If your amplicon sequence is longer than your sequenced read length, the R1 and 
 Especially in repetitive regions, multiple alignments may have the best score. If you want to investigate alternate best-scoring alignments, you can view all alignments using this tool: http://rna.informatik.uni-freiburg.de/Teaching/index.jsp?toolName=Gotoh. As input, sequences from the 'Alleles_frequency_table.txt' can be used. Specifically, for a given row, the value in the 'Aligned_Sequence' should be entered into the 'Sequence a' box after removing any dashes, and the value in the 'Reference_Sequence' should be entered into the 'Sequence b' box after removing any dashes. The alternate alignments can be selected in the 'Results' panel in the Output section.
 
 ## Alternate running modes
-CRISPResso2 can be run for many fastqs (CRISPRessoBatch), for many amplicons in the same fastq (CRISPRessoPooled), or for whole-genome sequencing (CRISPRessoWGS). 
+CRISPResso2 can be run for many fastqs (CRISPRessoBatch), for many amplicons in the same fastq (CRISPRessoPooled), or for whole-genome sequencing (CRISPRessoWGS).
 
 ### CRISPRessoBatch
-CRISPRessoBatch allows users to specify input files and other command line arguments in a single file, and then to run CRISPResso2 analysis on each file in parallel. Samples for which the amplicon and guide sequences are the same will be compared between batches, producing useful summary tables and coomparison plots. 
+CRISPRessoBatch allows users to specify input files and other command line arguments in a single file, and then to run CRISPResso2 analysis on each file in parallel. Samples for which the amplicon and guide sequences are the same will be compared between batches, producing useful summary tables and coomparison plots.
 
-This flexible utility adds four additional parameters: 
+This flexible utility adds four additional parameters:
 
 --batch_settings: This parameter specifies the tab-separated batch file. The batch file consists of a header line listing the parameters specified, and then one line for each sample describing the parameters for that sample. Each of the parameters for CRISPResso2 given above can be specified for each sample. When CRISPRessoBatch is run, additional parameters can be specified that will be applied to all of the samples listed in the batch file. An example batch file looks like:
 ```
@@ -339,7 +339,7 @@ sample3	sample3.fq
 
 -p or --n_processes: This specifies the number of processes to use for quantification. (default: 1)
 
--bo or --batch_output_folder: Directory where batch analysis output will be stored. 
+-bo or --batch_output_folder: Directory where batch analysis output will be stored.
 
 CRISPRessoBatch outputs several summary files and plots:
 
@@ -349,7 +349,7 @@ CRISPRessoBatch outputs several summary files and plots:
 
 For each amplicon, the following files are produced with the name of the amplicon as the filename prefix:
 
-*NUCLEOTIDE_FREQUENCY_SUMMARY.txt* and *NUCLEOTIDE_PERCENTAGE_SUMMARY.txt* aggregate the nucleotide counts and percentages at each position in the amplicon for each sample. 
+*NUCLEOTIDE_FREQUENCY_SUMMARY.txt* and *NUCLEOTIDE_PERCENTAGE_SUMMARY.txt* aggregate the nucleotide counts and percentages at each position in the amplicon for each sample.
 
 
 *MODIFICATION_FREQUENCY_SUMMARY.txt* and *MODIFICATION_PERCENTAGE_SUMMARY.txt* aggregate the modification frequency and percentage at each position in the amplicon for each sample.
@@ -391,7 +391,7 @@ To run the tool in this mode the user must provide:
 1.  Paired-end reads (two files) or single-end reads (single file)
     in [FASTQ
     format ](http://en.wikipedia.org/wiki/FASTQ_format)(fastq.gz files
-    are also accepted) 
+    are also accepted)
 
 2.  A description file containing the amplicon sequences used to enrich
     regions in the genome and some additional information. In
@@ -417,9 +417,9 @@ To run the tool in this mode the user must provide:
 A file in the correct format should look like this:
 
 Site1 CACACTGTGGCCCCTGTGCCCAGCCCTGGGCTCTCTGTACATGAAGCAAC CCCTGTGCCCAGCCC NA NA
- 
+
 Site2 GTCCTGGTTTTTGGTTTGGGAAATATAGTCATC NA GTCCTGGTTTTTGGTTTAAAAAAATATAGTCATC NA
- 
+
 Site 3 TTTCTGGTTTTTGGTTTGGGAAATATAGTCATC NA NA GGAAATATA
 
 Note: *no column titles should be entered.* Also the colors here are used only for illustrative purposes and in a plain text file will be not be present and saved.
@@ -455,7 +455,7 @@ The output of CRISPRessoPooled Amplicons mode consists of:
 
 3.  A set of folders, one for each amplicon, containing a full
     CRISPResso report.
-    
+
 4.  SAMPLES_QUANTIFICATION_SUMMARY.txt: this file contains a summary of the quantification and the alignment statistics for each          region analyzed (read counts and percentages for the various classes: Unmodified, NHEJ, point mutations, and HDR).
 
 5.  *CRISPRessoPooled\_RUNNING\_LOG.txt*:  execution log and messages
@@ -477,7 +477,7 @@ To run the tool in this mode the user must provide:
 1.  Paired-end reads (two files) or single-end reads (single file)
     in [FASTQ
     format ](http://en.wikipedia.org/wiki/FASTQ_format)(fastq.gz files
-    are also accepted) 
+    are also accepted)
 
 2.  The full path of the reference genome in bowtie2 format (e.g.
     /genomes/human\_hg19/hg19). Instructions on how to build
@@ -527,7 +527,7 @@ The output of CRISPRessoPooled Genome mode consists of:
 
 2.  A set of folders with the CRISPResso report on the regions with
     enough reads.
-    
+
 3.  SAMPLES_QUANTIFICATION_SUMMARY.txt: this file contains a summary of the quantification and the alignment statistics for each          region analyzed (read counts and percentages for the various classes: Unmodified, NHEJ, point mutations, and HDR).
 
 4.  *CRISPRessoPooled\_RUNNING\_LOG.txt*:  execution log and messages
@@ -552,7 +552,7 @@ To run the tool in this mode the user must provide:
 -   Paired-end reads (two files) or single-end reads (single file)
     in [FASTQ
     format ](http://en.wikipedia.org/wiki/FASTQ_format)(fastq.gz files
-    are also accepted) 
+    are also accepted)
 
 -   A description file containing the amplicon sequences used to enrich
     regions in the genome and some additional information (as described
@@ -675,7 +675,7 @@ A file in the correct format should look like this:
 ```
 chr1 65118211 65118261 R1 CTACAGAGCCCCAGTCCTGG NA NA
 
-chr6 51002798 51002820 R2 NA NA NA 
+chr6 51002798 51002820 R2 NA NA NA
 ```
 
 Note: *no column titles should be entered.* As you may have noticed this
@@ -692,12 +692,12 @@ BED file with 4 columns, is also **accepted** by this utility.
 Example:
 
 *Using Bioconda:*
-``` 
+```
 CRISPRessoWGS -b WGS/50/50_sorted_rmdup_fixed_groups.bam -f WGS_TEST.txt -r /GENOMES/mm9/mm9.fa --gene_annotations ensemble_mm9.txt.gz --name CRISPR_WGS_SRR1542350
 ```
 
 *Using Docker:*
-``` 
+```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoWGS -b WGS/50/50_sorted_rmdup_fixed_groups.bam -f WGS_TEST.txt -r /GENOMES/mm9/mm9.fa --gene_annotations ensemble_mm9.txt.gz --name CRISPR_WGS_SRR1542350
 ```
 
@@ -770,9 +770,9 @@ docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoCompare
 
 The output will consist of:
 
-1.	Comparison_Efficiency.pdf: a figure containing a comparison of the edit frequencies for each category (NHEJ, MIXED NHEJ-HDR and HDR) and as well the net effect subtracting the second sample (second folder in the command line) provided in the analysis from the first sample (first folder in the command line). 
+1.	Comparison_Efficiency.pdf: a figure containing a comparison of the edit frequencies for each category (NHEJ, MIXED NHEJ-HDR and HDR) and as well the net effect subtracting the second sample (second folder in the command line) provided in the analysis from the first sample (first folder in the command line).
 2.	Comparison_Combined_Insertion_Deletion_Substitution_Locations.pdf: a figure showing the average profile for the mutations for the two samples in the same scale and their difference with the same convention used in the previous figure (first sample – second sample).
-3.	CRISPRessoCompare_RUNNING_LOG.txt: detailed execution log. 
+3.	CRISPRessoCompare_RUNNING_LOG.txt: detailed execution log.
 
 ### CRISPRessoPooledWGSCompare
 
@@ -800,5 +800,4 @@ docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/CRISPResso2 CRISPRessoPooledW
 The output from these files will consist of:
 1.	COMPARISON_SAMPLES_QUANTIFICATION_SUMMARIES.txt: this file contains a summary of the quantification for each of the two conditions for each region and their difference (read counts and percentages for the various classes: Unmodified, NHEJ, MIXED NHEJ-HDR  and HDR).
 2.	A set of folders with CRISPRessoCompare reports on the common regions with enough reads in both conditions.
-3.	CRISPRessoPooledWGSCompare_RUNNING_LOG.txt: detailed execution log. 
-
+3.	CRISPRessoPooledWGSCompare_RUNNING_LOG.txt: detailed execution log.

@@ -34,6 +34,10 @@ RUN echo "deb http://httpredir.debian.org/debian jessie main contrib" > /etc/apt
 COPY . /CRISPResso2
 WORKDIR /CRISPResso2
 RUN python setup.py install
-RUN CRISPResso -h
+RUN CRISPResso -h \
+  && CRISPRessoBatch -h
+  && CRISPRessoPooled -h
+  && CRISPRessoWGS -h
+  && CRISPRessoCompare -h
 
 ENTRYPOINT ["python","/CRISPResso2/CRISPResso2_router.py"]
