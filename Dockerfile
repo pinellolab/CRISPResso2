@@ -35,9 +35,9 @@ COPY . /CRISPResso2
 WORKDIR /CRISPResso2
 RUN python setup.py install
 RUN CRISPResso -h \
-  && CRISPRessoBatch -h
-  && CRISPRessoPooled -h
-  && CRISPRessoWGS -h
+  && CRISPRessoBatch -h \
+  && CRISPRessoPooled -h \
+  && CRISPRessoWGS -h \
   && CRISPRessoCompare -h
 
 ENTRYPOINT ["python","/CRISPResso2/CRISPResso2_router.py"]
