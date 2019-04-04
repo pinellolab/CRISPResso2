@@ -87,7 +87,7 @@ def main():
     	      'seaborn==0.7.1',
               'jinja2',
     	      'scipy==1.1.0',
-              'zip',
+              'zip==0.0.2',
               ],
           cmdclass = command_classes,
           ext_modules = ext_modules
