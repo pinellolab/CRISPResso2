@@ -2272,6 +2272,11 @@ def main():
             #(3)visualize effective lengths of reads aligning to this amplicon
 
             if not args.suppress_plots:
+
+                n_this_category = counts_total[ref_name]
+                if n_this_category < 1:
+                    continue
+
                 plt.figure(figsize=(10,10))
                 ax = plt.subplot(111)
                 densityPct = 0.0
@@ -2288,7 +2293,7 @@ def main():
                 ax.set_ylabel('Sequences % (no.)')
                 y_label_values= np.round(np.linspace(0, min(100,max(ax.get_yticks())),6))# np.arange(0,y_max,y_max/6.0)
                 ax.set_yticks(y_label_values)
-                ax.set_yticklabels(['%.1f%% (%.0f)' % (pct,pct/100*N_TOTAL) for pct in y_label_values])
+                ax.set_yticklabels(['%.1f%% (%.0f)' % (pct,pct/100*n_this_category) for pct in y_label_values])
                 ax.set_xlabel('Indel size (bp)')
                 #lgd=plt.legend(['No indel','Indel'])
                 lgd=ax.legend(['No indel','Indel'],loc='center', bbox_to_anchor=(0.5, -0.12),ncol=1, fancybox=True, shadow=True)
@@ -2316,9 +2321,6 @@ def main():
                 y_values_del = refs[ref_name]['y_values_del']
                 x_bins_del = refs[ref_name]['x_bins_del']
 
-                n_this_category = counts_total[ref_name]
-                if n_this_category < 1:
-                    continue
 
                 fig=plt.figure(figsize=(26,6.5))
 
