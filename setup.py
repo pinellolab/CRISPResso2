@@ -88,7 +88,6 @@ def main():
               'jinja2',
               'networkx==2.2',
     	      'scipy==1.1.0',
-              'zip==0.0.2',
               ],
           cmdclass = command_classes,
           ext_modules = ext_modules
