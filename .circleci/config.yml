@@ -8,7 +8,7 @@ jobs:
     docker:
       # specify the version you desire here
       # use `-browsers` prefix for selenium tests, e.g. `3.6.1-browsers`
-      - image: circleci/python:2.7-node-browsers
+      - image: pinellolab/crispresso2
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -32,6 +32,7 @@ jobs:
           command: |
             python -m virtualenv venv
             source venv/bin/activate
+            rm -rf /opt/conda/bin/CRISPRess*
             python setup.py install
 
       - save_cache:
