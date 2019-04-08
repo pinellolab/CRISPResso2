@@ -635,7 +635,7 @@
 <script>
 function updateZoom(e) {
   /*prevent any other actions that may occur when moving over the image:*/
-  e.preventDefault();
+//  e.preventDefault();
   var img = e.target.imgObj
   var view = e.target.viewObj
   var lens = e.target.lensObj
@@ -691,6 +691,21 @@ function getCursorPos(e,img) {
   return {x : x, y : y};
 }
 
+var passiveSupported = false;
+try {
+  var options = {
+    get passive() { // This function will be called when the browser
+                    //   attempts to access the passive property.
+      passiveSupported = true;
+    }
+  };
+
+  window.addEventListener("test", options, options);
+  window.removeEventListener("test", options, options);
+} catch(err) {
+  passiveSupported = false;
+}
+
 	{% for amplicon_name in report_data.amplicons %}
 		{% if report_data['fig_locs'][amplicon_name]['plot_2a'] %}
 		view = document.getElementById('zoomview_nucs_{{amplicon_name}}');
@@ -705,11 +720,11 @@ function getCursorPos(e,img) {
 		lens.lensObj = lens
 		lens.imgObj = img
 
-		lens.addEventListener("mousemove", updateZoom);
-		img.addEventListener("mousemove", updateZoom);
+		lens.addEventListener("mousemove", updateZoom, passiveSupported? { passive: true } : false);
+		img.addEventListener("mousemove", updateZoom, passiveSupported? { passive: true } : false);
 		/*and also for touch screens:*/
-		lens.addEventListener("touchmove", updateZoom);
-		img.addEventListener("touchmove", updateZoom);
+		lens.addEventListener("touchmove", updateZoom, passiveSupported? { passive: true } : false);
+		img.addEventListener("touchmove", updateZoom, passiveSupported? { passive: true } : false);
 
 		{% endif %}
 	{% endfor %}

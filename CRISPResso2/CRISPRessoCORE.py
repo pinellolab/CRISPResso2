@@ -2296,7 +2296,7 @@ def main():
                 ax.set_yticklabels(['%.1f%% (%.0f)' % (pct,pct/100*n_this_category) for pct in y_label_values])
                 ax.set_xlabel('Indel size (bp)')
                 #lgd=plt.legend(['No indel','Indel'])
-                lgd=ax.legend(['No indel','Indel'],loc='center', bbox_to_anchor=(0.5, -0.12),ncol=1, fancybox=True, shadow=True)
+                lgd=ax.legend(['No indel','Indel'],loc='center', bbox_to_anchor=(0.5, -0.18),ncol=1, fancybox=True, shadow=True)
                 lgd.legendHandles[0].set_height(3)
                 lgd.legendHandles[1].set_height(3)
 

@@ -49,6 +49,22 @@ def main():
         from Cython.Build import cythonize
         ext_modules = cythonize(ext_modules, language_level="2")
 
+
+    call_root = "CRISPResso"
+    if "--no_clash_crispresso1" in sys.argv:
+        sys.argv.remove("--no_clash_crispresso1")
+        call_root = "CRISPResso2"
+
+    entry_points = {
+          "console_scripts": [call_root+' = CRISPResso2.CRISPRessoCORE:main',
+              call_root+'Batch = CRISPResso2.CRISPRessoBatchCORE:main',
+              call_root+'Pooled = CRISPResso2.CRISPRessoPooledCORE:main',
+              call_root+'WGS = CRISPResso2.CRISPRessoWGSCORE:main',
+              call_root+'Compare = CRISPResso2.CRISPRessoCompareCORE:main',
+              call_root+'PooledWGSCompare = CRISPResso2.CRISPRessoPooledWGSCompareCORE:main',
+              ]
+          }
+
     setup(name="CRISPResso2",
           version=version,
           author='Kendell Clement',
@@ -57,15 +73,7 @@ def main():
           package_dir={'CRISPResso2' : 'CRISPResso2'},
           include_package_data = True,
           packages=['CRISPResso2'],
-      	  entry_points = {
-        	"console_scripts": ['CRISPResso = CRISPResso2.CRISPRessoCORE:main',
-          'CRISPRessoBatch = CRISPResso2.CRISPRessoBatchCORE:main',
-          'CRISPRessoPooled = CRISPResso2.CRISPRessoPooledCORE:main',
-          'CRISPRessoWGS = CRISPResso2.CRISPRessoWGSCORE:main',
-          'CRISPRessoCompare = CRISPResso2.CRISPRessoCompareCORE:main',
-          'CRISPRessoPooledWGSCompare = CRISPResso2.CRISPRessoPooledWGSCompareCORE:main',
-              ]
-           },
+          entry_points=entry_points,
           description="Software pipeline for the analysis of genome editing outcomes from deep sequencing data",
           classifiers=[
               'Development Status :: 4 - Beta',
@@ -84,7 +92,7 @@ def main():
               'matplotlib>=1.3.1, <3.0.0',
               'biopython>=1.6.5',
               'argparse>=1.3',
-    	      'seaborn==0.7.1',
+    	      'seaborn>=0.7.1',
               'jinja2',
               'networkx==2.2',
     	      'scipy==1.1.0',
