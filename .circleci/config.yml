@@ -30,8 +30,8 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            python -m venv venv
-            . venv/bin/activate
+            python -m virtualenv venv
+            source venv/bin/activate
             python setup.py install
 
       - save_cache:
@@ -43,7 +43,7 @@ jobs:
       - run:
           name: test-alive
           command: |
-            . venv/bin/activate
+            source venv/bin/activate
             CRISPResso -h
 
       - store_artifacts:
