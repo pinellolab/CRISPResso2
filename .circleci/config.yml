@@ -73,6 +73,9 @@ jobs:
 
       - store_artifacts:
           path: test-crispresso.out
+      - store_artifacts:
           path: test-crispresso-with-params.out
+      - store_artifacts:
           path: test-crispresso-batch.out
+      - store_artifacts:
           path: test-crispresso-pooled.out
