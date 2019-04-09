@@ -52,5 +52,27 @@ jobs:
                   diff CRISPResso_on_FANC.Cas9/Reference.nucleotide_frequency_table.txt tests/expectedResults/CRISPResso_on_FANC.Cas9/Reference.nucleotide_frequency_table.txt >> test-crispresso.out 2>&1
                   diff CRISPResso_on_FANC.Cas9/CRISPResso_quantification_of_editing_frequency.txt tests/expectedResults/CRISPResso_on_FANC.Cas9/CRISPResso_quantification_of_editing_frequency.txt >> test-crispresso.out 2>&1
 
+      - run:
+          name: test-crispresso-with-params
+          command: |
+                  CRISPResso -r1 FANC.Cas9.fastq -a CGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCCGCCACCGTGCGCCGGGCCTTGCAGTGGGCGCGCTACCTGCGCCACATCCATCGGCGCTTTGGTCGG -g GGAATCCCTTCTGCAGCACC -e CGGCCGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCTGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCCGCCACCGTGCGCCGGGCCTTGCAGTGGGCGCGCTACCTGCGCCACATCCATCGGCGCTTTGGTCGG -c GGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTT --dump -qwc 20-30_45-50 -q 30 --default_min_aln_score 80 -an FANC -n params --debug > test-crispresso-with-params.log
+                  diff CRISPResso_on_params/Reference.nucleotide_frequency_table.txt tests/expectedResults/CRISPResso_on_params/Reference.nucleotide_frequency_table.txt >> test-crispresso-with-params.out 2>&1
+                  diff CRISPResso_on_params/CRISPResso_quantification_of_editing_frequency.txt tests/expectedResults/CRISPResso_on_params/CRISPResso_quantification_of_editing_frequency.txt >> test-crispresso-with-params.out 2>&1
+
+      - run:
+          name: test-crispresso-batch
+          command: |
+                  CRISPRessoBatch -bs tests/FANC.batch -a CGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCCGCCACCGTGCGCCGGGCCTTGCAGTGGGCGCGCTACCTGCGCCACATCCATCGGCGCTTTGGTCGG -g GGAATCCCTTCTGCAGCACC -p 2 --debug --base_editor --debug > test-crispresso-batch.out
+                  diff CRISPRessoBatch_on_FANC/Reference.MODIFICATION_FREQUENCY_SUMMARY.txt tests/expectedResults/CRISPRessoBatch_on_FANC/Reference.MODIFICATION_FREQUENCY_SUMMARY.txt >> test-crispresso-batch.out 2>&1
+
+      - run:
+          name: test-crispresso-pooled
+          command: |
+                  CRISPRessoPooled -r1 tests/Both.Cas9.fastq -f tests/Cas9.amplicons.txt -p 2 --keep_intermediate --min_reads_to_use_region 100 --debug > test-crispresso-pooled.out
+                  diff CRISPRessoPooled_on_Both.Cas9/SAMPLES_QUANTIFICATION_SUMMARY.txt tests/expectedResults/CRISPRessoPooled_on_Both.Cas9/SAMPLES_QUANTIFICATION_SUMMARY.txt >> test-crispresso-pooled.out 2>&1
+
       - store_artifacts:
           path: test-crispresso.out
+          path: test-crispresso-with-params.out
+          path: test-crispresso-batch.out
+          path: test-crispresso-pooled.out
