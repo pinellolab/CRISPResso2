@@ -45,6 +45,13 @@ jobs:
           command: |
             CRISPResso -h
 
+      - run:
+          name: test-crispresso
+          command: |
+            CRISPResso -r1 tests/FANC.Cas9.fastq -a CGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCCGCCACCGTGCGCCGGGCCTTGCAGTGGGCGCGCTACCTGCGCCACATCCATCGGCGCTTTGGTCGG -g GGAATCCCTTCTGCAGCACC --debug -n FANC.Cas9
+            diff CRISPResso_on_FANC.Cas9/Reference.nucleotide_frequency_table.txt tests/expectedResults/CRISPResso_on_FANC.Cas9/Reference.nucleotide_frequency_table.txt
+            diff CRISPResso_on_FANC.Cas9/CRISPResso_quantification_of_editing_frequency.txt tests/expectedResults/CRISPResso_on_FANC.Cas9/CRISPResso_quantification_of_editing_frequency.txt
+
       - store_artifacts:
           path: test-reports
           destination: test-reports

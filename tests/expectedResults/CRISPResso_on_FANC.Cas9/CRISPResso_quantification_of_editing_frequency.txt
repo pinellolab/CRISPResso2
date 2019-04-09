@@ -1,0 +1,2 @@
+Amplicon	Unmodified%	Modified%	Reads_aligned	Reads_total	Unmodified	Modified	Discarded	Insertions	Deletions	Substitutions	Only Insertions	Only Deletions	Only Substitutions	Insertions and Deletions	Insertions and Substitutions	Deletions and Substitutions	Insertions Deletions and Substitutions
+Reference	0.736170212766	0.263829787234	235	235	173	62	0	8	49	7	6	49	5	0	2	0	0
