@@ -30,21 +30,22 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            python -m virtualenv venv
-            source venv/bin/activate
+            conda create -n crispresso2 python=2.7
+            source activate crispresso2
             rm -rf /opt/conda/bin/CRISPRess*
+            rm -rf /opt/conda/lib/python2.7/site-packages/CRISPResso2*
             python setup.py install
 
       - save_cache:
           paths:
-            - ./venv
+            - /opt/conda/
           key: v1-dependencies-{{ checksum "setup.py" }}
 
       # run tests!
       - run:
           name: test-alive
           command: |
-            source venv/bin/activate
+            source activate crispresso2
             CRISPResso -h
 
       - store_artifacts:
