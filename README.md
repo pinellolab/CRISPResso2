@@ -1,3 +1,8 @@
+![Docker Cloud Automated build](https://img.shields.io/docker/cloud/automated/pinellolab/crispresso2.svg)
+![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/pinellolab/crispresso2.svg)
+![CircleCI branch](https://img.shields.io/circleci/project/github/pinellolab/CRISPResso2/master.svg)
+[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/crispresso2/README.html)
+
 # CRISPResso2
 CRISPResso2 is a software pipeline designed to enable rapid and intuitive interpretation of genome editing experiments.
 
