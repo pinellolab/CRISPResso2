@@ -48,10 +48,9 @@ jobs:
       - run:
           name: test-crispresso
           command: |
-                  CRISPResso -r1 tests/FANC.Cas9.fastq -a CGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCCGCCACCGTGCGCCGGGCCTTGCAGTGGGCGCGCTACCTGCGCCACATCCATCGGCGCTTTGGTCGG -g GGAATCCCTTCTGCAGCACC --debug > test-reports/test-crispresso.out 2>&1
-                  diff CRISPResso_on_FANC.Cas9/Reference.nucleotide_frequency_table.txt tests/expectedResults/CRISPResso_on_FANC.Cas9/Reference.nucleotide_frequency_table.txt >> test-reports/test-crispresso.out 2>&1
-                  diff CRISPResso_on_FANC.Cas9/CRISPResso_quantification_of_editing_frequency.txt tests/expectedResults/CRISPResso_on_FANC.Cas9/CRISPResso_quantification_of_editing_frequency.txt >> test-reports/test-crispresso.out 2>&1
+                  CRISPResso -r1 tests/FANC.Cas9.fastq -a CGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCCGCCACCGTGCGCCGGGCCTTGCAGTGGGCGCGCTACCTGCGCCACATCCATCGGCGCTTTGGTCGG -g GGAATCCCTTCTGCAGCACC --debug > test-crispresso.out 2>&1
+                  diff CRISPResso_on_FANC.Cas9/Reference.nucleotide_frequency_table.txt tests/expectedResults/CRISPResso_on_FANC.Cas9/Reference.nucleotide_frequency_table.txt >> test-crispresso.out 2>&1
+                  diff CRISPResso_on_FANC.Cas9/CRISPResso_quantification_of_editing_frequency.txt tests/expectedResults/CRISPResso_on_FANC.Cas9/CRISPResso_quantification_of_editing_frequency.txt >> test-crispresso.out 2>&1
 
       - store_artifacts:
-          path: test-reports
-          destination: test-reports
+          path: test-crispresso.out
