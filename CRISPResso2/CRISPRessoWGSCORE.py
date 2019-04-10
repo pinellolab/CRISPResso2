@@ -460,7 +460,7 @@ def main():
         df_regions.fillna('NA').to_csv(_jp('REPORT_READS_ALIGNED_TO_SELECTED_REGIONS_WGS.txt'),sep='\t')
 
         #Run Crispresso
-        info('\nRunning CRISPResso on each regions...')
+        info('\nRunning CRISPResso on each region...')
         crispresso_cmds = []
         for idx,row in df_regions.iterrows():
 
@@ -494,11 +494,11 @@ def main():
         all_region_read_counts = {}
         good_region_names = []
         good_region_folders = {}
-        header = 'Name\tUnmodified%\tModified%\tReads_aligned\tReads_total\tUnmodified\tModified\tDiscarded\tInsertions\tDeletions\tSubstitutions\tOnly Insertions\tOnly Deletions\tOnly Substitutions\tInsertions and Deletions\tInsertions and Substitutions\tDeletions and Substitutions\tInsertions Deletions and Substitutions\n'
+        header = 'Name\tUnmodified%\tModified%\tReads_aligned\tReads_total\tUnmodified\tModified\tDiscarded\tInsertions\tDeletions\tSubstitutions\tOnly Insertions\tOnly Deletions\tOnly Substitutions\tInsertions and Deletions\tInsertions and Substitutions\tDeletions and Substitutions\tInsertions Deletions and Substitutions'
         header_els = header.split("\t")
         header_el_count = len(header_els)
-        empty_line_els = ['NA']*(header_el_count-2)
-        n_reads_index = header_els.index('Reads_total') + 1
+        empty_line_els = [np.nan]*(header_el_count-1)
+        n_reads_index = header_els.index('Reads_total') - 1
         for idx,row in df_regions.iterrows():
             folder_name='CRISPResso_on_%s' % idx
             run_name = idx
@@ -541,13 +541,15 @@ def main():
                     mod_pct = 100*n_mod/float(n_aligned)
 
                 vals = [run_name]
-                vals.extend([unmod_pct,mod_pct,n_aligned,n_tot,n_unmod,n_mod,n_discarded,n_insertion,n_deletion,n_substitution,n_only_insertion,n_only_deletion,n_only_substitution,n_insertion_and_deletion,n_insertion_and_substitution,n_deletion_and_substitution,n_insertion_and_deletion_and_substitution])
+                vals.extend([round(unmod_pct,8),round(mod_pct,8),n_aligned,n_tot,n_unmod,n_mod,n_discarded,n_insertion,n_deletion,n_substitution,n_only_insertion,n_only_deletion,n_only_substitution,n_insertion_and_deletion,n_insertion_and_substitution,n_deletion_and_substitution,n_insertion_and_deletion_and_substitution])
                 quantification_summary.append(vals)
 
                 good_region_names.append(idx)
                 good_region_folders[idx] = folder_name
         samples_quantification_summary_filename = _jp('SAMPLES_QUANTIFICATION_SUMMARY.txt')
 
+        print('df: ' + str(quantification_summary))
+        print('header: ' + str(header_els))
         df_summary_quantification=pd.DataFrame(quantification_summary,columns=header_els)
         if args.crispresso1_mode:
             crispresso1_columns=['Name','Unmodified%','Modified%','Reads_aligned','Reads_total']

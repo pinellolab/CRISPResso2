@@ -1335,20 +1335,25 @@ def plot_unmod_mod_pcts(fig_filename_root,df_summary_quantification,save_png,cut
     if cutoff is not None:
         plt.axvline(cutoff,ls='dashed')
 
-    max_val = max(df['Reads_total'])
-    space_val = max_val*0.02
-    pct_labels = []
-    for mod_pct,num_reads in zip(df['Modified%'],df['Reads_aligned']):
-        if np.isreal(num_reads) and num_reads > cutoff:
-            pct_labels.append(str(round(mod_pct,2))+"%")
-        else:
-            pct_labels.append("")
+    #if there are rows..
+    if df.shape[0] > 0:
+        max_val = max(df['Reads_total'])
+        space_val = max_val*0.02
+        pct_labels = []
+        for mod_pct,num_reads in zip(df['Modified%'],df['Reads_aligned']):
+            if np.isreal(num_reads) and num_reads > cutoff:
+                pct_labels.append(str(round(mod_pct,2))+"%")
+            else:
+                pct_labels.append("")
 
-    for rect, label in zip(p2.patches,pct_labels):
-        ax.text(rect.get_x()+rect.get_width()+space_val,rect.get_y()+rect.get_height()/2.0, label,ha='left',va='center')
+        for rect, label in zip(p2.patches,pct_labels):
+            ax.text(rect.get_x()+rect.get_width()+space_val,rect.get_y()+rect.get_height()/2.0, label,ha='left',va='center')
 
-    plt.legend((p0[0], p1[0], p2[0]), ('Total Reads', 'Unmodified', 'Modified'),loc='center', bbox_to_anchor=(0.5, -0.22),ncol=1, fancybox=True, shadow=True)
-    plt.tight_layout()
+        print('p0: ' + str(p0))
+        print('p1: ' + str(p1))
+        print('p2: ' + str(p2))
+        plt.legend((p0[0], p1[0], p2[0]), ('Total Reads', 'Unmodified', 'Modified'),loc='center', bbox_to_anchor=(0.5, -0.22),ncol=1, fancybox=True, shadow=True)
+        plt.tight_layout()
 
     plt.savefig(fig_filename_root+'.pdf',pad_inches=1,bbox_inches='tight')
     if save_png:

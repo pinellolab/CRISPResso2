@@ -29,7 +29,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.0.27"
+__version__ = "2.0.28"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -437,17 +437,21 @@ def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,
         last_count,last_seq = seq_lines[i-1].strip().split()
         #if this allele is present in at least XX% of the samples
         if float(last_count)/float(number_of_reads_to_consider) > min_freq_to_consider:
-            for amp_seq in amplicon_seq_arr:
+            this_amplicon_seq_arr = amplicon_seq_arr[:]
+            this_amplicon_max_pct = 0 #keep track of similarity to most-similar already-found amplicons
+            for amp_seq in this_amplicon_seq_arr:
                 ref_incentive = np.zeros(len(amp_seq)+1,dtype=np.int)
                 fws1,fws2,fwscore=CRISPResso2Align.global_align(seq,amp_seq,matrix=aln_matrix,gap_incentive=ref_incentive,gap_open=needleman_wunsch_gap_open,gap_extend=needleman_wunsch_gap_extend,)
                 rvs1,rvs2,rvscore=CRISPResso2Align.global_align(reverse_complement(seq),amp_seq,matrix=aln_matrix,gap_incentive=ref_incentive,gap_open=needleman_wunsch_gap_open,gap_extend=needleman_wunsch_gap_extend,)
                 #if the sequence is similar to a previously-seen read, don't add it
-                if fwscore > amplicon_similarity_cutoff or rvscore > amplicon_similarity_cutoff:
-                    continue
-                else:
-                    amplicon_seq_arr.append(seq)
-                    curr_amplicon_id += 1
-                    continue
+                min_len =  min(len(last_seq),len(seq))
+                max_score = max(fwscore,rvscore)
+                if max_score/float(min_len) > this_amplicon_max_pct:
+                    this_amplicon_max_pct = max_score/float(min_len)
+            #if this amplicon was maximally-similar to all other chosen amplicons by less than amplicon_similarity_cutoff, add to the list
+            if this_amplicon_max_pct < amplicon_similarity_cutoff:
+                amplicon_seq_arr.append(seq)
+                curr_amplicon_id += 1
         else:
             break
 

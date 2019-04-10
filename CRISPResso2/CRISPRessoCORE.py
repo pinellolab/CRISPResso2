@@ -540,6 +540,8 @@ def main():
             if args.debug:
                 for idx,seq in enumerate(guides):
                     print('Detected guide ' + str(idx) + ":" + str(seq))
+            if amplicon_seq_arr == 0:
+                raise BadParameterException("Cannot automatically infer amplicon sequence.")
 
         else: #not auto
             amplicon_seq_arr = args.amplicon_seq.split(",")
@@ -974,11 +976,23 @@ def main():
             info('Merging paired sequences with Flash...')
             expected_max_overlap=2*avg_read_length - min_amplicon_len
             expected_min_overlap=2*avg_read_length - max_amplicon_len
+#            print('avg read len: ' + str(avg_read_length))
+#            print('expected_max_overlap' + str(expected_max_overlap))
+#            print('expected_min_overlap' + str(expected_min_overlap))
+#            print('min amplicon len:' + str(min_amplicon_len))
+#            print('max amplicon len:' + str(max_amplicon_len))
             indel_overlap_tolerance = 10 # magic number bound on how many bp inserted/deleted in ~90% of reads (for flash)
             #max overlap is either the entire read (avg_read_length) or the expected amplicon length + indel tolerance
-            max_overlap = max(0,min(avg_read_length, expected_max_overlap+indel_overlap_tolerance))
+            max_overlap = max(10,min(avg_read_length, expected_max_overlap+indel_overlap_tolerance))
             #min overlap is either 4bp (as in crispresso1) or the expected amplicon length - indel tolerance
             min_overlap = max(4,expected_min_overlap-indel_overlap_tolerance)
+#            print('max_overlap: ' + str(max_overlap))
+#            print('min_overlap: ' + str(min_overlap))
+            # if reads are longer than the amplicon, there is no way to tell flash to have them overlap like this..
+            if avg_read_length > min_amplicon_len:
+                info('Warning: Reads are longer than amplicon.')
+                min_overlap = 4
+                max_overlap = 2*avg_read_length
             if args.max_paired_end_reads_overlap:
                 max_overlap = args.max_paired_end_reads_overlap
             if args.min_paired_end_reads_overlap:
@@ -1782,11 +1796,11 @@ def main():
                 unmod_pct = "NA"
                 mod_pct = "NA"
                 if n_aligned > 0:
-                    unmod_pct = n_unmod/float(n_aligned)
-                    mod_pct = n_mod/float(n_aligned)
+                    unmod_pct = 100*n_unmod/float(n_aligned)
+                    mod_pct = 100*n_mod/float(n_aligned)
 
                 vals = [ref_name]
-                vals.extend([str(x) for x in [unmod_pct,mod_pct,n_aligned,N_TOTAL,n_unmod,n_mod,n_discarded,n_insertion,n_deletion,n_substitution,n_only_insertion,n_only_deletion,n_only_substitution,n_insertion_and_deletion,n_insertion_and_substitution,n_deletion_and_substitution,n_insertion_and_deletion_and_substitution]])
+                vals.extend([str(x) for x in [round(unmod_pct,8),round(mod_pct,8),n_aligned,N_TOTAL,n_unmod,n_mod,n_discarded,n_insertion,n_deletion,n_substitution,n_only_insertion,n_only_deletion,n_only_substitution,n_insertion_and_deletion,n_insertion_and_substitution,n_deletion_and_substitution,n_insertion_and_deletion_and_substitution]])
                 outfile.write("\t".join(vals) + "\n")
 
         crispresso2_info['quant_of_editing_freq_filename'] = os.path.basename(quant_of_editing_freq_filename)

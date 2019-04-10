@@ -778,7 +778,7 @@ def main():
             coordinates=[]
             for region in glob.glob(os.path.join(MAPPED_REGIONS,'REGION*.fastq.gz')):
                 coord_from_filename = os.path.basename(region).replace('.fastq.gz','').split('_')[1:4]
-                print('ccord from filename: ' + str(coord_from_filename))
+#                print('ccord from filename: ' + str(coord_from_filename))
                 if not (coord_from_filename[1].isdigit() and coord_from_filename[2].isdigit()):
                     warn('Skipping region [%s] because the region name cannot be parsed\n'% region)
                     continue
@@ -844,7 +844,7 @@ def main():
         header = 'Name\tUnmodified%\tModified%\tReads_aligned\tReads_total\tUnmodified\tModified\tDiscarded\tInsertions\tDeletions\tSubstitutions\tOnly Insertions\tOnly Deletions\tOnly Substitutions\tInsertions and Deletions\tInsertions and Substitutions\tDeletions and Substitutions\tInsertions Deletions and Substitutions'
         header_els = header.split("\t")
         header_el_count = len(header_els)
-        empty_line_els = [np.nan]*(header_el_count-2)
+        empty_line_els = [np.nan]*(header_el_count-1)
         n_reads_index = header_els.index('Reads_total') - 1
         for idx,row in df_final_data.iterrows():
 
@@ -894,7 +894,7 @@ def main():
 
 
                     vals = [run_name]
-                    vals.extend([unmod_pct,mod_pct,n_aligned,n_tot,n_unmod,n_mod,n_discarded,n_insertion,n_deletion,n_substitution,n_only_insertion,n_only_deletion,n_only_substitution,n_insertion_and_deletion,n_insertion_and_substitution,n_deletion_and_substitution,n_insertion_and_deletion_and_substitution])
+                    vals.extend([round(unmod_pct,8),round(mod_pct,8),n_aligned,n_tot,n_unmod,n_mod,n_discarded,n_insertion,n_deletion,n_substitution,n_only_insertion,n_only_deletion,n_only_substitution,n_insertion_and_deletion,n_insertion_and_substitution,n_deletion_and_substitution,n_insertion_and_deletion_and_substitution])
                     quantification_summary.append(vals)
 
                     good_region_names.append(idx)
@@ -908,6 +908,7 @@ def main():
             crispresso1_columns=['Name','Unmodified%','Modified%','Reads_aligned','Reads_total']
             df_summary_quantification.fillna('NA').to_csv(samples_quantification_summary_filename,sep='\t',index=None,columns=crispresso1_columns)
         else:
+
             df_summary_quantification.fillna('NA').to_csv(samples_quantification_summary_filename,sep='\t',index=None)
 
         crispresso2_info['samples_quantification_summary_filename'] = os.path.basename(samples_quantification_summary_filename)
@@ -953,6 +954,8 @@ def main():
 
         #if many reads weren't aligned, print those out for the user
         if RUNNING_MODE != 'ONLY_GENOME':
+            #N_READS_INPUT=get_n_reads_fastq(args.fastq_r1)
+            #N_READS_AFTER_PREPROCESSING=get_n_reads_fastq(processed_output_filename)
     		tot_reads_aligned = df_summary_quantification['Reads_aligned'].fillna(0).sum()
     		tot_reads = df_summary_quantification['Reads_total'].sum()
 
@@ -961,8 +964,8 @@ def main():
     		if RUNNING_MODE=='ONLY_AMPLICONS':
     			this_bam_filename = bam_filename_amplicons
     		#if less than 1/2 of reads aligned, find most common unaligned reads and advise the user
-    		if tot_reads > 0 and tot_reads_aligned/tot_reads < 0.5:
-    			warn('Less than half (%d/%d) of reads aligned. Finding most frequent unaligned reads.'%(tot_reads_aligned,tot_reads))
+    		if N_READS_INPUT > 0 and tot_reads/N_READS_INPUT < 0.5:
+    			warn('Less than half (%d/%d) of reads aligned. Finding most frequent unaligned reads.'%(tot_reads,N_READS_INPUT))
     			###
     			###this results in the unpretty messages being printed:
     			### sort: write failed: standard output: Broken pipe
