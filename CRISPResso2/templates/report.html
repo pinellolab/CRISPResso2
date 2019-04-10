@@ -239,6 +239,9 @@
   <span class='d-none d-md-block'>Hover your mouse over the bottom image to zoom in on a specific region.</span><br>
   {{report_data['fig_captions'][amplicon_name]['plot_2a']}}
 </label>
+							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name]['plot_2a'] %}
+                  <p class="m-0"><small>Download: <a href="{{data_path}}">{{data_label}}</a></small></p>
+                {% endfor %}
 						{% endif %}
 
 						{% if report_data['fig_2b_names'][amplicon_name] %}
