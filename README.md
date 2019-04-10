@@ -241,7 +241,9 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --no_rerun: Don't rerun CRISPResso2 if a run using the same parameters has already been finished. (default: False)
 
---suppress_report: Suppress output report (default: False)
+--suppress_report: Suppress output report, plots ouput as .pdf only (not .png) (default: False)
+
+--suppress_plots: Suppress output plots (default: False)
 
 ## CRISPResso2 output
 The output of CRISPResso2 consists of a set of informative graphs that allow for the quantification and visualization of the position and type of outcomes within an amplicon sequence.
