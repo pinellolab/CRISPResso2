@@ -484,7 +484,7 @@ def plot_subs_across_ref(ref_len, ref_seq, ref_name, ref_count, all_substitution
     ax.set_xlim([0,ref_len])
 
     legend_patches = [pA[0],pC[0],pG[0],pT[0],pN[0]]
-    legend_labels = ['A','C','T','G','N']
+    legend_labels = ['A','C','G','T','N']
 
     if quantification_window_idxs and len(quantification_window_idxs) > 1:
         include_idxs_list = sorted(list(quantification_window_idxs))

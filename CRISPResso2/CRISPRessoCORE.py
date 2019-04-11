@@ -2279,7 +2279,7 @@ def main():
                                 save_png,sgRNA_intervals=new_sgRNA_intervals,quantification_window_idxs=new_include_idx)
                         crispresso2_info['refs'][ref_name]['plot_2b_roots'].append(os.path.basename(plot_root))
                         crispresso2_info['refs'][ref_name]['plot_2b_captions'].append('Figure 2b: Nucleotide distribution around sgRNA ' + sgRNA + '.')
-                        crispresso2_info['refs'][ref_name]['plot_2b_datas'].append([('Nucleotide frequency',os.path.basename(nuc_freq_filename))])
+                        crispresso2_info['refs'][ref_name]['plot_2b_datas'].append([('Nucleotide frequency in quantification window',os.path.basename(quant_window_nuc_freq_filename))])
 
 
             ###############################################################################################################################################
