@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
 CRISPResso2 - Kendell Clement and Luca Pinello 2018
@@ -9,7 +9,7 @@ Software pipeline for the analysis of genome editing outcomes from deep sequenci
 import os
 import subprocess as sb
 import sys
-usage = '\n- CRISPResso2 Docker Container -\n\t- Possible commands: \n\t  CRISPResso\n\t  CRISPRessoBatch\n\t  CRISPRessoPooled\n\t  CRISPRessoWGS\n\t  CRISPRessoCompare\n\t  CRISPRessoPooledWGSCompare\n\t  License\n\t- this special early-release docker version should be run like this:\n\tdocker run -v ${PWD}:/DATA -w /DATA -i kclem/trojan2 CRISPResso -r1 fastq1.fq -a AAAATTT \n'
+usage = '\n- CRISPResso2 Docker Container -\n\t- Possible commands: \n\t  CRISPResso\n\t  CRISPRessoBatch\n\t  CRISPRessoPooled\n\t  CRISPRessoWGS\n\t  CRISPRessoCompare\n\t  CRISPRessoPooledWGSCompare\n\t  License\n\t- this docker version should be run like this:\n\tdocker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso -r1 fastq1.fq -a AAAATTT \n'
 
 if len(sys.argv)==1:
 

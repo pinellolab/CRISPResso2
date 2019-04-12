@@ -94,7 +94,6 @@ def main():
               'argparse>=1.3',
     	      'seaborn>=0.7.1',
               'jinja2',
-              'networkx==2.2',
     	      'scipy==1.1.0',
               ],
           cmdclass = command_classes,
