@@ -71,6 +71,12 @@ jobs:
                   CRISPRessoPooled -r1 tests/Both.Cas9.fastq -f tests/Cas9.amplicons.txt -p 2 --keep_intermediate --min_reads_to_use_region 100 --debug > test-crispresso-pooled.out
                   diff CRISPRessoPooled_on_Both.Cas9/SAMPLES_QUANTIFICATION_SUMMARY.txt tests/expectedResults/CRISPRessoPooled_on_Both.Cas9/SAMPLES_QUANTIFICATION_SUMMARY.txt >> test-crispresso-pooled.out 2>&1
 
+      - run:
+          name: test-crispresso-wgs
+          command: |
+                  CRISPRessoWGS -b Both.Cas9.fastq.smallGenome.bam -r smallGenome/smallGenome.fa -f Cas9.regions.txt --debug > test-crispresso-wgs.out 2>&1
+                  diff CRISPRessoWGS_on_Both.Cas9.fastq.smallGenome/SAMPLES_QUANTIFICATION_SUMMARY.txt tests/expectedResults/CRISPRessoWGS_on_Both.Cas9.fastq.smallGenome/SAMPLES_QUANTIFICATION_SUMMARY.txt >> test-crispresso-wgs.out 2>&1
+
       - store_artifacts:
           path: test-crispresso.out
       - store_artifacts:
@@ -79,3 +85,5 @@ jobs:
           path: test-crispresso-batch.out
       - store_artifacts:
           path: test-crispresso-pooled.out
+      - store_artifacts:
+          path: test-crispresso-wgs.out
