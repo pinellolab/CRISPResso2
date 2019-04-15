@@ -74,7 +74,7 @@ jobs:
       - run:
           name: test-crispresso-wgs
           command: |
-                  CRISPRessoWGS -b Both.Cas9.fastq.smallGenome.bam -r smallGenome/smallGenome.fa -f Cas9.regions.txt --debug > test-crispresso-wgs.out 2>&1
+                  CRISPRessoWGS -b tests/Both.Cas9.fastq.smallGenome.bam -r tests/smallGenome/smallGenome.fa -f tests/Cas9.regions.txt --debug > test-crispresso-wgs.out 2>&1
                   diff CRISPRessoWGS_on_Both.Cas9.fastq.smallGenome/SAMPLES_QUANTIFICATION_SUMMARY.txt tests/expectedResults/CRISPRessoWGS_on_Both.Cas9.fastq.smallGenome/SAMPLES_QUANTIFICATION_SUMMARY.txt >> test-crispresso-wgs.out 2>&1
 
       - store_artifacts:
