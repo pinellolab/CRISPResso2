@@ -833,7 +833,6 @@ def main():
 
             crispresso_cmd_to_write = ' '.join(cmd_copy) #clean command doesn't show the absolute path to the executable or other files
         crispresso2_info['command_used'] = crispresso_cmd_to_write
-        print('setting command used to ' + crispresso_cmd_to_write)
 
 
         try:
@@ -974,29 +973,29 @@ def main():
 
             #Merging with Flash
             info('Merging paired sequences with Flash...')
-            expected_max_overlap=2*avg_read_length - min_amplicon_len
-            expected_min_overlap=2*avg_read_length - max_amplicon_len
-#            print('avg read len: ' + str(avg_read_length))
-#            print('expected_max_overlap' + str(expected_max_overlap))
-#            print('expected_min_overlap' + str(expected_min_overlap))
-#            print('min amplicon len:' + str(min_amplicon_len))
-#            print('max amplicon len:' + str(max_amplicon_len))
-            indel_overlap_tolerance = 10 # magic number bound on how many bp inserted/deleted in ~90% of reads (for flash)
-            #max overlap is either the entire read (avg_read_length) or the expected amplicon length + indel tolerance
-            max_overlap = max(10,min(avg_read_length, expected_max_overlap+indel_overlap_tolerance))
-            #min overlap is either 4bp (as in crispresso1) or the expected amplicon length - indel tolerance
-            min_overlap = max(4,expected_min_overlap-indel_overlap_tolerance)
-#            print('max_overlap: ' + str(max_overlap))
-#            print('min_overlap: ' + str(min_overlap))
-            # if reads are longer than the amplicon, there is no way to tell flash to have them overlap like this..
-            if avg_read_length > min_amplicon_len:
-                info('Warning: Reads are longer than amplicon.')
-                min_overlap = 4
-                max_overlap = 2*avg_read_length
-            if args.max_paired_end_reads_overlap:
-                max_overlap = args.max_paired_end_reads_overlap
-            if args.min_paired_end_reads_overlap:
-                min_overlap = args.min_paired_end_reads_overlap
+            min_overlap = args.min_paired_end_reads_overlap
+            max_overlap = args.max_paired_end_reads_overlap
+            if args.stringent_flash_merging:
+                expected_max_overlap=2*avg_read_length - min_amplicon_len
+                expected_min_overlap=2*avg_read_length - max_amplicon_len
+    #            print('avg read len: ' + str(avg_read_length))
+    #            print('expected_max_overlap' + str(expected_max_overlap))
+    #            print('expected_min_overlap' + str(expected_min_overlap))
+    #            print('min amplicon len:' + str(min_amplicon_len))
+    #            print('max amplicon len:' + str(max_amplicon_len))
+                indel_overlap_tolerance = 10 # magic number bound on how many bp inserted/deleted in ~90% of reads (for flash)
+                #max overlap is either the entire read (avg_read_length) or the expected amplicon length + indel tolerance
+                max_overlap = max(10,min(avg_read_length, expected_max_overlap+indel_overlap_tolerance))
+                #min overlap is either 4bp (as in crispresso1) or the expected amplicon length - indel tolerance
+                min_overlap = max(4,expected_min_overlap-indel_overlap_tolerance)
+    #            print('max_overlap: ' + str(max_overlap))
+    #            print('min_overlap: ' + str(min_overlap))
+                # if reads are longer than the amplicon, there is no way to tell flash to have them overlap like this..
+                if avg_read_length > min_amplicon_len:
+                    info('Warning: Reads are longer than amplicon.')
+                    min_overlap = 4
+                    max_overlap = 2*avg_read_length
+
             output_prefix = "out"
             if clean_file_prefix != "":
                 output_prefix = clean_file_prefix + "out"

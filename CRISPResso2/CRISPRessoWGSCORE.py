@@ -548,8 +548,6 @@ def main():
                 good_region_folders[idx] = folder_name
         samples_quantification_summary_filename = _jp('SAMPLES_QUANTIFICATION_SUMMARY.txt')
 
-        print('df: ' + str(quantification_summary))
-        print('header: ' + str(header_els))
         df_summary_quantification=pd.DataFrame(quantification_summary,columns=header_els)
         if args.crispresso1_mode:
             crispresso1_columns=['Name','Unmodified%','Modified%','Reads_aligned','Reads_total']

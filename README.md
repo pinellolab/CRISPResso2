@@ -187,9 +187,11 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --trimmomatic_options_string: Override options for Trimmomatic (default: ). This parameter can be used to specify different adaptor sequences used in the experiment if you need to trim them. For example: ```ILLUMINACLIP:NexteraPE-PE.fa:0:90:10:0:true```, where NexteraPE-PE.fa is a file containing sequences of adapters to be trimmed.
 
---min_paired_end_reads_overlap: Parameter for the FLASH read merging step. Minimum required overlap length between two reads to provide a confident overlap. (default: None)
+--min_paired_end_reads_overlap: Parameter for the FLASH read merging step. Minimum required overlap length between two reads to provide a confident overlap. (default: 10)
 
---max_paired_end_reads_overlap: Parameter for the FLASH merging step. Maximum overlap length expected in approximately 90% of read pairs.  Please see the FLASH manual for more information.  (default: None)
+--max_paired_end_reads_overlap: Parameter for the FLASH merging step. Maximum overlap length expected in approximately 90% of read pairs.  Please see the FLASH manual for more information.  (default: 100)
+
+--stringent_flash_merging: Use stringent parameters for flash merging. In the case where flash could merge R1 and R2 reads ambiguously, the expected overlap is calculated as 2\*average_read_length - amplicon_length. The flash parameters for --min-overlap and --max-overlap will be set to prefer merged reads with length within 10bp of the expected overlap. These values override the --min_paired_end_reads_overlap or --max_paired_end_reads_overlap CRISPResso parameters. (default: False)
 
 -w or --quantification_window_size or --window_around_sgrna: Defines the size of the quantification window(s) centered around the position specified by the "-- cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence (--sgRNA). Indels overlapping this quantification window are included in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default size is 2bp, which is 1bp up- and 1bp downstream from the quantification window center. (default: 2)
 
