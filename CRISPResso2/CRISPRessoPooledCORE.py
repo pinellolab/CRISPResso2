@@ -448,7 +448,7 @@ def main():
                     'Name','Amplicon_Sequence','sgRNA',
                     'Expected_HDR','Coding_sequence'],comment='#',sep='\t',dtype={'Name':str})
 
-            if df_template.iloc[0,1].lower() == "amplicon_sequence":
+            if str(df_template.iloc[0,1]).lower() == "amplicon_sequence":
                 df_template.drop(0,axis=0,inplace=True)
                 info('Detected header in amplicon file.')
 
