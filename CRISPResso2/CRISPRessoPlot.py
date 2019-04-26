@@ -1349,9 +1349,6 @@ def plot_unmod_mod_pcts(fig_filename_root,df_summary_quantification,save_png,cut
         for rect, label in zip(p2.patches,pct_labels):
             ax.text(rect.get_x()+rect.get_width()+space_val,rect.get_y()+rect.get_height()/2.0, label,ha='left',va='center')
 
-        print('p0: ' + str(p0))
-        print('p1: ' + str(p1))
-        print('p2: ' + str(p2))
         plt.legend((p0[0], p1[0], p2[0]), ('Total Reads', 'Unmodified', 'Modified'),loc='center', bbox_to_anchor=(0.5, -0.22),ncol=1, fancybox=True, shadow=True)
         plt.tight_layout()
 

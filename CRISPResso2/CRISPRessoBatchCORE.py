@@ -301,8 +301,9 @@ def main():
         seen_names = {}
         for amplicon in all_amplicons:
             suffix_counter = 2
+            orig_name = amplicon_names[amplicon]
             while amplicon_names[amplicon] in seen_names:
-                amplicon_names[amplicon] = amplicon_names[amplicon]+"_"+str(suffix_counter)
+                amplicon_names[amplicon] = orig_name+"_"+str(suffix_counter)
                 suffix_counter += 1
             seen_names[amplicon_names[amplicon]] = 1
 
