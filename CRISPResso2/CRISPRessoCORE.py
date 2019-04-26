@@ -993,7 +993,7 @@ def main():
                 # if reads are longer than the amplicon, there is no way to tell flash to have them overlap like this..
                 if avg_read_length > min_amplicon_len:
                     info('Warning: Reads are longer than amplicon.')
-                    min_overlap = 4
+                    min_overlap = avg_read_length-10
                     max_overlap = 2*avg_read_length
 
             output_prefix = "out"
