@@ -384,7 +384,7 @@ def get_most_frequent_reads(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_
             max_overlap_param = "--max-overlap="+str(max_paired_end_reads_overlap)
         if min_paired_end_reads_overlap:
             min_overlap_param = "--min-overlap="+str(min_paired_end_reads_overlap)
-        file_generation_command = "bash -c 'paste <(%s %s) <(%s %s)' | head -n %d | paste - - - - | awk -v OFS=\"\\n\" -v FS=\"\\t\" '{print($1,$3,$5,$7,$2,$4,$6,$8)}' | %s - --interleaved-input --allow-outies %s %s --to-stdout 2>/dev/null " %(view_cmd_1,fastq_r1,view_cmd_2,fastq_r2,number_of_reads_to_consider,flash_command,max_overlap_param,min_overlap_param)
+        file_generation_command = "bash -c 'paste <(%s \"%s\") <(%s \"%s\")' | head -n %d | paste - - - - | awk -v OFS=\"\\n\" -v FS=\"\\t\" '{print($1,$3,$5,$7,$2,$4,$6,$8)}' | %s - --interleaved-input --allow-outies %s %s --to-stdout 2>/dev/null " %(view_cmd_1,fastq_r1,view_cmd_2,fastq_r2,number_of_reads_to_consider,flash_command,max_overlap_param,min_overlap_param)
     count_frequent_cmd = file_generation_command + " | awk '((NR-2)%4==0){print $1}' | sort | uniq -c | sort -nr "
     def default_sigpipe():
         signal.signal(signal.SIGPIPE, signal.SIG_DFL)
