@@ -96,16 +96,16 @@ def check_program(binary_name,download_url=None):
 
 
 def get_avg_read_length_fastq(fastq_filename):
-     cmd=('z' if fastq_filename.endswith('.gz') else '' ) +('cat < %s' % fastq_filename)+\
+     cmd=('z' if fastq_filename.endswith('.gz') else '' ) +('cat < \"%s\"' % fastq_filename)+\
                   r''' | awk 'BN {n=0;s=0;} NR%4 == 2 {s+=length($0);n++;} END { printf("%d\n",s/n)}' '''
      p = sb.Popen(cmd, shell=True,stdout=sb.PIPE)
      return int(p.communicate()[0].strip())
 
 def get_n_reads_fastq(fastq_filename):
-     p = sb.Popen(('z' if fastq_filename.endswith('.gz') else '' ) +"cat < %s | wc -l" % fastq_filename , shell=True,stdout=sb.PIPE)
+     p = sb.Popen(('z' if fastq_filename.endswith('.gz') else '' ) +"cat < \"%s\" | wc -l" % fastq_filename , shell=True,stdout=sb.PIPE)
      return int(float(p.communicate()[0])/4.0)
 
-import time
+#import time
 #start = time.time()
 matplotlib=check_library('matplotlib')
 #end = time.time()
@@ -532,14 +532,14 @@ def main():
 
             if args.debug:
                 for idx,seq in enumerate(amplicon_seq_arr):
-                    print('Detected amplicon ' + str(idx) + ":" + str(seq))
+                    info('Detected amplicon ' + str(idx) + ":" + str(seq))
 
             if len(guides) > 1:
                 plural_string = "s"
             info("Auto-detected %d guide%s"%(len(guides),plural_string))
             if args.debug:
                 for idx,seq in enumerate(guides):
-                    print('Detected guide ' + str(idx) + ":" + str(seq))
+                    info('Detected guide ' + str(idx) + ":" + str(seq))
             if amplicon_seq_arr == 0:
                 raise BadParameterException("Cannot automatically infer amplicon sequence.")
 
@@ -966,8 +966,12 @@ def main():
 
 
             info('Estimating average read length...')
+            if args.debug:
+                print('Checking average read length from ' + output_forward_paired_filename)
             if get_n_reads_fastq(output_forward_paired_filename):
                 avg_read_length=get_avg_read_length_fastq(output_forward_paired_filename)
+                if args.debug:
+                    print('Average read length is ' + str(avg_read_length) + ' from ' + output_forward_paired_filname)
             else:
                raise CRISPRessoShared.NoReadsAfterQualityFilteringException('No reads survived the average or single bp quality filtering.')
 
@@ -1041,6 +1045,7 @@ def main():
                 raise CRISPRessoShared.FlashException('Flash failed to produce merged reads file, please check the log file.')
 
         #count reads
+        print('checking processed output filename ' + processed_output_filename)
         N_READS_AFTER_PREPROCESSING=get_n_reads_fastq(processed_output_filename)
         if N_READS_AFTER_PREPROCESSING == 0:
             raise CRISPRessoShared.NoReadsAfterQualityFilteringException('No reads in input or no reads survived the average or single bp quality filtering.')
