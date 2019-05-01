@@ -967,11 +967,11 @@ def main():
 
             info('Estimating average read length...')
             if args.debug:
-                print('Checking average read length from ' + output_forward_paired_filename)
+                info('Checking average read length from ' + output_forward_paired_filename)
             if get_n_reads_fastq(output_forward_paired_filename):
                 avg_read_length=get_avg_read_length_fastq(output_forward_paired_filename)
                 if args.debug:
-                    print('Average read length is ' + str(avg_read_length) + ' from ' + output_forward_paired_filname)
+                    info('Average read length is ' + str(avg_read_length) + ' from ' + output_forward_paired_filname)
             else:
                raise CRISPRessoShared.NoReadsAfterQualityFilteringException('No reads survived the average or single bp quality filtering.')
 

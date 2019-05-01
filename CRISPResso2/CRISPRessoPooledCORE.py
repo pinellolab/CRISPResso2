@@ -964,7 +964,7 @@ def main():
     		if RUNNING_MODE=='ONLY_AMPLICONS':
     			this_bam_filename = bam_filename_amplicons
     		#if less than 1/2 of reads aligned, find most common unaligned reads and advise the user
-    		if N_READS_INPUT > 0 and tot_reads/N_READS_INPUT < 0.5:
+    		if N_READS_INPUT > 0 and tot_reads/float(N_READS_INPUT) < 0.5:
     			warn('Less than half (%d/%d) of reads aligned. Finding most frequent unaligned reads.'%(tot_reads,N_READS_INPUT))
     			###
     			###this results in the unpretty messages being printed:
