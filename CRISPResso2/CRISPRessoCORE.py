@@ -588,13 +588,10 @@ def main():
                 this_quant_window_coordinates = quant_window_coordinates_arr[idx]
 
 
-            plot_window_size = max(2,args.plot_window_size)
-            if args.crispresso1_mode:
-                plot_window_size = max(1,args.plot_window_size) * 2
             # Calculate cut sites for this reference
             (this_sgRNA_sequences, this_sgRNA_intervals, this_cut_points, this_include_idxs,
                 this_exclude_idxs, this_plot_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(this_seq,guides,args.quantification_window_center,
-                args.quantification_window_size,this_quant_window_coordinates,args.exclude_bp_from_left,args.exclude_bp_from_right,plot_window_size)
+                args.quantification_window_size,this_quant_window_coordinates,args.exclude_bp_from_left,args.exclude_bp_from_right,args.plot_window_size)
 
             this_contains_guide = False
             if len(this_sgRNA_sequences) > 0:
@@ -2263,7 +2260,7 @@ def main():
                     for sgRNA,cut_point in zip(sgRNA_sequences,cut_points):
                         #get nucleotide columns to print for this sgRNA
                         sel_cols = [0,1]
-                        plot_half_window = max(1,args.plot_window_size/2)
+                        plot_half_window = max(1,args.plot_window_size)
                         new_sel_cols_start = max(2,cut_point-plot_half_window+1)
                         new_sel_cols_end = min(ref_len,cut_point+plot_half_window+1)
                         sel_cols.extend(range(new_sel_cols_start+2,new_sel_cols_end+2))
@@ -3136,9 +3133,7 @@ def main():
             crispresso2_info['refs'][ref_name]['plot_9_datas'] = []
             crispresso2_info['refs'][ref_name]['allele_frequency_files'] = []
             for sgRNA,cut_point in zip(sgRNA_sequences,cut_points):
-                plot_half_window = max(1,args.plot_window_size/2)
-                if args.crispresso1_mode:
-                    plot_half_window = args.plot_window_size
+                plot_half_window = max(1,args.plot_window_size)
                 df_allele_around_cut=CRISPRessoShared.get_dataframe_around_cut(df_alleles.loc[df_alleles['Reference_Name'] == ref_name],cut_point,plot_half_window)
 
                 #write alleles table to file

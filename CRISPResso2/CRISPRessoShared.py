@@ -105,9 +105,9 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('--max_paired_end_reads_overlap',  type=int, help='Parameter for the FLASH merging step.  Maximum overlap length expected in approximately 90%% of read pairs. Please see the FLASH manual for more information.', default=100)
     parser.add_argument('--stringent_flash_merging', help='Use stringent parameters for flash merging. In the case where flash could merge R1 and R2 reads ambiguously, the expected overlap is calculated as 2*average_read_length - amplicon_length. The flash parameters for --min-overlap and --max-overlap will be set to prefer merged reads with length within 10bp of the expected overlap. These values override the --min_paired_end_reads_overlap or --max_paired_end_reads_overlap CRISPResso parameters.', action='store_true')
 
-    parser.add_argument('-w', '--quantification_window_size','--window_around_sgrna', type=int, help='Defines the size of the quantification window(s) centered around the position specified by the "--cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence (--sgRNA). Indels overlapping this quantification window are included in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 2bp, one on each side of the cleavage position.', default=2)
-    parser.add_argument('-wc','--quantification_window_center','--cleavage_offset', type=int, help="Center of quantification window to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17.", default=-3)
-#    parser.add_argument('--cleavage_offset', type=str, help="Predicted cleavage position for cleaving nucleases with respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. The default value of -3 is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. To suppress the cleavage offset, enter 'N'.", default=-3)
+    parser.add_argument('-w', '--quantification_window_size','--window_around_sgrna', type=int, help='Defines the size (in bp) of the quantification window extending from the position specified by the "--cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence(s) (--sgRNA). Mutations within this number of bp from the quantification window center are used in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 1, 1bp on each side of the cleavage position for a total length of 2bp.', default=1)
+    parser.add_argument('-wc','--quantification_window_center','--cleavage_offset', type=int, help="Center of quantification window to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17 to only include mutations near the 5' end of the sgRNA.", default=-3)
+    #    parser.add_argument('--cleavage_offset', type=str, help="Predicted cleavage position for cleaving nucleases with respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. The default value of -3 is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. To suppress the cleavage offset, enter 'N'.", default=-3)
     parser.add_argument('--exclude_bp_from_left', type=int, help='Exclude bp from the left side of the amplicon sequence for the quantification of the indels', default=15)
     parser.add_argument('--exclude_bp_from_right', type=int, help='Exclude bp from the right side of the amplicon sequence for the quantification of the indels', default=15)
 
@@ -126,7 +126,7 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
 
     parser.add_argument('--keep_intermediate',help='Keep all the  intermediate files',action='store_true')
     parser.add_argument('--dump',help='Dump numpy arrays and pandas dataframes to file for debugging purposes',action='store_true')
-    parser.add_argument('--plot_window_size','--offset_around_cut_to_plot',  type=int, help='Window around quantification window center to plot. Plots alleles centered at each guide.', default=40)
+    parser.add_argument('--plot_window_size','--offset_around_cut_to_plot',  type=int, help='Defines the size of the window extending from the quantification window center to plot. Nucleotides within plot_window_size of the quantification_window_center for each guide are plotted.', default=20)
     parser.add_argument('--min_frequency_alleles_around_cut_to_plot', type=float, help='Minimum %% reads required to report an allele in the alleles table plot.', default=0.2)
     parser.add_argument('--max_rows_alleles_around_cut_to_plot',  type=int, help='Maximum number of rows to report in the alleles table plot. ', default=50)
 
@@ -608,11 +608,11 @@ def get_amplicon_info_for_guides(ref_seq,guides,quantification_window_center,qua
     ref_seq : reference sequence
     guides : a list of guide sequences
     quantification_window_center : for each guide, quantification is centered at this position
-    quantification_window_size : size of window centered at quantification_window_center
+    quantification_window_size : length of quantification window extending from quantification_window_center
     quantification_window_coordinates: if given, these override quantification_window_center and quantification_window_size for setting quantification window
     exclude_bp_from_left : these bp are excluded from the quantification window
     exclude_bp_from_right : these bp are excluded from the quantification window
-    plot_window_size : size of window centered at quantification_window_center to plot
+    plot_window_size : length of window extending from quantification_window_center to plot
 
     returns:
     this_sgRNA_sequences : list of sgRNAs that are in this amplicon
@@ -660,7 +660,7 @@ def get_amplicon_info_for_guides(ref_seq,guides,quantification_window_center,qua
                 raise NTException("Cannot parse analysis window coordinate '" + str(coord) + "' in '" + str(theseCoords) + "'. Coordinates must be given in the form start-end e.g. 5-10 . Please check the --analysis_window_coordinate parameter.")
         given_include_idxs = this_include_idxs
     elif this_cut_points and quantification_window_size>0:
-        half_window=max(1,quantification_window_size/2)
+        half_window=max(1,quantification_window_size)
         for cut_p in this_cut_points:
             st=max(0,cut_p-half_window+1)
             en=min(ref_seq_length-1,cut_p+half_window+1)
@@ -691,7 +691,7 @@ def get_amplicon_info_for_guides(ref_seq,guides,quantification_window_center,qua
             raise BadParameterException('The entire sequence has been excluded. Please enter a longer amplicon, or decrease the exclude_bp_from_right and exclude_bp_from_left parameters')
 
     if this_cut_points and plot_window_size>0:
-        window_around_cut=max(1,plot_window_size/2)
+        window_around_cut=max(1,plot_window_size)
         for cut_p in this_cut_points:
             if cut_p - window_around_cut + 1 < 0:
                 raise BadParameterException('Offset around cut would extend to the left of the amplicon. Please decrease plot_window_size parameter. Cut point: ' + str(cut_p) + ' window: ' + str(window_around_cut) + ' reference: ' + str(ref_seq_length))
