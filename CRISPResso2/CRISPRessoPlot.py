@@ -215,8 +215,8 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=
                 min_sgRNA_x = this_sgRNA_start
         ax.text(2+min_sgRNA_x,sgRNA_y_start + sgRNA_y_height/2,'sgRNA ',horizontalalignment='right',verticalalignment='center')
 
-    if quantification_window_idxs is not None:
-        q_win_y_start = 0
+    if quantification_window_idxs is not None and len(quantification_window_idxs) > 0:
+        q_win_y_start = 0.05
         q_win_y_height = nSamples+1
 
         q_list = sorted(list(quantification_window_idxs))
@@ -263,7 +263,7 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=
     if del_sum > 0:
         del_patch = patches.Patch(color=color_lookup['-'], label='Deletion')
         legend_patches.append(del_patch)
-    if quantification_window_idxs:
+    if quantification_window_idxs is not None and len(quantification_window_idxs) > 0:
         q_win_patch = patches.Patch(fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
         legend_patches.append(q_win_patch)
 
@@ -290,13 +290,14 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=
         fig.savefig(fig_filename_root+'.png',bbox_inches='tight',pad=1)
     plt.close()
 
-def plot_conversion_map(nuc_pct_df,fig_filename_root,conversion_nuc_from,conversion_nuc_to,save_also_png,plotPct = 0.9,min_text_pct=0.3,max_text_pct=0.9,conversion_scale_max=None,sgRNA_intervals=None):
+def plot_conversion_map(nuc_pct_df,fig_filename_root,conversion_nuc_from,conversion_nuc_to,save_also_png,plotPct = 0.9,min_text_pct=0.3,max_text_pct=0.9,conversion_scale_max=None,sgRNA_intervals=None,quantification_window_idxs=None):
     """
     Plots a heatmap of conversion across several sequences
     :param nuc_pct_df combined df of multiple batches
     :param plotPct: percent of vertical space to plot in (the rest will be white)
     :param min_text_pct: add text annotation if the percent is greater than this number
     :param max_text_pct: add text annotation if the percent is less than this number
+    :param quantification_window_idxs: indices for quantification window annotation on plot
     """
 
     from_nuc = conversion_nuc_from
@@ -349,7 +350,8 @@ def plot_conversion_map(nuc_pct_df,fig_filename_root,conversion_nuc_from,convers
     # make a color map of fixed colors (for coloring reference in this example)
     color_lookup = get_color_lookup(['A','T','C','G'],alpha=1)
 
-    fig = plt.figure(figsize=(amp_len/2.0,nSamples*2))
+#    fig = plt.figure(figsize=(amp_len/2.0,nSamples*2))
+    fig = plt.figure(figsize=((amp_len+10)/2.0,(nSamples+1)*2))
     ax = fig.add_subplot(111)
 
     #remove box around plot
@@ -400,6 +402,27 @@ def plot_conversion_map(nuc_pct_df,fig_filename_root,conversion_nuc_from,convers
             patches.Rectangle((pos_ind, ref_y_start), 1, ref_y_height,facecolor=color_lookup[ref_seq[pos_ind]],edgecolor='w')
             )
         ax.text(pos_ind+0.5,ref_y_start + ref_y_height/2.0,ref_seq[pos_ind],horizontalalignment='center',verticalalignment='center')
+
+    if quantification_window_idxs is not None and len(quantification_window_idxs) > 0:
+        q_win_y_start = 0.05
+        q_win_y_height = nSamples+1
+
+        q_list = sorted(list(quantification_window_idxs))
+
+        lastStart = q_list[0]
+        lastIdx = q_list[0]
+        for idx in range(1,len(q_list)):
+            if q_list[idx] == lastIdx + 1:
+                lastIdx = q_list[idx]
+            else:
+                ax.add_patch(
+                    patches.Rectangle((2+lastStart, q_win_y_start), 1+(lastIdx-lastStart), q_win_y_height,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
+                    )
+                lastStart = q_list[idx]
+                lastIdx = q_list[idx]
+        ax.add_patch(
+            patches.Rectangle((2+lastStart, q_win_y_start), 1+(lastIdx-lastStart), q_win_y_height,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
+            )
 
     plt.tick_params(top=False, bottom=False, left=False, right=False, labelleft=True, labelbottom=False)
 #    plt.tick_params(top='off', bottom='off', left='off', right='off', labelleft='on', labelbottom='off')
@@ -486,7 +509,7 @@ def plot_subs_across_ref(ref_len, ref_seq, ref_name, ref_count, all_substitution
     legend_patches = [pA[0],pC[0],pG[0],pT[0],pN[0]]
     legend_labels = ['A','C','G','T','N']
 
-    if quantification_window_idxs and len(quantification_window_idxs) > 1:
+    if quantification_window_idxs is not None and len(quantification_window_idxs) > 0:
         include_idxs_list = sorted(list(quantification_window_idxs))
         lastStart = include_idxs_list[0]
         lastIdx = include_idxs_list[0]
@@ -512,7 +535,7 @@ def plot_subs_across_ref(ref_len, ref_seq, ref_name, ref_count, all_substitution
 #    lgd=ax.legend(legend_patches,legend_labels,ncol=1)
     lgd=ax.legend(handles=legend_patches, labels=legend_labels,loc='upper center', bbox_to_anchor=(0.3, -0.15),ncol=2, fancybox=True, shadow=True)
 
-    y_label_values= np.round(np.linspace(0, min(max(tots),max(ax.get_yticks())),6))# np.arange(0,y_max,y_max/6.0)
+    y_label_values= np.round(np.linspace(0, min(12,max(tots),max(ax.get_yticks())),6))# np.arange(0,y_max,y_max/6.0)
     plt.yticks(y_label_values,['%.1f%% (%d)' % (n_reads/ref_count*100,n_reads) for n_reads in y_label_values])
 
     plt.savefig(fig_filename_root + '.pdf',bbox_extra_artists=(lgd,),bbox_inches='tight')
@@ -573,7 +596,7 @@ def plot_log_nuc_freqs(df_nuc_freq,tot_aln_reads,plot_title,fig_filename_root,sa
     sns.heatmap(np.log2(df_nuc_freq+1),vmin=0,vmax=np.log2(tot_aln_reads+1),cmap="YlGnBu",ax=ax)#,xticklabels=1)
     ax.set_title(plot_title)
 
-    if quantification_window_idxs is not None:
+    if quantification_window_idxs is not None and len(quantification_window_idxs) > 0:
         q_win_y_start = -0.1
         q_win_y_height = 6.1
 
@@ -1228,7 +1251,7 @@ def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,i
 #    gs2.update(left=0,right=1, hspace=0.05,wspace=0,top=1*(((N_ROWS)*1.13))/(N_ROWS))
 #    gs1.update(left=0,right=1, hspace=0.05,wspace=0,)
 
-    sns.set_context(rc={'axes.facecolor':'white','lines.markeredgewidth': 1,'mathtext.fontset' : 'stix','text.usetex':True,'text.latex.unicode':True} )
+#    sns.set_context(rc={'axes.facecolor':'white','lines.markeredgewidth': 1,'mathtext.fontset' : 'stix','text.usetex':True,'text.latex.unicode':True} )
 
     proxies = [matplotlib.lines.Line2D([0], [0], linestyle='none', mfc='black',
                     mec='none', marker=r'$\mathbf{{{}}}$'.format('bold'),ms=18),

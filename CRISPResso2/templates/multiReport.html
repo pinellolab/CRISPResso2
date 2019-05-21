@@ -68,14 +68,16 @@
           {% if window_nuc_pct_quilts|length > 0 %}
             <div class='card text-center mb-2'>
               <div class='card-header'>
-                <h5>Nucleotide percentages in the quantification window</h5>
+                <h5>Nucleotide percentages around guides</h5>
               </div>
               <div class='card-body'>
-              {% for plot in window_nuc_pct_quilts %}
-                {% set amplicon_name = plot | replace(".Quantification_Window_Nucleotide_Percentage_Quilt.pdf","") %}
-                {% if window_nuc_pct_quilts|length > 1 %}<h5>{{amplicon_name}}</h5>{% endif %}
-                <a href="{{plot}}"><img src="{{plot|replace('.pdf','.png')}}" width='80%' ></a>
-  							<label class="labelpadding">Composition of each base in the quantification window for the amplicon {{amplicon_name}}.</label>
+                {% for plot_name in window_nuc_pct_quilts %}
+                  <h5>{{summary_plot_titles[plot_name]}}</h5>
+                  <a href="{{plot_name}}.pdf"><img src="{{plot_name}}.png" width='80%' ></a>
+                  <label class="labelpadding">{{summary_plot_labels[plot_name]}}</label>
+  							  {% for (data_label,data_path) in summary_plot_datas[plot_name] %}
+                    <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+                  {% endfor %}
                 {% endfor %}
               </div>
             </div>
@@ -87,11 +89,13 @@
                 <h5>Nucleotide percentages in the entire amplicon</h5>
               </div>
               <div class='card-body'>
-              {% for plot in nuc_pct_quilts %}
-                {% set amplicon_name = plot | replace(".Nucleotide_Percentage_Quilt.pdf","") %}
-                {% if nuc_pct_quilts|length > 1 %}<h5>{{amplicon_name}}</h5>{% endif %}
-                <a href="{{plot}}"><img src="{{plot|replace('.pdf','.png')}}" width='80%' ></a>
-                <label class="labelpadding">Composition of each base in the amplicon {{amplicon_name}}.</label>
+                {% for plot_name in nuc_pct_quilts %}
+                  <h5>{{summary_plot_titles[plot_name]}}</h5>
+                  <a href="{{plot_name}}.pdf"><img src="{{plot_name}}.png" width='80%' ></a>
+                  <label class="labelpadding">{{summary_plot_labels[plot_name]}}</label>
+  							  {% for (data_label,data_path) in summary_plot_datas[plot_name] %}
+                    <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+                  {% endfor %}
                 {% endfor %}
               </div>
             </div>
@@ -100,14 +104,16 @@
           {% if window_nuc_conv_plots|length > 0 %}
             <div class='card text-center mb-2'>
               <div class='card-header'>
-                <h5>Conversion of target bases in the quantification window</h5>
+                <h5>Conversion of target bases around guides</h5>
               </div>
               <div class='card-body'>
-              {% for plot in window_nuc_conv_plots %}
-                {% set amplicon_name = plot | replace(".Quantification_Window_Nucleotide_Conversion.pdf","") %}
-                {% if window_nuc_conv_plots|length > 1 %}<h5>{{amplicon_name}}</h5>{% endif %}
-                <a href="{{plot}}"><img src="{{plot|replace('.pdf','.png')}}" width='80%' ></a>
-                <label class="labelpadding">Conversion of each target base in the quantification window for {{amplicon_name}}.</label>
+                {% for plot_name in window_nuc_conv_plots %}
+                  <h5>{{summary_plot_titles[plot_name]}}</h5>
+                  <a href="{{plot_name}}.pdf"><img src="{{plot_name}}.png" width='80%' ></a>
+                  <label class="labelpadding">{{summary_plot_labels[plot_name]}}</label>
+  							  {% for (data_label,data_path) in summary_plot_datas[plot_name] %}
+                    <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+                  {% endfor %}
                 {% endfor %}
               </div>
             </div>
@@ -119,11 +125,13 @@
                 <h5>Conversion of target bases in the entire amplicon</h5>
               </div>
               <div class='card-body'>
-              {% for plot in nuc_conv_plots %}
-                {% set amplicon_name = plot | replace(".Nucleotide_Conversion.pdf","") %}
-                {% if nuc_conv_plots|length > 1 %}<h5>{{amplicon_name}}</h5>{% endif %}
-                <a href="{{plot}}"><img src="{{plot|replace('.pdf','.png')}}" width='80%' ></a>
-                <label class="labelpadding">Conversion of each target base in the {{amplicon_name}}.</label>
+                {% for plot_name in nuc_conv_plots %}
+                  <h5>{{summary_plot_titles[plot_name]}}</h5>
+                  <a href="{{plot_name}}.pdf"><img src="{{plot_name}}.png" width='80%' ></a>
+                  <label class="labelpadding">{{summary_plot_labels[plot_name]}}</label>
+  							  {% for (data_label,data_path) in summary_plot_datas[plot_name] %}
+                    <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+                  {% endfor %}
                 {% endfor %}
               </div>
             </div>
@@ -139,7 +147,7 @@
                 <a href="{{plot_name}}.pdf"><img src="{{plot_name}}.png" width='80%' ></a>
                 <label class="labelpadding">{{summary_plot_labels[plot_name]}}</label>
 							  {% for (data_label,data_path) in summary_plot_datas[plot_name] %}
-                  <p class="m-0"><small>Download: <a href="{{data_path}}">{{data_label}}</a></small></p>
+                  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
               </div>
             </div>

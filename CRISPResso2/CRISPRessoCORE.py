@@ -184,15 +184,15 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
                 # 'contains_guide'
                 # 'sgRNA_intervals'
                 # 'sgRNA_sequences'
-                # 'cut_points'
+                # 'sgRNA_cut_points'
                 # 'contains_coding_seq'
                 # 'exon_positions'
                 # 'exon_intervals'
                 # 'exon_len_mods': the modification to the original exon length (if we copied the exon positions from another reference, this reference could introduce an indel, resulting in a non-zero length modification)
                 # 'splicing_positions'
-                # 'include_idxs'
+                # 'include_idxs' # sorted numpy array
                 # 'exclude_idxs'
-                # 'plot_idxs'
+                # 'plot_idxs' #sorted numpy array
                 # 'idx_cloned_from' #if this reference didn't contain a guide (or exon sequence), it was aligned to 'idx_cloned_from' reference, and cut_points, gap_incentive, sgRNA_intervals, inculde_idx, ane exon information were cloned from it (at the appropriate indices)
            Examples of these seqences can include:
            -the amplicon sequence
@@ -589,8 +589,8 @@ def main():
 
 
             # Calculate cut sites for this reference
-            (this_sgRNA_sequences, this_sgRNA_intervals, this_cut_points, this_include_idxs,
-                this_exclude_idxs, this_plot_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(this_seq,guides,args.quantification_window_center,
+            (this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_cut_points, this_sgRNA_plot_idxs, this_include_idxs,
+                this_exclude_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(this_seq,guides,args.quantification_window_center,
                 args.quantification_window_size,this_quant_window_coordinates,args.exclude_bp_from_left,args.exclude_bp_from_right,args.plot_window_size)
 
             this_contains_guide = False
@@ -626,7 +626,7 @@ def main():
             this_splicing_positions = set(this_splicing_positions).difference(this_exon_positions)
 
             this_gap_incentive = np.zeros(this_seq_length+1,dtype=np.int)
-            for cut_point in this_cut_points:
+            for cut_point in this_sgRNA_cut_points:
                 this_gap_incentive[cut_point+1] = args.needleman_wunsch_gap_incentive
 
             seq_rc = CRISPRessoShared.reverse_complement(this_seq)
@@ -661,10 +661,11 @@ def main():
                    'sequence':this_seq,
                    'sequence_length':this_seq_length,
                    'min_aln_score':this_min_aln_score,
-                   'cut_points':this_cut_points,
                    'gap_incentive':this_gap_incentive,
+                   'sgRNA_cut_points':this_sgRNA_cut_points,
                    'sgRNA_intervals':this_sgRNA_intervals,
                    'sgRNA_sequences':this_sgRNA_sequences,
+                   'sgRNA_plot_idxs':this_sgRNA_plot_idxs,
                    'contains_guide':this_contains_guide,
                    'contains_coding_seq':this_contains_coding_seq,
                    'exon_positions':this_exon_positions,
@@ -673,7 +674,6 @@ def main():
                    'splicing_positions':this_splicing_positions,
                    'include_idxs':this_include_idxs,
                    'exclude_idxs':this_exclude_idxs,
-                   'plot_idxs':this_plot_idxs,
                    'idx_cloned_from':None,
                    'fw_seeds':seeds,
                    'rc_seeds':rc_seeds,
@@ -698,7 +698,7 @@ def main():
         clone_has_cut_points = False
         clone_has_exons = False
         for ref_name in ref_names:
-            cut_points = refs[ref_name]['cut_points']
+            cut_points = refs[ref_name]['sgRNA_cut_points']
             exon_positions = refs[ref_name]['exon_positions']
             if cut_points:
                 if len(ref_names) > 1:
@@ -719,7 +719,7 @@ def main():
 
         if clone_ref_name is not None:
             for ref_name in ref_names:
-                cut_points = refs[ref_name]['cut_points']
+                cut_points = refs[ref_name]['sgRNA_cut_points']
                 sgRNA_intervals = refs[ref_name]['sgRNA_intervals']
                 exon_positions = refs[ref_name]['exon_positions']
 
@@ -769,7 +769,7 @@ def main():
 #                print(str(s1inds))
 
                 if (needs_cut_points or needs_sgRNA_intervals) and clone_has_cut_points:
-                    this_cut_points = [s1inds[X] for X in refs[clone_ref_name]['cut_points']]
+                    this_cut_points = [s1inds[X] for X in refs[clone_ref_name]['sgRNA_cut_points']]
                     this_gap_incentive = np.zeros(refs[ref_name]['sequence_length']+1,dtype=np.int)
                     for cut_point in this_cut_points:
                         this_gap_incentive[cut_point + 1] = args.needleman_wunsch_gap_incentive
@@ -778,17 +778,21 @@ def main():
                     for (sgRNA_interval_start,sgRNA_interval_end) in refs[clone_ref_name]['sgRNA_intervals']:
                         this_sgRNA_intervals.append((s1inds[sgRNA_interval_start],s1inds[sgRNA_interval_end]))
 
-                    this_include_idxs = [s1inds[X] for X in refs[clone_ref_name]['include_idxs']]
-                    #subtract any indices in 'exclude_idxs' -- e.g. in case some of the cloned include_idxs were near the read ends (excluded)
-                    this_exclude_idxs = set(refs[ref_name]['exclude_idxs'])
-                    this_include_idxs = set(np.setdiff1d(this_include_idxs,this_exclude_idxs))
+                    for plot_idx_list in refs[clone_ref_name]['sgRNA_plot_idxs']:
+                        this_sgRNA_plot_idxs.append([s1inds[x] for x in plot_idx_list])
 
-                    refs[ref_name]['cut_points'] = this_cut_points
+                    this_include_idxs = [s1inds[x] for x in refs[clone_ref_name]['include_idxs']]
+                    #subtract any indices in 'exclude_idxs' -- e.g. in case some of the cloned include_idxs were near the read ends (excluded)
+                    this_exclude_idxs = sorted(list(set(refs[ref_name]['exclude_idxs'])))
+                    this_include_idxs = sorted(list(set(np.setdiff1d(this_include_idxs,this_exclude_idxs))))
+
                     refs[ref_name]['gap_incentive'] = this_gap_incentive
+                    refs[ref_name]['sgRNA_cut_points'] = this_cut_points
                     refs[ref_name]['sgRNA_intervals'] = this_sgRNA_intervals
+                    refs[ref_name]['sgRNA_sequences'] = refs[clone_ref_name]['sgRNA_sequences']
+                    refs[ref_name]['sgRNA_plot_idxs'] = this_sgRNA_plot_idxs
                     refs[ref_name]['include_idxs'] = this_include_idxs
                     refs[ref_name]['contains_guide'] = True
-                    refs[ref_name]['sgRNA_sequences'] = refs[clone_ref_name]['sgRNA_sequences']
 
 
                 if needs_exon_positions and clone_has_exons:
@@ -1042,7 +1046,6 @@ def main():
                 raise CRISPRessoShared.FlashException('Flash failed to produce merged reads file, please check the log file.')
 
         #count reads
-        print('checking processed output filename ' + processed_output_filename)
         N_READS_AFTER_PREPROCESSING=get_n_reads_fastq(processed_output_filename)
         if N_READS_AFTER_PREPROCESSING == 0:
             raise CRISPRessoShared.NoReadsAfterQualityFilteringException('No reads in input or no reads survived the average or single bp quality filtering.')
@@ -1390,7 +1393,7 @@ def main():
                                     length_modified_positions_exons.append((insertion_sizes[idx_ins]))
 
                         for idx_del, (del_start,del_end) in enumerate(deletion_coordinates):
-                            deletion_length_vectors[ref_name][range(del_start,del_end)] += (deletion_sizes[idx_del]*variantCount)
+                            deletion_length_vectors[ref_name][list(range(del_start,del_end))] += (deletion_sizes[idx_del]*variantCount)
 
                         if refs[ref_name]['contains_coding_seq']:
                             del_positions_to_append = sorted(set(exon_positions).intersection(set(deletion_positions)))
@@ -1592,8 +1595,8 @@ def main():
 
             ref_len = refs[ref_name]['sequence_length']
             if refs[ref_name]['contains_guide']:
-                min_cut=min(refs[ref_name]['cut_points'])
-                max_cut=max(refs[ref_name]['cut_points'])
+                min_cut=min(refs[ref_name]['sgRNA_cut_points'])
+                max_cut=max(refs[ref_name]['sgRNA_cut_points'])
                 xmin,xmax=-min_cut,ref_len-max_cut
             else:
                 min_cut=ref_len/2
@@ -1694,9 +1697,10 @@ def main():
                 'sequence' + "\t" +
                 'sequence_length' + "\t" +
                 'min_aln_score' + "\t" +
-                'cut_points' + "\t" +
                 'gap_incentive' + "\t" +
+                'sgRNA_cut_points' + "\t" +
                 'sgRNA_intervals' + "\t" +
+                'sgRNA_plot_idxs' + "\t" +
                 'sgRNA_sequences' + "\t" +
                 'contains_guide' + "\t" +
                 'contains_coding_seq' + "\t" +
@@ -1706,7 +1710,6 @@ def main():
                 'splicing_positions' + "\t" +
                 'include_idxs' + "\t" +
                 'exclude_idxs' + "\t" +
-                'plot_idxs' + "\t" +
                 'idx_cloned_from' + "\n")
             ref_info_file.write(refString)
             np.set_printoptions(linewidth=1000**1000) #no line breaks
@@ -1715,10 +1718,11 @@ def main():
                     str(refs[ref_name]['sequence']) + "\t" +
                     str(refs[ref_name]['sequence_length']) + "\t" +
                     str(refs[ref_name]['min_aln_score']) + "\t" +
-                    str(refs[ref_name]['cut_points']) + "\t" +
                     str(refs[ref_name]['gap_incentive']) + "\t" +
+                    str(refs[ref_name]['sgRNA_cut_points']) + "\t" +
                     str(refs[ref_name]['sgRNA_intervals']) + "\t" +
                     str(refs[ref_name]['sgRNA_sequences']) + "\t" +
+                    str(refs[ref_name]['sgRNA_plot_idxs']) + "\t" +
                     str(refs[ref_name]['contains_guide']) + "\t" +
                     str(refs[ref_name]['contains_coding_seq']) + "\t" +
                     str(refs[ref_name]['exon_positions']) + "\t" +
@@ -1727,7 +1731,6 @@ def main():
                     str(refs[ref_name]['splicing_positions']) + "\t" +
                     str(refs[ref_name]['include_idxs']) + "\t" +
                     str(refs[ref_name]['exclude_idxs']) + "\t" +
-                    str(refs[ref_name]['plot_idxs']) + "\t" +
                     str(refs[ref_name]['idx_cloned_from']) + "\n")
                 ref_info_file.write(refString)
             ref_info_file.close()
@@ -1836,30 +1839,34 @@ def main():
         crispresso2_info['indelsub_pct_vectors'] = insertion_pct_vectors
 
         for ref_name in ref_names:
+            #only show reference name in filenames if more than one reference
+            ref_plot_name = ref_name+"."
+            if len(ref_names) == 1 and ref_names[0] == "Reference":
+                ref_plot_name = ""
 
             #n_this_category = counts_total[ref_name]
             #if n_this_category < 1:
             #    continue
 
             if not args.suppress_plots:
-                ins_pct_vector_filename = _jp(ref_name+'.effect_vector_insertion.txt')
+                ins_pct_vector_filename = _jp(ref_plot_name+'Effect_vector_insertion.txt')
                 save_vector_to_file(insertion_pct_vectors[ref_name],ins_pct_vector_filename)
                 crispresso2_info['refs'][ref_name]['insertion_pct_vector_filename'] = os.path.basename(ins_pct_vector_filename)
 
-                del_pct_vector_filename = _jp(ref_name+'.effect_vector_deletion.txt')
+                del_pct_vector_filename = _jp(ref_plot_name+'Effect_vector_deletion.txt')
                 save_vector_to_file(deletion_pct_vectors[ref_name],del_pct_vector_filename)
                 crispresso2_info['refs'][ref_name]['deletion_pct_vector_filename'] = os.path.basename(del_pct_vector_filename)
 
-                sub_pct_vector_filename = _jp(ref_name+'.effect_vector_substitution.txt')
+                sub_pct_vector_filename = _jp(ref_plot_name+'Effect_vector_substitution.txt')
                 save_vector_to_file(substitution_pct_vectors[ref_name],sub_pct_vector_filename)
                 crispresso2_info['refs'][ref_name]['substitution_pct_vector_filename'] = os.path.basename(sub_pct_vector_filename)
 
-                indelsub_pct_vector_filename = _jp(ref_name+'.effect_vector_combined.txt')
+                indelsub_pct_vector_filename = _jp(ref_plot_name+'Effect_vector_combined.txt')
                 save_vector_to_file(indelsub_pct_vectors[ref_name],indelsub_pct_vector_filename)
                 crispresso2_info['refs'][ref_name]['combined_pct_vector_filename'] = os.path.basename(indelsub_pct_vector_filename)
 
             #save mods in quantification window
-            quant_window_mod_count_filename = _jp(ref_name+'.quantification_window_modification_count_vectors.txt')
+            quant_window_mod_count_filename = _jp(ref_plot_name+'Quantification_window_modification_count_vectors.txt')
             save_count_vectors_to_file([insertion_count_vectors[ref_name],
                         deletion_count_vectors[ref_name],
                         substitution_count_vectors[ref_name],
@@ -1870,7 +1877,7 @@ def main():
             crispresso2_info['refs'][ref_name]['quant_window_mod_count_filename'] = os.path.basename(quant_window_mod_count_filename)
 
             #save all mods
-            mod_count_filename = _jp(ref_name+'.modification_count_vectors.txt')
+            mod_count_filename = _jp(ref_plot_name+'Modification_count_vectors.txt')
             save_count_vectors_to_file([all_insertion_count_vectors[ref_name],
                         all_insertion_left_count_vectors[ref_name],
                         all_deletion_count_vectors[ref_name],
@@ -1891,42 +1898,42 @@ def main():
                 MODIFIED_NON_FRAMESHIFT = counts_modified_non_frameshift[ref_name]
                 NON_MODIFIED_NON_FRAMESHIFT = counts_non_modified_non_frameshift[ref_name]
                 SPLICING_SITES_MODIFIED = counts_splicing_sites_modified[ref_name]
-                frameshift_analysis_filename = _jp(ref_name+'.frameshift_analysis.txt')
+                frameshift_analysis_filename = _jp(ref_plot_name+'Frameshift_analysis.txt')
                 with open(frameshift_analysis_filename,'w+') as outfile:
                         outfile.write('Frameshift analysis:\n\tNoncoding mutation:%d reads\n\tIn-frame mutation:%d reads\n\tFrameshift mutation:%d reads\n' %(NON_MODIFIED_NON_FRAMESHIFT, MODIFIED_NON_FRAMESHIFT ,MODIFIED_FRAMESHIFT))
                 crispresso2_info['refs'][ref_name]['frameshift_analysis_filename'] = os.path.basename(frameshift_analysis_filename)
                 crispresso2_info['refs'][ref_name]['frameshift_analysis_filename_caption'] = "A text file describing the number of noncoding, in-frame, and frameshift mutations. This report file is produced when the amplicon contains a coding sequence."
 
-                splice_sites_analysis_filename = _jp(ref_name+'.splice_sites_analysis.txt')
+                splice_sites_analysis_filename = _jp(ref_plot_name+'Splice_sites_analysis.txt')
                 with open(splice_sites_analysis_filename,'w+') as outfile:
                         outfile.write('Splice sites analysis:\n\tUnmodified:%d reads\n\tPotential splice sites modified:%d reads\n' %(counts_total[ref_name]- SPLICING_SITES_MODIFIED, SPLICING_SITES_MODIFIED))
                 crispresso2_info['refs'][ref_name]['splice_sites_analysis_filename'] = os.path.basename(splice_sites_analysis_filename)
                 crispresso2_info['refs'][ref_name]['splice_sites_analysis_filename_caption'] = "A text file describing the number of splicing sites that are unmodified and modified. This file report is produced when the amplicon contains a coding sequence."
 
-                ins_pct_vector_noncoding_filename = _jp(ref_name+'.effect_vector_insertion_noncoding.txt')
+                ins_pct_vector_noncoding_filename = _jp(ref_plot_name+'Effect_vector_insertion_noncoding.txt')
                 save_vector_to_file(insertion_pct_vectors_noncoding[ref_name],ins_pct_vector_noncoding_filename)
                 crispresso2_info['refs'][ref_name]['insertion_pct_vector_noncoding_filename'] = os.path.basename(ins_pct_vector_noncoding_filename)
                 crispresso2_info['refs'][ref_name]['insertion_pct_vector_noncoding_filename_caption'] = "A tab-separated text file with a one-row header that shows the percentage of reads with a noncoding insertion at each base in the " + ref_name + " sequence. " \
                     "The first column shows the 1-based position of the amplicon, and the second column shows the percentage of reads with a noncoding insertion at that location. This report file is produced when the amplicon contains a coding sequence."
 
-                del_pct_vector_noncoding_filename = _jp(ref_name+'.effect_vector_deletion_noncoding.txt')
+                del_pct_vector_noncoding_filename = _jp(ref_plot_name+'Effect_vector_deletion_noncoding.txt')
                 save_vector_to_file(deletion_pct_vectors_noncoding[ref_name],del_pct_vector_noncoding_filename)
                 crispresso2_info['refs'][ref_name]['deletion_pct_vector_noncoding_filename'] = os.path.basename(del_pct_vector_noncoding_filename)
                 crispresso2_info['refs'][ref_name]['deletion_pct_vector_noncoding_filename_caption'] = "A tab-separated text file with a one-row header that shows the percentage of reads with a noncoding deletion at each base in the " + ref_name + " sequence. " \
                     "The first column shows the 1-based position of the amplicon, and the second column shows the percentage of reads with a noncoding deletion at that location. This report file is produced when the amplicon contains a coding sequence."
 
-                sub_pct_vector_noncoding_filename = _jp(ref_name+'.effect_vector_substitution_noncoding.txt')
+                sub_pct_vector_noncoding_filename = _jp(ref_plot_name+'Effect_vector_substitution_noncoding.txt')
                 save_vector_to_file(substitution_pct_vectors_noncoding[ref_name],sub_pct_vector_noncoding_filename)
                 crispresso2_info['refs'][ref_name]['substitution_pct_vector_noncoding_filename'] = os.path.basename(sub_pct_vector_noncoding_filename)
                 crispresso2_info['refs'][ref_name]['substitution_pct_vector_noncoding_filename_caption'] = "A tab-separated text file with a one-row header that shows the percentage of reads with a noncoding substitution at each base in the " + ref_name + " sequence. " \
                     "The first column shows the 1-based position of the amplicon, and the second column shows the percentage of reads with a nondcoding substitution at that location. This report file is produced when the amplicon contains a coding sequence."
 
             if args.dump:
-                if refs[ref_name]['cut_points']:
-                    cp.dump(refs[ref_name]['cut_points'], open( _jp(ref_name+'.cut_points.pickle'), 'wb' ) )
+                if refs[ref_name]['sgRNA_cut_points']:
+                    cp.dump(refs[ref_name]['sgRNA_cut_points'], open( _jp(ref_plot_name+'Cut_points.pickle'), 'wb' ) )
 
                 if refs[ref_name]['sgRNA_intervals']:
-                    cp.dump(refs[ref_name]['sgRNA_intervals'], open( _jp(ref_name+'.sgRNA_intervals.pickle'), 'wb' ) )
+                    cp.dump(refs[ref_name]['sgRNA_intervals'], open( _jp(ref_plot_name+'sgRNA_intervals.pickle'), 'wb' ) )
 
             hdensity = refs[ref_name]['hdensity']
             hlengths = refs[ref_name]['hlengths']
@@ -1941,7 +1948,7 @@ def main():
 
             if not args.suppress_plots:
 
-                indel_histogram_file = _jp(ref_name+'.indel_histogram.txt')
+                indel_histogram_file = _jp(ref_plot_name+'Indel_histogram.txt')
                 pd.DataFrame(np.vstack([hlengths,hdensity]).T,columns=['indel_size','fq']).to_csv(indel_histogram_file,index=None,sep='\t')
                 crispresso2_info['refs'][ref_name]['indel_histogram_filename'] = os.path.basename(indel_histogram_file)
                 crispresso2_info['refs'][ref_name]['indel_histogram_filename_caption'] = "A tab-separated text file that shows a histogram of the length of indels (both insertions and deletions) in the " + ref_name +" sequence in the quantification window. " \
@@ -1949,21 +1956,21 @@ def main():
 
 
 
-                insertion_histogram_file = _jp(ref_name+'.insertion_histogram.txt')
+                insertion_histogram_file = _jp(ref_plot_name+'Insertion_histogram.txt')
                 pd.DataFrame(np.vstack([x_bins_ins[:-1],y_values_ins]).T,columns=['ins_size','fq']).to_csv(insertion_histogram_file,index=None,sep='\t')
                 crispresso2_info['refs'][ref_name]['insertion_histogram_filename'] = os.path.basename(insertion_histogram_file)
                 crispresso2_info['refs'][ref_name]['insertion_histogram_filename_caption'] = "A tab-separated text file that shows a histogram of the number of insertions in the " + ref_name +" sequence in the quantification window. " \
                     "Insertions outside of the quantification window are not included. The ins_size column shows the number of insertions, and the fq column shows the number of reads having that number of insertions."
 
 
-                deletion_histogram_file = _jp(ref_name+'.deletion_histogram.txt')
+                deletion_histogram_file = _jp(ref_plot_name+'Deletion_histogram.txt')
                 pd.DataFrame(np.vstack([-x_bins_del[:-1],y_values_del]).T,columns=['del_size','fq']).to_csv(deletion_histogram_file,index=None,sep='\t')
                 crispresso2_info['refs'][ref_name]['deletion_histogram_filename'] = os.path.basename(deletion_histogram_file)
                 crispresso2_info['refs'][ref_name]['deletion_histogram_filename_caption'] = "A tab-separated text file that shows a histogram of the number of deletions in the " + ref_name +" sequence in the quantification window. " \
                 "Deletions outside of the quantification window are not included. The del_size column shows the number of deletions, and the fq column shows the number of reads having that number of deletions."
 
 
-                substitution_histogram_file = _jp(ref_name+'.substitution_histogram.txt')
+                substitution_histogram_file = _jp(ref_plot_name+'Substitution_histogram.txt')
                 pd.DataFrame(np.vstack([x_bins_mut[:-1],y_values_mut]).T,columns=['sub_count','fq']).to_csv(substitution_histogram_file,index=None,sep='\t')
                 crispresso2_info['refs'][ref_name]['substitution_histogram_filename'] = os.path.basename(substitution_histogram_file)
                 crispresso2_info['refs'][ref_name]['substitution_histogram_filename_caption'] = "A tab-separated text file that shows a histogram of the number of substitutions in the " + ref_name +" sequence in the quantification window. " \
@@ -1972,14 +1979,14 @@ def main():
 
 
             if args.dump:
-                np.savez(_jp('%s.effect_vector_insertion'%ref_name),insertion_pct_vectors[ref_name])
-                np.savez(_jp('%s.effect_vector_deletion'%ref_name),deletion_pct_vectors[ref_name])
-                np.savez(_jp('%s.effect_vector_substitution'%ref_name),substitution_pct_vectors[ref_name])
+                np.savez(_jp(ref_plot_name+'Effect_vector_insertion'),insertion_pct_vectors[ref_name])
+                np.savez(_jp(ref_plot_name+'Effect_vector_deletion'),deletion_pct_vectors[ref_name])
+                np.savez(_jp(ref_plot_name+'Effect_vector_substitution'),substitution_pct_vectors[ref_name])
 
-                np.savez(_jp('%s.effect_vector_combined'%ref_name),indelsub_pct_vectors[ref_name])
+                np.savez(_jp(ref_plot_name+'Effect_vector_combined'),indelsub_pct_vectors[ref_name])
 
-                np.savez(_jp('%s.position_dependent_vector_avg_insertion_size'%ref_name),insertion_length_vectors[ref_name])
-                np.savez(_jp('%s.position_dependent_vector_avg_deletion_size'%ref_name),deletion_length_vectors[ref_name])
+                np.savez(_jp(ref_plot_name+'Position_dependent_vector_avg_insertion_size'),insertion_length_vectors[ref_name])
+                np.savez(_jp(ref_plot_name+'Position_dependent_vector_avg_deletion_size'),deletion_length_vectors[ref_name])
 
         if args.dump:
             info('Dumping all the processed data...')
@@ -2054,7 +2061,7 @@ def main():
 
             plt.tight_layout()
 
-            plot_root = _jp("1a.Read_Barplot")
+            plot_root = _jp("1a.Read_barplot")
             plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
             if save_png:
                 plt.savefig(plot_root+'.png',bbox_inches='tight')
@@ -2076,7 +2083,11 @@ def main():
                 elif args.expected_hdr_amplicon_seq != "" and class_name == "HDR_UNMODIFIED":
                     labels.append("HDR" + "\n(" + str(class_counts[class_name]) + " reads)")
                 else:
-                    labels.append(class_name + "\n(" + str(class_counts[class_name]) + " reads)")
+                    display_class_name = class_name
+                    if len(ref_names) == 1:
+                        display_class_name = display_class_name.replace('Reference_','')
+
+                    labels.append(display_class_name + "\n(" + str(class_counts[class_name]) + " reads)")
 
                 sizes.append(100*class_counts[class_name]/float(N_TOTAL))
 
@@ -2095,7 +2106,7 @@ def main():
     #        plt.setp(texts, fontproperties=proptease)
             plt.axis("equal")
 
-            plot_root = _jp("1b.Alignment_Pie_Chart")
+            plot_root = _jp("1b.Alignment_pie_chart")
             plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
             if save_png:
                 plt.savefig(plot_root+'.png',bbox_inches='tight')
@@ -2139,7 +2150,7 @@ def main():
 
             plt.tight_layout()
 
-            plot_root = _jp('1c.Alignment_Barplot')
+            plot_root = _jp('1c.Alignment_barplot')
             plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
             if save_png:
                 plt.savefig(plot_root+'.png',bbox_inches='tight')
@@ -2161,16 +2172,19 @@ def main():
             hdensity = refs[ref_name]['hdensity']
             hlengths = refs[ref_name]['hlengths']
             center_index = refs[ref_name]['center_index']
-            ref_include_idx = refs[ref_name]['include_idxs']
-            include_idxs_list = sorted(list(refs[ref_name]['include_idxs']))
-            quantification_window_ref_seq = [list(ref_seq)[x] for x in ref_include_idx]
-            ref_plot_idxs = refs[ref_name]['plot_idxs']
+            include_idxs_list = refs[ref_name]['include_idxs']
+            quantification_window_ref_seq = [list(ref_seq)[x] for x in include_idxs_list]
             sgRNA_sequences = refs[ref_name]['sgRNA_sequences']
 #            print('debug 2120 here: '+str(sgRNA_sequences))
-            cut_points = refs[ref_name]['cut_points']
+            cut_points = refs[ref_name]['sgRNA_cut_points']
             sgRNA_intervals = refs[ref_name]['sgRNA_intervals']
             tot_aln_reads = counts_total[ref_name]
             n_this_category = counts_total[ref_name]
+
+            #only show reference name in filenames if more than one reference
+            ref_plot_name = ref_name+"."
+            if len(ref_names) == 1 and ref_names[0] == "Reference":
+                ref_plot_name = ""
 
             if n_this_category < 1:
                 continue
@@ -2182,12 +2196,12 @@ def main():
                 df_nuc_freq.index = ['A','C','G','T','N','-']
                 df_nuc_freq.columns = quantification_window_ref_seq
                 #print table showing nuc frequencies (sum to total alleles) (in quantification window)
-                quant_window_nuc_freq_filename = _jp(ref_name + '.quantification_window_nucleotide_frequency_table.txt')
+                quant_window_nuc_freq_filename = _jp(ref_plot_name + 'Quantification_window_nucleotide_frequency_table.txt')
                 df_nuc_freq.to_csv(quant_window_nuc_freq_filename,sep='\t',header=True,index=True)
                 crispresso2_info['refs'][ref_name]['quant_window_nuc_freq_filename'] = os.path.basename(quant_window_nuc_freq_filename)
 
                 df_nuc_pct = df_nuc_freq.divide(tot_aln_reads)
-                quant_window_nuc_pct_filename = _jp(ref_name + '.quantification_window_nucleotide_percentage_table.txt')
+                quant_window_nuc_pct_filename = _jp(ref_plot_name + 'Quantification_window_nucleotide_percentage_table.txt')
                 df_nuc_pct.to_csv(quant_window_nuc_pct_filename,sep='\t',header=True,index=True)
                 crispresso2_info['refs'][ref_name]['quant_window_nuc_pct_filename'] = os.path.basename(quant_window_nuc_pct_filename)
 
@@ -2195,12 +2209,12 @@ def main():
                 df_nuc_freq_all.index = ['A','C','G','T','N','-']
                 df_nuc_freq_all.columns = list(ref_seq)
                 #print table showing nuc frequencies (sum to total alleles) (in entire region)
-                nuc_freq_filename = _jp(ref_name + '.nucleotide_frequency_table.txt')
+                nuc_freq_filename = _jp(ref_plot_name + 'Nucleotide_frequency_table.txt')
                 df_nuc_freq_all.to_csv(nuc_freq_filename,sep='\t',header=True,index=True)
                 crispresso2_info['refs'][ref_name]['nuc_freq_filename'] = os.path.basename(nuc_freq_filename)
 
                 df_nuc_pct_all = df_nuc_freq_all.divide(tot_aln_reads)
-                nuc_pct_filename = _jp(ref_name + '.nucleotide_percentage_table.txt')
+                nuc_pct_filename = _jp(ref_plot_name + 'Nucleotide_percentage_table.txt')
                 df_nuc_pct_all.to_csv(nuc_pct_filename,sep='\t',header=True,index=True)
                 crispresso2_info['refs'][ref_name]['nuc_pct_filename'] = os.path.basename(nuc_pct_filename)
 
@@ -2213,7 +2227,7 @@ def main():
                     )
 
                 #print table showing sub frequencies
-                quant_window_sub_freq_filename =_jp(ref_name + '.quantification_window_substitution_frequency_table.txt')
+                quant_window_sub_freq_filename =_jp(ref_plot_name + 'Quantification_window_substitution_frequency_table.txt')
                 df_sub_freq.to_csv(quant_window_sub_freq_filename,sep='\t',header=True,index=True)
                 crispresso2_info['refs'][ref_name]['quant_window_sub_freq_filename'] = os.path.basename(quant_window_sub_freq_filename)
 
@@ -2225,7 +2239,7 @@ def main():
                     ref_total_aln_reads = tot_aln_reads
                     )
 
-                sub_freq_table_filename = _jp(ref_name + '.substitution_frequency_table.txt')
+                sub_freq_table_filename = _jp(ref_plot_name + 'Substitution_frequency_table.txt')
                 df_sub_freq_all.to_csv(sub_freq_table_filename,sep='\t',header=True,index=True)
                 crispresso2_info['refs'][ref_name]['sub_freq_table_filename'] = os.path.basename(sub_freq_table_filename)
 
@@ -2248,8 +2262,8 @@ def main():
                     mod_df_for_plot = modification_percentage_summary_df.copy()
                     mod_df_for_plot.insert(0,'Batch',ref_name)
 
-                    plot_root = _jp('2a.'+ref_name + '.Nucleotide_Percentage_Quilt')
-                    CRISPRessoPlot.plot_nucleotide_quilt(nuc_df_for_plot,mod_df_for_plot,plot_root,save_png,sgRNA_intervals=refs[ref_name]['sgRNA_intervals'],quantification_window_idxs=refs[ref_name]['include_idxs'])
+                    plot_root = _jp('2a.'+ref_plot_name + 'Nucleotide_percentage_quilt')
+                    CRISPRessoPlot.plot_nucleotide_quilt(nuc_df_for_plot,mod_df_for_plot,plot_root,save_png,sgRNA_intervals=sgRNA_intervals,quantification_window_idxs=include_idxs_list)
                     crispresso2_info['refs'][ref_name]['plot_2a_root'] = os.path.basename(plot_root)
                     crispresso2_info['refs'][ref_name]['plot_2a_caption'] = "Figure 2a: Nucleotide distribution across amplicon. At each base in the reference amplicon, the percentage of each base as observed in sequencing reads is shown (A = green; C = orange; G = yellow; T = purple). Black bars show the percentage of reads for which that base was deleted. Brown bars between bases show the percentage of reads having an insertion at that position."
                     crispresso2_info['refs'][ref_name]['plot_2a_data'] = [('Nucleotide frequency table',os.path.basename(nuc_freq_filename))]
@@ -2263,16 +2277,16 @@ def main():
                         plot_half_window = max(1,args.plot_window_size)
                         new_sel_cols_start = max(2,cut_point-plot_half_window+1)
                         new_sel_cols_end = min(ref_len,cut_point+plot_half_window+1)
-                        sel_cols.extend(range(new_sel_cols_start+2,new_sel_cols_end+2))
+                        sel_cols.extend(list(range(new_sel_cols_start+2,new_sel_cols_end+2)))
                         #get new intervals
                         new_sgRNA_intervals = []
                         #add annotations for each sgRNA (to be plotted on this sgRNA's plot)
                         for (int_start,int_end) in refs[ref_name]['sgRNA_intervals']:
                             new_sgRNA_intervals += [(int_start - new_sel_cols_start,int_end - new_sel_cols_start)]
                         new_include_idx = []
-                        for x in refs[ref_name]['include_idxs']:
+                        for x in include_idxs_list:
                             new_include_idx += [x - new_sel_cols_start]
-                        plot_root = _jp('2b.'+ref_name + '.Nucleotide_Percentage_Quilt_For_' + sgRNA)
+                        plot_root = _jp('2b.'+ref_plot_name + 'Nucleotide_percentage_quilt_around_sgRNA_' + sgRNA)
                         CRISPRessoPlot.plot_nucleotide_quilt(
                                 nuc_df_for_plot.iloc[:,sel_cols],
                                 mod_df_for_plot.iloc[:,sel_cols],
@@ -2315,7 +2329,7 @@ def main():
                 lgd.legendHandles[0].set_height(3)
                 lgd.legendHandles[1].set_height(3)
 
-                plot_root = _jp('3a.'+ref_name+'.Indel_Size_Distribution')
+                plot_root = _jp('3a.'+ref_plot_name+'Indel_size_distribution')
                 plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
                 if save_png:
                     plt.savefig(plot_root+'.png',bbox_inches='tight')
@@ -2323,7 +2337,7 @@ def main():
 
                 crispresso2_info['refs'][ref_name]['plot_3a_root'] = os.path.basename(plot_root)
                 crispresso2_info['refs'][ref_name]['plot_3a_caption'] = "Figure 3a: Frequency distribution of alleles with indels (blue) and without indels (red)."
-                crispresso2_info['refs'][ref_name]['plot_3a_data'] = [('Indel histogram data',os.path.basename(crispresso2_info['refs'][ref_name]['indel_histogram_filename']))]
+                crispresso2_info['refs'][ref_name]['plot_3a_data'] = [('Indel histogram',os.path.basename(crispresso2_info['refs'][ref_name]['indel_histogram_filename']))]
                 ###############################################################################################################################################
 
                 ###############################################################################################################################################
@@ -2386,7 +2400,7 @@ def main():
 
                 plt.tight_layout()
 
-                plot_root = _jp('3b.'+ref_name+'.Insertion_Deletion_Substitutions_Size_Hist')
+                plot_root = _jp('3b.'+ref_plot_name+'Insertion_deletion_substitutions_size_hist')
                 plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
                 if save_png:
                     plt.savefig(plot_root+'.png',bbox_inches='tight')
@@ -2458,7 +2472,7 @@ def main():
                 plt.ylim(0,max(1,y_max))
                 plt.xlim(0,ref_len-1)
 
-                plot_root = _jp('4a.'+ref_name+'.Combined_Insertion_Deletion_Substitution_Locations')
+                plot_root = _jp('4a.'+ref_plot_name+'Combined_insertion_deletion_substitution_locations')
                 plt.savefig(plot_root+'.pdf',bbox_extra_artists=(lgd,),bbox_inches='tight')
                 if save_png:
                     plt.savefig(plot_root+'.png',bbox_extra_artists=(lgd,),bbox_inches='tight')
@@ -2527,7 +2541,7 @@ def main():
 
                 plt.title(get_plot_title_with_ref_name('Mutation position distribution',ref_name))
 
-                plot_root = _jp('4b.'+ref_name+'.Insertion_Deletion_Substitution_Locations')
+                plot_root = _jp('4b.'+ref_plot_name+'Insertion_deletion_substitution_locations')
                 plt.savefig(plot_root+'.pdf',bbox_extra_artists=(lgd,),pad_inches=1,bbox_inches='tight')
                 if save_png:
                     plt.savefig(plot_root+'.png',bbox_extra_artists=(lgd,),bbox_inches='tight')
@@ -2597,7 +2611,7 @@ def main():
                 plt.ylim(0,max(1,y_max))
                 plt.xlim(0,ref_len-1)
                 plt.title(get_plot_title_with_ref_name('Mutation position distribution',ref_name))
-                plot_root = _jp('4c.'+ref_name+'.Quantification_Window_Insertion_Deletion_Substitution_Locations')
+                plot_root = _jp('4c.'+ref_plot_name+'Quantification_window_insertion_deletion_substitution_locations')
                 plt.savefig(plot_root+'.pdf',bbox_extra_artists=(lgd,),pad_inches=1,bbox_inches='tight')
                 if save_png:
                     plt.savefig(plot_root+'.png',bbox_extra_artists=(lgd,),bbox_inches='tight')
@@ -2659,7 +2673,7 @@ def main():
                 plt.tight_layout()
 
 
-                plot_root = _jp('4d.'+ref_name+'.Position_Dependent_Average_Indel_Size')
+                plot_root = _jp('4d.'+ref_plot_name+'Position_dependent_average_indel_size')
                 plt.savefig(plot_root+'.pdf',bbox_extra_artists=(lgd,),pad_inches=1,bbox_inches='tight')
                 if save_png:
                     plt.savefig(plot_root+'.png',bbox_extra_artists=(lgd,),bbox_inches='tight')
@@ -2686,7 +2700,7 @@ def main():
                     plt.plot(ref1_all_substitution_positions,'g',linewidth=3,label='Substitutions')
 
 
-                    ref1_cut_points = refs[ref_names[0]]['cut_points']
+                    ref1_cut_points = refs[ref_names[0]]['sgRNA_cut_points']
                     ref1_sgRNA_intervals = refs[ref_names[0]]['sgRNA_intervals']
                     ref1_include_idxs_list = sorted(list(refs[ref_names[0]]['include_idxs']))
                     #shade quantification window
@@ -2734,13 +2748,13 @@ def main():
                     plt.xlim(0,ref_len-1)
                     if ref_name == ref_names[0]:
                         plt.title('Mutation position distribution in all reads with reference to %s'%(ref_names[0]))
-                        plot_root = _jp('4e.' + ref_names[0] + '.Global_Mutations_In_All_Reads')
+                        plot_root = _jp('4e.' + ref_names[0] + '.Global_mutations_in_all_reads')
                         crispresso2_info['refs'][ref_names[0]]['plot_4e_root'] = os.path.basename(plot_root)
                         crispresso2_info['refs'][ref_names[0]]['plot_4e_caption'] = "Figure 4e: Modifications in all reads when aligned to the reference sequence. Insertions: red, deletions: purple, substitutions: green. All modifications (including those outside the quantification window) are shown."
                         crispresso2_info['refs'][ref_names[0]]['plot_4e_data'] = []
                     elif ref_name == "HDR":
                         plt.title('Mutation position distribution in %s reads with reference to %s'%(ref_name,ref_names[0]))
-                        plot_root = _jp('4f.' + ref_names[0] + '.Global_Mutations_In_HDR_Reads_With_Reference_To_'+ref_names[0])
+                        plot_root = _jp('4f.' + ref_names[0] + '.Global_mutations_in_HDR_reads_with_reference_to_'+ref_names[0])
                         crispresso2_info['refs'][ref_names[0]]['plot_4f_root'] = os.path.basename(plot_root)
                         crispresso2_info['refs'][ref_names[0]]['plot_4f_caption'] = "Figure 4f: Modifications in HDR reads with respect to the reference sequence. Insertions: red, deletions: purple, substitutions: green. All modifications (including those outside the quantification window) are shown."
                         crispresso2_info['refs'][ref_names[0]]['plot_4f_data'] = []
@@ -2751,12 +2765,12 @@ def main():
                     plt.close()
 
 
-        ###############################################################################################################################################
-        #(5, 6) frameshift analyses plots
+            ###############################################################################################################################################
+            #(5, 6) frameshift analyses plots
             if (refs[ref_name]['contains_coding_seq']): #PERFORM FRAMESHIFT ANALYSIS
                 #make frameshift plots
                 ref_len = refs[ref_name]['sequence_length']
-                cut_points = refs[ref_name]['cut_points']
+                cut_points = refs[ref_name]['sgRNA_cut_points']
                 sgRNA_intervals = refs[ref_name]['sgRNA_intervals']
                 MODIFIED_FRAMESHIFT = counts_modified_frameshift[ref_name]
                 MODIFIED_NON_FRAMESHIFT = counts_modified_non_frameshift[ref_name]
@@ -2818,7 +2832,7 @@ def main():
                     plt.setp(autotexts, fontproperties=proptease)
                     plt.setp(texts, fontproperties=proptease)
 
-                    plot_root = _jp('5.'+ref_name+'.Frameshift_In-frame_Mutations_Pie_Chart')
+                    plot_root = _jp('5.'+ref_plot_name+'Frameshift_in-frame_mutations_pie_chart')
                     plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
                     if save_png:
                         plt.savefig(plot_root+'.png',bbox_inches='tight')
@@ -2883,7 +2897,7 @@ def main():
                     ax2.tick_params(axis='both', which='minor', labelsize=24)
                     plt.tight_layout()
 
-                    plot_root = _jp('6.'+ref_name+'.Frameshift_In-frame_Mutation_Profiles')
+                    plot_root = _jp('6.'+ref_plot_name+'Frameshift_in-frame_mutation_profiles')
                     plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
                     if save_png:
                         plt.savefig(plot_root+'.png',bbox_inches='tight')
@@ -2907,7 +2921,7 @@ def main():
                     proptease.set_size('xx-large')
                     plt.setp(autotexts, fontproperties=proptease)
                     plt.setp(texts, fontproperties=proptease)
-                    plot_root = _jp('8.'+ref_name+'.Potential_Splice_Sites_Pie_Chart')
+                    plot_root = _jp('8.'+ref_plot_name+'Potential_splice_sites_pie_chart')
                     plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
                     if save_png:
                         plt.savefig(plot_root+'.png',bbox_inches='tight')
@@ -2964,7 +2978,7 @@ def main():
                     plt.xlim(0,ref_len-1)
                     plt.title(get_plot_title_with_ref_name('Noncoding mutation position distribution',ref_name))
 
-                    plot_root = _jp('7.'+ref_name+'.Insertion_Deletion_Substitution_Locations_Noncoding')
+                    plot_root = _jp('7.'+ref_plot_name+'Insertion_deletion_substitution_locations_noncoding')
                     plt.savefig(plot_root+'.pdf',bbox_extra_artists=(lgd,),pad_inches=1,bbox_inches='tight')
                     if save_png:
                         plt.savefig(plot_root+'.png',bbox_extra_artists=(lgd,),bbox_inches='tight')
@@ -2975,41 +2989,11 @@ def main():
             #end contains coding seq
 
 
-        ######PLOT
+            ######PLOT
             if not args.crispresso1_mode and args.base_editor_output:
-                plot_ref_seq = ''.join([ref_seq[i] for i in ref_plot_idxs])
-                plot_nuc_pcts = df_nuc_pct_all.iloc[:,ref_plot_idxs]
-                plot_nuc_freqs = df_nuc_freq_all.iloc[:,ref_plot_idxs]
-
-                #get computation window in plotted region
-                is_window = np.zeros(ref_len)
-                for ind in include_idxs_list:
-                    is_window[ind] = 1
-                plot_is_window = np.zeros(len(ref_plot_idxs)) #binary array of sgRNAs in the
-                plot_quant_window_idxs = []
-                for ind, loc in enumerate(ref_plot_idxs):
-                    plot_is_window[ind] = is_window[loc]
-                    if is_window[loc]:
-                        plot_quant_window_idxs.append(ind-2)
-
-                from_nuc_indices = [pos for pos, char in enumerate(list(plot_nuc_pcts.columns.values)) if char == args.conversion_nuc_from]
-                just_sel_nuc_pcts = plot_nuc_pcts.iloc[:,from_nuc_indices].copy() #only nucleotides targeted by base editing
-                just_sel_nuc_pcts.columns = [char + str(pos+1) for pos,char in enumerate(list(just_sel_nuc_pcts.columns.values))]
-                just_sel_nuc_freqs = plot_nuc_freqs.iloc[:,from_nuc_indices].copy()
-                just_sel_nuc_freqs.columns = [char + str(pos+1) for pos,char in enumerate(list(just_sel_nuc_freqs.columns.values))]
-
-                quant_window_sel_nuc_pct_filename = _jp(ref_name + '.quantification_window_selected_nucleotide_percentage_table.txt')
-                just_sel_nuc_pcts.to_csv(quant_window_sel_nuc_pct_filename,sep='\t',header=True,index=True)
-                crispresso2_info['quant_window_sel_nuc_pct_filename'] = os.path.basename(quant_window_sel_nuc_pct_filename)
-
-                quant_window_sel_nuc_freq_filename = _jp(ref_name + '.quantification_window_selected_nucleotide_frequency_table.txt')
-                just_sel_nuc_freqs.to_csv(quant_window_sel_nuc_freq_filename,sep='\t',header=True,index=True)
-                crispresso2_info['quant_window_sel_nuc_freq_filename'] = os.path.basename(quant_window_sel_nuc_freq_filename)
-                #print table showing all nuc frequencies (sum to total alleles) (in entire region)
-
                 if not args.suppress_plots:
 
-                    fig_filename_root= _jp('10a.'+ref_name+'.Substitution_Frequencies_At_Each_bp')
+                    fig_filename_root= _jp('10a.'+ref_plot_name+'Substitution_frequencies_at_each_bp')
                     CRISPRessoPlot.plot_subs_across_ref(
                         ref_len = ref_len,
                         ref_seq = ref_seq,
@@ -3024,11 +3008,11 @@ def main():
                         )
                     crispresso2_info['refs'][ref_name]['plot_10a_root'] = os.path.basename(fig_filename_root)
                     crispresso2_info['refs'][ref_name]['plot_10a_caption'] = "Figure 10a: Substitution frequencies across the amplicon."
-                    crispresso2_info['refs'][ref_name]['plot_10a_data'] = [('Substitution frequencies',os.path.basename(nuc_freq_filename))]
+                    crispresso2_info['refs'][ref_name]['plot_10a_data'] = [('Nucleotide frequencies',os.path.basename(nuc_freq_filename))]
 
 
                     #plot all substitution rates in entire region
-                    fig_filename_root = _jp('10b.'+ref_name+'.Substitution_Frequency_Barplot')
+                    fig_filename_root = _jp('10b.'+ref_plot_name+'Substitution_frequency_barplot')
                     CRISPRessoPlot.plot_sub_freqs(
                         alt_nuc_counts = alt_nuc_counts_all,
                         plot_title = get_plot_title_with_ref_name('Substitution frequency\nin entire amplicon', ref_name),
@@ -3037,10 +3021,10 @@ def main():
                         )
                     crispresso2_info['refs'][ref_name]['plot_10b_root'] = os.path.basename(fig_filename_root)
                     crispresso2_info['refs'][ref_name]['plot_10b_caption'] = "Figure 10b: Substitution frequencies across the amplicon."
-                    crispresso2_info['refs'][ref_name]['plot_10b_data'] = [('Substitution frequencies',os.path.basename(nuc_freq_filename))]
+                    crispresso2_info['refs'][ref_name]['plot_10b_data'] = [('Nucleotide frequencies',os.path.basename(nuc_freq_filename))]
 
                     #plot all substitution rates in quantification_window
-                    fig_filename_root = _jp('10c.'+ref_name+'.Quantification_Window_Substitution_Frequency_Barplot')
+                    fig_filename_root = _jp('10c.'+ref_plot_name+'Substitution_frequency_barplot_around_sgRNA_'+sgRNA)
                     CRISPRessoPlot.plot_sub_freqs(
                         alt_nuc_counts = alt_nuc_counts,
                         plot_title = get_plot_title_with_ref_name('Substitution frequency\nin quantification window', ref_name),
@@ -3049,263 +3033,322 @@ def main():
                         )
                     crispresso2_info['refs'][ref_name]['plot_10c_root'] = os.path.basename(fig_filename_root)
                     crispresso2_info['refs'][ref_name]['plot_10c_caption'] = "Figure 10c: Substitution frequencies in the quantification window"
-                    crispresso2_info['refs'][ref_name]['plot_10c_data'] = [('Substitution frequencies in quantification window',os.path.basename(quant_window_sel_nuc_freq_filename))]
+                    crispresso2_info['refs'][ref_name]['plot_10c_data'] = [('Nucleotide frequencies in quantification window',os.path.basename(quant_window_sub_freq_filename))]
 
 
-    #                CRISPRessoPlot.plot_nuc_freqs(
-    #                    df_nuc_freq = df_nuc_freq,
-    #                    tot_aln_reads = tot_aln_reads,
-    #                    plot_title = get_plot_title_with_ref_name('Nucleotide Frequencies',ref_name),
-    #                    fig_filename_root = _jp('14a.'+ref_name+'.nucleotide_frequency'),
-    #                    save_also_png = save_png
-    #                    )
 
-                    fig_filename_root = _jp('10d.'+ref_name+'.Log2_Nucleotide_Frequency')
-                    CRISPRessoPlot.plot_log_nuc_freqs(
-                        df_nuc_freq = plot_nuc_freqs,
-                        tot_aln_reads = tot_aln_reads,
-                        plot_title = get_plot_title_with_ref_name('Log2 Nucleotide Frequencies',ref_name),
-                        fig_filename_root = fig_filename_root,
-                        save_also_png = save_png,
-                        quantification_window_idxs = plot_quant_window_idxs
-                        )
-                    crispresso2_info['refs'][ref_name]['plot_10d_root'] = os.path.basename(fig_filename_root)
-                    crispresso2_info['refs'][ref_name]['plot_10d_caption'] = "Figure 10d: Log2 nucleotide frequencies for each position. The quantification window is outlined by the dotted box."
-                    crispresso2_info['refs'][ref_name]['plot_10d_data'] = []
-
-
-                    fig_filename_root = _jp('10e.'+ref_name+'.Quantification_Window_Selected_Conversion')
-                    CRISPRessoPlot.plot_conversion_at_sel_nucs(
-                        df_subs = plot_nuc_pcts,
-                        ref_name = ref_name,
-                        ref_sequence = plot_ref_seq,
-                        plot_title = get_plot_title_with_ref_name('Substitution Frequencies at Quantification Window Nucleotides',ref_name),
-                        conversion_nuc_from = args.conversion_nuc_from,
-                        fig_filename_root = fig_filename_root,
-                        save_also_png = save_png
-                        )
-                    crispresso2_info['refs'][ref_name]['plot_10e_root'] = os.path.basename(fig_filename_root)
-                    crispresso2_info['refs'][ref_name]['plot_10e_caption'] = "Figure 10e: Proprotion of each base at each nucleotide targeted by base editors in the quantification window. The number of each target base is annotated on the reference sequence at the bottom of the plot."
-                    crispresso2_info['refs'][ref_name]['plot_10e_data'] = []
-
-                    fig_filename_root = _jp('10f.'+ref_name+'.Quantification_Window_Selected_Conversion_No_Ref')
-                    CRISPRessoPlot.plot_conversion_at_sel_nucs_not_include_ref(
-                        df_subs = plot_nuc_pcts,
-                        ref_name = ref_name,
-                        ref_sequence = plot_ref_seq,
-                        plot_title = get_plot_title_with_ref_name('Substitution Frequencies at Quantification Window Nucleotides',ref_name),
-                        conversion_nuc_from = args.conversion_nuc_from,
-                        fig_filename_root = fig_filename_root,
-                        save_also_png = save_png
-                        )
-                    crispresso2_info['refs'][ref_name]['plot_10f_root'] = os.path.basename(fig_filename_root)
-                    crispresso2_info['refs'][ref_name]['plot_10f_caption'] = "Figure 10f: Non-reference base proportions. For target nucleotides in the quantification window, this plot shows the proportion of non-reference (non-"+args.conversion_nuc_from + ") bases as a percentage of all non-reference sequences. The number of each target base is annotated on the reference sequence at the bottom of the plot."
-                    crispresso2_info['refs'][ref_name]['plot_10f_data'] = []
-
-                    fig_filename_root = _jp('10g.'+ref_name+'.Quantification_Window_Selected_Conversion_No_Ref_Scaled')
-                    CRISPRessoPlot.plot_conversion_at_sel_nucs_not_include_ref_scaled(
-                        df_subs = plot_nuc_pcts,
-                        ref_name = ref_name,
-                        ref_sequence = plot_ref_seq,
-                        plot_title = get_plot_title_with_ref_name('Substitution Frequencies at Quantification Window Nucleotides',ref_name),
-                        conversion_nuc_from = args.conversion_nuc_from,
-                        fig_filename_root = fig_filename_root,
-                        save_also_png = save_png
-                        )
-                    crispresso2_info['refs'][ref_name]['plot_10g_root'] = os.path.basename(fig_filename_root)
-                    crispresso2_info['refs'][ref_name]['plot_10g_caption'] = "Figure 10g: Non-reference base percentages. For target nucleotides in the quantification window, this plot shows the percentage of non-reference (non-" + args.conversion_nuc_from + ") bases. The number of each target base is annotated on the reference sequence at the bottom of the plot."
-                    crispresso2_info['refs'][ref_name]['plot_10g_data'] = []
-
-
-        ##new plots alleles around cut_sites
-
-        for ref_name in ref_names:
-            n_this_category = counts_total[ref_name]
-            if n_this_category < 1:
-                continue
-
+            ##new plots alleles around cut_sites
             sgRNA_sequences = refs[ref_name]['sgRNA_sequences']
-            cut_points = refs[ref_name]['cut_points']
+            sgRNA_cut_points = refs[ref_name]['sgRNA_cut_points']
             sgRNA_intervals = refs[ref_name]['sgRNA_intervals']
+            sgRNA_plot_idxs = refs[ref_name]['sgRNA_plot_idxs']
 
             crispresso2_info['refs'][ref_name]['plot_9_roots'] = []
             crispresso2_info['refs'][ref_name]['plot_9_captions'] = []
             crispresso2_info['refs'][ref_name]['plot_9_datas'] = []
             crispresso2_info['refs'][ref_name]['allele_frequency_files'] = []
-            for sgRNA,cut_point in zip(sgRNA_sequences,cut_points):
-                plot_half_window = max(1,args.plot_window_size)
+
+            crispresso2_info['refs'][ref_name]['plot_10c_roots'] = []
+            crispresso2_info['refs'][ref_name]['plot_10c_captions'] = []
+            crispresso2_info['refs'][ref_name]['plot_10c_datas'] = []
+
+            crispresso2_info['refs'][ref_name]['plot_10d_roots'] = []
+            crispresso2_info['refs'][ref_name]['plot_10d_captions'] = []
+            crispresso2_info['refs'][ref_name]['plot_10d_datas'] = []
+
+            crispresso2_info['refs'][ref_name]['plot_10e_roots'] = []
+            crispresso2_info['refs'][ref_name]['plot_10e_captions'] = []
+            crispresso2_info['refs'][ref_name]['plot_10e_datas'] = []
+
+            crispresso2_info['refs'][ref_name]['plot_10f_roots'] = []
+            crispresso2_info['refs'][ref_name]['plot_10f_captions'] = []
+            crispresso2_info['refs'][ref_name]['plot_10f_datas'] = []
+
+            crispresso2_info['refs'][ref_name]['plot_10g_roots'] = []
+            crispresso2_info['refs'][ref_name]['plot_10g_captions'] = []
+            crispresso2_info['refs'][ref_name]['plot_10g_datas'] = []
+
+            for ind,sgRNA in enumerate(sgRNA_sequences):
+                cut_point = sgRNA_cut_points[ind]
+                plot_idxs = sgRNA_plot_idxs[ind]
                 df_allele_around_cut=CRISPRessoShared.get_dataframe_around_cut(df_alleles.loc[df_alleles['Reference_Name'] == ref_name],cut_point,plot_half_window)
 
                 #write alleles table to file
-                allele_filename = _jp('%s.Alleles_frequency_table_around_cut_site_for_%s.txt' % (ref_name,sgRNA))
+                allele_filename = _jp(ref_plot_name+'Alleles_frequency_table_around_sgRNA_'+sgRNA+'.txt')
                 df_allele_around_cut.to_csv(allele_filename,sep='\t',header=True)
                 crispresso2_info['refs'][ref_name]['allele_frequency_files'].append(os.path.basename(allele_filename))
 
                 ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_half_window+1:cut_point+plot_half_window+1]
-                fig_filename_root = _jp('9.%s.Alleles_Frequency_Table_Around_Cut_Site_For_%s' % (ref_name,sgRNA))
+                fig_filename_root = _jp('9.'+ref_plot_name+'Alleles_frequency_table_around_sgRNA_'+sgRNA)
                 n_good = df_allele_around_cut.ix[df_allele_around_cut['%Reads']>=args.min_frequency_alleles_around_cut_to_plot].shape[0]
                 if not args.suppress_plots and n_good > 0:
                     CRISPRessoPlot.plot_alleles_table(ref_seq_around_cut,df_alleles=df_allele_around_cut,fig_filename_root=fig_filename_root,
                         MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot,MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot,SAVE_ALSO_PNG=save_png,base_editor_output=args.base_editor_output,sgRNA_intervals=sgRNA_intervals)
                     crispresso2_info['refs'][ref_name]['plot_9_roots'].append(os.path.basename(fig_filename_root))
-                    crispresso2_info['refs'][ref_name]['plot_9_captions'].append("Figure 9: Visualization of the distribution of identified alleles around each cleavage site. Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site.")
+                    crispresso2_info['refs'][ref_name]['plot_9_captions'].append("Figure 9: Visualization of the distribution of identified alleles around each the cleavage site for the guide " + sgRNA + ". Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site.")
                     crispresso2_info['refs'][ref_name]['plot_9_datas'].append([('Allele frequency table',os.path.basename(allele_filename))])
 
-            #(5, 6) GLOBAL frameshift analyses plots
-            if args.coding_seq:
-                global_MODIFIED_FRAMESHIFT = 0
-                global_MODIFIED_NON_FRAMESHIFT = 0
-                global_NON_MODIFIED_NON_FRAMESHIFT = 0
-                global_SPLICING_SITES_MODIFIED = 0
-                global_hists_frameshift = defaultdict(lambda :0)
-                global_hists_inframe = defaultdict(lambda :0)
-
-                global_count_total = 0
-                global_count_modified = 0
-                global_count_unmodified = 0
-                global_exon_len_mods = []
-
-                for ref_name in ref_names:
-                    if refs[ref_name]['contains_coding_seq']: #PERFORM FRAMESHIFT ANALYSIS
-                        if ref_name == "HDR":
-                            global_MODIFIED_FRAMESHIFT += counts_modified_frameshift[ref_name]
-                            global_MODIFIED_NON_FRAMESHIFT += counts_modified_non_frameshift[ref_name]
-                            global_NON_MODIFIED_NON_FRAMESHIFT += counts_non_modified_non_frameshift[ref_name]
-                            global_SPLICING_SITES_MODIFIED += counts_splicing_sites_modified[ref_name]
-
-                            #for HDR, add all unmodified reads to those that have modifications not in exons
-                            global_NON_MODIFIED_NON_FRAMESHIFT += counts_unmodified[ref_name]
-                        else:
-                            global_MODIFIED_FRAMESHIFT += counts_modified_frameshift[ref_name]
-                            global_MODIFIED_NON_FRAMESHIFT += counts_modified_non_frameshift[ref_name]
-                            global_NON_MODIFIED_NON_FRAMESHIFT += counts_non_modified_non_frameshift[ref_name]
-                            global_SPLICING_SITES_MODIFIED += counts_splicing_sites_modified[ref_name]
-
-                        for (exon_len,count) in hists_frameshift[ref_name].iteritems():
-                            global_hists_frameshift[exon_len] += count
-                        for (exon_len,count) in hists_inframe[ref_name].iteritems():
-                            global_hists_inframe[exon_len] += count
 
 
-                        global_count_total += counts_total[ref_name]
-                        global_count_modified += counts_modified[ref_name]
-                        global_count_unmodified += counts_unmodified[ref_name]
+                if not args.crispresso1_mode and args.base_editor_output:
+                    ###guide-specific base editor plots
+                    plot_ref_seq = ref_seq_around_cut
+                    plot_nuc_pcts = df_nuc_pct_all.iloc[:,plot_idxs]
+                    plot_nuc_freqs = df_nuc_freq_all.iloc[:,plot_idxs]
 
-                if not args.suppress_plots:
-                    fig=plt.figure(figsize=(12*1.5,14.5*1.5))
-                    ax1 = plt.subplot2grid((6,3), (0, 0), colspan=3, rowspan=5)
+                    #get computation window in plotted region
+                    is_window = np.zeros(ref_len)
+                    for ind in include_idxs_list:
+                        is_window[ind] = 1
+                    plot_is_window = np.zeros(len(plot_idxs)) #binary array whether base should be plotted
+                    plot_quant_window_idxs = []
+                    for ind, loc in enumerate(plot_idxs):
+                        plot_is_window[ind] = is_window[loc]
+                        if is_window[loc]:
+                            plot_quant_window_idxs.append(ind-2)
 
-                    patches, texts, autotexts =ax1.pie([global_MODIFIED_FRAMESHIFT,\
-                                                        global_MODIFIED_NON_FRAMESHIFT,\
-                                                        global_NON_MODIFIED_NON_FRAMESHIFT],\
-                                                       labels=['Frameshift mutation\n(%d reads)' %global_MODIFIED_FRAMESHIFT,\
-                                                              'In-frame mutation\n(%d reads)' % global_MODIFIED_NON_FRAMESHIFT,\
-                                                              'Noncoding mutation\n(%d reads)' %global_NON_MODIFIED_NON_FRAMESHIFT],\
-                                                       explode=(0.0,0.0,0.0),\
-                                                       colors=[(0.89019608,  0.29019608,  0.2, 0.8),(0.99215686,  0.73333333,  0.51764706,0.8),(0.99607843,  0.90980392,  0.78431373,0.8)],\
-                                                       autopct='%1.1f%%')
+                    from_nuc_indices = [pos for pos, char in enumerate(list(plot_nuc_pcts.columns.values)) if char == args.conversion_nuc_from]
+                    just_sel_nuc_pcts = plot_nuc_pcts.iloc[:,from_nuc_indices].copy() #only nucleotides targeted by base editing
+                    #just_sel_nuc_pcts.columns = [char + str(pos+1) for pos,char in enumerate(list(just_sel_nuc_pcts.columns.values))]
+                    just_sel_nuc_pcts.columns = [args.conversion_nuc_from + str(pos+1) for pos in from_nuc_indices]
+                    just_sel_nuc_freqs = plot_nuc_freqs.iloc[:,from_nuc_indices].copy()
+                    just_sel_nuc_freqs.columns = [args.conversion_nuc_from + str(pos+1) for pos in from_nuc_indices]
 
-                    proptease = fm.FontProperties()
-                    proptease.set_size('xx-large')
-                    plt.setp(autotexts, fontproperties=proptease)
-                    plt.setp(texts, fontproperties=proptease)
-                    plot_root = _jp('5a.Global_Frameshift_In-frame_Mutations_Pie_Chart')
-                    plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
-                    if save_png:
-                        plt.savefig(plot_root+'.png',bbox_inches='tight')
-                    plt.close()
-                    crispresso2_info['plot_5a_root'] = os.path.basename(plot_root)
-                    crispresso2_info['plot_5a_caption'] = "Figure 5a: Frameshift analysis of coding sequence reads affected by modifications for all reads. Unmodified reference reads are excluded from this plot, and all HDR reads are included in this plot."
-                    crispresso2_info['plot_5a_data'] = []
+                    quant_window_sel_nuc_pct_filename = _jp(ref_plot_name + 'Selected_nucleotide_percentage_table_around_sgRNA_'+sgRNA+'.txt')
+                    just_sel_nuc_pcts.to_csv(quant_window_sel_nuc_pct_filename,sep='\t',header=True,index=True)
+#                   not storing the name because it is unique to this sgRNA
+#                    crispresso2_info['quant_window_sel_nuc_pct_filename'] = os.path.basename(quant_window_sel_nuc_pct_filename)
 
-                     #profiles-----------------------------------------------------------------------------------
-                    fig=plt.figure(figsize=(22,10))
-                    ax1=fig.add_subplot(2,1,1)
-                    x,y=map(np.array,zip(*[a for a in global_hists_frameshift.iteritems()]))
-                    if sum(global_hists_frameshift.values()) != 0:
-                        y=y/float(sum(global_hists_frameshift.values()))*100
-                    ax1.bar(x-0.1,y)
-                    ax1.set_xlim(-30.5,30.5)
-                    ax1.set_frame_on(False)
-                    ax1.set_xticks([idx for idx in range(-30,31) if idx % 3])
-                    ax1.tick_params(which='both',      # both major and minor ticks are affected
-                       bottom=False,      # ticks along the bottom edge are off
-                       top=False,         # ticks along the top edge are off
-                       labelbottom=True) # labels along the bottom edge are off)
-                    ax1.yaxis.tick_left()
-                    xmin, xmax = ax1.get_xaxis().get_view_interval()
-                    ymin, ymax = ax1.get_yaxis().get_view_interval()
-                    ax1.set_xticklabels([str(idx)  for idx in [idx for idx in range(-30,31) if idx % 3]],rotation='vertical')
-                    plt.title('Global Frameshift profile')
-                    ax1.tick_params(axis='both', which='major', labelsize=24)
-                    ax1.tick_params(axis='both', which='minor', labelsize=24)
-                    plt.tight_layout()
-                    ax1.set_ylabel('Sequences % (no.)')
-                    y_label_values= np.round(np.linspace(0, min(100,max(ax1.get_yticks())),6))# np.arange(0,y_max,y_max/6.0)
-                    ax1.set_yticks(y_label_values)
-                    ax1.set_yticklabels(['%.1f%% (%.0f)' % (pct,pct/100*sum(global_hists_frameshift.values())) for pct in y_label_values])
+                    quant_window_sel_nuc_freq_filename = _jp(ref_plot_name + 'Selected_nucleotide_frequency_table_around_sgRNA_'+sgRNA+'.txt')
+                    just_sel_nuc_freqs.to_csv(quant_window_sel_nuc_freq_filename,sep='\t',header=True,index=True)
+#                   not storing the name because it is unique to this sgRNA
+#                    crispresso2_info['quant_window_sel_nuc_freq_filename'] = os.path.basename(quant_window_sel_nuc_freq_filename)
 
-                    ax2=fig.add_subplot(2,1,2)
-                    x,y=map(np.array,zip(*[a for a in global_hists_inframe.iteritems()]))
-                    if sum(global_hists_inframe.values()) > 0:
-                        y=y/float(sum(global_hists_inframe.values()))*100
-                    #ax2.bar(x-0.5,y,color=(0,1,1,0.2))
-                    ax2.bar(x-0.1,y,color=(0,1,1,0.2))
-                    ax2.set_xlim(-30.5,30.5)
-                    ax2.set_frame_on(False)
-                    ax2.set_xticks([idx for idx in range(-30,31) if (idx % 3 ==0) ])
-                    ax2.tick_params(which='both',      # both major and minor ticks are affected
-                       bottom=False,      # ticks along the bottom edge are off
-                       top=False,         # ticks along the top edge are off
-                       labelbottom=True) # labels along the bottom edge are off)
-                    ax2.yaxis.tick_left()
-                    xmin, xmax = ax2.xaxis.get_view_interval()
-                    ymin, ymax = ax2.yaxis.get_view_interval()
-                    ax2.set_xticklabels([str(idx)  for idx in [idx for idx in range(-30,31) if (idx % 3==0)]],rotation='vertical',horizontalalignment="center")
-                    plt.title('Global In-frame profile')
-                    ax2.set_ylabel('Sequences % (no.)')
-                    y_label_values= np.round(np.linspace(0, min(100,max(ax2.get_yticks())),6))# np.arange(0,y_max,y_max/6.0)
-                    ax2.set_yticks(y_label_values)
-                    ax2.set_yticklabels(['%.1f%% (%.0f)' % (pct,pct/100*sum(global_hists_inframe.values())) for pct in y_label_values])
+                    #print table showing all nuc frequencies (sum to total alleles) (in entire region)
 
-                    ax2.tick_params(axis='both', which='major', labelsize=24)
-                    ax2.tick_params(axis='both', which='minor', labelsize=24)
-                    plt.tight_layout()
+        #                CRISPRessoPlot.plot_nuc_freqs(
+        #                    df_nuc_freq = df_nuc_freq,
+        #                    tot_aln_reads = tot_aln_reads,
+        #                    plot_title = get_plot_title_with_ref_name('Nucleotide Frequencies',ref_name),
+        #                    fig_filename_root = _jp('14a.'+ref_name+'.nucleotide_frequency'),
+        #                    save_also_png = save_png
+        #                    )
 
-                    plot_root = _jp('6a.Global_Frameshift_In-frame_Mutation_Profiles')
-                    plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
-                    if save_png:
-                        plt.savefig(plot_root+'.png',bbox_inches='tight')
-                    plt.close()
-                    crispresso2_info['plot_6a_root'] = os.path.basename(plot_root)
-                    crispresso2_info['plot_6a_caption'] = "Figure 6a: Frameshift and in-frame mutagenesis profiles for all reads indicating position affected by modification."
-                    crispresso2_info['plot_6a_data'] = []
+                    if not args.suppress_plots:
+
+                        fig_filename_root = _jp('10d.'+ref_plot_name+'Log2_nucleotide_frequency_around_sgRNA_'+sgRNA)
+                        CRISPRessoPlot.plot_log_nuc_freqs(
+                            df_nuc_freq = plot_nuc_freqs,
+                            tot_aln_reads = tot_aln_reads,
+                            plot_title = get_plot_title_with_ref_name('Log2 Nucleotide Frequencies Around sgRNA ' + sgRNA,ref_name),
+                            fig_filename_root = fig_filename_root,
+                            save_also_png = save_png,
+                            quantification_window_idxs = plot_quant_window_idxs
+                            )
+                        crispresso2_info['refs'][ref_name]['plot_10d_roots'].append(os.path.basename(fig_filename_root))
+                        crispresso2_info['refs'][ref_name]['plot_10d_captions'].append("Figure 10d: Log2 nucleotide frequencies for each position in the plotting window around the sgRNA " + sgRNA + ". The quantification window is outlined by the dotted box.")
+                        crispresso2_info['refs'][ref_name]['plot_10d_datas'].append([])
 
 
-                     #-----------------------------------------------------------------------------------------------------------
-                    fig=plt.figure(figsize=(12*1.5,12*1.5))
-                    ax=fig.add_subplot(1,1,1)
-                    patches, texts, autotexts =ax.pie([global_SPLICING_SITES_MODIFIED,\
-                                                      (global_count_total - global_SPLICING_SITES_MODIFIED)],\
-                                                      labels=['Potential splice sites modified\n(%d reads)' %global_SPLICING_SITES_MODIFIED,\
-                                                              'Unmodified\n(%d reads)' % (global_count_total - global_SPLICING_SITES_MODIFIED)],\
-                                                      explode=(0.0,0),\
-                                                      colors=[(0.89019608,  0.29019608,  0.2, 0.8),(0.99607843,  0.90980392,  0.78431373,0.8)],\
-                                                      autopct='%1.1f%%')
-                    proptease = fm.FontProperties()
-                    proptease.set_size('xx-large')
-                    plt.setp(autotexts, fontproperties=proptease)
-                    plt.setp(texts, fontproperties=proptease)
-                    plot_root = _jp('8a.Global_Potential_Splice_Sites_Pie_Chart')
-                    plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
-                    if save_png:
-                        plt.savefig(plot_root+'.png',bbox_inches='tight')
-                    plt.close()
-                    crispresso2_info['plot_8a_root'] = os.path.basename(plot_root)
-                    crispresso2_info['plot_8a_caption'] = "Figure 8a: Predicted impact on splice sites for all reads. Potential splice sites modified refers to reads in which the either of the two intronic positions adjacent to exon junctions are disrupted."
-                    crispresso2_info['plot_8a_data'] = []
+                        fig_filename_root = _jp('10e.'+ref_plot_name+'Selected_conversion_at_'+args.conversion_nuc_from+'s_around_sgRNA_'+sgRNA)
+                        CRISPRessoPlot.plot_conversion_at_sel_nucs(
+                            df_subs = plot_nuc_pcts,
+                            ref_name = ref_name,
+                            ref_sequence = plot_ref_seq,
+                            plot_title = get_plot_title_with_ref_name('Substitution Frequencies at '+args.conversion_nuc_from+'s around sgRNA ' + sgRNA,ref_name),
+                            conversion_nuc_from = args.conversion_nuc_from,
+                            fig_filename_root = fig_filename_root,
+                            save_also_png = save_png
+                            )
+                        crispresso2_info['refs'][ref_name]['plot_10e_roots'].append(os.path.basename(fig_filename_root))
+                        crispresso2_info['refs'][ref_name]['plot_10e_captions'].append("Figure 10e: Proportion of each base at each nucleotide targeted by base editors in the plotting window around the sgRNA " + sgRNA + ". The number of each target base is annotated on the reference sequence at the bottom of the plot.")
+                        crispresso2_info['refs'][ref_name]['plot_10e_datas'].append([('Nucleotide frequencies at ' + args.conversion_nuc_from + 's',os.path.basename(quant_window_sel_nuc_freq_filename))])
 
-                #end global coding seq plots
+                        fig_filename_root = _jp('10f.'+ref_plot_name+'Selected_conversion_no_ref_at_'+args.conversion_nuc_from+'s_around_sgRNA_'+sgRNA)
+                        CRISPRessoPlot.plot_conversion_at_sel_nucs_not_include_ref(
+                            df_subs = plot_nuc_pcts,
+                            ref_name = ref_name,
+                            ref_sequence = plot_ref_seq,
+                            plot_title = get_plot_title_with_ref_name('Substitution Frequencies at '+args.conversion_nuc_from+'s around sgRNA ' + sgRNA,ref_name),
+                            conversion_nuc_from = args.conversion_nuc_from,
+                            fig_filename_root = fig_filename_root,
+                            save_also_png = save_png
+                            )
+                        crispresso2_info['refs'][ref_name]['plot_10f_roots'].append(os.path.basename(fig_filename_root))
+                        crispresso2_info['refs'][ref_name]['plot_10f_captions'].append("Figure 10f: Non-reference base proportions. For target nucleotides in the plotting window, this plot shows the proportion of non-reference (non-"+args.conversion_nuc_from + ") bases as a percentage of all non-reference sequences. The number of each target base is annotated on the reference sequence at the bottom of the plot.")
+                        crispresso2_info['refs'][ref_name]['plot_10f_datas'].append([('Nucleotide frequencies at ' + args.conversion_nuc_from + 's',os.path.basename(quant_window_sel_nuc_freq_filename))])
+
+                        fig_filename_root = _jp('10g.'+ref_plot_name+'Selected_conversion_no_ref_scaled_at_'+args.conversion_nuc_from+'s_around_sgRNA_'+sgRNA)
+                        CRISPRessoPlot.plot_conversion_at_sel_nucs_not_include_ref_scaled(
+                            df_subs = plot_nuc_pcts,
+                            ref_name = ref_name,
+                            ref_sequence = plot_ref_seq,
+                            plot_title = get_plot_title_with_ref_name('Substitution Frequencies at '+args.conversion_nuc_from+'s around sgRNA ' + sgRNA,ref_name),
+                            conversion_nuc_from = args.conversion_nuc_from,
+                            fig_filename_root = fig_filename_root,
+                            save_also_png = save_png
+                            )
+                        crispresso2_info['refs'][ref_name]['plot_10g_roots'].append(os.path.basename(fig_filename_root))
+                        crispresso2_info['refs'][ref_name]['plot_10g_captions'].append("Figure 10g: Non-reference base counts. For target nucleotides in the plotting window, this plot shows the number of non-reference (non-" + args.conversion_nuc_from + ") bases. The number of each target base is annotated on the reference sequence at the bottom of the plot.")
+                        crispresso2_info['refs'][ref_name]['plot_10g_datas'].append([('Nucleotide frequencies at ' + args.conversion_nuc_from +'s',os.path.basename(quant_window_sel_nuc_freq_filename))])
+
+            #END GUIDE SPECIFIC PLOTS
+
+        #(5, 6) GLOBAL frameshift analyses plots
+        if args.coding_seq:
+            global_MODIFIED_FRAMESHIFT = 0
+            global_MODIFIED_NON_FRAMESHIFT = 0
+            global_NON_MODIFIED_NON_FRAMESHIFT = 0
+            global_SPLICING_SITES_MODIFIED = 0
+            global_hists_frameshift = defaultdict(lambda :0)
+            global_hists_inframe = defaultdict(lambda :0)
+
+            global_count_total = 0
+            global_count_modified = 0
+            global_count_unmodified = 0
+            global_exon_len_mods = []
+
+            for ref_name in ref_names:
+                if refs[ref_name]['contains_coding_seq']: #PERFORM FRAMESHIFT ANALYSIS
+                    if ref_name == "HDR":
+                        global_MODIFIED_FRAMESHIFT += counts_modified_frameshift[ref_name]
+                        global_MODIFIED_NON_FRAMESHIFT += counts_modified_non_frameshift[ref_name]
+                        global_NON_MODIFIED_NON_FRAMESHIFT += counts_non_modified_non_frameshift[ref_name]
+                        global_SPLICING_SITES_MODIFIED += counts_splicing_sites_modified[ref_name]
+
+                        #for HDR, add all unmodified reads to those that have modifications not in exons
+                        global_NON_MODIFIED_NON_FRAMESHIFT += counts_unmodified[ref_name]
+                    else:
+                        global_MODIFIED_FRAMESHIFT += counts_modified_frameshift[ref_name]
+                        global_MODIFIED_NON_FRAMESHIFT += counts_modified_non_frameshift[ref_name]
+                        global_NON_MODIFIED_NON_FRAMESHIFT += counts_non_modified_non_frameshift[ref_name]
+                        global_SPLICING_SITES_MODIFIED += counts_splicing_sites_modified[ref_name]
+
+                    for (exon_len,count) in hists_frameshift[ref_name].iteritems():
+                        global_hists_frameshift[exon_len] += count
+                    for (exon_len,count) in hists_inframe[ref_name].iteritems():
+                        global_hists_inframe[exon_len] += count
+
+
+                    global_count_total += counts_total[ref_name]
+                    global_count_modified += counts_modified[ref_name]
+                    global_count_unmodified += counts_unmodified[ref_name]
+
+            if not args.suppress_plots:
+                fig=plt.figure(figsize=(12*1.5,14.5*1.5))
+                ax1 = plt.subplot2grid((6,3), (0, 0), colspan=3, rowspan=5)
+
+                patches, texts, autotexts =ax1.pie([global_MODIFIED_FRAMESHIFT,\
+                                                    global_MODIFIED_NON_FRAMESHIFT,\
+                                                    global_NON_MODIFIED_NON_FRAMESHIFT],\
+                                                   labels=['Frameshift mutation\n(%d reads)' %global_MODIFIED_FRAMESHIFT,\
+                                                          'In-frame mutation\n(%d reads)' % global_MODIFIED_NON_FRAMESHIFT,\
+                                                          'Noncoding mutation\n(%d reads)' %global_NON_MODIFIED_NON_FRAMESHIFT],\
+                                                   explode=(0.0,0.0,0.0),\
+                                                   colors=[(0.89019608,  0.29019608,  0.2, 0.8),(0.99215686,  0.73333333,  0.51764706,0.8),(0.99607843,  0.90980392,  0.78431373,0.8)],\
+                                                   autopct='%1.1f%%')
+
+                proptease = fm.FontProperties()
+                proptease.set_size('xx-large')
+                plt.setp(autotexts, fontproperties=proptease)
+                plt.setp(texts, fontproperties=proptease)
+                plot_root = _jp('5a.Global_frameshift_in-frame_mutations_pie_chart')
+                plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
+                if save_png:
+                    plt.savefig(plot_root+'.png',bbox_inches='tight')
+                plt.close()
+                crispresso2_info['plot_5a_root'] = os.path.basename(plot_root)
+                crispresso2_info['plot_5a_caption'] = "Figure 5a: Frameshift analysis of coding sequence reads affected by modifications for all reads. Unmodified reference reads are excluded from this plot, and all HDR reads are included in this plot."
+                crispresso2_info['plot_5a_data'] = []
+
+                 #profiles-----------------------------------------------------------------------------------
+                fig=plt.figure(figsize=(22,10))
+                ax1=fig.add_subplot(2,1,1)
+                x,y=map(np.array,zip(*[a for a in global_hists_frameshift.iteritems()]))
+                if sum(global_hists_frameshift.values()) != 0:
+                    y=y/float(sum(global_hists_frameshift.values()))*100
+                ax1.bar(x-0.1,y)
+                ax1.set_xlim(-30.5,30.5)
+                ax1.set_frame_on(False)
+                ax1.set_xticks([idx for idx in range(-30,31) if idx % 3])
+                ax1.tick_params(which='both',      # both major and minor ticks are affected
+                   bottom=False,      # ticks along the bottom edge are off
+                   top=False,         # ticks along the top edge are off
+                   labelbottom=True) # labels along the bottom edge are off)
+                ax1.yaxis.tick_left()
+                xmin, xmax = ax1.get_xaxis().get_view_interval()
+                ymin, ymax = ax1.get_yaxis().get_view_interval()
+                ax1.set_xticklabels([str(idx)  for idx in [idx for idx in range(-30,31) if idx % 3]],rotation='vertical')
+                plt.title('Global Frameshift profile')
+                ax1.tick_params(axis='both', which='major', labelsize=24)
+                ax1.tick_params(axis='both', which='minor', labelsize=24)
+                plt.tight_layout()
+                ax1.set_ylabel('Sequences % (no.)')
+                y_label_values= np.round(np.linspace(0, min(100,max(ax1.get_yticks())),6))# np.arange(0,y_max,y_max/6.0)
+                ax1.set_yticks(y_label_values)
+                ax1.set_yticklabels(['%.1f%% (%.0f)' % (pct,pct/100*sum(global_hists_frameshift.values())) for pct in y_label_values])
+
+                ax2=fig.add_subplot(2,1,2)
+                x,y=map(np.array,zip(*[a for a in global_hists_inframe.iteritems()]))
+                if sum(global_hists_inframe.values()) > 0:
+                    y=y/float(sum(global_hists_inframe.values()))*100
+                #ax2.bar(x-0.5,y,color=(0,1,1,0.2))
+                ax2.bar(x-0.1,y,color=(0,1,1,0.2))
+                ax2.set_xlim(-30.5,30.5)
+                ax2.set_frame_on(False)
+                ax2.set_xticks([idx for idx in range(-30,31) if (idx % 3 ==0) ])
+                ax2.tick_params(which='both',      # both major and minor ticks are affected
+                   bottom=False,      # ticks along the bottom edge are off
+                   top=False,         # ticks along the top edge are off
+                   labelbottom=True) # labels along the bottom edge are off)
+                ax2.yaxis.tick_left()
+                xmin, xmax = ax2.xaxis.get_view_interval()
+                ymin, ymax = ax2.yaxis.get_view_interval()
+                ax2.set_xticklabels([str(idx)  for idx in [idx for idx in range(-30,31) if (idx % 3==0)]],rotation='vertical',horizontalalignment="center")
+                plt.title('Global In-frame profile')
+                ax2.set_ylabel('Sequences % (no.)')
+                y_label_values= np.round(np.linspace(0, min(100,max(ax2.get_yticks())),6))# np.arange(0,y_max,y_max/6.0)
+                ax2.set_yticks(y_label_values)
+                ax2.set_yticklabels(['%.1f%% (%.0f)' % (pct,pct/100*sum(global_hists_inframe.values())) for pct in y_label_values])
+
+                ax2.tick_params(axis='both', which='major', labelsize=24)
+                ax2.tick_params(axis='both', which='minor', labelsize=24)
+                plt.tight_layout()
+
+                plot_root = _jp('6a.Global_frameshift_in-frame_mutation_profiles')
+                plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
+                if save_png:
+                    plt.savefig(plot_root+'.png',bbox_inches='tight')
+                plt.close()
+                crispresso2_info['plot_6a_root'] = os.path.basename(plot_root)
+                crispresso2_info['plot_6a_caption'] = "Figure 6a: Frameshift and in-frame mutagenesis profiles for all reads indicating position affected by modification."
+                crispresso2_info['plot_6a_data'] = []
+
+
+                 #-----------------------------------------------------------------------------------------------------------
+                fig=plt.figure(figsize=(12*1.5,12*1.5))
+                ax=fig.add_subplot(1,1,1)
+                patches, texts, autotexts =ax.pie([global_SPLICING_SITES_MODIFIED,\
+                                                  (global_count_total - global_SPLICING_SITES_MODIFIED)],\
+                                                  labels=['Potential splice sites modified\n(%d reads)' %global_SPLICING_SITES_MODIFIED,\
+                                                          'Unmodified\n(%d reads)' % (global_count_total - global_SPLICING_SITES_MODIFIED)],\
+                                                  explode=(0.0,0),\
+                                                  colors=[(0.89019608,  0.29019608,  0.2, 0.8),(0.99607843,  0.90980392,  0.78431373,0.8)],\
+                                                  autopct='%1.1f%%')
+                proptease = fm.FontProperties()
+                proptease.set_size('xx-large')
+                plt.setp(autotexts, fontproperties=proptease)
+                plt.setp(texts, fontproperties=proptease)
+                plot_root = _jp('8a.Global_potential_splice_sites_pie_chart')
+                plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
+                if save_png:
+                    plt.savefig(plot_root+'.png',bbox_inches='tight')
+                plt.close()
+                crispresso2_info['plot_8a_root'] = os.path.basename(plot_root)
+                crispresso2_info['plot_8a_caption'] = "Figure 8a: Predicted impact on splice sites for all reads. Potential splice sites modified refers to reads in which the either of the two intronic positions adjacent to exon junctions are disrupted."
+                crispresso2_info['plot_8a_data'] = []
+
+            #end global coding seq plots
 
 
         info('Done!')

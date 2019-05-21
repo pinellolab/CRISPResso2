@@ -83,6 +83,7 @@ def find_indels_substitutions(_read_seq_al,_ref_seq_al,_include_indx):
     insertion_sizes=[]
 
 
+    include_indx_set = set(_include_indx)
     for p in re_find_indels.finditer(read_seq_al):
         st,en=p.span()
         ref_st = 0
@@ -92,7 +93,7 @@ def find_indels_substitutions(_read_seq_al,_ref_seq_al,_include_indx):
         if en < len(ref_positions):
           ref_en = ref_positions[en]
         all_deletion_positions.extend(range(ref_st,ref_en))
-        inc_del_pos = _include_indx.intersection(range(ref_st,ref_en))
+        inc_del_pos = include_indx_set.intersection(range(ref_st,ref_en))
         if(len(inc_del_pos)>0):
           deletion_positions.extend(range(ref_st,ref_en))
           deletion_coordinates.append((ref_st,ref_en))
