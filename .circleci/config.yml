@@ -63,7 +63,7 @@ jobs:
           name: test-crispresso-batch
           command: |
                   CRISPRessoBatch -bs tests/FANC.batch -a CGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCCGCCACCGTGCGCCGGGCCTTGCAGTGGGCGCGCTACCTGCGCCACATCCATCGGCGCTTTGGTCGG -g GGAATCCCTTCTGCAGCACC -p 2 --debug --base_editor --debug > test-crispresso-batch.out
-                  diff CRISPRessoBatch_on_FANC/Reference.MODIFICATION_FREQUENCY_SUMMARY.txt tests/expectedResults/CRISPRessoBatch_on_FANC/Reference.MODIFICATION_FREQUENCY_SUMMARY.txt >> test-crispresso-batch.out 2>&1
+                  diff CRISPRessoBatch_on_FANC/MODIFICATION_FREQUENCY_SUMMARY.txt tests/expectedResults/CRISPRessoBatch_on_FANC/MODIFICATION_FREQUENCY_SUMMARY.txt >> test-crispresso-batch.out 2>&1
 
       - run:
           name: test-crispresso-pooled
