@@ -31,12 +31,11 @@ def make_report(run_data,crispresso_report_file,crispresso_folder,_ROOT):
     #dicts for each amplicon fig_names[amp_name] = [list of fig names]
     #                        fig_locs[amp_name][fig_name] = figure location
     fig_names = {} #all except for the figure 1 (which is common to all amplicons)
-    fig_2b_names = {} #multiple -- one per sgRNA
-    fig_9_names = {} # multiple -- one per sgRNA
     fig_locs = {}
     fig_titles = {}
     fig_captions = {}
     fig_datas = {}
+    sgRNA_based_fig_names = {}
 #    print('crispresso_report file: ' + crispresso_report_file + ' crispresso_folder : ' + crispresso_folder + ' root: ' + _ROOT)
 
     def add_fig_if_exists(fig_name,fig_root,fig_title,fig_caption,fig_data,
@@ -77,34 +76,27 @@ def make_report(run_data,crispresso_report_file,crispresso_folder,_ROOT):
         amplicon_fig_captions = {}
         amplicon_fig_datas = {}
 
-        #fig 2b's
-        amplicon_fig_2b_names = []
-        if 'plot_2b_roots' in run_data['refs'][amplicon_name]:
-            for idx,plot_2b_root in enumerate(run_data['refs'][amplicon_name]['plot_2b_roots']):
-                fig_name = "plot_2b_" + str(idx)
-                add_fig_if_exists(fig_name,plot_2b_root,'Figure ' + fig_name + ' sgRNA ' + str(idx+1),run_data['refs'][amplicon_name]['plot_2b_captions'][idx],run_data['refs'][amplicon_name]['plot_2b_datas'][idx],
-                    amplicon_fig_2b_names,amplicon_fig_locs,amplicon_fig_titles,amplicon_fig_captions,amplicon_fig_datas)
 
 
-        for fig in ['2a','3a','3b','4a','4b','4c','4d','4e','4f','5','6','7','8','10a','10b','10c','10d','10e','10f','10g']:
+        for fig in ['2a','3a','3b','4a','4b','4c','4d','4e','4f','5','6','7','8','10a','10b','10c']:
             fig_name = 'plot_'+ fig
             if fig_name + '_root' in run_data['refs'][amplicon_name]:
                 add_fig_if_exists(fig_name,run_data['refs'][amplicon_name][fig_name + '_root'],'Figure ' + fig_name,run_data['refs'][amplicon_name][fig_name + '_caption'],run_data['refs'][amplicon_name][fig_name + '_data'],
                         amplicon_fig_names,amplicon_fig_locs,amplicon_fig_titles,amplicon_fig_captions,amplicon_fig_datas)
 
-        #fig 9's
-        amplicon_fig_9_names = []
-        if 'plot_9_roots' in run_data['refs'][amplicon_name]:
-            for idx,plot_9_root in enumerate(run_data['refs'][amplicon_name]['plot_9_roots']):
-                fig_name = "plot_9_" + str(idx)
-                add_fig_if_exists(fig_name,plot_9_root,'Figure ' + fig_name + ' sgRNA ' + str(idx+1),run_data['refs'][amplicon_name]['plot_9_captions'][idx],run_data['refs'][amplicon_name]['plot_9_datas'][idx],
-                    amplicon_fig_9_names,amplicon_fig_locs,amplicon_fig_titles,amplicon_fig_captions,amplicon_fig_datas)
-
-
+        this_sgRNA_based_fig_names = {}
+        for fig in ['2b','9','10d','10e','10f','10g']:
+        #fig 2b's
+            this_fig_names = []
+            if 'plot_'+fig+'_roots' in run_data['refs'][amplicon_name]:
+                for idx,plot_root in enumerate(run_data['refs'][amplicon_name]['plot_'+fig+'_roots']):
+                    fig_name = "plot_"+fig+"_" + str(idx)
+                    add_fig_if_exists(fig_name,plot_root,'Figure ' + fig_name + ' sgRNA ' + str(idx+1),run_data['refs'][amplicon_name]['plot_'+fig+'_captions'][idx],run_data['refs'][amplicon_name]['plot_'+fig+'_datas'][idx],
+                        this_fig_names,amplicon_fig_locs,amplicon_fig_titles,amplicon_fig_captions,amplicon_fig_datas)
+            this_sgRNA_based_fig_names[fig] = this_fig_names
 
         fig_names[amplicon_name] = amplicon_fig_names
-        fig_2b_names[amplicon_name] = amplicon_fig_2b_names
-        fig_9_names[amplicon_name] = amplicon_fig_9_names
+        sgRNA_based_fig_names[amplicon_name] = this_sgRNA_based_fig_names
 
         fig_locs[amplicon_name] = amplicon_fig_locs
         fig_titles[amplicon_name] = amplicon_fig_titles
@@ -115,7 +107,7 @@ def make_report(run_data,crispresso_report_file,crispresso_folder,_ROOT):
     if run_data['args'].name != "":
         report_display_name = run_data['args'].name
 
-    report_data={'amplicons':amplicons,'fig_names':fig_names,'fig_2b_names':fig_2b_names,'fig_9_names':fig_9_names,
+    report_data={'amplicons':amplicons,'fig_names':fig_names,'sgRNA_based_fig_names':sgRNA_based_fig_names,
             'fig_locs':fig_locs,'fig_titles':fig_titles,'fig_captions':fig_captions,'fig_datas':fig_datas,'run_data':run_data,
             'command_used':run_data['command_used'],'params':run_data['args_string'],'report_display_name':report_display_name}
 
@@ -134,11 +126,24 @@ def make_batch_report_from_folder(crispressoBatch_report_file,crispresso2_info,b
     batch_names = crispresso2_info['completed_batch_arr']
     display_names = crispresso2_info['batch_input_names']
 
-    window_nuc_pct_quilts = [x + ".pdf" for x in crispresso2_info['window_nuc_pct_quilt_plot_names']]
-    nuc_pct_quilts = [x + ".pdf" for x in crispresso2_info['nuc_pct_quilt_plot_names']]
+    window_nuc_pct_quilts = crispresso2_info['window_nuc_pct_quilt_plot_names']
+    nuc_pct_quilts = crispresso2_info['nuc_pct_quilt_plot_names']
 
-    window_nuc_conv_plots = [x + ".pdf" for x in crispresso2_info['window_nuc_conv_plot_names']]
-    nuc_conv_plots = [x + ".pdf" for x in crispresso2_info['nuc_conv_plot_names']]
+    window_nuc_conv_plots = crispresso2_info['window_nuc_conv_plot_names']
+    nuc_conv_plots = crispresso2_info['nuc_conv_plot_names']
+
+    summary_plot_names = []
+    if 'summary_plot_names' in crispresso2_info:
+        summary_plot_names = crispresso2_info['summary_plot_names']
+    summary_plot_titles = {}
+    if 'summary_plot_titles' in crispresso2_info:
+        summary_plot_titles = crispresso2_info['summary_plot_titles']
+    summary_plot_labels = {}
+    if 'summary_plot_labels' in crispresso2_info:
+        summary_plot_labels = crispresso2_info['summary_plot_labels']
+    summary_plot_datas = {}
+    if 'summary_plot_datas' in crispresso2_info:
+        summary_plot_datas = crispresso2_info['summary_plot_datas']
 
 
     sub_html_files = {}
@@ -156,6 +161,7 @@ def make_batch_report_from_folder(crispressoBatch_report_file,crispresso2_info,b
         run_names.append(display_name)
 
     make_multi_report(run_names,sub_html_files,crispressoBatch_report_file,_ROOT,'CRISPResso Batch Output',
+        summary_plot_names=summary_plot_names,summary_plot_titles=summary_plot_titles,summary_plot_labels=summary_plot_labels,summary_plot_datas=summary_plot_datas,
         window_nuc_pct_quilts=window_nuc_pct_quilts,
         nuc_pct_quilts=nuc_pct_quilts,
         window_nuc_conv_plots=window_nuc_conv_plots,
@@ -165,6 +171,10 @@ def make_batch_report_from_folder(crispressoBatch_report_file,crispresso2_info,b
 def make_pooled_report_from_folder(crispresso_report_file,crispresso2_info,folder,_ROOT):
     names_arr = crispresso2_info['good_region_names']
     make_multi_report_from_folder(crispresso2_info,names_arr,'CRISPResso Pooled Output',crispresso_report_file,folder,_ROOT)
+
+def make_compare_report_from_folder(crispresso_report_file,crispresso2_info,folder,_ROOT):
+    names_arr = []
+    make_multi_report_from_folder(crispresso2_info,names_arr,'CRISPResso Compare Output',crispresso_report_file,folder,_ROOT)
 
 def make_meta_report_from_folder(crispresso_report_file,crispresso2_info,folder,_ROOT):
     names_arr = crispresso2_info['meta_names_arr']

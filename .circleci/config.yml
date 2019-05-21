@@ -49,14 +49,14 @@ jobs:
           name: test-crispresso
           command: |
                   CRISPResso -r1 tests/FANC.Cas9.fastq -a CGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCCGCCACCGTGCGCCGGGCCTTGCAGTGGGCGCGCTACCTGCGCCACATCCATCGGCGCTTTGGTCGG -g GGAATCCCTTCTGCAGCACC --debug > test-crispresso.out 2>&1
-                  diff CRISPResso_on_FANC.Cas9/Reference.nucleotide_frequency_table.txt tests/expectedResults/CRISPResso_on_FANC.Cas9/Reference.nucleotide_frequency_table.txt >> test-crispresso.out 2>&1
+                  diff CRISPResso_on_FANC.Cas9/Nucleotide_frequency_table.txt tests/expectedResults/CRISPResso_on_FANC.Cas9/Nucleotide_frequency_table.txt >> test-crispresso.out 2>&1
                   diff CRISPResso_on_FANC.Cas9/CRISPResso_quantification_of_editing_frequency.txt tests/expectedResults/CRISPResso_on_FANC.Cas9/CRISPResso_quantification_of_editing_frequency.txt >> test-crispresso.out 2>&1
 
       - run:
           name: test-crispresso-with-params
           command: |
                   CRISPResso -r1 tests/FANC.Cas9.fastq -a CGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCCGCCACCGTGCGCCGGGCCTTGCAGTGGGCGCGCTACCTGCGCCACATCCATCGGCGCTTTGGTCGG -g GGAATCCCTTCTGCAGCACC -e CGGCCGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCTGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCCGCCACCGTGCGCCGGGCCTTGCAGTGGGCGCGCTACCTGCGCCACATCCATCGGCGCTTTGGTCGG -c GGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTT --dump -qwc 20-30_45-50 -q 30 --default_min_aln_score 80 -an FANC -n params --debug > test-crispresso-with-params.log
-                  diff CRISPResso_on_params/FANC.nucleotide_frequency_table.txt tests/expectedResults/CRISPResso_on_params/FANC.nucleotide_frequency_table.txt >> test-crispresso-with-params.out 2>&1
+                  diff CRISPResso_on_params/FANC.Nucleotide_frequency_table.txt tests/expectedResults/CRISPResso_on_params/FANC.Nucleotide_frequency_table.txt >> test-crispresso-with-params.out 2>&1
                   diff CRISPResso_on_params/CRISPResso_quantification_of_editing_frequency.txt tests/expectedResults/CRISPResso_on_params/CRISPResso_quantification_of_editing_frequency.txt >> test-crispresso-with-params.out 2>&1
 
       - run:
@@ -76,6 +76,11 @@ jobs:
           command: |
                   CRISPRessoWGS -b tests/Both.Cas9.fastq.smallGenome.bam -r tests/smallGenome/smallGenome.fa -f tests/Cas9.regions.txt --debug > test-crispresso-wgs.out 2>&1
                   diff CRISPRessoWGS_on_Both.Cas9.fastq.smallGenome/SAMPLES_QUANTIFICATION_SUMMARY.txt tests/expectedResults/CRISPRessoWGS_on_Both.Cas9.fastq.smallGenome/SAMPLES_QUANTIFICATION_SUMMARY.txt >> test-crispresso-wgs.out 2>&1
+      - run:
+          name: test-crispresso-compare
+          command: |
+                  CRISPRessoCompare CRISPRessoBatch_on_FANC/CRISPResso_on_Cas9/ CRISPRessoBatch_on_FANC/CRISPResso_on_Untreated/ --debug > test-crispresso-compare.out 2>&1
+                  diff CRISPRessoCompare_on_Cas9_VS_Untreated/Deletions_quantification.txt tests/expectedResults/CRISPRessoCompare_on_Cas9_VS_Untreated/Deletions_quantification.txt >> test-crispresso-compare.out 2>&1
 
       - store_artifacts:
           path: test-crispresso.out
@@ -87,3 +92,5 @@ jobs:
           path: test-crispresso-pooled.out
       - store_artifacts:
           path: test-crispresso-wgs.out
+      - store_artifacts:
+          path: test-crispresso-compare.out

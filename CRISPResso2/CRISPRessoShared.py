@@ -29,7 +29,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.0.28"
+__version__ = "2.0.29"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -617,19 +617,19 @@ def get_amplicon_info_for_guides(ref_seq,guides,quantification_window_center,qua
     returns:
     this_sgRNA_sequences : list of sgRNAs that are in this amplicon
     this_sgRNA_intervals : indices of each guide
-    this_cut_points : cut points for each guide (defined by quantification_window_center)
-    this_include_idxs : indices to be included in quantification
-    this_exclude_idxs : indices to be excluded from quantification
-    this_plot_idxs : indices to be plotted
+    this_sgRNA_cut_points : cut points for each guide (defined by quantification_window_center)
+    this_sgRNA_plot_idxs : list of indices to be plotted for each sgRNA
+    this_include_idxs : list of indices to be included in quantification
+    this_exclude_idxs : list of indices to be excluded from quantification
     """
     ref_seq_length = len(ref_seq)
 
     this_sgRNA_sequences = []
     this_sgRNA_intervals = []
-    this_cut_points = []
+    this_sgRNA_cut_points = []
+    this_sgRNA_plot_idxs=[]
     this_include_idxs=[]
     this_exclude_idxs=[]
-    this_plot_idxs=[]
 
     for guide_idx, current_guide_seq in enumerate(guides):
         offset_fw=quantification_window_center+len(current_guide_seq)-1
@@ -638,7 +638,7 @@ def get_amplicon_info_for_guides(ref_seq,guides,quantification_window_center,qua
                          [m.start() + offset_rc for m in re.finditer(reverse_complement(current_guide_seq), ref_seq)]
 
         if (new_cut_points):
-            this_cut_points += new_cut_points
+            this_sgRNA_cut_points += new_cut_points
             this_sgRNA_intervals+=[(m.start(),m.start()+len(current_guide_seq)-1) for m in re.finditer(current_guide_seq, ref_seq)]+\
                                   [(m.start(),m.start()+len(current_guide_seq)-1) for m in re.finditer(reverse_complement(current_guide_seq), ref_seq)]
             this_sgRNA_sequences.append(current_guide_seq)
@@ -659,9 +659,9 @@ def get_amplicon_info_for_guides(ref_seq,guides,quantification_window_center,qua
             else:
                 raise NTException("Cannot parse analysis window coordinate '" + str(coord) + "' in '" + str(theseCoords) + "'. Coordinates must be given in the form start-end e.g. 5-10 . Please check the --analysis_window_coordinate parameter.")
         given_include_idxs = this_include_idxs
-    elif this_cut_points and quantification_window_size>0:
+    elif this_sgRNA_cut_points and quantification_window_size>0:
         half_window=max(1,quantification_window_size)
-        for cut_p in this_cut_points:
+        for cut_p in this_sgRNA_cut_points:
             st=max(0,cut_p-half_window+1)
             en=min(ref_seq_length-1,cut_p+half_window+1)
             this_include_idxs.extend(range(st,en))
@@ -690,22 +690,23 @@ def get_amplicon_info_for_guides(ref_seq,guides,quantification_window_center,qua
         else:
             raise BadParameterException('The entire sequence has been excluded. Please enter a longer amplicon, or decrease the exclude_bp_from_right and exclude_bp_from_left parameters')
 
-    if this_cut_points and plot_window_size>0:
+    if this_sgRNA_cut_points and plot_window_size>0:
         window_around_cut=max(1,plot_window_size)
-        for cut_p in this_cut_points:
+        for cut_p in this_sgRNA_cut_points:
             if cut_p - window_around_cut + 1 < 0:
                 raise BadParameterException('Offset around cut would extend to the left of the amplicon. Please decrease plot_window_size parameter. Cut point: ' + str(cut_p) + ' window: ' + str(window_around_cut) + ' reference: ' + str(ref_seq_length))
             if cut_p + window_around_cut > ref_seq_length-1:
                 raise BadParameterException('Offset around cut would be greater than reference sequence length. Please decrease plot_window_size parameter. Cut point: ' + str(cut_p) + ' window: ' + str(window_around_cut) + ' reference: ' + str(ref_seq_length))
             st=max(0,cut_p-window_around_cut+1)
             en=min(ref_seq_length-1,cut_p+window_around_cut+1)
-            this_plot_idxs.append(range(st,en))
+            this_sgRNA_plot_idxs.append(sorted(list(range(st,en))))
     else:
-       this_plot_idxs=range(ref_seq_length)
+       this_sgRNA_plot_idxs=range(ref_seq_length)
 
-    this_plot_idxs = np.ravel(this_plot_idxs)
+    this_include_idxs = np.sort(list(this_include_idxs))
+    this_exclude_idxs = np.sort(list(this_exclude_idxs))
 
-    return this_sgRNA_sequences, this_sgRNA_intervals, this_cut_points, this_include_idxs, this_exclude_idxs, this_plot_idxs
+    return this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_cut_points, this_sgRNA_plot_idxs, this_include_idxs, this_exclude_idxs
 
 
 ######

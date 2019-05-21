@@ -576,7 +576,7 @@ def main():
         plot_root = _jp("CRISPRessoWGS_modification_summary")
         CRISPRessoPlot.plot_unmod_mod_pcts(plot_root,df_summary_quantification,save_png,args.min_reads_to_use_region)
         plot_name = os.path.basename(plot_root)
-        crispresso2_info['summary_plot_root'] = plot_name
+        crispresso2_info['modification_summary_plot'] = plot_name
         crispresso2_info['summary_plot_names'].append(plot_name)
         crispresso2_info['summary_plot_titles'][plot_name] = 'CRISPRessoWGS Modification Summary'
         crispresso2_info['summary_plot_labels'][plot_name] = 'Each bar shows the total number of reads aligned to each amplicon, divided into the reads that are modified and unmodified. The vertical line shows the cutoff for analysis, set using the --min_reads_to_use_region parameter.'
@@ -585,7 +585,7 @@ def main():
         plot_root = _jp("CRISPRessoWGS_reads_summary")
         CRISPRessoPlot.plot_reads_total(plot_root,df_summary_quantification,save_png,args.min_reads_to_use_region)
         plot_name = os.path.basename(plot_root)
-        crispresso2_info['summary_plot_root'] = plot_name
+        crispresso2_info['reads_summary_plot'] = plot_name
         crispresso2_info['summary_plot_names'].append(plot_name)
         crispresso2_info['summary_plot_titles'][plot_name] = 'CRISPRessoWGS Read Allocation Summary'
         crispresso2_info['summary_plot_labels'][plot_name] = 'Each bar shows the total number of reads allocated to each amplicon. The vertical line shows the cutoff for analysis, set using the --min_reads_to_use_region parameter.'
