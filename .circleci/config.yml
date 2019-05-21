@@ -63,7 +63,7 @@ jobs:
           name: test-crispresso-batch
           command: |
                   CRISPRessoBatch -bs tests/FANC.batch -a CGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCCGCCACCGTGCGCCGGGCCTTGCAGTGGGCGCGCTACCTGCGCCACATCCATCGGCGCTTTGGTCGG -g GGAATCCCTTCTGCAGCACC -p 2 --debug --base_editor --debug > test-crispresso-batch.out
-                  diff CRISPRessoBatch_on_FANC/Reference.MODIFICATION_FREQUENCY_SUMMARY.txt tests/expectedResults/CRISPRessoBatch_on_FANC/Reference.MODIFICATION_FREQUENCY_SUMMARY.txt >> test-crispresso-batch.out 2>&1
+                  diff CRISPRessoBatch_on_FANC/MODIFICATION_FREQUENCY_SUMMARY.txt tests/expectedResults/CRISPRessoBatch_on_FANC/MODIFICATION_FREQUENCY_SUMMARY.txt >> test-crispresso-batch.out 2>&1
 
       - run:
           name: test-crispresso-pooled
@@ -80,7 +80,7 @@ jobs:
           name: test-crispresso-compare
           command: |
                   CRISPRessoCompare CRISPRessoBatch_on_FANC/CRISPResso_on_Cas9/ CRISPRessoBatch_on_FANC/CRISPResso_on_Untreated/ --debug > test-crispresso-compare.out 2>&1
-                  diff CRISPRessoCompare_on_Cas9_VS_Untreated/Deletions_quantification.txt tests/expectedResults/CRISPRessoCompare_on_Cas9_VS_Untreated/Deletions_quantification.txt >> test-crispresso-compare.out 2>&1
+                  diff CRISPRessoCompare_on_Cas9_VS_Untreated/Alleles_frequency_table_around_sgRNA_GGAATCCCTTCTGCAGCACC.txt tests/expectedResults/CRISPRessoCompare_on_Cas9_VS_Untreated/Alleles_frequency_table_around_sgRNA_GGAATCCCTTCTGCAGCACC.txt >> test-crispresso-compare.out 2>&1
 
       - store_artifacts:
           path: test-crispresso.out
