@@ -3,10 +3,20 @@
 /* BEGIN: Cython Metadata
 {
     "distutils": {
-        "depends": [], 
+        "depends": [
+            "/data/pinello/SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/numpy/core/include/numpy/arrayobject.h", 
+            "/data/pinello/SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/numpy/core/include/numpy/ufuncobject.h"
+        ], 
+        "extra_compile_args": [
+            "-w", 
+            "-Ofast"
+        ], 
+        "include_dirs": [
+            "/data/pinello/SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/numpy/core/include"
+        ], 
         "name": "CRISPResso2.CRISPRessoCOREResources", 
         "sources": [
-            "CRISPRessoCOREResources.pyx"
+            "CRISPResso2/CRISPRessoCOREResources.pyx"
         ]
     }, 
     "module_name": "CRISPResso2.CRISPRessoCOREResources"
@@ -855,12 +865,12 @@ static const char *__pyx_filename;
 
 
 static const char *__pyx_f[] = {
-  "CRISPRessoCOREResources.pyx",
+  "CRISPResso2/CRISPRessoCOREResources.pyx",
   "__init__.pxd",
   "type.pxd",
 };
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":776
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":776
  * # in Cython to enable them only on the right systems.
  * 
  * ctypedef npy_int8       int8_t             # <<<<<<<<<<<<<<
@@ -869,7 +879,7 @@ static const char *__pyx_f[] = {
  */
 typedef npy_int8 __pyx_t_5numpy_int8_t;
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":777
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":777
  * 
  * ctypedef npy_int8       int8_t
  * ctypedef npy_int16      int16_t             # <<<<<<<<<<<<<<
@@ -878,7 +888,7 @@ typedef npy_int8 __pyx_t_5numpy_int8_t;
  */
 typedef npy_int16 __pyx_t_5numpy_int16_t;
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":778
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":778
  * ctypedef npy_int8       int8_t
  * ctypedef npy_int16      int16_t
  * ctypedef npy_int32      int32_t             # <<<<<<<<<<<<<<
@@ -887,7 +897,7 @@ typedef npy_int16 __pyx_t_5numpy_int16_t;
  */
 typedef npy_int32 __pyx_t_5numpy_int32_t;
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":779
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":779
  * ctypedef npy_int16      int16_t
  * ctypedef npy_int32      int32_t
  * ctypedef npy_int64      int64_t             # <<<<<<<<<<<<<<
@@ -896,7 +906,7 @@ typedef npy_int32 __pyx_t_5numpy_int32_t;
  */
 typedef npy_int64 __pyx_t_5numpy_int64_t;
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":783
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":783
  * #ctypedef npy_int128     int128_t
  * 
  * ctypedef npy_uint8      uint8_t             # <<<<<<<<<<<<<<
@@ -905,7 +915,7 @@ typedef npy_int64 __pyx_t_5numpy_int64_t;
  */
 typedef npy_uint8 __pyx_t_5numpy_uint8_t;
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":784
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":784
  * 
  * ctypedef npy_uint8      uint8_t
  * ctypedef npy_uint16     uint16_t             # <<<<<<<<<<<<<<
@@ -914,7 +924,7 @@ typedef npy_uint8 __pyx_t_5numpy_uint8_t;
  */
 typedef npy_uint16 __pyx_t_5numpy_uint16_t;
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":785
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":785
  * ctypedef npy_uint8      uint8_t
  * ctypedef npy_uint16     uint16_t
  * ctypedef npy_uint32     uint32_t             # <<<<<<<<<<<<<<
@@ -923,7 +933,7 @@ typedef npy_uint16 __pyx_t_5numpy_uint16_t;
  */
 typedef npy_uint32 __pyx_t_5numpy_uint32_t;
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":786
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":786
  * ctypedef npy_uint16     uint16_t
  * ctypedef npy_uint32     uint32_t
  * ctypedef npy_uint64     uint64_t             # <<<<<<<<<<<<<<
@@ -932,7 +942,7 @@ typedef npy_uint32 __pyx_t_5numpy_uint32_t;
  */
 typedef npy_uint64 __pyx_t_5numpy_uint64_t;
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":790
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":790
  * #ctypedef npy_uint128    uint128_t
  * 
  * ctypedef npy_float32    float32_t             # <<<<<<<<<<<<<<
@@ -941,7 +951,7 @@ typedef npy_uint64 __pyx_t_5numpy_uint64_t;
  */
 typedef npy_float32 __pyx_t_5numpy_float32_t;
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":791
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":791
  * 
  * ctypedef npy_float32    float32_t
  * ctypedef npy_float64    float64_t             # <<<<<<<<<<<<<<
@@ -950,7 +960,7 @@ typedef npy_float32 __pyx_t_5numpy_float32_t;
  */
 typedef npy_float64 __pyx_t_5numpy_float64_t;
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":800
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":800
  * # The int types are mapped a bit surprising --
  * # numpy.int corresponds to 'l' and numpy.long to 'q'
  * ctypedef npy_long       int_t             # <<<<<<<<<<<<<<
@@ -959,7 +969,7 @@ typedef npy_float64 __pyx_t_5numpy_float64_t;
  */
 typedef npy_long __pyx_t_5numpy_int_t;
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":801
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":801
  * # numpy.int corresponds to 'l' and numpy.long to 'q'
  * ctypedef npy_long       int_t
  * ctypedef npy_longlong   long_t             # <<<<<<<<<<<<<<
@@ -968,7 +978,7 @@ typedef npy_long __pyx_t_5numpy_int_t;
  */
 typedef npy_longlong __pyx_t_5numpy_long_t;
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":802
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":802
  * ctypedef npy_long       int_t
  * ctypedef npy_longlong   long_t
  * ctypedef npy_longlong   longlong_t             # <<<<<<<<<<<<<<
@@ -977,7 +987,7 @@ typedef npy_longlong __pyx_t_5numpy_long_t;
  */
 typedef npy_longlong __pyx_t_5numpy_longlong_t;
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":804
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":804
  * ctypedef npy_longlong   longlong_t
  * 
  * ctypedef npy_ulong      uint_t             # <<<<<<<<<<<<<<
@@ -986,7 +996,7 @@ typedef npy_longlong __pyx_t_5numpy_longlong_t;
  */
 typedef npy_ulong __pyx_t_5numpy_uint_t;
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":805
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":805
  * 
  * ctypedef npy_ulong      uint_t
  * ctypedef npy_ulonglong  ulong_t             # <<<<<<<<<<<<<<
@@ -995,7 +1005,7 @@ typedef npy_ulong __pyx_t_5numpy_uint_t;
  */
 typedef npy_ulonglong __pyx_t_5numpy_ulong_t;
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":806
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":806
  * ctypedef npy_ulong      uint_t
  * ctypedef npy_ulonglong  ulong_t
  * ctypedef npy_ulonglong  ulonglong_t             # <<<<<<<<<<<<<<
@@ -1004,7 +1014,7 @@ typedef npy_ulonglong __pyx_t_5numpy_ulong_t;
  */
 typedef npy_ulonglong __pyx_t_5numpy_ulonglong_t;
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":808
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":808
  * ctypedef npy_ulonglong  ulonglong_t
  * 
  * ctypedef npy_intp       intp_t             # <<<<<<<<<<<<<<
@@ -1013,7 +1023,7 @@ typedef npy_ulonglong __pyx_t_5numpy_ulonglong_t;
  */
 typedef npy_intp __pyx_t_5numpy_intp_t;
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":809
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":809
  * 
  * ctypedef npy_intp       intp_t
  * ctypedef npy_uintp      uintp_t             # <<<<<<<<<<<<<<
@@ -1022,7 +1032,7 @@ typedef npy_intp __pyx_t_5numpy_intp_t;
  */
 typedef npy_uintp __pyx_t_5numpy_uintp_t;
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":811
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":811
  * ctypedef npy_uintp      uintp_t
  * 
  * ctypedef npy_double     float_t             # <<<<<<<<<<<<<<
@@ -1031,7 +1041,7 @@ typedef npy_uintp __pyx_t_5numpy_uintp_t;
  */
 typedef npy_double __pyx_t_5numpy_float_t;
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":812
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":812
  * 
  * ctypedef npy_double     float_t
  * ctypedef npy_double     double_t             # <<<<<<<<<<<<<<
@@ -1040,7 +1050,7 @@ typedef npy_double __pyx_t_5numpy_float_t;
  */
 typedef npy_double __pyx_t_5numpy_double_t;
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":813
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":813
  * ctypedef npy_double     float_t
  * ctypedef npy_double     double_t
  * ctypedef npy_longdouble longdouble_t             # <<<<<<<<<<<<<<
@@ -1075,7 +1085,7 @@ static CYTHON_INLINE __pyx_t_double_complex __pyx_t_double_complex_from_parts(do
 
 /*--- Type declarations ---*/
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":815
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":815
  * ctypedef npy_longdouble longdouble_t
  * 
  * ctypedef npy_cfloat      cfloat_t             # <<<<<<<<<<<<<<
@@ -1084,7 +1094,7 @@ static CYTHON_INLINE __pyx_t_double_complex __pyx_t_double_complex_from_parts(do
  */
 typedef npy_cfloat __pyx_t_5numpy_cfloat_t;
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":816
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":816
  * 
  * ctypedef npy_cfloat      cfloat_t
  * ctypedef npy_cdouble     cdouble_t             # <<<<<<<<<<<<<<
@@ -1093,7 +1103,7 @@ typedef npy_cfloat __pyx_t_5numpy_cfloat_t;
  */
 typedef npy_cdouble __pyx_t_5numpy_cdouble_t;
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":817
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":817
  * ctypedef npy_cfloat      cfloat_t
  * ctypedef npy_cdouble     cdouble_t
  * ctypedef npy_clongdouble clongdouble_t             # <<<<<<<<<<<<<<
@@ -1102,7 +1112,7 @@ typedef npy_cdouble __pyx_t_5numpy_cdouble_t;
  */
 typedef npy_clongdouble __pyx_t_5numpy_clongdouble_t;
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":819
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":819
  * ctypedef npy_clongdouble clongdouble_t
  * 
  * ctypedef npy_cdouble     complex_t             # <<<<<<<<<<<<<<
@@ -1326,6 +1336,23 @@ static CYTHON_INLINE int __Pyx_PyList_Extend(PyObject* L, PyObject* v) {
     return PyList_SetSlice(L, PY_SSIZE_T_MAX, PY_SSIZE_T_MAX, v);
 #endif
 }
+
+/* UnpackUnboundCMethod.proto */
+typedef struct {
+    PyObject *type;
+    PyObject **method_name;
+    PyCFunction func;
+    PyObject *method;
+    int flag;
+} __Pyx_CachedCFunction;
+
+/* CallUnboundCMethod1.proto */
+static PyObject* __Pyx__CallUnboundCMethod1(__Pyx_CachedCFunction* cfunc, PyObject* self, PyObject* arg);
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_CallUnboundCMethod1(__Pyx_CachedCFunction* cfunc, PyObject* self, PyObject* arg);
+#else
+#define __Pyx_CallUnboundCMethod1(cfunc, self, arg)  __Pyx__CallUnboundCMethod1(cfunc, self, arg)
+#endif
 
 /* PyThreadStateGet.proto */
 #if CYTHON_FAST_THREAD_STATE
@@ -1691,6 +1718,7 @@ static const char __pyx_k_deletion_sizes[] = "deletion_sizes";
 static const char __pyx_k_re_find_indels[] = "re_find_indels";
 static const char __pyx_k_substitution_n[] = "substitution_n";
 static const char __pyx_k_insertion_sizes[] = "insertion_sizes";
+static const char __pyx_k_include_indx_set[] = "include_indx_set";
 static const char __pyx_k_calculate_homology[] = "calculate_homology";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
 static const char __pyx_k_deletion_positions[] = "deletion_positions";
@@ -1704,21 +1732,21 @@ static const char __pyx_k_all_insertion_positions[] = "all_insertion_positions";
 static const char __pyx_k_all_substitution_values[] = "all_substitution_values";
 static const char __pyx_k_find_indels_substitutions[] = "find_indels_substitutions";
 static const char __pyx_k_all_substitution_positions[] = "all_substitution_positions";
-static const char __pyx_k_CRISPRessoCOREResources_pyx[] = "CRISPRessoCOREResources.pyx";
 static const char __pyx_k_ndarray_is_not_C_contiguous[] = "ndarray is not C contiguous";
 static const char __pyx_k_all_insertion_left_positions[] = "all_insertion_left_positions";
 static const char __pyx_k_numpy_core_multiarray_failed_to[] = "numpy.core.multiarray failed to import";
 static const char __pyx_k_unknown_dtype_code_in_numpy_pxd[] = "unknown dtype code in numpy.pxd (%d)";
-static const char __pyx_k_CRISPResso2_CRISPRessoCOREResour[] = "CRISPResso2.CRISPRessoCOREResources";
+static const char __pyx_k_CRISPResso2_CRISPRessoCOREResour[] = "CRISPResso2/CRISPRessoCOREResources.pyx";
 static const char __pyx_k_Format_string_allocated_too_shor[] = "Format string allocated too short, see comment in numpy.pxd";
 static const char __pyx_k_Non_native_byte_order_not_suppor[] = "Non-native byte order not supported";
 static const char __pyx_k_ndarray_is_not_Fortran_contiguou[] = "ndarray is not Fortran contiguous";
 static const char __pyx_k_numpy_core_umath_failed_to_impor[] = "numpy.core.umath failed to import";
+static const char __pyx_k_CRISPResso2_CRISPRessoCOREResour_2[] = "CRISPResso2.CRISPRessoCOREResources";
 static const char __pyx_k_Format_string_allocated_too_shor_2[] = "Format string allocated too short.";
 static PyObject *__pyx_n_s_A;
 static PyObject *__pyx_n_s_C;
-static PyObject *__pyx_n_s_CRISPResso2_CRISPRessoCOREResour;
-static PyObject *__pyx_kp_s_CRISPRessoCOREResources_pyx;
+static PyObject *__pyx_kp_s_CRISPResso2_CRISPRessoCOREResour;
+static PyObject *__pyx_n_s_CRISPResso2_CRISPRessoCOREResour_2;
 static PyObject *__pyx_kp_u_Format_string_allocated_too_shor;
 static PyObject *__pyx_kp_u_Format_string_allocated_too_shor_2;
 static PyObject *__pyx_n_s_G;
@@ -1757,6 +1785,7 @@ static PyObject *__pyx_n_s_idx_c;
 static PyObject *__pyx_n_s_import;
 static PyObject *__pyx_n_s_inc_del_pos;
 static PyObject *__pyx_n_s_include_indx;
+static PyObject *__pyx_n_s_include_indx_set;
 static PyObject *__pyx_n_s_insertion_coordinates;
 static PyObject *__pyx_n_s_insertion_n;
 static PyObject *__pyx_n_s_insertion_positions;
@@ -1798,6 +1827,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
 static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_2calculate_homology(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_a, PyObject *__pyx_v_b); /* proto */
 static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, Py_buffer *__pyx_v_info, int __pyx_v_flags); /* proto */
 static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_self, Py_buffer *__pyx_v_info); /* proto */
+static __Pyx_CachedCFunction __pyx_umethod_PySet_Type_intersection = {0, &__pyx_n_s_intersection, 0, 0, 0};
 static PyObject *__pyx_int_0;
 static PyObject *__pyx_int_neg_1;
 static PyObject *__pyx_tuple_;
@@ -1920,6 +1950,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
   PyObject *__pyx_v_insertion_positions = NULL;
   PyObject *__pyx_v_insertion_coordinates = NULL;
   PyObject *__pyx_v_insertion_sizes = NULL;
+  PyObject *__pyx_v_include_indx_set = NULL;
   PyObject *__pyx_v_p = NULL;
   PyObject *__pyx_v_ref_st = NULL;
   PyObject *__pyx_v_ref_en = NULL;
@@ -2419,16 +2450,28 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
   /* "CRISPResso2/CRISPRessoCOREResources.pyx":86
  * 
  * 
+ *     include_indx_set = set(_include_indx)             # <<<<<<<<<<<<<<
+ *     for p in re_find_indels.finditer(read_seq_al):
+ *         st,en=p.span()
+ */
+  __pyx_t_4 = PySet_New(__pyx_v__include_indx); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 86, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_v_include_indx_set = ((PyObject*)__pyx_t_4);
+  __pyx_t_4 = 0;
+
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":87
+ * 
+ *     include_indx_set = set(_include_indx)
  *     for p in re_find_indels.finditer(read_seq_al):             # <<<<<<<<<<<<<<
  *         st,en=p.span()
  *         ref_st = 0
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_re_find_indels); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 86, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_re_find_indels); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 87, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_finditer); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 86, __pyx_L1_error)
+  __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_finditer); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 87, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyBytes_FromString(__pyx_v_read_seq_al); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 86, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyBytes_FromString(__pyx_v_read_seq_al); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 87, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_11 = NULL;
   if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_10))) {
@@ -2443,16 +2486,16 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
   __pyx_t_4 = (__pyx_t_11) ? __Pyx_PyObject_Call2Args(__pyx_t_10, __pyx_t_11, __pyx_t_2) : __Pyx_PyObject_CallOneArg(__pyx_t_10, __pyx_t_2);
   __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 86, __pyx_L1_error)
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 87, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
   if (likely(PyList_CheckExact(__pyx_t_4)) || PyTuple_CheckExact(__pyx_t_4)) {
     __pyx_t_10 = __pyx_t_4; __Pyx_INCREF(__pyx_t_10); __pyx_t_9 = 0;
     __pyx_t_5 = NULL;
   } else {
-    __pyx_t_9 = -1; __pyx_t_10 = PyObject_GetIter(__pyx_t_4); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 86, __pyx_L1_error)
+    __pyx_t_9 = -1; __pyx_t_10 = PyObject_GetIter(__pyx_t_4); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 87, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_10);
-    __pyx_t_5 = Py_TYPE(__pyx_t_10)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 86, __pyx_L1_error)
+    __pyx_t_5 = Py_TYPE(__pyx_t_10)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 87, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   for (;;) {
@@ -2460,17 +2503,17 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
       if (likely(PyList_CheckExact(__pyx_t_10))) {
         if (__pyx_t_9 >= PyList_GET_SIZE(__pyx_t_10)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_10, __pyx_t_9); __Pyx_INCREF(__pyx_t_4); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 86, __pyx_L1_error)
+        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_10, __pyx_t_9); __Pyx_INCREF(__pyx_t_4); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 87, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_10, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 86, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_10, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 87, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       } else {
         if (__pyx_t_9 >= PyTuple_GET_SIZE(__pyx_t_10)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_10, __pyx_t_9); __Pyx_INCREF(__pyx_t_4); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 86, __pyx_L1_error)
+        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_10, __pyx_t_9); __Pyx_INCREF(__pyx_t_4); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 87, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_10, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 86, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_10, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 87, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       }
@@ -2480,7 +2523,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 86, __pyx_L1_error)
+          else __PYX_ERR(0, 87, __pyx_L1_error)
         }
         break;
       }
@@ -2489,14 +2532,14 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
     __Pyx_XDECREF_SET(__pyx_v_p, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "CRISPResso2/CRISPRessoCOREResources.pyx":87
- * 
+    /* "CRISPResso2/CRISPRessoCOREResources.pyx":88
+ *     include_indx_set = set(_include_indx)
  *     for p in re_find_indels.finditer(read_seq_al):
  *         st,en=p.span()             # <<<<<<<<<<<<<<
  *         ref_st = 0
  *         if st-1 > 0:
  */
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_p, __pyx_n_s_span); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 87, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_p, __pyx_n_s_span); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 88, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_t_11 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
@@ -2510,7 +2553,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
     }
     __pyx_t_4 = (__pyx_t_11) ? __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_11) : __Pyx_PyObject_CallNoArg(__pyx_t_2);
     __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
-    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 87, __pyx_L1_error)
+    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 88, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     if ((likely(PyTuple_CheckExact(__pyx_t_4))) || (PyList_CheckExact(__pyx_t_4))) {
@@ -2519,7 +2562,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
       if (unlikely(size != 2)) {
         if (size > 2) __Pyx_RaiseTooManyValuesError(2);
         else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-        __PYX_ERR(0, 87, __pyx_L1_error)
+        __PYX_ERR(0, 88, __pyx_L1_error)
       }
       #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
       if (likely(PyTuple_CheckExact(sequence))) {
@@ -2532,15 +2575,15 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
       __Pyx_INCREF(__pyx_t_2);
       __Pyx_INCREF(__pyx_t_11);
       #else
-      __pyx_t_2 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 87, __pyx_L1_error)
+      __pyx_t_2 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 88, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_11 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 87, __pyx_L1_error)
+      __pyx_t_11 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 88, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_11);
       #endif
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     } else {
       Py_ssize_t index = -1;
-      __pyx_t_12 = PyObject_GetIter(__pyx_t_4); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 87, __pyx_L1_error)
+      __pyx_t_12 = PyObject_GetIter(__pyx_t_4); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 88, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_12);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __pyx_t_13 = Py_TYPE(__pyx_t_12)->tp_iternext;
@@ -2548,7 +2591,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
       __Pyx_GOTREF(__pyx_t_2);
       index = 1; __pyx_t_11 = __pyx_t_13(__pyx_t_12); if (unlikely(!__pyx_t_11)) goto __pyx_L14_unpacking_failed;
       __Pyx_GOTREF(__pyx_t_11);
-      if (__Pyx_IternextUnpackEndCheck(__pyx_t_13(__pyx_t_12), 2) < 0) __PYX_ERR(0, 87, __pyx_L1_error)
+      if (__Pyx_IternextUnpackEndCheck(__pyx_t_13(__pyx_t_12), 2) < 0) __PYX_ERR(0, 88, __pyx_L1_error)
       __pyx_t_13 = NULL;
       __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
       goto __pyx_L15_unpacking_done;
@@ -2556,17 +2599,17 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
       __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
       __pyx_t_13 = NULL;
       if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-      __PYX_ERR(0, 87, __pyx_L1_error)
+      __PYX_ERR(0, 88, __pyx_L1_error)
       __pyx_L15_unpacking_done:;
     }
-    __pyx_t_3 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_3 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 87, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_3 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 88, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_14 = __Pyx_PyInt_As_int(__pyx_t_11); if (unlikely((__pyx_t_14 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 87, __pyx_L1_error)
+    __pyx_t_14 = __Pyx_PyInt_As_int(__pyx_t_11); if (unlikely((__pyx_t_14 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 88, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
     __pyx_v_st = __pyx_t_3;
     __pyx_v_en = __pyx_t_14;
 
-    /* "CRISPResso2/CRISPRessoCOREResources.pyx":88
+    /* "CRISPResso2/CRISPRessoCOREResources.pyx":89
  *     for p in re_find_indels.finditer(read_seq_al):
  *         st,en=p.span()
  *         ref_st = 0             # <<<<<<<<<<<<<<
@@ -2576,7 +2619,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
     __Pyx_INCREF(__pyx_int_0);
     __Pyx_XDECREF_SET(__pyx_v_ref_st, __pyx_int_0);
 
-    /* "CRISPResso2/CRISPRessoCOREResources.pyx":89
+    /* "CRISPResso2/CRISPRessoCOREResources.pyx":90
  *         st,en=p.span()
  *         ref_st = 0
  *         if st-1 > 0:             # <<<<<<<<<<<<<<
@@ -2586,7 +2629,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
     __pyx_t_6 = (((__pyx_v_st - 1) > 0) != 0);
     if (__pyx_t_6) {
 
-      /* "CRISPResso2/CRISPRessoCOREResources.pyx":90
+      /* "CRISPResso2/CRISPRessoCOREResources.pyx":91
  *         ref_st = 0
  *         if st-1 > 0:
  *           ref_st = ref_positions[st]             # <<<<<<<<<<<<<<
@@ -2598,7 +2641,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
       __Pyx_DECREF_SET(__pyx_v_ref_st, __pyx_t_4);
       __pyx_t_4 = 0;
 
-      /* "CRISPResso2/CRISPRessoCOREResources.pyx":89
+      /* "CRISPResso2/CRISPRessoCOREResources.pyx":90
  *         st,en=p.span()
  *         ref_st = 0
  *         if st-1 > 0:             # <<<<<<<<<<<<<<
@@ -2607,42 +2650,42 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
  */
     }
 
-    /* "CRISPResso2/CRISPRessoCOREResources.pyx":91
+    /* "CRISPResso2/CRISPRessoCOREResources.pyx":92
  *         if st-1 > 0:
  *           ref_st = ref_positions[st]
  *         ref_en = idx-1             # <<<<<<<<<<<<<<
  *         if en < len(ref_positions):
  *           ref_en = ref_positions[en]
  */
-    __pyx_t_4 = __Pyx_PyInt_From_long((__pyx_v_idx - 1)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 91, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyInt_From_long((__pyx_v_idx - 1)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 92, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_XDECREF_SET(__pyx_v_ref_en, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "CRISPResso2/CRISPRessoCOREResources.pyx":92
+    /* "CRISPResso2/CRISPRessoCOREResources.pyx":93
  *           ref_st = ref_positions[st]
  *         ref_en = idx-1
  *         if en < len(ref_positions):             # <<<<<<<<<<<<<<
  *           ref_en = ref_positions[en]
  *         all_deletion_positions.extend(range(ref_st,ref_en))
  */
-    __pyx_t_15 = PyList_GET_SIZE(__pyx_v_ref_positions); if (unlikely(__pyx_t_15 == ((Py_ssize_t)-1))) __PYX_ERR(0, 92, __pyx_L1_error)
+    __pyx_t_15 = PyList_GET_SIZE(__pyx_v_ref_positions); if (unlikely(__pyx_t_15 == ((Py_ssize_t)-1))) __PYX_ERR(0, 93, __pyx_L1_error)
     __pyx_t_6 = ((__pyx_v_en < __pyx_t_15) != 0);
     if (__pyx_t_6) {
 
-      /* "CRISPResso2/CRISPRessoCOREResources.pyx":93
+      /* "CRISPResso2/CRISPRessoCOREResources.pyx":94
  *         ref_en = idx-1
  *         if en < len(ref_positions):
  *           ref_en = ref_positions[en]             # <<<<<<<<<<<<<<
  *         all_deletion_positions.extend(range(ref_st,ref_en))
- *         inc_del_pos = _include_indx.intersection(range(ref_st,ref_en))
+ *         inc_del_pos = include_indx_set.intersection(range(ref_st,ref_en))
  */
       __pyx_t_4 = PyList_GET_ITEM(__pyx_v_ref_positions, __pyx_v_en);
       __Pyx_INCREF(__pyx_t_4);
       __Pyx_DECREF_SET(__pyx_v_ref_en, __pyx_t_4);
       __pyx_t_4 = 0;
 
-      /* "CRISPResso2/CRISPRessoCOREResources.pyx":92
+      /* "CRISPResso2/CRISPRessoCOREResources.pyx":93
  *           ref_st = ref_positions[st]
  *         ref_en = idx-1
  *         if en < len(ref_positions):             # <<<<<<<<<<<<<<
@@ -2651,14 +2694,14 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
  */
     }
 
-    /* "CRISPResso2/CRISPRessoCOREResources.pyx":94
+    /* "CRISPResso2/CRISPRessoCOREResources.pyx":95
  *         if en < len(ref_positions):
  *           ref_en = ref_positions[en]
  *         all_deletion_positions.extend(range(ref_st,ref_en))             # <<<<<<<<<<<<<<
- *         inc_del_pos = _include_indx.intersection(range(ref_st,ref_en))
+ *         inc_del_pos = include_indx_set.intersection(range(ref_st,ref_en))
  *         if(len(inc_del_pos)>0):
  */
-    __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 94, __pyx_L1_error)
+    __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 95, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_INCREF(__pyx_v_ref_st);
     __Pyx_GIVEREF(__pyx_v_ref_st);
@@ -2666,70 +2709,55 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
     __Pyx_INCREF(__pyx_v_ref_en);
     __Pyx_GIVEREF(__pyx_v_ref_en);
     PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_v_ref_en);
-    __pyx_t_11 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_4, NULL); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 94, __pyx_L1_error)
+    __pyx_t_11 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_4, NULL); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 95, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_11);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_8 = __Pyx_PyList_Extend(__pyx_v_all_deletion_positions, __pyx_t_11); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 94, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyList_Extend(__pyx_v_all_deletion_positions, __pyx_t_11); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 95, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
 
-    /* "CRISPResso2/CRISPRessoCOREResources.pyx":95
+    /* "CRISPResso2/CRISPRessoCOREResources.pyx":96
  *           ref_en = ref_positions[en]
  *         all_deletion_positions.extend(range(ref_st,ref_en))
- *         inc_del_pos = _include_indx.intersection(range(ref_st,ref_en))             # <<<<<<<<<<<<<<
+ *         inc_del_pos = include_indx_set.intersection(range(ref_st,ref_en))             # <<<<<<<<<<<<<<
  *         if(len(inc_del_pos)>0):
  *           deletion_positions.extend(range(ref_st,ref_en))
  */
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v__include_indx, __pyx_n_s_intersection); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 95, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 95, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_11 = PyTuple_New(2); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 96, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_11);
     __Pyx_INCREF(__pyx_v_ref_st);
     __Pyx_GIVEREF(__pyx_v_ref_st);
-    PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_v_ref_st);
+    PyTuple_SET_ITEM(__pyx_t_11, 0, __pyx_v_ref_st);
     __Pyx_INCREF(__pyx_v_ref_en);
     __Pyx_GIVEREF(__pyx_v_ref_en);
-    PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_v_ref_en);
-    __pyx_t_12 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_2, NULL); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 95, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_12);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_2 = NULL;
-    if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_4))) {
-      __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_4);
-      if (likely(__pyx_t_2)) {
-        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_4);
-        __Pyx_INCREF(__pyx_t_2);
-        __Pyx_INCREF(function);
-        __Pyx_DECREF_SET(__pyx_t_4, function);
-      }
-    }
-    __pyx_t_11 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_4, __pyx_t_2, __pyx_t_12) : __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_12);
-    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-    if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 95, __pyx_L1_error)
+    PyTuple_SET_ITEM(__pyx_t_11, 1, __pyx_v_ref_en);
+    __pyx_t_4 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_11, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 96, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+    __pyx_t_11 = __Pyx_CallUnboundCMethod1(&__pyx_umethod_PySet_Type_intersection, __pyx_v_include_indx_set, __pyx_t_4); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 96, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_11);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_XDECREF_SET(__pyx_v_inc_del_pos, __pyx_t_11);
     __pyx_t_11 = 0;
 
-    /* "CRISPResso2/CRISPRessoCOREResources.pyx":96
+    /* "CRISPResso2/CRISPRessoCOREResources.pyx":97
  *         all_deletion_positions.extend(range(ref_st,ref_en))
- *         inc_del_pos = _include_indx.intersection(range(ref_st,ref_en))
+ *         inc_del_pos = include_indx_set.intersection(range(ref_st,ref_en))
  *         if(len(inc_del_pos)>0):             # <<<<<<<<<<<<<<
  *           deletion_positions.extend(range(ref_st,ref_en))
  *           deletion_coordinates.append((ref_st,ref_en))
  */
-    __pyx_t_15 = PyObject_Length(__pyx_v_inc_del_pos); if (unlikely(__pyx_t_15 == ((Py_ssize_t)-1))) __PYX_ERR(0, 96, __pyx_L1_error)
+    __pyx_t_15 = PyObject_Length(__pyx_v_inc_del_pos); if (unlikely(__pyx_t_15 == ((Py_ssize_t)-1))) __PYX_ERR(0, 97, __pyx_L1_error)
     __pyx_t_6 = ((__pyx_t_15 > 0) != 0);
     if (__pyx_t_6) {
 
-      /* "CRISPResso2/CRISPRessoCOREResources.pyx":97
- *         inc_del_pos = _include_indx.intersection(range(ref_st,ref_en))
+      /* "CRISPResso2/CRISPRessoCOREResources.pyx":98
+ *         inc_del_pos = include_indx_set.intersection(range(ref_st,ref_en))
  *         if(len(inc_del_pos)>0):
  *           deletion_positions.extend(range(ref_st,ref_en))             # <<<<<<<<<<<<<<
  *           deletion_coordinates.append((ref_st,ref_en))
  *           deletion_sizes.append(en-st)
  */
-      __pyx_t_11 = PyTuple_New(2); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 97, __pyx_L1_error)
+      __pyx_t_11 = PyTuple_New(2); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 98, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_11);
       __Pyx_INCREF(__pyx_v_ref_st);
       __Pyx_GIVEREF(__pyx_v_ref_st);
@@ -2737,20 +2765,20 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
       __Pyx_INCREF(__pyx_v_ref_en);
       __Pyx_GIVEREF(__pyx_v_ref_en);
       PyTuple_SET_ITEM(__pyx_t_11, 1, __pyx_v_ref_en);
-      __pyx_t_4 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_11, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 97, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_11, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 98, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-      __pyx_t_8 = __Pyx_PyList_Extend(__pyx_v_deletion_positions, __pyx_t_4); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 97, __pyx_L1_error)
+      __pyx_t_8 = __Pyx_PyList_Extend(__pyx_v_deletion_positions, __pyx_t_4); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 98, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-      /* "CRISPResso2/CRISPRessoCOREResources.pyx":98
+      /* "CRISPResso2/CRISPRessoCOREResources.pyx":99
  *         if(len(inc_del_pos)>0):
  *           deletion_positions.extend(range(ref_st,ref_en))
  *           deletion_coordinates.append((ref_st,ref_en))             # <<<<<<<<<<<<<<
  *           deletion_sizes.append(en-st)
  * 
  */
-      __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 98, __pyx_L1_error)
+      __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 99, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_INCREF(__pyx_v_ref_st);
       __Pyx_GIVEREF(__pyx_v_ref_st);
@@ -2758,33 +2786,33 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
       __Pyx_INCREF(__pyx_v_ref_en);
       __Pyx_GIVEREF(__pyx_v_ref_en);
       PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_v_ref_en);
-      __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_deletion_coordinates, __pyx_t_4); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 98, __pyx_L1_error)
+      __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_deletion_coordinates, __pyx_t_4); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 99, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-      /* "CRISPResso2/CRISPRessoCOREResources.pyx":99
+      /* "CRISPResso2/CRISPRessoCOREResources.pyx":100
  *           deletion_positions.extend(range(ref_st,ref_en))
  *           deletion_coordinates.append((ref_st,ref_en))
  *           deletion_sizes.append(en-st)             # <<<<<<<<<<<<<<
  * 
  *     deletion_n = np.sum(deletion_sizes)
  */
-      __pyx_t_4 = __Pyx_PyInt_From_int((__pyx_v_en - __pyx_v_st)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 99, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyInt_From_int((__pyx_v_en - __pyx_v_st)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 100, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_deletion_sizes, __pyx_t_4); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 99, __pyx_L1_error)
+      __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_deletion_sizes, __pyx_t_4); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 100, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-      /* "CRISPResso2/CRISPRessoCOREResources.pyx":96
+      /* "CRISPResso2/CRISPRessoCOREResources.pyx":97
  *         all_deletion_positions.extend(range(ref_st,ref_en))
- *         inc_del_pos = _include_indx.intersection(range(ref_st,ref_en))
+ *         inc_del_pos = include_indx_set.intersection(range(ref_st,ref_en))
  *         if(len(inc_del_pos)>0):             # <<<<<<<<<<<<<<
  *           deletion_positions.extend(range(ref_st,ref_en))
  *           deletion_coordinates.append((ref_st,ref_en))
  */
     }
 
-    /* "CRISPResso2/CRISPRessoCOREResources.pyx":86
+    /* "CRISPResso2/CRISPRessoCOREResources.pyx":87
  * 
- * 
+ *     include_indx_set = set(_include_indx)
  *     for p in re_find_indels.finditer(read_seq_al):             # <<<<<<<<<<<<<<
  *         st,en=p.span()
  *         ref_st = 0
@@ -2792,16 +2820,16 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
   }
   __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":101
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":102
  *           deletion_sizes.append(en-st)
  * 
  *     deletion_n = np.sum(deletion_sizes)             # <<<<<<<<<<<<<<
  * 
  *     for p in re_find_indels.finditer(ref_seq_al):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 101, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_sum); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 101, __pyx_L1_error)
+  __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_sum); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_11);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_4 = NULL;
@@ -2816,49 +2844,49 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
   }
   __pyx_t_10 = (__pyx_t_4) ? __Pyx_PyObject_Call2Args(__pyx_t_11, __pyx_t_4, __pyx_v_deletion_sizes) : __Pyx_PyObject_CallOneArg(__pyx_t_11, __pyx_v_deletion_sizes);
   __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 101, __pyx_L1_error)
+  if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
   __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
   __pyx_v_deletion_n = __pyx_t_10;
   __pyx_t_10 = 0;
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":103
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":104
  *     deletion_n = np.sum(deletion_sizes)
  * 
  *     for p in re_find_indels.finditer(ref_seq_al):             # <<<<<<<<<<<<<<
  *         st,en=p.span()
  *         #sometimes deletions run off the end of the reference
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_11, __pyx_n_s_re_find_indels); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 103, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_11, __pyx_n_s_re_find_indels); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 104, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_11);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_11, __pyx_n_s_finditer); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 103, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_11, __pyx_n_s_finditer); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 104, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-  __pyx_t_11 = __Pyx_PyBytes_FromString(__pyx_v_ref_seq_al); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 103, __pyx_L1_error)
+  __pyx_t_11 = __Pyx_PyBytes_FromString(__pyx_v_ref_seq_al); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 104, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_11);
-  __pyx_t_12 = NULL;
+  __pyx_t_2 = NULL;
   if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_4))) {
-    __pyx_t_12 = PyMethod_GET_SELF(__pyx_t_4);
-    if (likely(__pyx_t_12)) {
+    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_4);
+    if (likely(__pyx_t_2)) {
       PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_4);
-      __Pyx_INCREF(__pyx_t_12);
+      __Pyx_INCREF(__pyx_t_2);
       __Pyx_INCREF(function);
       __Pyx_DECREF_SET(__pyx_t_4, function);
     }
   }
-  __pyx_t_10 = (__pyx_t_12) ? __Pyx_PyObject_Call2Args(__pyx_t_4, __pyx_t_12, __pyx_t_11) : __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_11);
-  __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
+  __pyx_t_10 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_4, __pyx_t_2, __pyx_t_11) : __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_11);
+  __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-  if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 103, __pyx_L1_error)
+  if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 104, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   if (likely(PyList_CheckExact(__pyx_t_10)) || PyTuple_CheckExact(__pyx_t_10)) {
     __pyx_t_4 = __pyx_t_10; __Pyx_INCREF(__pyx_t_4); __pyx_t_9 = 0;
     __pyx_t_5 = NULL;
   } else {
-    __pyx_t_9 = -1; __pyx_t_4 = PyObject_GetIter(__pyx_t_10); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 103, __pyx_L1_error)
+    __pyx_t_9 = -1; __pyx_t_4 = PyObject_GetIter(__pyx_t_10); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 104, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = Py_TYPE(__pyx_t_4)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 103, __pyx_L1_error)
+    __pyx_t_5 = Py_TYPE(__pyx_t_4)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 104, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
   for (;;) {
@@ -2866,17 +2894,17 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
       if (likely(PyList_CheckExact(__pyx_t_4))) {
         if (__pyx_t_9 >= PyList_GET_SIZE(__pyx_t_4)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_10 = PyList_GET_ITEM(__pyx_t_4, __pyx_t_9); __Pyx_INCREF(__pyx_t_10); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 103, __pyx_L1_error)
+        __pyx_t_10 = PyList_GET_ITEM(__pyx_t_4, __pyx_t_9); __Pyx_INCREF(__pyx_t_10); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 104, __pyx_L1_error)
         #else
-        __pyx_t_10 = PySequence_ITEM(__pyx_t_4, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 103, __pyx_L1_error)
+        __pyx_t_10 = PySequence_ITEM(__pyx_t_4, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 104, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_10);
         #endif
       } else {
         if (__pyx_t_9 >= PyTuple_GET_SIZE(__pyx_t_4)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_10 = PyTuple_GET_ITEM(__pyx_t_4, __pyx_t_9); __Pyx_INCREF(__pyx_t_10); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 103, __pyx_L1_error)
+        __pyx_t_10 = PyTuple_GET_ITEM(__pyx_t_4, __pyx_t_9); __Pyx_INCREF(__pyx_t_10); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 104, __pyx_L1_error)
         #else
-        __pyx_t_10 = PySequence_ITEM(__pyx_t_4, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 103, __pyx_L1_error)
+        __pyx_t_10 = PySequence_ITEM(__pyx_t_4, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 104, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_10);
         #endif
       }
@@ -2886,7 +2914,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 103, __pyx_L1_error)
+          else __PYX_ERR(0, 104, __pyx_L1_error)
         }
         break;
       }
@@ -2895,28 +2923,28 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
     __Pyx_XDECREF_SET(__pyx_v_p, __pyx_t_10);
     __pyx_t_10 = 0;
 
-    /* "CRISPResso2/CRISPRessoCOREResources.pyx":104
+    /* "CRISPResso2/CRISPRessoCOREResources.pyx":105
  * 
  *     for p in re_find_indels.finditer(ref_seq_al):
  *         st,en=p.span()             # <<<<<<<<<<<<<<
  *         #sometimes deletions run off the end of the reference
  *         if en > idx: # if insertion happened after ref
  */
-    __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_v_p, __pyx_n_s_span); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 104, __pyx_L1_error)
+    __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_v_p, __pyx_n_s_span); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 105, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_11);
-    __pyx_t_12 = NULL;
+    __pyx_t_2 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_11))) {
-      __pyx_t_12 = PyMethod_GET_SELF(__pyx_t_11);
-      if (likely(__pyx_t_12)) {
+      __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_11);
+      if (likely(__pyx_t_2)) {
         PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_11);
-        __Pyx_INCREF(__pyx_t_12);
+        __Pyx_INCREF(__pyx_t_2);
         __Pyx_INCREF(function);
         __Pyx_DECREF_SET(__pyx_t_11, function);
       }
     }
-    __pyx_t_10 = (__pyx_t_12) ? __Pyx_PyObject_CallOneArg(__pyx_t_11, __pyx_t_12) : __Pyx_PyObject_CallNoArg(__pyx_t_11);
-    __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
-    if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 104, __pyx_L1_error)
+    __pyx_t_10 = (__pyx_t_2) ? __Pyx_PyObject_CallOneArg(__pyx_t_11, __pyx_t_2) : __Pyx_PyObject_CallNoArg(__pyx_t_11);
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 105, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_10);
     __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
     if ((likely(PyTuple_CheckExact(__pyx_t_10))) || (PyList_CheckExact(__pyx_t_10))) {
@@ -2925,54 +2953,54 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
       if (unlikely(size != 2)) {
         if (size > 2) __Pyx_RaiseTooManyValuesError(2);
         else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-        __PYX_ERR(0, 104, __pyx_L1_error)
+        __PYX_ERR(0, 105, __pyx_L1_error)
       }
       #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
       if (likely(PyTuple_CheckExact(sequence))) {
         __pyx_t_11 = PyTuple_GET_ITEM(sequence, 0); 
-        __pyx_t_12 = PyTuple_GET_ITEM(sequence, 1); 
+        __pyx_t_2 = PyTuple_GET_ITEM(sequence, 1); 
       } else {
         __pyx_t_11 = PyList_GET_ITEM(sequence, 0); 
-        __pyx_t_12 = PyList_GET_ITEM(sequence, 1); 
+        __pyx_t_2 = PyList_GET_ITEM(sequence, 1); 
       }
       __Pyx_INCREF(__pyx_t_11);
-      __Pyx_INCREF(__pyx_t_12);
+      __Pyx_INCREF(__pyx_t_2);
       #else
-      __pyx_t_11 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 104, __pyx_L1_error)
+      __pyx_t_11 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 105, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_11);
-      __pyx_t_12 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 104, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_12);
+      __pyx_t_2 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 105, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
       #endif
       __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
     } else {
       Py_ssize_t index = -1;
-      __pyx_t_2 = PyObject_GetIter(__pyx_t_10); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 104, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_2);
-      __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-      __pyx_t_13 = Py_TYPE(__pyx_t_2)->tp_iternext;
-      index = 0; __pyx_t_11 = __pyx_t_13(__pyx_t_2); if (unlikely(!__pyx_t_11)) goto __pyx_L21_unpacking_failed;
-      __Pyx_GOTREF(__pyx_t_11);
-      index = 1; __pyx_t_12 = __pyx_t_13(__pyx_t_2); if (unlikely(!__pyx_t_12)) goto __pyx_L21_unpacking_failed;
+      __pyx_t_12 = PyObject_GetIter(__pyx_t_10); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 105, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_12);
-      if (__Pyx_IternextUnpackEndCheck(__pyx_t_13(__pyx_t_2), 2) < 0) __PYX_ERR(0, 104, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+      __pyx_t_13 = Py_TYPE(__pyx_t_12)->tp_iternext;
+      index = 0; __pyx_t_11 = __pyx_t_13(__pyx_t_12); if (unlikely(!__pyx_t_11)) goto __pyx_L21_unpacking_failed;
+      __Pyx_GOTREF(__pyx_t_11);
+      index = 1; __pyx_t_2 = __pyx_t_13(__pyx_t_12); if (unlikely(!__pyx_t_2)) goto __pyx_L21_unpacking_failed;
+      __Pyx_GOTREF(__pyx_t_2);
+      if (__Pyx_IternextUnpackEndCheck(__pyx_t_13(__pyx_t_12), 2) < 0) __PYX_ERR(0, 105, __pyx_L1_error)
       __pyx_t_13 = NULL;
-      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+      __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
       goto __pyx_L22_unpacking_done;
       __pyx_L21_unpacking_failed:;
-      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+      __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
       __pyx_t_13 = NULL;
       if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-      __PYX_ERR(0, 104, __pyx_L1_error)
+      __PYX_ERR(0, 105, __pyx_L1_error)
       __pyx_L22_unpacking_done:;
     }
-    __pyx_t_14 = __Pyx_PyInt_As_int(__pyx_t_11); if (unlikely((__pyx_t_14 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 104, __pyx_L1_error)
+    __pyx_t_14 = __Pyx_PyInt_As_int(__pyx_t_11); if (unlikely((__pyx_t_14 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 105, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-    __pyx_t_3 = __Pyx_PyInt_As_int(__pyx_t_12); if (unlikely((__pyx_t_3 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 104, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+    __pyx_t_3 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_3 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 105, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_v_st = __pyx_t_14;
     __pyx_v_en = __pyx_t_3;
 
-    /* "CRISPResso2/CRISPRessoCOREResources.pyx":106
+    /* "CRISPResso2/CRISPRessoCOREResources.pyx":107
  *         st,en=p.span()
  *         #sometimes deletions run off the end of the reference
  *         if en > idx: # if insertion happened after ref             # <<<<<<<<<<<<<<
@@ -2982,7 +3010,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
     __pyx_t_6 = ((__pyx_v_en > __pyx_v_idx) != 0);
     if (__pyx_t_6) {
 
-      /* "CRISPResso2/CRISPRessoCOREResources.pyx":107
+      /* "CRISPResso2/CRISPRessoCOREResources.pyx":108
  *         #sometimes deletions run off the end of the reference
  *         if en > idx: # if insertion happened after ref
  *           continue             # <<<<<<<<<<<<<<
@@ -2991,7 +3019,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
  */
       goto __pyx_L19_continue;
 
-      /* "CRISPResso2/CRISPRessoCOREResources.pyx":106
+      /* "CRISPResso2/CRISPRessoCOREResources.pyx":107
  *         st,en=p.span()
  *         #sometimes deletions run off the end of the reference
  *         if en > idx: # if insertion happened after ref             # <<<<<<<<<<<<<<
@@ -3000,7 +3028,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
  */
     }
 
-    /* "CRISPResso2/CRISPRessoCOREResources.pyx":108
+    /* "CRISPResso2/CRISPRessoCOREResources.pyx":109
  *         if en > idx: # if insertion happened after ref
  *           continue
  *         if st < 1: #if start starts before ref             # <<<<<<<<<<<<<<
@@ -3010,7 +3038,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
     __pyx_t_6 = ((__pyx_v_st < 1) != 0);
     if (__pyx_t_6) {
 
-      /* "CRISPResso2/CRISPRessoCOREResources.pyx":109
+      /* "CRISPResso2/CRISPRessoCOREResources.pyx":110
  *           continue
  *         if st < 1: #if start starts before ref
  *           continue             # <<<<<<<<<<<<<<
@@ -3019,7 +3047,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
  */
       goto __pyx_L19_continue;
 
-      /* "CRISPResso2/CRISPRessoCOREResources.pyx":108
+      /* "CRISPResso2/CRISPRessoCOREResources.pyx":109
  *         if en > idx: # if insertion happened after ref
  *           continue
  *         if st < 1: #if start starts before ref             # <<<<<<<<<<<<<<
@@ -3028,7 +3056,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
  */
     }
 
-    /* "CRISPResso2/CRISPRessoCOREResources.pyx":110
+    /* "CRISPResso2/CRISPRessoCOREResources.pyx":111
  *         if st < 1: #if start starts before ref
  *           continue
  *         ref_st = ref_positions[st-1]             # <<<<<<<<<<<<<<
@@ -3041,7 +3069,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
     __Pyx_XDECREF_SET(__pyx_v_ref_st, __pyx_t_10);
     __pyx_t_10 = 0;
 
-    /* "CRISPResso2/CRISPRessoCOREResources.pyx":111
+    /* "CRISPResso2/CRISPRessoCOREResources.pyx":112
  *           continue
  *         ref_st = ref_positions[st-1]
  *         ref_en = ref_positions[en]             # <<<<<<<<<<<<<<
@@ -3053,61 +3081,61 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
     __Pyx_XDECREF_SET(__pyx_v_ref_en, __pyx_t_10);
     __pyx_t_10 = 0;
 
-    /* "CRISPResso2/CRISPRessoCOREResources.pyx":113
+    /* "CRISPResso2/CRISPRessoCOREResources.pyx":114
  *         ref_en = ref_positions[en]
  * 
  *         all_insertion_left_positions.append(ref_st)             # <<<<<<<<<<<<<<
  *         all_insertion_positions.append(ref_st)
  *         all_insertion_positions.append(ref_en)
  */
-    __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_all_insertion_left_positions, __pyx_v_ref_st); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 113, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_all_insertion_left_positions, __pyx_v_ref_st); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 114, __pyx_L1_error)
 
-    /* "CRISPResso2/CRISPRessoCOREResources.pyx":114
+    /* "CRISPResso2/CRISPRessoCOREResources.pyx":115
  * 
  *         all_insertion_left_positions.append(ref_st)
  *         all_insertion_positions.append(ref_st)             # <<<<<<<<<<<<<<
  *         all_insertion_positions.append(ref_en)
  *         if(ref_st in _include_indx or ref_en in _include_indx):
  */
-    __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_all_insertion_positions, __pyx_v_ref_st); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 114, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_all_insertion_positions, __pyx_v_ref_st); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 115, __pyx_L1_error)
 
-    /* "CRISPResso2/CRISPRessoCOREResources.pyx":115
+    /* "CRISPResso2/CRISPRessoCOREResources.pyx":116
  *         all_insertion_left_positions.append(ref_st)
  *         all_insertion_positions.append(ref_st)
  *         all_insertion_positions.append(ref_en)             # <<<<<<<<<<<<<<
  *         if(ref_st in _include_indx or ref_en in _include_indx):
  *           insertion_coordinates.append((ref_st,ref_en))
  */
-    __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_all_insertion_positions, __pyx_v_ref_en); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 115, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_all_insertion_positions, __pyx_v_ref_en); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 116, __pyx_L1_error)
 
-    /* "CRISPResso2/CRISPRessoCOREResources.pyx":116
+    /* "CRISPResso2/CRISPRessoCOREResources.pyx":117
  *         all_insertion_positions.append(ref_st)
  *         all_insertion_positions.append(ref_en)
  *         if(ref_st in _include_indx or ref_en in _include_indx):             # <<<<<<<<<<<<<<
  *           insertion_coordinates.append((ref_st,ref_en))
  *           insertion_positions.append(ref_st)
  */
-    __pyx_t_7 = (__Pyx_PySequence_ContainsTF(__pyx_v_ref_st, __pyx_v__include_indx, Py_EQ)); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 116, __pyx_L1_error)
+    __pyx_t_7 = (__Pyx_PySequence_ContainsTF(__pyx_v_ref_st, __pyx_v__include_indx, Py_EQ)); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 117, __pyx_L1_error)
     __pyx_t_17 = (__pyx_t_7 != 0);
     if (!__pyx_t_17) {
     } else {
       __pyx_t_6 = __pyx_t_17;
       goto __pyx_L26_bool_binop_done;
     }
-    __pyx_t_17 = (__Pyx_PySequence_ContainsTF(__pyx_v_ref_en, __pyx_v__include_indx, Py_EQ)); if (unlikely(__pyx_t_17 < 0)) __PYX_ERR(0, 116, __pyx_L1_error)
+    __pyx_t_17 = (__Pyx_PySequence_ContainsTF(__pyx_v_ref_en, __pyx_v__include_indx, Py_EQ)); if (unlikely(__pyx_t_17 < 0)) __PYX_ERR(0, 117, __pyx_L1_error)
     __pyx_t_7 = (__pyx_t_17 != 0);
     __pyx_t_6 = __pyx_t_7;
     __pyx_L26_bool_binop_done:;
     if (__pyx_t_6) {
 
-      /* "CRISPResso2/CRISPRessoCOREResources.pyx":117
+      /* "CRISPResso2/CRISPRessoCOREResources.pyx":118
  *         all_insertion_positions.append(ref_en)
  *         if(ref_st in _include_indx or ref_en in _include_indx):
  *           insertion_coordinates.append((ref_st,ref_en))             # <<<<<<<<<<<<<<
  *           insertion_positions.append(ref_st)
  *           insertion_positions.append(ref_en)
  */
-      __pyx_t_10 = PyTuple_New(2); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 117, __pyx_L1_error)
+      __pyx_t_10 = PyTuple_New(2); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 118, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_10);
       __Pyx_INCREF(__pyx_v_ref_st);
       __Pyx_GIVEREF(__pyx_v_ref_st);
@@ -3115,40 +3143,40 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
       __Pyx_INCREF(__pyx_v_ref_en);
       __Pyx_GIVEREF(__pyx_v_ref_en);
       PyTuple_SET_ITEM(__pyx_t_10, 1, __pyx_v_ref_en);
-      __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_insertion_coordinates, __pyx_t_10); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 117, __pyx_L1_error)
+      __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_insertion_coordinates, __pyx_t_10); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 118, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
 
-      /* "CRISPResso2/CRISPRessoCOREResources.pyx":118
+      /* "CRISPResso2/CRISPRessoCOREResources.pyx":119
  *         if(ref_st in _include_indx or ref_en in _include_indx):
  *           insertion_coordinates.append((ref_st,ref_en))
  *           insertion_positions.append(ref_st)             # <<<<<<<<<<<<<<
  *           insertion_positions.append(ref_en)
  *           insertion_sizes.append(en-st)
  */
-      __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_insertion_positions, __pyx_v_ref_st); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 118, __pyx_L1_error)
+      __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_insertion_positions, __pyx_v_ref_st); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 119, __pyx_L1_error)
 
-      /* "CRISPResso2/CRISPRessoCOREResources.pyx":119
+      /* "CRISPResso2/CRISPRessoCOREResources.pyx":120
  *           insertion_coordinates.append((ref_st,ref_en))
  *           insertion_positions.append(ref_st)
  *           insertion_positions.append(ref_en)             # <<<<<<<<<<<<<<
  *           insertion_sizes.append(en-st)
  * 
  */
-      __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_insertion_positions, __pyx_v_ref_en); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 119, __pyx_L1_error)
+      __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_insertion_positions, __pyx_v_ref_en); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 120, __pyx_L1_error)
 
-      /* "CRISPResso2/CRISPRessoCOREResources.pyx":120
+      /* "CRISPResso2/CRISPRessoCOREResources.pyx":121
  *           insertion_positions.append(ref_st)
  *           insertion_positions.append(ref_en)
  *           insertion_sizes.append(en-st)             # <<<<<<<<<<<<<<
  * 
  *     insertion_n = np.sum(insertion_sizes)
  */
-      __pyx_t_10 = __Pyx_PyInt_From_int((__pyx_v_en - __pyx_v_st)); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 120, __pyx_L1_error)
+      __pyx_t_10 = __Pyx_PyInt_From_int((__pyx_v_en - __pyx_v_st)); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 121, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_10);
-      __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_insertion_sizes, __pyx_t_10); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 120, __pyx_L1_error)
+      __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_insertion_sizes, __pyx_t_10); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 121, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
 
-      /* "CRISPResso2/CRISPRessoCOREResources.pyx":116
+      /* "CRISPResso2/CRISPRessoCOREResources.pyx":117
  *         all_insertion_positions.append(ref_st)
  *         all_insertion_positions.append(ref_en)
  *         if(ref_st in _include_indx or ref_en in _include_indx):             # <<<<<<<<<<<<<<
@@ -3157,7 +3185,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
  */
     }
 
-    /* "CRISPResso2/CRISPRessoCOREResources.pyx":103
+    /* "CRISPResso2/CRISPRessoCOREResources.pyx":104
  *     deletion_n = np.sum(deletion_sizes)
  * 
  *     for p in re_find_indels.finditer(ref_seq_al):             # <<<<<<<<<<<<<<
@@ -3168,165 +3196,165 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
   }
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":122
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":123
  *           insertion_sizes.append(en-st)
  * 
  *     insertion_n = np.sum(insertion_sizes)             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_n_s_np); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 122, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_n_s_np); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
-  __pyx_t_12 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_sum); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 122, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_12);
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_sum); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 123, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
   __pyx_t_10 = NULL;
-  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_12))) {
-    __pyx_t_10 = PyMethod_GET_SELF(__pyx_t_12);
+  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_2))) {
+    __pyx_t_10 = PyMethod_GET_SELF(__pyx_t_2);
     if (likely(__pyx_t_10)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_12);
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
       __Pyx_INCREF(__pyx_t_10);
       __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_12, function);
+      __Pyx_DECREF_SET(__pyx_t_2, function);
     }
   }
-  __pyx_t_4 = (__pyx_t_10) ? __Pyx_PyObject_Call2Args(__pyx_t_12, __pyx_t_10, __pyx_v_insertion_sizes) : __Pyx_PyObject_CallOneArg(__pyx_t_12, __pyx_v_insertion_sizes);
+  __pyx_t_4 = (__pyx_t_10) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_10, __pyx_v_insertion_sizes) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_v_insertion_sizes);
   __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 122, __pyx_L1_error)
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_v_insertion_n = __pyx_t_4;
   __pyx_t_4 = 0;
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":126
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":127
  * 
  *     retDict = {
  * 	    'all_insertion_positions':all_insertion_positions,             # <<<<<<<<<<<<<<
  * 	    'all_insertion_left_positions':all_insertion_left_positions,
  * 	    'insertion_positions':insertion_positions,
  */
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(17); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 126, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(17); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 127, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_all_insertion_positions, __pyx_v_all_insertion_positions) < 0) __PYX_ERR(0, 126, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_all_insertion_positions, __pyx_v_all_insertion_positions) < 0) __PYX_ERR(0, 127, __pyx_L1_error)
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":127
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":128
  *     retDict = {
  * 	    'all_insertion_positions':all_insertion_positions,
  * 	    'all_insertion_left_positions':all_insertion_left_positions,             # <<<<<<<<<<<<<<
  * 	    'insertion_positions':insertion_positions,
  * 	    'insertion_coordinates':insertion_coordinates,
  */
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_all_insertion_left_positions, __pyx_v_all_insertion_left_positions) < 0) __PYX_ERR(0, 126, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_all_insertion_left_positions, __pyx_v_all_insertion_left_positions) < 0) __PYX_ERR(0, 127, __pyx_L1_error)
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":128
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":129
  * 	    'all_insertion_positions':all_insertion_positions,
  * 	    'all_insertion_left_positions':all_insertion_left_positions,
  * 	    'insertion_positions':insertion_positions,             # <<<<<<<<<<<<<<
  * 	    'insertion_coordinates':insertion_coordinates,
  * 	    'insertion_sizes':insertion_sizes,
  */
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_insertion_positions, __pyx_v_insertion_positions) < 0) __PYX_ERR(0, 126, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_insertion_positions, __pyx_v_insertion_positions) < 0) __PYX_ERR(0, 127, __pyx_L1_error)
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":129
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":130
  * 	    'all_insertion_left_positions':all_insertion_left_positions,
  * 	    'insertion_positions':insertion_positions,
  * 	    'insertion_coordinates':insertion_coordinates,             # <<<<<<<<<<<<<<
  * 	    'insertion_sizes':insertion_sizes,
  * 	    'insertion_n':insertion_n,
  */
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_insertion_coordinates, __pyx_v_insertion_coordinates) < 0) __PYX_ERR(0, 126, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_insertion_coordinates, __pyx_v_insertion_coordinates) < 0) __PYX_ERR(0, 127, __pyx_L1_error)
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":130
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":131
  * 	    'insertion_positions':insertion_positions,
  * 	    'insertion_coordinates':insertion_coordinates,
  * 	    'insertion_sizes':insertion_sizes,             # <<<<<<<<<<<<<<
  * 	    'insertion_n':insertion_n,
  * 
  */
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_insertion_sizes, __pyx_v_insertion_sizes) < 0) __PYX_ERR(0, 126, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_insertion_sizes, __pyx_v_insertion_sizes) < 0) __PYX_ERR(0, 127, __pyx_L1_error)
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":131
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":132
  * 	    'insertion_coordinates':insertion_coordinates,
  * 	    'insertion_sizes':insertion_sizes,
  * 	    'insertion_n':insertion_n,             # <<<<<<<<<<<<<<
  * 
  * 	    'all_deletion_positions':all_deletion_positions,
  */
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_insertion_n, __pyx_v_insertion_n) < 0) __PYX_ERR(0, 126, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_insertion_n, __pyx_v_insertion_n) < 0) __PYX_ERR(0, 127, __pyx_L1_error)
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":133
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":134
  * 	    'insertion_n':insertion_n,
  * 
  * 	    'all_deletion_positions':all_deletion_positions,             # <<<<<<<<<<<<<<
  * 	    'deletion_positions':deletion_positions,
  * 	    'deletion_coordinates':deletion_coordinates,
  */
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_all_deletion_positions, __pyx_v_all_deletion_positions) < 0) __PYX_ERR(0, 126, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_all_deletion_positions, __pyx_v_all_deletion_positions) < 0) __PYX_ERR(0, 127, __pyx_L1_error)
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":134
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":135
  * 
  * 	    'all_deletion_positions':all_deletion_positions,
  * 	    'deletion_positions':deletion_positions,             # <<<<<<<<<<<<<<
  * 	    'deletion_coordinates':deletion_coordinates,
  * 	    'deletion_sizes':deletion_sizes,
  */
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_deletion_positions, __pyx_v_deletion_positions) < 0) __PYX_ERR(0, 126, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_deletion_positions, __pyx_v_deletion_positions) < 0) __PYX_ERR(0, 127, __pyx_L1_error)
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":135
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":136
  * 	    'all_deletion_positions':all_deletion_positions,
  * 	    'deletion_positions':deletion_positions,
  * 	    'deletion_coordinates':deletion_coordinates,             # <<<<<<<<<<<<<<
  * 	    'deletion_sizes':deletion_sizes,
  * 	    'deletion_n':deletion_n,
  */
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_deletion_coordinates, __pyx_v_deletion_coordinates) < 0) __PYX_ERR(0, 126, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_deletion_coordinates, __pyx_v_deletion_coordinates) < 0) __PYX_ERR(0, 127, __pyx_L1_error)
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":136
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":137
  * 	    'deletion_positions':deletion_positions,
  * 	    'deletion_coordinates':deletion_coordinates,
  * 	    'deletion_sizes':deletion_sizes,             # <<<<<<<<<<<<<<
  * 	    'deletion_n':deletion_n,
  * 
  */
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_deletion_sizes, __pyx_v_deletion_sizes) < 0) __PYX_ERR(0, 126, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_deletion_sizes, __pyx_v_deletion_sizes) < 0) __PYX_ERR(0, 127, __pyx_L1_error)
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":137
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":138
  * 	    'deletion_coordinates':deletion_coordinates,
  * 	    'deletion_sizes':deletion_sizes,
  * 	    'deletion_n':deletion_n,             # <<<<<<<<<<<<<<
  * 
  * 	    'all_substitution_positions':all_substitution_positions,
  */
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_deletion_n, __pyx_v_deletion_n) < 0) __PYX_ERR(0, 126, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_deletion_n, __pyx_v_deletion_n) < 0) __PYX_ERR(0, 127, __pyx_L1_error)
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":139
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":140
  * 	    'deletion_n':deletion_n,
  * 
  * 	    'all_substitution_positions':all_substitution_positions,             # <<<<<<<<<<<<<<
  * 	    'substitution_positions':substitution_positions,
  * 	    'all_substitution_values':np.array(all_substitution_values),
  */
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_all_substitution_positions, __pyx_v_all_substitution_positions) < 0) __PYX_ERR(0, 126, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_all_substitution_positions, __pyx_v_all_substitution_positions) < 0) __PYX_ERR(0, 127, __pyx_L1_error)
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":140
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":141
  * 
  * 	    'all_substitution_positions':all_substitution_positions,
  * 	    'substitution_positions':substitution_positions,             # <<<<<<<<<<<<<<
  * 	    'all_substitution_values':np.array(all_substitution_values),
  * 	    'substitution_values':np.array(substitution_values),
  */
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_substitution_positions, __pyx_v_substitution_positions) < 0) __PYX_ERR(0, 126, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_substitution_positions, __pyx_v_substitution_positions) < 0) __PYX_ERR(0, 127, __pyx_L1_error)
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":141
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":142
  * 	    'all_substitution_positions':all_substitution_positions,
  * 	    'substitution_positions':substitution_positions,
  * 	    'all_substitution_values':np.array(all_substitution_values),             # <<<<<<<<<<<<<<
  * 	    'substitution_values':np.array(substitution_values),
  * 	    'substitution_n':substitution_n,
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_n_s_np); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_n_s_np); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 142, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
-  __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_array); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_array); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 142, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_11);
   __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
   __pyx_t_10 = NULL;
@@ -3339,24 +3367,24 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
       __Pyx_DECREF_SET(__pyx_t_11, function);
     }
   }
-  __pyx_t_12 = (__pyx_t_10) ? __Pyx_PyObject_Call2Args(__pyx_t_11, __pyx_t_10, __pyx_v_all_substitution_values) : __Pyx_PyObject_CallOneArg(__pyx_t_11, __pyx_v_all_substitution_values);
+  __pyx_t_2 = (__pyx_t_10) ? __Pyx_PyObject_Call2Args(__pyx_t_11, __pyx_t_10, __pyx_v_all_substitution_values) : __Pyx_PyObject_CallOneArg(__pyx_t_11, __pyx_v_all_substitution_values);
   __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
-  if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 141, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_12);
+  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_all_substitution_values, __pyx_t_12) < 0) __PYX_ERR(0, 126, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_all_substitution_values, __pyx_t_2) < 0) __PYX_ERR(0, 127, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":142
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":143
  * 	    'substitution_positions':substitution_positions,
  * 	    'all_substitution_values':np.array(all_substitution_values),
  * 	    'substitution_values':np.array(substitution_values),             # <<<<<<<<<<<<<<
  * 	    'substitution_n':substitution_n,
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_11, __pyx_n_s_np); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_11, __pyx_n_s_np); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 143, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_11);
-  __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_11, __pyx_n_s_array); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_11, __pyx_n_s_array); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 143, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
   __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
   __pyx_t_11 = NULL;
@@ -3369,38 +3397,38 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
       __Pyx_DECREF_SET(__pyx_t_10, function);
     }
   }
-  __pyx_t_12 = (__pyx_t_11) ? __Pyx_PyObject_Call2Args(__pyx_t_10, __pyx_t_11, __pyx_v_substitution_values) : __Pyx_PyObject_CallOneArg(__pyx_t_10, __pyx_v_substitution_values);
+  __pyx_t_2 = (__pyx_t_11) ? __Pyx_PyObject_Call2Args(__pyx_t_10, __pyx_t_11, __pyx_v_substitution_values) : __Pyx_PyObject_CallOneArg(__pyx_t_10, __pyx_v_substitution_values);
   __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
-  if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 142, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_12);
+  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 143, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_substitution_values, __pyx_t_12) < 0) __PYX_ERR(0, 126, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_substitution_values, __pyx_t_2) < 0) __PYX_ERR(0, 127, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":143
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":144
  * 	    'all_substitution_values':np.array(all_substitution_values),
  * 	    'substitution_values':np.array(substitution_values),
  * 	    'substitution_n':substitution_n,             # <<<<<<<<<<<<<<
  * 
  * 	    'ref_positions':ref_positions,
  */
-  __pyx_t_12 = PyInt_FromSsize_t(__pyx_v_substitution_n); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 143, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_12);
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_substitution_n, __pyx_t_12) < 0) __PYX_ERR(0, 126, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+  __pyx_t_2 = PyInt_FromSsize_t(__pyx_v_substitution_n); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 144, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_substitution_n, __pyx_t_2) < 0) __PYX_ERR(0, 127, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":145
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":146
  * 	    'substitution_n':substitution_n,
  * 
  * 	    'ref_positions':ref_positions,             # <<<<<<<<<<<<<<
  *     }
  *     return retDict
  */
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_ref_positions, __pyx_v_ref_positions) < 0) __PYX_ERR(0, 126, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_ref_positions, __pyx_v_ref_positions) < 0) __PYX_ERR(0, 127, __pyx_L1_error)
   __pyx_v_retDict = ((PyObject*)__pyx_t_4);
   __pyx_t_4 = 0;
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":147
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":148
  * 	    'ref_positions':ref_positions,
  *     }
  *     return retDict             # <<<<<<<<<<<<<<
@@ -3446,6 +3474,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
   __Pyx_XDECREF(__pyx_v_insertion_positions);
   __Pyx_XDECREF(__pyx_v_insertion_coordinates);
   __Pyx_XDECREF(__pyx_v_insertion_sizes);
+  __Pyx_XDECREF(__pyx_v_include_indx_set);
   __Pyx_XDECREF(__pyx_v_p);
   __Pyx_XDECREF(__pyx_v_ref_st);
   __Pyx_XDECREF(__pyx_v_ref_en);
@@ -3458,7 +3487,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_find_indels_su
   return __pyx_r;
 }
 
-/* "CRISPResso2/CRISPRessoCOREResources.pyx":153
+/* "CRISPResso2/CRISPRessoCOREResources.pyx":154
  *     size_t strlen(char *s)
  * 
  * def calculate_homology(a, b):             # <<<<<<<<<<<<<<
@@ -3498,11 +3527,11 @@ static PyObject *__pyx_pw_11CRISPResso2_23CRISPRessoCOREResources_3calculate_hom
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_b)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("calculate_homology", 1, 2, 2, 1); __PYX_ERR(0, 153, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("calculate_homology", 1, 2, 2, 1); __PYX_ERR(0, 154, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "calculate_homology") < 0)) __PYX_ERR(0, 153, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "calculate_homology") < 0)) __PYX_ERR(0, 154, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -3515,7 +3544,7 @@ static PyObject *__pyx_pw_11CRISPResso2_23CRISPRessoCOREResources_3calculate_hom
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("calculate_homology", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 153, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("calculate_homology", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 154, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("CRISPResso2.CRISPRessoCOREResources.calculate_homology", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -3544,27 +3573,27 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_2calculate_hom
   PyObject *__pyx_t_6 = NULL;
   __Pyx_RefNannySetupContext("calculate_homology", 0);
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":154
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":155
  * 
  * def calculate_homology(a, b):
  *     cdef char *al = a             # <<<<<<<<<<<<<<
  *     cdef char *bl = b
  *     cdef size_t l = strlen(al)
  */
-  __pyx_t_1 = __Pyx_PyObject_AsWritableString(__pyx_v_a); if (unlikely((!__pyx_t_1) && PyErr_Occurred())) __PYX_ERR(0, 154, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_AsWritableString(__pyx_v_a); if (unlikely((!__pyx_t_1) && PyErr_Occurred())) __PYX_ERR(0, 155, __pyx_L1_error)
   __pyx_v_al = __pyx_t_1;
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":155
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":156
  * def calculate_homology(a, b):
  *     cdef char *al = a
  *     cdef char *bl = b             # <<<<<<<<<<<<<<
  *     cdef size_t l = strlen(al)
  *     cdef float score = 0.0
  */
-  __pyx_t_1 = __Pyx_PyObject_AsWritableString(__pyx_v_b); if (unlikely((!__pyx_t_1) && PyErr_Occurred())) __PYX_ERR(0, 155, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_AsWritableString(__pyx_v_b); if (unlikely((!__pyx_t_1) && PyErr_Occurred())) __PYX_ERR(0, 156, __pyx_L1_error)
   __pyx_v_bl = __pyx_t_1;
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":156
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":157
  *     cdef char *al = a
  *     cdef char *bl = b
  *     cdef size_t l = strlen(al)             # <<<<<<<<<<<<<<
@@ -3573,7 +3602,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_2calculate_hom
  */
   __pyx_v_l = strlen(__pyx_v_al);
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":157
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":158
  *     cdef char *bl = b
  *     cdef size_t l = strlen(al)
  *     cdef float score = 0.0             # <<<<<<<<<<<<<<
@@ -3582,7 +3611,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_2calculate_hom
  */
   __pyx_v_score = 0.0;
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":159
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":160
  *     cdef float score = 0.0
  * 
  *     for i in range(l):             # <<<<<<<<<<<<<<
@@ -3594,7 +3623,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_2calculate_hom
   for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
     __pyx_v_i = __pyx_t_4;
 
-    /* "CRISPResso2/CRISPRessoCOREResources.pyx":160
+    /* "CRISPResso2/CRISPRessoCOREResources.pyx":161
  * 
  *     for i in range(l):
  *         if al[i] == bl[i]:             # <<<<<<<<<<<<<<
@@ -3604,7 +3633,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_2calculate_hom
     __pyx_t_5 = (((__pyx_v_al[__pyx_v_i]) == (__pyx_v_bl[__pyx_v_i])) != 0);
     if (__pyx_t_5) {
 
-      /* "CRISPResso2/CRISPRessoCOREResources.pyx":161
+      /* "CRISPResso2/CRISPRessoCOREResources.pyx":162
  *     for i in range(l):
  *         if al[i] == bl[i]:
  *             score+=1             # <<<<<<<<<<<<<<
@@ -3612,7 +3641,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_2calculate_hom
  */
       __pyx_v_score = (__pyx_v_score + 1.0);
 
-      /* "CRISPResso2/CRISPRessoCOREResources.pyx":160
+      /* "CRISPResso2/CRISPRessoCOREResources.pyx":161
  * 
  *     for i in range(l):
  *         if al[i] == bl[i]:             # <<<<<<<<<<<<<<
@@ -3622,7 +3651,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_2calculate_hom
     }
   }
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":162
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":163
  *         if al[i] == bl[i]:
  *             score+=1
  *     return score/l             # <<<<<<<<<<<<<<
@@ -3630,15 +3659,15 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_2calculate_hom
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(__pyx_v_l == 0)) {
     PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-    __PYX_ERR(0, 162, __pyx_L1_error)
+    __PYX_ERR(0, 163, __pyx_L1_error)
   }
-  __pyx_t_6 = PyFloat_FromDouble((__pyx_v_score / __pyx_v_l)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 162, __pyx_L1_error)
+  __pyx_t_6 = PyFloat_FromDouble((__pyx_v_score / __pyx_v_l)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 163, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __pyx_r = __pyx_t_6;
   __pyx_t_6 = 0;
   goto __pyx_L0;
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":153
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":154
  *     size_t strlen(char *s)
  * 
  * def calculate_homology(a, b):             # <<<<<<<<<<<<<<
@@ -3657,7 +3686,7 @@ static PyObject *__pyx_pf_11CRISPResso2_23CRISPRessoCOREResources_2calculate_hom
   return __pyx_r;
 }
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":258
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":258
  *         # experimental exception made for __getbuffer__ and __releasebuffer__
  *         # -- the details of this may change.
  *         def __getbuffer__(ndarray self, Py_buffer* info, int flags):             # <<<<<<<<<<<<<<
@@ -3706,7 +3735,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
   __pyx_v_info->obj = Py_None; __Pyx_INCREF(Py_None);
   __Pyx_GIVEREF(__pyx_v_info->obj);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":265
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":265
  * 
  *             cdef int i, ndim
  *             cdef int endian_detector = 1             # <<<<<<<<<<<<<<
@@ -3715,7 +3744,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  */
   __pyx_v_endian_detector = 1;
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":266
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":266
  *             cdef int i, ndim
  *             cdef int endian_detector = 1
  *             cdef bint little_endian = ((<char*>&endian_detector)[0] != 0)             # <<<<<<<<<<<<<<
@@ -3724,7 +3753,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  */
   __pyx_v_little_endian = ((((char *)(&__pyx_v_endian_detector))[0]) != 0);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":268
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":268
  *             cdef bint little_endian = ((<char*>&endian_detector)[0] != 0)
  * 
  *             ndim = PyArray_NDIM(self)             # <<<<<<<<<<<<<<
@@ -3733,7 +3762,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  */
   __pyx_v_ndim = PyArray_NDIM(__pyx_v_self);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":270
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":270
  *             ndim = PyArray_NDIM(self)
  * 
  *             if ((flags & pybuf.PyBUF_C_CONTIGUOUS == pybuf.PyBUF_C_CONTIGUOUS)             # <<<<<<<<<<<<<<
@@ -3747,7 +3776,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
     goto __pyx_L4_bool_binop_done;
   }
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":271
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":271
  * 
  *             if ((flags & pybuf.PyBUF_C_CONTIGUOUS == pybuf.PyBUF_C_CONTIGUOUS)
  *                 and not PyArray_CHKFLAGS(self, NPY_ARRAY_C_CONTIGUOUS)):             # <<<<<<<<<<<<<<
@@ -3758,7 +3787,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
   __pyx_t_1 = __pyx_t_2;
   __pyx_L4_bool_binop_done:;
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":270
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":270
  *             ndim = PyArray_NDIM(self)
  * 
  *             if ((flags & pybuf.PyBUF_C_CONTIGUOUS == pybuf.PyBUF_C_CONTIGUOUS)             # <<<<<<<<<<<<<<
@@ -3767,7 +3796,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  */
   if (unlikely(__pyx_t_1)) {
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":272
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":272
  *             if ((flags & pybuf.PyBUF_C_CONTIGUOUS == pybuf.PyBUF_C_CONTIGUOUS)
  *                 and not PyArray_CHKFLAGS(self, NPY_ARRAY_C_CONTIGUOUS)):
  *                 raise ValueError(u"ndarray is not C contiguous")             # <<<<<<<<<<<<<<
@@ -3780,7 +3809,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __PYX_ERR(1, 272, __pyx_L1_error)
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":270
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":270
  *             ndim = PyArray_NDIM(self)
  * 
  *             if ((flags & pybuf.PyBUF_C_CONTIGUOUS == pybuf.PyBUF_C_CONTIGUOUS)             # <<<<<<<<<<<<<<
@@ -3789,7 +3818,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  */
   }
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":274
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":274
  *                 raise ValueError(u"ndarray is not C contiguous")
  * 
  *             if ((flags & pybuf.PyBUF_F_CONTIGUOUS == pybuf.PyBUF_F_CONTIGUOUS)             # <<<<<<<<<<<<<<
@@ -3803,7 +3832,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
     goto __pyx_L7_bool_binop_done;
   }
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":275
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":275
  * 
  *             if ((flags & pybuf.PyBUF_F_CONTIGUOUS == pybuf.PyBUF_F_CONTIGUOUS)
  *                 and not PyArray_CHKFLAGS(self, NPY_ARRAY_F_CONTIGUOUS)):             # <<<<<<<<<<<<<<
@@ -3814,7 +3843,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
   __pyx_t_1 = __pyx_t_2;
   __pyx_L7_bool_binop_done:;
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":274
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":274
  *                 raise ValueError(u"ndarray is not C contiguous")
  * 
  *             if ((flags & pybuf.PyBUF_F_CONTIGUOUS == pybuf.PyBUF_F_CONTIGUOUS)             # <<<<<<<<<<<<<<
@@ -3823,7 +3852,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  */
   if (unlikely(__pyx_t_1)) {
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":276
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":276
  *             if ((flags & pybuf.PyBUF_F_CONTIGUOUS == pybuf.PyBUF_F_CONTIGUOUS)
  *                 and not PyArray_CHKFLAGS(self, NPY_ARRAY_F_CONTIGUOUS)):
  *                 raise ValueError(u"ndarray is not Fortran contiguous")             # <<<<<<<<<<<<<<
@@ -3836,7 +3865,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __PYX_ERR(1, 276, __pyx_L1_error)
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":274
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":274
  *                 raise ValueError(u"ndarray is not C contiguous")
  * 
  *             if ((flags & pybuf.PyBUF_F_CONTIGUOUS == pybuf.PyBUF_F_CONTIGUOUS)             # <<<<<<<<<<<<<<
@@ -3845,7 +3874,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  */
   }
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":278
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":278
  *                 raise ValueError(u"ndarray is not Fortran contiguous")
  * 
  *             info.buf = PyArray_DATA(self)             # <<<<<<<<<<<<<<
@@ -3854,7 +3883,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  */
   __pyx_v_info->buf = PyArray_DATA(__pyx_v_self);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":279
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":279
  * 
  *             info.buf = PyArray_DATA(self)
  *             info.ndim = ndim             # <<<<<<<<<<<<<<
@@ -3863,7 +3892,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  */
   __pyx_v_info->ndim = __pyx_v_ndim;
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":280
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":280
  *             info.buf = PyArray_DATA(self)
  *             info.ndim = ndim
  *             if sizeof(npy_intp) != sizeof(Py_ssize_t):             # <<<<<<<<<<<<<<
@@ -3873,7 +3902,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
   __pyx_t_1 = (((sizeof(npy_intp)) != (sizeof(Py_ssize_t))) != 0);
   if (__pyx_t_1) {
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":283
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":283
  *                 # Allocate new buffer for strides and shape info.
  *                 # This is allocated as one block, strides first.
  *                 info.strides = <Py_ssize_t*>PyObject_Malloc(sizeof(Py_ssize_t) * 2 * <size_t>ndim)             # <<<<<<<<<<<<<<
@@ -3882,7 +3911,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  */
     __pyx_v_info->strides = ((Py_ssize_t *)PyObject_Malloc((((sizeof(Py_ssize_t)) * 2) * ((size_t)__pyx_v_ndim))));
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":284
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":284
  *                 # This is allocated as one block, strides first.
  *                 info.strides = <Py_ssize_t*>PyObject_Malloc(sizeof(Py_ssize_t) * 2 * <size_t>ndim)
  *                 info.shape = info.strides + ndim             # <<<<<<<<<<<<<<
@@ -3891,7 +3920,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  */
     __pyx_v_info->shape = (__pyx_v_info->strides + __pyx_v_ndim);
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":285
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":285
  *                 info.strides = <Py_ssize_t*>PyObject_Malloc(sizeof(Py_ssize_t) * 2 * <size_t>ndim)
  *                 info.shape = info.strides + ndim
  *                 for i in range(ndim):             # <<<<<<<<<<<<<<
@@ -3903,7 +3932,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
     for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
       __pyx_v_i = __pyx_t_6;
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":286
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":286
  *                 info.shape = info.strides + ndim
  *                 for i in range(ndim):
  *                     info.strides[i] = PyArray_STRIDES(self)[i]             # <<<<<<<<<<<<<<
@@ -3912,7 +3941,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  */
       (__pyx_v_info->strides[__pyx_v_i]) = (PyArray_STRIDES(__pyx_v_self)[__pyx_v_i]);
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":287
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":287
  *                 for i in range(ndim):
  *                     info.strides[i] = PyArray_STRIDES(self)[i]
  *                     info.shape[i] = PyArray_DIMS(self)[i]             # <<<<<<<<<<<<<<
@@ -3922,7 +3951,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
       (__pyx_v_info->shape[__pyx_v_i]) = (PyArray_DIMS(__pyx_v_self)[__pyx_v_i]);
     }
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":280
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":280
  *             info.buf = PyArray_DATA(self)
  *             info.ndim = ndim
  *             if sizeof(npy_intp) != sizeof(Py_ssize_t):             # <<<<<<<<<<<<<<
@@ -3932,7 +3961,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
     goto __pyx_L9;
   }
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":289
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":289
  *                     info.shape[i] = PyArray_DIMS(self)[i]
  *             else:
  *                 info.strides = <Py_ssize_t*>PyArray_STRIDES(self)             # <<<<<<<<<<<<<<
@@ -3942,7 +3971,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
   /*else*/ {
     __pyx_v_info->strides = ((Py_ssize_t *)PyArray_STRIDES(__pyx_v_self));
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":290
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":290
  *             else:
  *                 info.strides = <Py_ssize_t*>PyArray_STRIDES(self)
  *                 info.shape = <Py_ssize_t*>PyArray_DIMS(self)             # <<<<<<<<<<<<<<
@@ -3953,7 +3982,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
   }
   __pyx_L9:;
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":291
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":291
  *                 info.strides = <Py_ssize_t*>PyArray_STRIDES(self)
  *                 info.shape = <Py_ssize_t*>PyArray_DIMS(self)
  *             info.suboffsets = NULL             # <<<<<<<<<<<<<<
@@ -3962,7 +3991,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  */
   __pyx_v_info->suboffsets = NULL;
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":292
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":292
  *                 info.shape = <Py_ssize_t*>PyArray_DIMS(self)
  *             info.suboffsets = NULL
  *             info.itemsize = PyArray_ITEMSIZE(self)             # <<<<<<<<<<<<<<
@@ -3971,7 +4000,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  */
   __pyx_v_info->itemsize = PyArray_ITEMSIZE(__pyx_v_self);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":293
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":293
  *             info.suboffsets = NULL
  *             info.itemsize = PyArray_ITEMSIZE(self)
  *             info.readonly = not PyArray_ISWRITEABLE(self)             # <<<<<<<<<<<<<<
@@ -3980,7 +4009,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  */
   __pyx_v_info->readonly = (!(PyArray_ISWRITEABLE(__pyx_v_self) != 0));
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":296
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":296
  * 
  *             cdef int t
  *             cdef char* f = NULL             # <<<<<<<<<<<<<<
@@ -3989,7 +4018,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  */
   __pyx_v_f = NULL;
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":297
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":297
  *             cdef int t
  *             cdef char* f = NULL
  *             cdef dtype descr = <dtype>PyArray_DESCR(self)             # <<<<<<<<<<<<<<
@@ -4002,7 +4031,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
   __pyx_v_descr = ((PyArray_Descr *)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":300
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":300
  *             cdef int offset
  * 
  *             info.obj = self             # <<<<<<<<<<<<<<
@@ -4015,7 +4044,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
   __Pyx_DECREF(__pyx_v_info->obj);
   __pyx_v_info->obj = ((PyObject *)__pyx_v_self);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":302
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":302
  *             info.obj = self
  * 
  *             if not PyDataType_HASFIELDS(descr):             # <<<<<<<<<<<<<<
@@ -4025,7 +4054,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
   __pyx_t_1 = ((!(PyDataType_HASFIELDS(__pyx_v_descr) != 0)) != 0);
   if (__pyx_t_1) {
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":303
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":303
  * 
  *             if not PyDataType_HASFIELDS(descr):
  *                 t = descr.type_num             # <<<<<<<<<<<<<<
@@ -4035,7 +4064,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
     __pyx_t_4 = __pyx_v_descr->type_num;
     __pyx_v_t = __pyx_t_4;
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":304
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":304
  *             if not PyDataType_HASFIELDS(descr):
  *                 t = descr.type_num
  *                 if ((descr.byteorder == c'>' and little_endian) or             # <<<<<<<<<<<<<<
@@ -4055,7 +4084,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
     }
     __pyx_L15_next_or:;
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":305
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":305
  *                 t = descr.type_num
  *                 if ((descr.byteorder == c'>' and little_endian) or
  *                     (descr.byteorder == c'<' and not little_endian)):             # <<<<<<<<<<<<<<
@@ -4072,7 +4101,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
     __pyx_t_1 = __pyx_t_2;
     __pyx_L14_bool_binop_done:;
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":304
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":304
  *             if not PyDataType_HASFIELDS(descr):
  *                 t = descr.type_num
  *                 if ((descr.byteorder == c'>' and little_endian) or             # <<<<<<<<<<<<<<
@@ -4081,7 +4110,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  */
     if (unlikely(__pyx_t_1)) {
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":306
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":306
  *                 if ((descr.byteorder == c'>' and little_endian) or
  *                     (descr.byteorder == c'<' and not little_endian)):
  *                     raise ValueError(u"Non-native byte order not supported")             # <<<<<<<<<<<<<<
@@ -4094,7 +4123,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __PYX_ERR(1, 306, __pyx_L1_error)
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":304
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":304
  *             if not PyDataType_HASFIELDS(descr):
  *                 t = descr.type_num
  *                 if ((descr.byteorder == c'>' and little_endian) or             # <<<<<<<<<<<<<<
@@ -4103,7 +4132,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  */
     }
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":307
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":307
  *                     (descr.byteorder == c'<' and not little_endian)):
  *                     raise ValueError(u"Non-native byte order not supported")
  *                 if   t == NPY_BYTE:        f = "b"             # <<<<<<<<<<<<<<
@@ -4116,7 +4145,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
       break;
       case NPY_UBYTE:
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":308
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":308
  *                     raise ValueError(u"Non-native byte order not supported")
  *                 if   t == NPY_BYTE:        f = "b"
  *                 elif t == NPY_UBYTE:       f = "B"             # <<<<<<<<<<<<<<
@@ -4127,7 +4156,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
       break;
       case NPY_SHORT:
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":309
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":309
  *                 if   t == NPY_BYTE:        f = "b"
  *                 elif t == NPY_UBYTE:       f = "B"
  *                 elif t == NPY_SHORT:       f = "h"             # <<<<<<<<<<<<<<
@@ -4138,7 +4167,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
       break;
       case NPY_USHORT:
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":310
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":310
  *                 elif t == NPY_UBYTE:       f = "B"
  *                 elif t == NPY_SHORT:       f = "h"
  *                 elif t == NPY_USHORT:      f = "H"             # <<<<<<<<<<<<<<
@@ -4149,7 +4178,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
       break;
       case NPY_INT:
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":311
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":311
  *                 elif t == NPY_SHORT:       f = "h"
  *                 elif t == NPY_USHORT:      f = "H"
  *                 elif t == NPY_INT:         f = "i"             # <<<<<<<<<<<<<<
@@ -4160,7 +4189,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
       break;
       case NPY_UINT:
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":312
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":312
  *                 elif t == NPY_USHORT:      f = "H"
  *                 elif t == NPY_INT:         f = "i"
  *                 elif t == NPY_UINT:        f = "I"             # <<<<<<<<<<<<<<
@@ -4171,7 +4200,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
       break;
       case NPY_LONG:
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":313
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":313
  *                 elif t == NPY_INT:         f = "i"
  *                 elif t == NPY_UINT:        f = "I"
  *                 elif t == NPY_LONG:        f = "l"             # <<<<<<<<<<<<<<
@@ -4182,7 +4211,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
       break;
       case NPY_ULONG:
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":314
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":314
  *                 elif t == NPY_UINT:        f = "I"
  *                 elif t == NPY_LONG:        f = "l"
  *                 elif t == NPY_ULONG:       f = "L"             # <<<<<<<<<<<<<<
@@ -4193,7 +4222,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
       break;
       case NPY_LONGLONG:
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":315
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":315
  *                 elif t == NPY_LONG:        f = "l"
  *                 elif t == NPY_ULONG:       f = "L"
  *                 elif t == NPY_LONGLONG:    f = "q"             # <<<<<<<<<<<<<<
@@ -4204,7 +4233,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
       break;
       case NPY_ULONGLONG:
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":316
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":316
  *                 elif t == NPY_ULONG:       f = "L"
  *                 elif t == NPY_LONGLONG:    f = "q"
  *                 elif t == NPY_ULONGLONG:   f = "Q"             # <<<<<<<<<<<<<<
@@ -4215,7 +4244,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
       break;
       case NPY_FLOAT:
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":317
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":317
  *                 elif t == NPY_LONGLONG:    f = "q"
  *                 elif t == NPY_ULONGLONG:   f = "Q"
  *                 elif t == NPY_FLOAT:       f = "f"             # <<<<<<<<<<<<<<
@@ -4226,7 +4255,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
       break;
       case NPY_DOUBLE:
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":318
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":318
  *                 elif t == NPY_ULONGLONG:   f = "Q"
  *                 elif t == NPY_FLOAT:       f = "f"
  *                 elif t == NPY_DOUBLE:      f = "d"             # <<<<<<<<<<<<<<
@@ -4237,7 +4266,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
       break;
       case NPY_LONGDOUBLE:
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":319
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":319
  *                 elif t == NPY_FLOAT:       f = "f"
  *                 elif t == NPY_DOUBLE:      f = "d"
  *                 elif t == NPY_LONGDOUBLE:  f = "g"             # <<<<<<<<<<<<<<
@@ -4248,7 +4277,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
       break;
       case NPY_CFLOAT:
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":320
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":320
  *                 elif t == NPY_DOUBLE:      f = "d"
  *                 elif t == NPY_LONGDOUBLE:  f = "g"
  *                 elif t == NPY_CFLOAT:      f = "Zf"             # <<<<<<<<<<<<<<
@@ -4259,7 +4288,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
       break;
       case NPY_CDOUBLE:
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":321
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":321
  *                 elif t == NPY_LONGDOUBLE:  f = "g"
  *                 elif t == NPY_CFLOAT:      f = "Zf"
  *                 elif t == NPY_CDOUBLE:     f = "Zd"             # <<<<<<<<<<<<<<
@@ -4270,7 +4299,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
       break;
       case NPY_CLONGDOUBLE:
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":322
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":322
  *                 elif t == NPY_CFLOAT:      f = "Zf"
  *                 elif t == NPY_CDOUBLE:     f = "Zd"
  *                 elif t == NPY_CLONGDOUBLE: f = "Zg"             # <<<<<<<<<<<<<<
@@ -4281,7 +4310,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
       break;
       case NPY_OBJECT:
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":323
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":323
  *                 elif t == NPY_CDOUBLE:     f = "Zd"
  *                 elif t == NPY_CLONGDOUBLE: f = "Zg"
  *                 elif t == NPY_OBJECT:      f = "O"             # <<<<<<<<<<<<<<
@@ -4292,7 +4321,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
       break;
       default:
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":325
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":325
  *                 elif t == NPY_OBJECT:      f = "O"
  *                 else:
  *                     raise ValueError(u"unknown dtype code in numpy.pxd (%d)" % t)             # <<<<<<<<<<<<<<
@@ -4313,7 +4342,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
       break;
     }
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":326
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":326
  *                 else:
  *                     raise ValueError(u"unknown dtype code in numpy.pxd (%d)" % t)
  *                 info.format = f             # <<<<<<<<<<<<<<
@@ -4322,7 +4351,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  */
     __pyx_v_info->format = __pyx_v_f;
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":327
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":327
  *                     raise ValueError(u"unknown dtype code in numpy.pxd (%d)" % t)
  *                 info.format = f
  *                 return             # <<<<<<<<<<<<<<
@@ -4332,7 +4361,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
     __pyx_r = 0;
     goto __pyx_L0;
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":302
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":302
  *             info.obj = self
  * 
  *             if not PyDataType_HASFIELDS(descr):             # <<<<<<<<<<<<<<
@@ -4341,7 +4370,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  */
   }
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":329
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":329
  *                 return
  *             else:
  *                 info.format = <char*>PyObject_Malloc(_buffer_format_string_len)             # <<<<<<<<<<<<<<
@@ -4351,7 +4380,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
   /*else*/ {
     __pyx_v_info->format = ((char *)PyObject_Malloc(0xFF));
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":330
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":330
  *             else:
  *                 info.format = <char*>PyObject_Malloc(_buffer_format_string_len)
  *                 info.format[0] = c'^' # Native data types, manual alignment             # <<<<<<<<<<<<<<
@@ -4360,7 +4389,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  */
     (__pyx_v_info->format[0]) = '^';
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":331
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":331
  *                 info.format = <char*>PyObject_Malloc(_buffer_format_string_len)
  *                 info.format[0] = c'^' # Native data types, manual alignment
  *                 offset = 0             # <<<<<<<<<<<<<<
@@ -4369,7 +4398,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  */
     __pyx_v_offset = 0;
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":332
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":332
  *                 info.format[0] = c'^' # Native data types, manual alignment
  *                 offset = 0
  *                 f = _util_dtypestring(descr, info.format + 1,             # <<<<<<<<<<<<<<
@@ -4379,7 +4408,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
     __pyx_t_9 = __pyx_f_5numpy__util_dtypestring(__pyx_v_descr, (__pyx_v_info->format + 1), (__pyx_v_info->format + 0xFF), (&__pyx_v_offset)); if (unlikely(__pyx_t_9 == ((char *)NULL))) __PYX_ERR(1, 332, __pyx_L1_error)
     __pyx_v_f = __pyx_t_9;
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":335
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":335
  *                                       info.format + _buffer_format_string_len,
  *                                       &offset)
  *                 f[0] = c'\0' # Terminate format string             # <<<<<<<<<<<<<<
@@ -4389,7 +4418,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
     (__pyx_v_f[0]) = '\x00';
   }
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":258
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":258
  *         # experimental exception made for __getbuffer__ and __releasebuffer__
  *         # -- the details of this may change.
  *         def __getbuffer__(ndarray self, Py_buffer* info, int flags):             # <<<<<<<<<<<<<<
@@ -4421,7 +4450,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
   return __pyx_r;
 }
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":337
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":337
  *                 f[0] = c'\0' # Terminate format string
  * 
  *         def __releasebuffer__(ndarray self, Py_buffer* info):             # <<<<<<<<<<<<<<
@@ -4445,7 +4474,7 @@ static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_s
   int __pyx_t_1;
   __Pyx_RefNannySetupContext("__releasebuffer__", 0);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":338
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":338
  * 
  *         def __releasebuffer__(ndarray self, Py_buffer* info):
  *             if PyArray_HASFIELDS(self):             # <<<<<<<<<<<<<<
@@ -4455,7 +4484,7 @@ static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_s
   __pyx_t_1 = (PyArray_HASFIELDS(__pyx_v_self) != 0);
   if (__pyx_t_1) {
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":339
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":339
  *         def __releasebuffer__(ndarray self, Py_buffer* info):
  *             if PyArray_HASFIELDS(self):
  *                 PyObject_Free(info.format)             # <<<<<<<<<<<<<<
@@ -4464,7 +4493,7 @@ static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_s
  */
     PyObject_Free(__pyx_v_info->format);
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":338
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":338
  * 
  *         def __releasebuffer__(ndarray self, Py_buffer* info):
  *             if PyArray_HASFIELDS(self):             # <<<<<<<<<<<<<<
@@ -4473,7 +4502,7 @@ static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_s
  */
   }
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":340
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":340
  *             if PyArray_HASFIELDS(self):
  *                 PyObject_Free(info.format)
  *             if sizeof(npy_intp) != sizeof(Py_ssize_t):             # <<<<<<<<<<<<<<
@@ -4483,7 +4512,7 @@ static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_s
   __pyx_t_1 = (((sizeof(npy_intp)) != (sizeof(Py_ssize_t))) != 0);
   if (__pyx_t_1) {
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":341
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":341
  *                 PyObject_Free(info.format)
  *             if sizeof(npy_intp) != sizeof(Py_ssize_t):
  *                 PyObject_Free(info.strides)             # <<<<<<<<<<<<<<
@@ -4492,7 +4521,7 @@ static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_s
  */
     PyObject_Free(__pyx_v_info->strides);
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":340
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":340
  *             if PyArray_HASFIELDS(self):
  *                 PyObject_Free(info.format)
  *             if sizeof(npy_intp) != sizeof(Py_ssize_t):             # <<<<<<<<<<<<<<
@@ -4501,7 +4530,7 @@ static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_s
  */
   }
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":337
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":337
  *                 f[0] = c'\0' # Terminate format string
  * 
  *         def __releasebuffer__(ndarray self, Py_buffer* info):             # <<<<<<<<<<<<<<
@@ -4513,7 +4542,7 @@ static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_s
   __Pyx_RefNannyFinishContext();
 }
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":821
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":821
  * ctypedef npy_cdouble     complex_t
  * 
  * cdef inline object PyArray_MultiIterNew1(a):             # <<<<<<<<<<<<<<
@@ -4527,7 +4556,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew1(PyObject *__
   PyObject *__pyx_t_1 = NULL;
   __Pyx_RefNannySetupContext("PyArray_MultiIterNew1", 0);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":822
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":822
  * 
  * cdef inline object PyArray_MultiIterNew1(a):
  *     return PyArray_MultiIterNew(1, <void*>a)             # <<<<<<<<<<<<<<
@@ -4541,7 +4570,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew1(PyObject *__
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":821
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":821
  * ctypedef npy_cdouble     complex_t
  * 
  * cdef inline object PyArray_MultiIterNew1(a):             # <<<<<<<<<<<<<<
@@ -4560,7 +4589,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew1(PyObject *__
   return __pyx_r;
 }
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":824
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":824
  *     return PyArray_MultiIterNew(1, <void*>a)
  * 
  * cdef inline object PyArray_MultiIterNew2(a, b):             # <<<<<<<<<<<<<<
@@ -4574,7 +4603,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew2(PyObject *__
   PyObject *__pyx_t_1 = NULL;
   __Pyx_RefNannySetupContext("PyArray_MultiIterNew2", 0);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":825
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":825
  * 
  * cdef inline object PyArray_MultiIterNew2(a, b):
  *     return PyArray_MultiIterNew(2, <void*>a, <void*>b)             # <<<<<<<<<<<<<<
@@ -4588,7 +4617,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew2(PyObject *__
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":824
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":824
  *     return PyArray_MultiIterNew(1, <void*>a)
  * 
  * cdef inline object PyArray_MultiIterNew2(a, b):             # <<<<<<<<<<<<<<
@@ -4607,7 +4636,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew2(PyObject *__
   return __pyx_r;
 }
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":827
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":827
  *     return PyArray_MultiIterNew(2, <void*>a, <void*>b)
  * 
  * cdef inline object PyArray_MultiIterNew3(a, b, c):             # <<<<<<<<<<<<<<
@@ -4621,7 +4650,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew3(PyObject *__
   PyObject *__pyx_t_1 = NULL;
   __Pyx_RefNannySetupContext("PyArray_MultiIterNew3", 0);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":828
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":828
  * 
  * cdef inline object PyArray_MultiIterNew3(a, b, c):
  *     return PyArray_MultiIterNew(3, <void*>a, <void*>b, <void*> c)             # <<<<<<<<<<<<<<
@@ -4635,7 +4664,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew3(PyObject *__
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":827
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":827
  *     return PyArray_MultiIterNew(2, <void*>a, <void*>b)
  * 
  * cdef inline object PyArray_MultiIterNew3(a, b, c):             # <<<<<<<<<<<<<<
@@ -4654,7 +4683,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew3(PyObject *__
   return __pyx_r;
 }
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":830
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":830
  *     return PyArray_MultiIterNew(3, <void*>a, <void*>b, <void*> c)
  * 
  * cdef inline object PyArray_MultiIterNew4(a, b, c, d):             # <<<<<<<<<<<<<<
@@ -4668,7 +4697,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew4(PyObject *__
   PyObject *__pyx_t_1 = NULL;
   __Pyx_RefNannySetupContext("PyArray_MultiIterNew4", 0);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":831
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":831
  * 
  * cdef inline object PyArray_MultiIterNew4(a, b, c, d):
  *     return PyArray_MultiIterNew(4, <void*>a, <void*>b, <void*>c, <void*> d)             # <<<<<<<<<<<<<<
@@ -4682,7 +4711,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew4(PyObject *__
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":830
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":830
  *     return PyArray_MultiIterNew(3, <void*>a, <void*>b, <void*> c)
  * 
  * cdef inline object PyArray_MultiIterNew4(a, b, c, d):             # <<<<<<<<<<<<<<
@@ -4701,7 +4730,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew4(PyObject *__
   return __pyx_r;
 }
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":833
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":833
  *     return PyArray_MultiIterNew(4, <void*>a, <void*>b, <void*>c, <void*> d)
  * 
  * cdef inline object PyArray_MultiIterNew5(a, b, c, d, e):             # <<<<<<<<<<<<<<
@@ -4715,7 +4744,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew5(PyObject *__
   PyObject *__pyx_t_1 = NULL;
   __Pyx_RefNannySetupContext("PyArray_MultiIterNew5", 0);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":834
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":834
  * 
  * cdef inline object PyArray_MultiIterNew5(a, b, c, d, e):
  *     return PyArray_MultiIterNew(5, <void*>a, <void*>b, <void*>c, <void*> d, <void*> e)             # <<<<<<<<<<<<<<
@@ -4729,7 +4758,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew5(PyObject *__
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":833
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":833
  *     return PyArray_MultiIterNew(4, <void*>a, <void*>b, <void*>c, <void*> d)
  * 
  * cdef inline object PyArray_MultiIterNew5(a, b, c, d, e):             # <<<<<<<<<<<<<<
@@ -4748,7 +4777,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew5(PyObject *__
   return __pyx_r;
 }
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":836
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":836
  *     return PyArray_MultiIterNew(5, <void*>a, <void*>b, <void*>c, <void*> d, <void*> e)
  * 
  * cdef inline tuple PyDataType_SHAPE(dtype d):             # <<<<<<<<<<<<<<
@@ -4762,7 +4791,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyDataType_SHAPE(PyArray_Descr *__
   int __pyx_t_1;
   __Pyx_RefNannySetupContext("PyDataType_SHAPE", 0);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":837
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":837
  * 
  * cdef inline tuple PyDataType_SHAPE(dtype d):
  *     if PyDataType_HASSUBARRAY(d):             # <<<<<<<<<<<<<<
@@ -4772,7 +4801,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyDataType_SHAPE(PyArray_Descr *__
   __pyx_t_1 = (PyDataType_HASSUBARRAY(__pyx_v_d) != 0);
   if (__pyx_t_1) {
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":838
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":838
  * cdef inline tuple PyDataType_SHAPE(dtype d):
  *     if PyDataType_HASSUBARRAY(d):
  *         return <tuple>d.subarray.shape             # <<<<<<<<<<<<<<
@@ -4784,7 +4813,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyDataType_SHAPE(PyArray_Descr *__
     __pyx_r = ((PyObject*)__pyx_v_d->subarray->shape);
     goto __pyx_L0;
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":837
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":837
  * 
  * cdef inline tuple PyDataType_SHAPE(dtype d):
  *     if PyDataType_HASSUBARRAY(d):             # <<<<<<<<<<<<<<
@@ -4793,7 +4822,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyDataType_SHAPE(PyArray_Descr *__
  */
   }
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":840
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":840
  *         return <tuple>d.subarray.shape
  *     else:
  *         return ()             # <<<<<<<<<<<<<<
@@ -4807,7 +4836,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyDataType_SHAPE(PyArray_Descr *__
     goto __pyx_L0;
   }
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":836
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":836
  *     return PyArray_MultiIterNew(5, <void*>a, <void*>b, <void*>c, <void*> d, <void*> e)
  * 
  * cdef inline tuple PyDataType_SHAPE(dtype d):             # <<<<<<<<<<<<<<
@@ -4822,7 +4851,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyDataType_SHAPE(PyArray_Descr *__
   return __pyx_r;
 }
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":842
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":842
  *         return ()
  * 
  * cdef inline char* _util_dtypestring(dtype descr, char* f, char* end, int* offset) except NULL:             # <<<<<<<<<<<<<<
@@ -4851,7 +4880,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
   char *__pyx_t_9;
   __Pyx_RefNannySetupContext("_util_dtypestring", 0);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":847
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":847
  * 
  *     cdef dtype child
  *     cdef int endian_detector = 1             # <<<<<<<<<<<<<<
@@ -4860,7 +4889,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
  */
   __pyx_v_endian_detector = 1;
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":848
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":848
  *     cdef dtype child
  *     cdef int endian_detector = 1
  *     cdef bint little_endian = ((<char*>&endian_detector)[0] != 0)             # <<<<<<<<<<<<<<
@@ -4869,7 +4898,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
  */
   __pyx_v_little_endian = ((((char *)(&__pyx_v_endian_detector))[0]) != 0);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":851
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":851
  *     cdef tuple fields
  * 
  *     for childname in descr.names:             # <<<<<<<<<<<<<<
@@ -4892,7 +4921,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
     __Pyx_XDECREF_SET(__pyx_v_childname, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":852
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":852
  * 
  *     for childname in descr.names:
  *         fields = descr.fields[childname]             # <<<<<<<<<<<<<<
@@ -4909,7 +4938,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
     __Pyx_XDECREF_SET(__pyx_v_fields, ((PyObject*)__pyx_t_3));
     __pyx_t_3 = 0;
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":853
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":853
  *     for childname in descr.names:
  *         fields = descr.fields[childname]
  *         child, new_offset = fields             # <<<<<<<<<<<<<<
@@ -4944,7 +4973,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
     __Pyx_XDECREF_SET(__pyx_v_new_offset, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":855
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":855
  *         child, new_offset = fields
  * 
  *         if (end - f) - <int>(new_offset - offset[0]) < 15:             # <<<<<<<<<<<<<<
@@ -4961,7 +4990,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
     __pyx_t_6 = ((((__pyx_v_end - __pyx_v_f) - ((int)__pyx_t_5)) < 15) != 0);
     if (unlikely(__pyx_t_6)) {
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":856
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":856
  * 
  *         if (end - f) - <int>(new_offset - offset[0]) < 15:
  *             raise RuntimeError(u"Format string allocated too short, see comment in numpy.pxd")             # <<<<<<<<<<<<<<
@@ -4974,7 +5003,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __PYX_ERR(1, 856, __pyx_L1_error)
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":855
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":855
  *         child, new_offset = fields
  * 
  *         if (end - f) - <int>(new_offset - offset[0]) < 15:             # <<<<<<<<<<<<<<
@@ -4983,7 +5012,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
  */
     }
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":858
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":858
  *             raise RuntimeError(u"Format string allocated too short, see comment in numpy.pxd")
  * 
  *         if ((child.byteorder == c'>' and little_endian) or             # <<<<<<<<<<<<<<
@@ -5003,7 +5032,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
     }
     __pyx_L8_next_or:;
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":859
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":859
  * 
  *         if ((child.byteorder == c'>' and little_endian) or
  *             (child.byteorder == c'<' and not little_endian)):             # <<<<<<<<<<<<<<
@@ -5020,7 +5049,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
     __pyx_t_6 = __pyx_t_7;
     __pyx_L7_bool_binop_done:;
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":858
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":858
  *             raise RuntimeError(u"Format string allocated too short, see comment in numpy.pxd")
  * 
  *         if ((child.byteorder == c'>' and little_endian) or             # <<<<<<<<<<<<<<
@@ -5029,7 +5058,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
  */
     if (unlikely(__pyx_t_6)) {
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":860
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":860
  *         if ((child.byteorder == c'>' and little_endian) or
  *             (child.byteorder == c'<' and not little_endian)):
  *             raise ValueError(u"Non-native byte order not supported")             # <<<<<<<<<<<<<<
@@ -5042,7 +5071,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __PYX_ERR(1, 860, __pyx_L1_error)
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":858
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":858
  *             raise RuntimeError(u"Format string allocated too short, see comment in numpy.pxd")
  * 
  *         if ((child.byteorder == c'>' and little_endian) or             # <<<<<<<<<<<<<<
@@ -5051,7 +5080,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
  */
     }
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":870
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":870
  * 
  *         # Output padding bytes
  *         while offset[0] < new_offset:             # <<<<<<<<<<<<<<
@@ -5067,7 +5096,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       if (!__pyx_t_6) break;
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":871
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":871
  *         # Output padding bytes
  *         while offset[0] < new_offset:
  *             f[0] = 120 # "x"; pad byte             # <<<<<<<<<<<<<<
@@ -5076,7 +5105,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
  */
       (__pyx_v_f[0]) = 0x78;
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":872
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":872
  *         while offset[0] < new_offset:
  *             f[0] = 120 # "x"; pad byte
  *             f += 1             # <<<<<<<<<<<<<<
@@ -5085,7 +5114,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
  */
       __pyx_v_f = (__pyx_v_f + 1);
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":873
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":873
  *             f[0] = 120 # "x"; pad byte
  *             f += 1
  *             offset[0] += 1             # <<<<<<<<<<<<<<
@@ -5096,7 +5125,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
       (__pyx_v_offset[__pyx_t_8]) = ((__pyx_v_offset[__pyx_t_8]) + 1);
     }
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":875
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":875
  *             offset[0] += 1
  * 
  *         offset[0] += child.itemsize             # <<<<<<<<<<<<<<
@@ -5106,7 +5135,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
     __pyx_t_8 = 0;
     (__pyx_v_offset[__pyx_t_8]) = ((__pyx_v_offset[__pyx_t_8]) + __pyx_v_child->elsize);
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":877
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":877
  *         offset[0] += child.itemsize
  * 
  *         if not PyDataType_HASFIELDS(child):             # <<<<<<<<<<<<<<
@@ -5116,7 +5145,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
     __pyx_t_6 = ((!(PyDataType_HASFIELDS(__pyx_v_child) != 0)) != 0);
     if (__pyx_t_6) {
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":878
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":878
  * 
  *         if not PyDataType_HASFIELDS(child):
  *             t = child.type_num             # <<<<<<<<<<<<<<
@@ -5128,7 +5157,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
       __Pyx_XDECREF_SET(__pyx_v_t, __pyx_t_4);
       __pyx_t_4 = 0;
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":879
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":879
  *         if not PyDataType_HASFIELDS(child):
  *             t = child.type_num
  *             if end - f < 5:             # <<<<<<<<<<<<<<
@@ -5138,7 +5167,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
       __pyx_t_6 = (((__pyx_v_end - __pyx_v_f) < 5) != 0);
       if (unlikely(__pyx_t_6)) {
 
-        /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":880
+        /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":880
  *             t = child.type_num
  *             if end - f < 5:
  *                 raise RuntimeError(u"Format string allocated too short.")             # <<<<<<<<<<<<<<
@@ -5151,7 +5180,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         __PYX_ERR(1, 880, __pyx_L1_error)
 
-        /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":879
+        /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":879
  *         if not PyDataType_HASFIELDS(child):
  *             t = child.type_num
  *             if end - f < 5:             # <<<<<<<<<<<<<<
@@ -5160,7 +5189,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
  */
       }
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":883
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":883
  * 
  *             # Until ticket #99 is fixed, use integers to avoid warnings
  *             if   t == NPY_BYTE:        f[0] =  98 #"b"             # <<<<<<<<<<<<<<
@@ -5178,7 +5207,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
         goto __pyx_L15;
       }
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":884
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":884
  *             # Until ticket #99 is fixed, use integers to avoid warnings
  *             if   t == NPY_BYTE:        f[0] =  98 #"b"
  *             elif t == NPY_UBYTE:       f[0] =  66 #"B"             # <<<<<<<<<<<<<<
@@ -5196,7 +5225,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
         goto __pyx_L15;
       }
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":885
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":885
  *             if   t == NPY_BYTE:        f[0] =  98 #"b"
  *             elif t == NPY_UBYTE:       f[0] =  66 #"B"
  *             elif t == NPY_SHORT:       f[0] = 104 #"h"             # <<<<<<<<<<<<<<
@@ -5214,7 +5243,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
         goto __pyx_L15;
       }
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":886
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":886
  *             elif t == NPY_UBYTE:       f[0] =  66 #"B"
  *             elif t == NPY_SHORT:       f[0] = 104 #"h"
  *             elif t == NPY_USHORT:      f[0] =  72 #"H"             # <<<<<<<<<<<<<<
@@ -5232,7 +5261,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
         goto __pyx_L15;
       }
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":887
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":887
  *             elif t == NPY_SHORT:       f[0] = 104 #"h"
  *             elif t == NPY_USHORT:      f[0] =  72 #"H"
  *             elif t == NPY_INT:         f[0] = 105 #"i"             # <<<<<<<<<<<<<<
@@ -5250,7 +5279,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
         goto __pyx_L15;
       }
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":888
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":888
  *             elif t == NPY_USHORT:      f[0] =  72 #"H"
  *             elif t == NPY_INT:         f[0] = 105 #"i"
  *             elif t == NPY_UINT:        f[0] =  73 #"I"             # <<<<<<<<<<<<<<
@@ -5268,7 +5297,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
         goto __pyx_L15;
       }
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":889
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":889
  *             elif t == NPY_INT:         f[0] = 105 #"i"
  *             elif t == NPY_UINT:        f[0] =  73 #"I"
  *             elif t == NPY_LONG:        f[0] = 108 #"l"             # <<<<<<<<<<<<<<
@@ -5286,7 +5315,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
         goto __pyx_L15;
       }
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":890
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":890
  *             elif t == NPY_UINT:        f[0] =  73 #"I"
  *             elif t == NPY_LONG:        f[0] = 108 #"l"
  *             elif t == NPY_ULONG:       f[0] = 76  #"L"             # <<<<<<<<<<<<<<
@@ -5304,7 +5333,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
         goto __pyx_L15;
       }
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":891
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":891
  *             elif t == NPY_LONG:        f[0] = 108 #"l"
  *             elif t == NPY_ULONG:       f[0] = 76  #"L"
  *             elif t == NPY_LONGLONG:    f[0] = 113 #"q"             # <<<<<<<<<<<<<<
@@ -5322,7 +5351,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
         goto __pyx_L15;
       }
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":892
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":892
  *             elif t == NPY_ULONG:       f[0] = 76  #"L"
  *             elif t == NPY_LONGLONG:    f[0] = 113 #"q"
  *             elif t == NPY_ULONGLONG:   f[0] = 81  #"Q"             # <<<<<<<<<<<<<<
@@ -5340,7 +5369,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
         goto __pyx_L15;
       }
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":893
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":893
  *             elif t == NPY_LONGLONG:    f[0] = 113 #"q"
  *             elif t == NPY_ULONGLONG:   f[0] = 81  #"Q"
  *             elif t == NPY_FLOAT:       f[0] = 102 #"f"             # <<<<<<<<<<<<<<
@@ -5358,7 +5387,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
         goto __pyx_L15;
       }
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":894
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":894
  *             elif t == NPY_ULONGLONG:   f[0] = 81  #"Q"
  *             elif t == NPY_FLOAT:       f[0] = 102 #"f"
  *             elif t == NPY_DOUBLE:      f[0] = 100 #"d"             # <<<<<<<<<<<<<<
@@ -5376,7 +5405,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
         goto __pyx_L15;
       }
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":895
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":895
  *             elif t == NPY_FLOAT:       f[0] = 102 #"f"
  *             elif t == NPY_DOUBLE:      f[0] = 100 #"d"
  *             elif t == NPY_LONGDOUBLE:  f[0] = 103 #"g"             # <<<<<<<<<<<<<<
@@ -5394,7 +5423,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
         goto __pyx_L15;
       }
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":896
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":896
  *             elif t == NPY_DOUBLE:      f[0] = 100 #"d"
  *             elif t == NPY_LONGDOUBLE:  f[0] = 103 #"g"
  *             elif t == NPY_CFLOAT:      f[0] = 90; f[1] = 102; f += 1 # Zf             # <<<<<<<<<<<<<<
@@ -5414,7 +5443,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
         goto __pyx_L15;
       }
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":897
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":897
  *             elif t == NPY_LONGDOUBLE:  f[0] = 103 #"g"
  *             elif t == NPY_CFLOAT:      f[0] = 90; f[1] = 102; f += 1 # Zf
  *             elif t == NPY_CDOUBLE:     f[0] = 90; f[1] = 100; f += 1 # Zd             # <<<<<<<<<<<<<<
@@ -5434,7 +5463,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
         goto __pyx_L15;
       }
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":898
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":898
  *             elif t == NPY_CFLOAT:      f[0] = 90; f[1] = 102; f += 1 # Zf
  *             elif t == NPY_CDOUBLE:     f[0] = 90; f[1] = 100; f += 1 # Zd
  *             elif t == NPY_CLONGDOUBLE: f[0] = 90; f[1] = 103; f += 1 # Zg             # <<<<<<<<<<<<<<
@@ -5454,7 +5483,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
         goto __pyx_L15;
       }
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":899
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":899
  *             elif t == NPY_CDOUBLE:     f[0] = 90; f[1] = 100; f += 1 # Zd
  *             elif t == NPY_CLONGDOUBLE: f[0] = 90; f[1] = 103; f += 1 # Zg
  *             elif t == NPY_OBJECT:      f[0] = 79 #"O"             # <<<<<<<<<<<<<<
@@ -5472,7 +5501,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
         goto __pyx_L15;
       }
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":901
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":901
  *             elif t == NPY_OBJECT:      f[0] = 79 #"O"
  *             else:
  *                 raise ValueError(u"unknown dtype code in numpy.pxd (%d)" % t)             # <<<<<<<<<<<<<<
@@ -5491,7 +5520,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
       }
       __pyx_L15:;
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":902
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":902
  *             else:
  *                 raise ValueError(u"unknown dtype code in numpy.pxd (%d)" % t)
  *             f += 1             # <<<<<<<<<<<<<<
@@ -5500,7 +5529,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
  */
       __pyx_v_f = (__pyx_v_f + 1);
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":877
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":877
  *         offset[0] += child.itemsize
  * 
  *         if not PyDataType_HASFIELDS(child):             # <<<<<<<<<<<<<<
@@ -5510,7 +5539,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
       goto __pyx_L13;
     }
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":906
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":906
  *             # Cython ignores struct boundary information ("T{...}"),
  *             # so don't output it
  *             f = _util_dtypestring(child, f, end, offset)             # <<<<<<<<<<<<<<
@@ -5523,7 +5552,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
     }
     __pyx_L13:;
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":851
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":851
  *     cdef tuple fields
  * 
  *     for childname in descr.names:             # <<<<<<<<<<<<<<
@@ -5533,7 +5562,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":907
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":907
  *             # so don't output it
  *             f = _util_dtypestring(child, f, end, offset)
  *     return f             # <<<<<<<<<<<<<<
@@ -5543,7 +5572,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
   __pyx_r = __pyx_v_f;
   goto __pyx_L0;
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":842
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":842
  *         return ()
  * 
  * cdef inline char* _util_dtypestring(dtype descr, char* f, char* end, int* offset) except NULL:             # <<<<<<<<<<<<<<
@@ -5568,7 +5597,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
   return __pyx_r;
 }
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1022
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1022
  *     int _import_umath() except -1
  * 
  * cdef inline void set_array_base(ndarray arr, object base):             # <<<<<<<<<<<<<<
@@ -5580,7 +5609,7 @@ static CYTHON_INLINE void __pyx_f_5numpy_set_array_base(PyArrayObject *__pyx_v_a
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("set_array_base", 0);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1023
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1023
  * 
  * cdef inline void set_array_base(ndarray arr, object base):
  *     Py_INCREF(base) # important to do this before stealing the reference below!             # <<<<<<<<<<<<<<
@@ -5589,7 +5618,7 @@ static CYTHON_INLINE void __pyx_f_5numpy_set_array_base(PyArrayObject *__pyx_v_a
  */
   Py_INCREF(__pyx_v_base);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1024
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1024
  * cdef inline void set_array_base(ndarray arr, object base):
  *     Py_INCREF(base) # important to do this before stealing the reference below!
  *     PyArray_SetBaseObject(arr, base)             # <<<<<<<<<<<<<<
@@ -5598,7 +5627,7 @@ static CYTHON_INLINE void __pyx_f_5numpy_set_array_base(PyArrayObject *__pyx_v_a
  */
   (void)(PyArray_SetBaseObject(__pyx_v_arr, __pyx_v_base));
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1022
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1022
  *     int _import_umath() except -1
  * 
  * cdef inline void set_array_base(ndarray arr, object base):             # <<<<<<<<<<<<<<
@@ -5610,7 +5639,7 @@ static CYTHON_INLINE void __pyx_f_5numpy_set_array_base(PyArrayObject *__pyx_v_a
   __Pyx_RefNannyFinishContext();
 }
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1026
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1026
  *     PyArray_SetBaseObject(arr, base)
  * 
  * cdef inline object get_array_base(ndarray arr):             # <<<<<<<<<<<<<<
@@ -5625,7 +5654,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_get_array_base(PyArrayObject *__py
   int __pyx_t_1;
   __Pyx_RefNannySetupContext("get_array_base", 0);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1027
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1027
  * 
  * cdef inline object get_array_base(ndarray arr):
  *     base = PyArray_BASE(arr)             # <<<<<<<<<<<<<<
@@ -5634,7 +5663,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_get_array_base(PyArrayObject *__py
  */
   __pyx_v_base = PyArray_BASE(__pyx_v_arr);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1028
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1028
  * cdef inline object get_array_base(ndarray arr):
  *     base = PyArray_BASE(arr)
  *     if base is NULL:             # <<<<<<<<<<<<<<
@@ -5644,7 +5673,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_get_array_base(PyArrayObject *__py
   __pyx_t_1 = ((__pyx_v_base == NULL) != 0);
   if (__pyx_t_1) {
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1029
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1029
  *     base = PyArray_BASE(arr)
  *     if base is NULL:
  *         return None             # <<<<<<<<<<<<<<
@@ -5655,7 +5684,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_get_array_base(PyArrayObject *__py
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1028
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1028
  * cdef inline object get_array_base(ndarray arr):
  *     base = PyArray_BASE(arr)
  *     if base is NULL:             # <<<<<<<<<<<<<<
@@ -5664,7 +5693,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_get_array_base(PyArrayObject *__py
  */
   }
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1030
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1030
  *     if base is NULL:
  *         return None
  *     return <object>base             # <<<<<<<<<<<<<<
@@ -5676,7 +5705,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_get_array_base(PyArrayObject *__py
   __pyx_r = ((PyObject *)__pyx_v_base);
   goto __pyx_L0;
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1026
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1026
  *     PyArray_SetBaseObject(arr, base)
  * 
  * cdef inline object get_array_base(ndarray arr):             # <<<<<<<<<<<<<<
@@ -5691,7 +5720,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_get_array_base(PyArrayObject *__py
   return __pyx_r;
 }
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1034
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1034
  * # Versions of the import_* functions which are more suitable for
  * # Cython code.
  * cdef inline int import_array() except -1:             # <<<<<<<<<<<<<<
@@ -5712,7 +5741,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_array(void) {
   PyObject *__pyx_t_8 = NULL;
   __Pyx_RefNannySetupContext("import_array", 0);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1035
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1035
  * # Cython code.
  * cdef inline int import_array() except -1:
  *     try:             # <<<<<<<<<<<<<<
@@ -5728,7 +5757,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_array(void) {
     __Pyx_XGOTREF(__pyx_t_3);
     /*try:*/ {
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1036
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1036
  * cdef inline int import_array() except -1:
  *     try:
  *         _import_array()             # <<<<<<<<<<<<<<
@@ -5737,7 +5766,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_array(void) {
  */
       __pyx_t_4 = _import_array(); if (unlikely(__pyx_t_4 == ((int)-1))) __PYX_ERR(1, 1036, __pyx_L3_error)
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1035
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1035
  * # Cython code.
  * cdef inline int import_array() except -1:
  *     try:             # <<<<<<<<<<<<<<
@@ -5751,7 +5780,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_array(void) {
     goto __pyx_L8_try_end;
     __pyx_L3_error:;
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1037
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1037
  *     try:
  *         _import_array()
  *     except Exception:             # <<<<<<<<<<<<<<
@@ -5766,7 +5795,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_array(void) {
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_GOTREF(__pyx_t_7);
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1038
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1038
  *         _import_array()
  *     except Exception:
  *         raise ImportError("numpy.core.multiarray failed to import")             # <<<<<<<<<<<<<<
@@ -5782,7 +5811,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_array(void) {
     goto __pyx_L5_except_error;
     __pyx_L5_except_error:;
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1035
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1035
  * # Cython code.
  * cdef inline int import_array() except -1:
  *     try:             # <<<<<<<<<<<<<<
@@ -5797,7 +5826,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_array(void) {
     __pyx_L8_try_end:;
   }
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1034
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1034
  * # Versions of the import_* functions which are more suitable for
  * # Cython code.
  * cdef inline int import_array() except -1:             # <<<<<<<<<<<<<<
@@ -5820,7 +5849,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_array(void) {
   return __pyx_r;
 }
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1040
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1040
  *         raise ImportError("numpy.core.multiarray failed to import")
  * 
  * cdef inline int import_umath() except -1:             # <<<<<<<<<<<<<<
@@ -5841,7 +5870,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
   PyObject *__pyx_t_8 = NULL;
   __Pyx_RefNannySetupContext("import_umath", 0);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1041
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1041
  * 
  * cdef inline int import_umath() except -1:
  *     try:             # <<<<<<<<<<<<<<
@@ -5857,7 +5886,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
     __Pyx_XGOTREF(__pyx_t_3);
     /*try:*/ {
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1042
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1042
  * cdef inline int import_umath() except -1:
  *     try:
  *         _import_umath()             # <<<<<<<<<<<<<<
@@ -5866,7 +5895,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
  */
       __pyx_t_4 = _import_umath(); if (unlikely(__pyx_t_4 == ((int)-1))) __PYX_ERR(1, 1042, __pyx_L3_error)
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1041
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1041
  * 
  * cdef inline int import_umath() except -1:
  *     try:             # <<<<<<<<<<<<<<
@@ -5880,7 +5909,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
     goto __pyx_L8_try_end;
     __pyx_L3_error:;
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1043
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1043
  *     try:
  *         _import_umath()
  *     except Exception:             # <<<<<<<<<<<<<<
@@ -5895,7 +5924,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_GOTREF(__pyx_t_7);
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1044
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1044
  *         _import_umath()
  *     except Exception:
  *         raise ImportError("numpy.core.umath failed to import")             # <<<<<<<<<<<<<<
@@ -5911,7 +5940,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
     goto __pyx_L5_except_error;
     __pyx_L5_except_error:;
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1041
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1041
  * 
  * cdef inline int import_umath() except -1:
  *     try:             # <<<<<<<<<<<<<<
@@ -5926,7 +5955,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
     __pyx_L8_try_end:;
   }
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1040
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1040
  *         raise ImportError("numpy.core.multiarray failed to import")
  * 
  * cdef inline int import_umath() except -1:             # <<<<<<<<<<<<<<
@@ -5949,7 +5978,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
   return __pyx_r;
 }
 
-/* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1046
+/* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1046
  *         raise ImportError("numpy.core.umath failed to import")
  * 
  * cdef inline int import_ufunc() except -1:             # <<<<<<<<<<<<<<
@@ -5970,7 +5999,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_ufunc(void) {
   PyObject *__pyx_t_8 = NULL;
   __Pyx_RefNannySetupContext("import_ufunc", 0);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1047
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1047
  * 
  * cdef inline int import_ufunc() except -1:
  *     try:             # <<<<<<<<<<<<<<
@@ -5986,7 +6015,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_ufunc(void) {
     __Pyx_XGOTREF(__pyx_t_3);
     /*try:*/ {
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1048
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1048
  * cdef inline int import_ufunc() except -1:
  *     try:
  *         _import_umath()             # <<<<<<<<<<<<<<
@@ -5995,7 +6024,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_ufunc(void) {
  */
       __pyx_t_4 = _import_umath(); if (unlikely(__pyx_t_4 == ((int)-1))) __PYX_ERR(1, 1048, __pyx_L3_error)
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1047
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1047
  * 
  * cdef inline int import_ufunc() except -1:
  *     try:             # <<<<<<<<<<<<<<
@@ -6009,7 +6038,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_ufunc(void) {
     goto __pyx_L8_try_end;
     __pyx_L3_error:;
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1049
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1049
  *     try:
  *         _import_umath()
  *     except Exception:             # <<<<<<<<<<<<<<
@@ -6023,7 +6052,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_ufunc(void) {
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_GOTREF(__pyx_t_7);
 
-      /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1050
+      /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1050
  *         _import_umath()
  *     except Exception:
  *         raise ImportError("numpy.core.umath failed to import")             # <<<<<<<<<<<<<<
@@ -6037,7 +6066,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_ufunc(void) {
     goto __pyx_L5_except_error;
     __pyx_L5_except_error:;
 
-    /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1047
+    /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1047
  * 
  * cdef inline int import_ufunc() except -1:
  *     try:             # <<<<<<<<<<<<<<
@@ -6052,7 +6081,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_ufunc(void) {
     __pyx_L8_try_end:;
   }
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1046
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1046
  *         raise ImportError("numpy.core.umath failed to import")
  * 
  * cdef inline int import_ufunc() except -1:             # <<<<<<<<<<<<<<
@@ -6123,8 +6152,8 @@ static struct PyModuleDef __pyx_moduledef = {
 static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_A, __pyx_k_A, sizeof(__pyx_k_A), 0, 0, 1, 1},
   {&__pyx_n_s_C, __pyx_k_C, sizeof(__pyx_k_C), 0, 0, 1, 1},
-  {&__pyx_n_s_CRISPResso2_CRISPRessoCOREResour, __pyx_k_CRISPResso2_CRISPRessoCOREResour, sizeof(__pyx_k_CRISPResso2_CRISPRessoCOREResour), 0, 0, 1, 1},
-  {&__pyx_kp_s_CRISPRessoCOREResources_pyx, __pyx_k_CRISPRessoCOREResources_pyx, sizeof(__pyx_k_CRISPRessoCOREResources_pyx), 0, 0, 1, 0},
+  {&__pyx_kp_s_CRISPResso2_CRISPRessoCOREResour, __pyx_k_CRISPResso2_CRISPRessoCOREResour, sizeof(__pyx_k_CRISPResso2_CRISPRessoCOREResour), 0, 0, 1, 0},
+  {&__pyx_n_s_CRISPResso2_CRISPRessoCOREResour_2, __pyx_k_CRISPResso2_CRISPRessoCOREResour_2, sizeof(__pyx_k_CRISPResso2_CRISPRessoCOREResour_2), 0, 0, 1, 1},
   {&__pyx_kp_u_Format_string_allocated_too_shor, __pyx_k_Format_string_allocated_too_shor, sizeof(__pyx_k_Format_string_allocated_too_shor), 0, 1, 0, 0},
   {&__pyx_kp_u_Format_string_allocated_too_shor_2, __pyx_k_Format_string_allocated_too_shor_2, sizeof(__pyx_k_Format_string_allocated_too_shor_2), 0, 1, 0, 0},
   {&__pyx_n_s_G, __pyx_k_G, sizeof(__pyx_k_G), 0, 0, 1, 1},
@@ -6163,6 +6192,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_import, __pyx_k_import, sizeof(__pyx_k_import), 0, 0, 1, 1},
   {&__pyx_n_s_inc_del_pos, __pyx_k_inc_del_pos, sizeof(__pyx_k_inc_del_pos), 0, 0, 1, 1},
   {&__pyx_n_s_include_indx, __pyx_k_include_indx, sizeof(__pyx_k_include_indx), 0, 0, 1, 1},
+  {&__pyx_n_s_include_indx_set, __pyx_k_include_indx_set, sizeof(__pyx_k_include_indx_set), 0, 0, 1, 1},
   {&__pyx_n_s_insertion_coordinates, __pyx_k_insertion_coordinates, sizeof(__pyx_k_insertion_coordinates), 0, 0, 1, 1},
   {&__pyx_n_s_insertion_n, __pyx_k_insertion_n, sizeof(__pyx_k_insertion_n), 0, 0, 1, 1},
   {&__pyx_n_s_insertion_positions, __pyx_k_insertion_positions, sizeof(__pyx_k_insertion_positions), 0, 0, 1, 1},
@@ -6204,7 +6234,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
 };
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
   __pyx_builtin_enumerate = __Pyx_GetBuiltinName(__pyx_n_s_enumerate); if (!__pyx_builtin_enumerate) __PYX_ERR(0, 41, __pyx_L1_error)
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 94, __pyx_L1_error)
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 95, __pyx_L1_error)
   __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(1, 272, __pyx_L1_error)
   __pyx_builtin_RuntimeError = __Pyx_GetBuiltinName(__pyx_n_s_RuntimeError); if (!__pyx_builtin_RuntimeError) __PYX_ERR(1, 856, __pyx_L1_error)
   __pyx_builtin_ImportError = __Pyx_GetBuiltinName(__pyx_n_s_ImportError); if (!__pyx_builtin_ImportError) __PYX_ERR(1, 1038, __pyx_L1_error)
@@ -6217,7 +6247,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":272
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":272
  *             if ((flags & pybuf.PyBUF_C_CONTIGUOUS == pybuf.PyBUF_C_CONTIGUOUS)
  *                 and not PyArray_CHKFLAGS(self, NPY_ARRAY_C_CONTIGUOUS)):
  *                 raise ValueError(u"ndarray is not C contiguous")             # <<<<<<<<<<<<<<
@@ -6228,7 +6258,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple_);
   __Pyx_GIVEREF(__pyx_tuple_);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":276
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":276
  *             if ((flags & pybuf.PyBUF_F_CONTIGUOUS == pybuf.PyBUF_F_CONTIGUOUS)
  *                 and not PyArray_CHKFLAGS(self, NPY_ARRAY_F_CONTIGUOUS)):
  *                 raise ValueError(u"ndarray is not Fortran contiguous")             # <<<<<<<<<<<<<<
@@ -6239,7 +6269,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__2);
   __Pyx_GIVEREF(__pyx_tuple__2);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":306
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":306
  *                 if ((descr.byteorder == c'>' and little_endian) or
  *                     (descr.byteorder == c'<' and not little_endian)):
  *                     raise ValueError(u"Non-native byte order not supported")             # <<<<<<<<<<<<<<
@@ -6250,7 +6280,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__3);
   __Pyx_GIVEREF(__pyx_tuple__3);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":856
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":856
  * 
  *         if (end - f) - <int>(new_offset - offset[0]) < 15:
  *             raise RuntimeError(u"Format string allocated too short, see comment in numpy.pxd")             # <<<<<<<<<<<<<<
@@ -6261,7 +6291,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__4);
   __Pyx_GIVEREF(__pyx_tuple__4);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":860
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":860
  *         if ((child.byteorder == c'>' and little_endian) or
  *             (child.byteorder == c'<' and not little_endian)):
  *             raise ValueError(u"Non-native byte order not supported")             # <<<<<<<<<<<<<<
@@ -6272,7 +6302,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__3);
   __Pyx_GIVEREF(__pyx_tuple__3);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":880
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":880
  *             t = child.type_num
  *             if end - f < 5:
  *                 raise RuntimeError(u"Format string allocated too short.")             # <<<<<<<<<<<<<<
@@ -6283,7 +6313,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__5);
   __Pyx_GIVEREF(__pyx_tuple__5);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1038
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1038
  *         _import_array()
  *     except Exception:
  *         raise ImportError("numpy.core.multiarray failed to import")             # <<<<<<<<<<<<<<
@@ -6294,7 +6324,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__6);
   __Pyx_GIVEREF(__pyx_tuple__6);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1044
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1044
  *         _import_umath()
  *     except Exception:
  *         raise ImportError("numpy.core.umath failed to import")             # <<<<<<<<<<<<<<
@@ -6305,7 +6335,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__7);
   __Pyx_GIVEREF(__pyx_tuple__7);
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1050
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1050
  *         _import_umath()
  *     except Exception:
  *         raise ImportError("numpy.core.umath failed to import")             # <<<<<<<<<<<<<<
@@ -6332,22 +6362,22 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *     cdef char* ref_seq_al = _ref_seq_al
  */
-  __pyx_tuple__10 = PyTuple_Pack(34, __pyx_n_s_read_seq_al, __pyx_n_s_ref_seq_al, __pyx_n_s_include_indx, __pyx_n_s_ref_seq_al_2, __pyx_n_s_read_seq_al_2, __pyx_n_s_sub_seq, __pyx_n_s_st, __pyx_n_s_en, __pyx_n_s_idx_c, __pyx_n_s_idx, __pyx_n_s_ref_positions, __pyx_n_s_all_substitution_positions, __pyx_n_s_substitution_positions, __pyx_n_s_all_substitution_values, __pyx_n_s_substitution_values, __pyx_n_s_nucSet, __pyx_n_s_c, __pyx_n_s_substitution_n, __pyx_n_s_all_deletion_positions, __pyx_n_s_deletion_positions, __pyx_n_s_deletion_coordinates, __pyx_n_s_deletion_sizes, __pyx_n_s_all_insertion_positions, __pyx_n_s_all_insertion_left_positions, __pyx_n_s_insertion_positions, __pyx_n_s_insertion_coordinates, __pyx_n_s_insertion_sizes, __pyx_n_s_p, __pyx_n_s_ref_st, __pyx_n_s_ref_en, __pyx_n_s_inc_del_pos, __pyx_n_s_deletion_n, __pyx_n_s_insertion_n, __pyx_n_s_retDict); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 12, __pyx_L1_error)
+  __pyx_tuple__10 = PyTuple_Pack(35, __pyx_n_s_read_seq_al, __pyx_n_s_ref_seq_al, __pyx_n_s_include_indx, __pyx_n_s_ref_seq_al_2, __pyx_n_s_read_seq_al_2, __pyx_n_s_sub_seq, __pyx_n_s_st, __pyx_n_s_en, __pyx_n_s_idx_c, __pyx_n_s_idx, __pyx_n_s_ref_positions, __pyx_n_s_all_substitution_positions, __pyx_n_s_substitution_positions, __pyx_n_s_all_substitution_values, __pyx_n_s_substitution_values, __pyx_n_s_nucSet, __pyx_n_s_c, __pyx_n_s_substitution_n, __pyx_n_s_all_deletion_positions, __pyx_n_s_deletion_positions, __pyx_n_s_deletion_coordinates, __pyx_n_s_deletion_sizes, __pyx_n_s_all_insertion_positions, __pyx_n_s_all_insertion_left_positions, __pyx_n_s_insertion_positions, __pyx_n_s_insertion_coordinates, __pyx_n_s_insertion_sizes, __pyx_n_s_include_indx_set, __pyx_n_s_p, __pyx_n_s_ref_st, __pyx_n_s_ref_en, __pyx_n_s_inc_del_pos, __pyx_n_s_deletion_n, __pyx_n_s_insertion_n, __pyx_n_s_retDict); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 12, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__10);
   __Pyx_GIVEREF(__pyx_tuple__10);
-  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(3, 0, 34, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__10, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_CRISPRessoCOREResources_pyx, __pyx_n_s_find_indels_substitutions, 12, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 12, __pyx_L1_error)
+  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(3, 0, 35, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__10, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_CRISPResso2_CRISPRessoCOREResour, __pyx_n_s_find_indels_substitutions, 12, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 12, __pyx_L1_error)
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":153
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":154
  *     size_t strlen(char *s)
  * 
  * def calculate_homology(a, b):             # <<<<<<<<<<<<<<
  *     cdef char *al = a
  *     cdef char *bl = b
  */
-  __pyx_tuple__12 = PyTuple_Pack(7, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_al, __pyx_n_s_bl, __pyx_n_s_l, __pyx_n_s_score, __pyx_n_s_i); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(0, 153, __pyx_L1_error)
+  __pyx_tuple__12 = PyTuple_Pack(7, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_al, __pyx_n_s_bl, __pyx_n_s_l, __pyx_n_s_score, __pyx_n_s_i); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(0, 154, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__12);
   __Pyx_GIVEREF(__pyx_tuple__12);
-  __pyx_codeobj__13 = (PyObject*)__Pyx_PyCode_New(2, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__12, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_CRISPRessoCOREResources_pyx, __pyx_n_s_calculate_homology, 153, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__13)) __PYX_ERR(0, 153, __pyx_L1_error)
+  __pyx_codeobj__13 = (PyObject*)__Pyx_PyCode_New(2, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__12, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_CRISPResso2_CRISPRessoCOREResour, __pyx_n_s_calculate_homology, 154, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__13)) __PYX_ERR(0, 154, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -6356,6 +6386,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
 }
 
 static CYTHON_SMALL_CODE int __Pyx_InitGlobals(void) {
+  __pyx_umethod_PySet_Type_intersection.type = (PyObject*)&PySet_Type;
   if (__Pyx_InitStrings(__pyx_string_tab) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
   __pyx_int_0 = PyInt_FromLong(0); if (unlikely(!__pyx_int_0)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_int_neg_1 = PyInt_FromLong(-1); if (unlikely(!__pyx_int_neg_1)) __PYX_ERR(0, 1, __pyx_L1_error)
@@ -6704,21 +6735,21 @@ if (!__Pyx_RefNanny) {
  * 
  *     cdef char* ref_seq_al = _ref_seq_al
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_11CRISPResso2_23CRISPRessoCOREResources_1find_indels_substitutions, NULL, __pyx_n_s_CRISPResso2_CRISPRessoCOREResour); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 12, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_11CRISPResso2_23CRISPRessoCOREResources_1find_indels_substitutions, NULL, __pyx_n_s_CRISPResso2_CRISPRessoCOREResour_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 12, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_find_indels_substitutions, __pyx_t_1) < 0) __PYX_ERR(0, 12, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "CRISPResso2/CRISPRessoCOREResources.pyx":153
+  /* "CRISPResso2/CRISPRessoCOREResources.pyx":154
  *     size_t strlen(char *s)
  * 
  * def calculate_homology(a, b):             # <<<<<<<<<<<<<<
  *     cdef char *al = a
  *     cdef char *bl = b
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_11CRISPResso2_23CRISPRessoCOREResources_3calculate_homology, NULL, __pyx_n_s_CRISPResso2_CRISPRessoCOREResour); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 153, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_11CRISPResso2_23CRISPRessoCOREResources_3calculate_homology, NULL, __pyx_n_s_CRISPResso2_CRISPRessoCOREResour_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 154, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_calculate_homology, __pyx_t_1) < 0) __PYX_ERR(0, 153, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_calculate_homology, __pyx_t_1) < 0) __PYX_ERR(0, 154, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "CRISPResso2/CRISPRessoCOREResources.pyx":1
@@ -6731,7 +6762,7 @@ if (!__Pyx_RefNanny) {
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_1) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "../../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1046
+  /* "../../../SHARED_SOFTWARE/anaconda3/envs/crispresso2/lib/python2.7/site-packages/Cython/Includes/numpy/__init__.pxd":1046
  *         raise ImportError("numpy.core.umath failed to import")
  * 
  * cdef inline int import_ufunc() except -1:             # <<<<<<<<<<<<<<
@@ -7372,6 +7403,78 @@ static int __Pyx_IternextUnpackEndCheck(PyObject *retval, Py_ssize_t expected) {
         return __Pyx_IterFinish();
     }
     return 0;
+}
+
+/* UnpackUnboundCMethod */
+static int __Pyx_TryUnpackUnboundCMethod(__Pyx_CachedCFunction* target) {
+    PyObject *method;
+    method = __Pyx_PyObject_GetAttrStr(target->type, *target->method_name);
+    if (unlikely(!method))
+        return -1;
+    target->method = method;
+#if CYTHON_COMPILING_IN_CPYTHON
+    #if PY_MAJOR_VERSION >= 3
+    if (likely(__Pyx_TypeCheck(method, &PyMethodDescr_Type)))
+    #endif
+    {
+        PyMethodDescrObject *descr = (PyMethodDescrObject*) method;
+        target->func = descr->d_method->ml_meth;
+        target->flag = descr->d_method->ml_flags & ~(METH_CLASS | METH_STATIC | METH_COEXIST | METH_STACKLESS);
+    }
+#endif
+    return 0;
+}
+
+/* CallUnboundCMethod1 */
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_CallUnboundCMethod1(__Pyx_CachedCFunction* cfunc, PyObject* self, PyObject* arg) {
+    if (likely(cfunc->func)) {
+        int flag = cfunc->flag;
+        if (flag == METH_O) {
+            return (*(cfunc->func))(self, arg);
+        } else if (PY_VERSION_HEX >= 0x030600B1 && flag == METH_FASTCALL) {
+            if (PY_VERSION_HEX >= 0x030700A0) {
+                return (*(__Pyx_PyCFunctionFast)(void*)(PyCFunction)cfunc->func)(self, &arg, 1);
+            } else {
+                return (*(__Pyx_PyCFunctionFastWithKeywords)(void*)(PyCFunction)cfunc->func)(self, &arg, 1, NULL);
+            }
+        } else if (PY_VERSION_HEX >= 0x030700A0 && flag == (METH_FASTCALL | METH_KEYWORDS)) {
+            return (*(__Pyx_PyCFunctionFastWithKeywords)(void*)(PyCFunction)cfunc->func)(self, &arg, 1, NULL);
+        }
+    }
+    return __Pyx__CallUnboundCMethod1(cfunc, self, arg);
+}
+#endif
+static PyObject* __Pyx__CallUnboundCMethod1(__Pyx_CachedCFunction* cfunc, PyObject* self, PyObject* arg){
+    PyObject *args, *result = NULL;
+    if (unlikely(!cfunc->func && !cfunc->method) && unlikely(__Pyx_TryUnpackUnboundCMethod(cfunc) < 0)) return NULL;
+#if CYTHON_COMPILING_IN_CPYTHON
+    if (cfunc->func && (cfunc->flag & METH_VARARGS)) {
+        args = PyTuple_New(1);
+        if (unlikely(!args)) goto bad;
+        Py_INCREF(arg);
+        PyTuple_SET_ITEM(args, 0, arg);
+        if (cfunc->flag & METH_KEYWORDS)
+            result = (*(PyCFunctionWithKeywords)(void*)(PyCFunction)cfunc->func)(self, args, NULL);
+        else
+            result = (*cfunc->func)(self, args);
+    } else {
+        args = PyTuple_New(2);
+        if (unlikely(!args)) goto bad;
+        Py_INCREF(self);
+        PyTuple_SET_ITEM(args, 0, self);
+        Py_INCREF(arg);
+        PyTuple_SET_ITEM(args, 1, arg);
+        result = __Pyx_PyObject_Call(cfunc->method, args, NULL);
+    }
+#else
+    args = PyTuple_Pack(2, self, arg);
+    if (unlikely(!args)) goto bad;
+    result = __Pyx_PyObject_Call(cfunc->method, args, NULL);
+#endif
+bad:
+    Py_XDECREF(args);
+    return result;
 }
 
 /* PyErrFetchRestore */
