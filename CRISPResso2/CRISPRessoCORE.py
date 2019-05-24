@@ -515,8 +515,11 @@ def main():
         if args.auto:
             number_of_reads_to_consider = 1000 * 4 #1000 fastq sequences (4 lines each)
 
-            amplicon_seq_arr = CRISPRessoShared.guess_amplicons(args.fastq_r1,args.fastq_r2,number_of_reads_to_consider,args.flash_command,args.max_paired_end_reads_overlap,args.min_paired_end_reads_overlap,aln_matrix,args.needleman_wunsch_gap_open,args.needleman_wunsch_gap_extend)
-            amplicon_name_arr = ['Amplicon'+str(x) for x in ['',range(1,len(amplicon_seq_arr))]]
+            amplicon_seq_arr = CRISPRessoShared.guess_amplicons(args.fastq_r1,args.fastq_r2,number_of_reads_to_consider,args.flash_command,args.max_paired_end_reads_overlap,args.min_paired_end_reads_overlap,
+                aln_matrix,args.needleman_wunsch_gap_open,args.needleman_wunsch_gap_extend)
+            amp_dummy = ['']
+            amp_dummy.extend(list(range(2,len(amplicon_seq_arr)+1)))
+            amplicon_name_arr = ['Amplicon'+str(x) for x in amp_dummy]
             if len(guides) == 0:
                 for amplicon_seq in amplicon_seq_arr:
                     (potential_guide,is_base_editor) = CRISPRessoShared.guess_guides(amplicon_seq,args.fastq_r1,args.fastq_r2,number_of_reads_to_consider,args.flash_command,
@@ -529,6 +532,7 @@ def main():
             if len(amplicon_seq_arr) > 1:
                 plural_string = "s"
             info("Auto-detected %d reference amplicon%s"%(len(amplicon_seq_arr),plural_string))
+            print('namearr: ' + str(amplicon_name_arr))
 
             if args.debug:
                 for idx,seq in enumerate(amplicon_seq_arr):
@@ -701,7 +705,7 @@ def main():
             cut_points = refs[ref_name]['sgRNA_cut_points']
             exon_positions = refs[ref_name]['exon_positions']
             if cut_points:
-                if len(ref_names) > 1:
+                if len(ref_names) > 1 and args.debug:
                     info("Using cut points from %s as template for other references"%ref_name)
                 clone_ref_name = ref_name
                 clone_has_cut_points = True
@@ -709,7 +713,7 @@ def main():
                     clone_has_exons = True
                 break
             if exon_positions:
-                if len(ref_names) > 1:
+                if len(ref_names) > 1 and args.debug:
                     info("Using exons positions from %s as template for other references"%ref_name)
                 clone_ref_name = ref_name
                 clone_has_exon_positions = True
@@ -728,18 +732,18 @@ def main():
                 needs_exon_positions = False
 
                 if cut_points:
-                    if len(ref_names) > 1:
+                    if len(ref_names) > 1 and args.debug:
                         info("Reference '%s' has cut points defined: %s. Not inferring."%(ref_name,cut_points))
                 else:
                     needs_cut_points = True
                 if sgRNA_intervals:
-                    if len(ref_names) > 1:
+                    if len(ref_names) > 1 and args.debug:
                         info("Reference '%s' has sgRNA_intervals defined: %s. Not inferring."%(ref_name,sgRNA_intervals))
                 else:
                     needs_sgRNA_intervals = True
 
                 if exon_positions:
-                    if len(exon_positions) > 1:
+                    if len(exon_positions) > 1 and args.debug:
                         info("Reference '%s' has exon_positions defined: %s. Not inferring."%(ref_name,exon_positions))
                 else:
                     needs_exon_positions = True
@@ -751,9 +755,9 @@ def main():
                 if fwscore < 60:
                     continue
 
-                if (needs_sgRNA_intervals or needs_cut_points) and clone_has_cut_points:
+                if (needs_sgRNA_intervals or needs_cut_points) and clone_has_cut_points and args.debug:
                     info("Reference '%s' has NO cut points or sgRNA intervals idxs defined. Inferring from '%s'."%(ref_name,clone_ref_name))
-                if needs_exon_positions and clone_has_exons:
+                if needs_exon_positions and clone_has_exons and args.debug:
                     info("Reference '%s' has NO exon_positions defined. Inferring from '%s'."%(ref_name,clone_ref_name))
                 #Create a list such that the nucleotide at ix in the old reference corresponds to s1inds[ix]
                 s1inds = []
@@ -778,6 +782,7 @@ def main():
                     for (sgRNA_interval_start,sgRNA_interval_end) in refs[clone_ref_name]['sgRNA_intervals']:
                         this_sgRNA_intervals.append((s1inds[sgRNA_interval_start],s1inds[sgRNA_interval_end]))
 
+                    this_sgRNA_plot_idxs = []
                     for plot_idx_list in refs[clone_ref_name]['sgRNA_plot_idxs']:
                         this_sgRNA_plot_idxs.append([s1inds[x] for x in plot_idx_list])
 
@@ -972,7 +977,7 @@ def main():
             if get_n_reads_fastq(output_forward_paired_filename):
                 avg_read_length=get_avg_read_length_fastq(output_forward_paired_filename)
                 if args.debug:
-                    info('Average read length is ' + str(avg_read_length) + ' from ' + output_forward_paired_filname)
+                    info('Average read length is ' + str(avg_read_length) + ' from ' + output_forward_paired_filename)
             else:
                raise CRISPRessoShared.NoReadsAfterQualityFilteringException('No reads survived the average or single bp quality filtering.')
 
@@ -2619,7 +2624,7 @@ def main():
 
                 crispresso2_info['refs'][ref_name]['plot_4c_root'] = os.path.basename(plot_root)
                 crispresso2_info['refs'][ref_name]['plot_4c_caption'] = "Figure 4c: Frequency of insertions (red), deletions (purple), and substitutions (green) across the entire amplicon, considering only modifications that overlap with the quantification window."
-                crispresso2_info['refs'][ref_name]['plot_4c_data'] = [('Modification frequency in quantification window',quant_window_mod_count_filename)]
+                crispresso2_info['refs'][ref_name]['plot_4c_data'] = [('Modification frequency in quantification window',os.path.basename(quant_window_mod_count_filename))]
 
                 #Position dependent indels plot
                 fig=plt.figure(figsize=(24,10))

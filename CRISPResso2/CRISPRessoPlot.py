@@ -535,7 +535,7 @@ def plot_subs_across_ref(ref_len, ref_seq, ref_name, ref_count, all_substitution
 #    lgd=ax.legend(legend_patches,legend_labels,ncol=1)
     lgd=ax.legend(handles=legend_patches, labels=legend_labels,loc='upper center', bbox_to_anchor=(0.3, -0.15),ncol=2, fancybox=True, shadow=True)
 
-    y_label_values= np.round(np.linspace(0, min(12,max(tots),max(ax.get_yticks())),6))# np.arange(0,y_max,y_max/6.0)
+    y_label_values= np.round(np.linspace(0, max(12,min(max(tots),max(ax.get_yticks()))),6))# np.arange(0,y_max,y_max/6.0)
     plt.yticks(y_label_values,['%.1f%% (%d)' % (n_reads/ref_count*100,n_reads) for n_reads in y_label_values])
 
     plt.savefig(fig_filename_root + '.pdf',bbox_extra_artists=(lgd,),bbox_inches='tight')
