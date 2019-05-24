@@ -120,11 +120,13 @@ def main():
             raise CRISPRessoShared.OutputFolderIncompleteException('The folder %s is not a valid CRISPResso2 output folder. Cannot find run data at %s'%(args.crispresso_output_folder_2,run_info_2_file))
         run_info_2 = cp.load(open(run_info_2_file,'rb'))
 
+        sample_1_name = args.sample_1_name
         if args.sample_1_name is None:
             sample_1_name = "Sample 1"
             if 'name' in run_info_1 and run_info_1['name'] != '':
                 sample_1_name = run_info_1['name']
 
+        sample_2_name = args.sample_2_name
         if args.sample_2_name is None:
             sample_2_name = "Sample 2"
             if 'name' in run_info_2 and run_info_2['name'] != '':
@@ -236,7 +238,7 @@ def main():
             rects2 = ax1.bar(index + bar_width, means_sample_2, bar_width,
                              alpha=opacity,
                              color=(1,0,0,0.4),
-                             label=sample_1_name)
+                             label=sample_2_name)
 
             plt.ylabel('% Sequences')
             plt.title(get_plot_title_with_ref_name('%s VS %s' % (sample_1_name,sample_2_name),amplicon_name))

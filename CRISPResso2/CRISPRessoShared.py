@@ -403,7 +403,7 @@ def get_most_frequent_reads(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_
         raise AutoException('Cannot parse any frequent amplicons sequences.')
     return seq_lines
 
-def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,min_paired_end_reads_overlap,aln_matrix,needleman_wunsch_gap_open,needleman_wunsch_gap_extend,min_freq_to_consider=0.01,amplicon_similarity_cutoff=0.95):
+def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,min_paired_end_reads_overlap,aln_matrix,needleman_wunsch_gap_open,needleman_wunsch_gap_extend,min_freq_to_consider=0.2,amplicon_similarity_cutoff=0.95):
     """
     guesses the amplicons used in an experiment by examining the most frequent read (giant caveat -- most frequent read should be unmodified)
     input:
