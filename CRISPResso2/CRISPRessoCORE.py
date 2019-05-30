@@ -3422,7 +3422,7 @@ def main():
 
         if not args.suppress_report:
             if (args.place_report_in_output_folder):
-                report_name = os.path.join(OUTPUT_DIRECTORY,"CRISPResso2_report.html")
+                report_name = _jp("CRISPResso2_report.html")
             else:
                 report_name = OUTPUT_DIRECTORY+'.html'
             CRISPRessoReport.make_report(crispresso2_info,report_name,OUTPUT_DIRECTORY,_ROOT)
