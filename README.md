@@ -247,6 +247,8 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --suppress_plots: Suppress output plots (default: False)
 
+--place_report_in_output_folder: If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output. (default: False)
+
 ## CRISPResso2 output
 The output of CRISPResso2 consists of a set of informative graphs that allow for the quantification and visualization of the position and type of outcomes within an amplicon sequence.
 
