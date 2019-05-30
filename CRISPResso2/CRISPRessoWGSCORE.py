@@ -573,15 +573,6 @@ def main():
         if args.suppress_report:
             save_png = False
 
-        plot_root = _jp("CRISPRessoWGS_modification_summary")
-        CRISPRessoPlot.plot_unmod_mod_pcts(plot_root,df_summary_quantification,save_png,args.min_reads_to_use_region)
-        plot_name = os.path.basename(plot_root)
-        crispresso2_info['modification_summary_plot'] = plot_name
-        crispresso2_info['summary_plot_names'].append(plot_name)
-        crispresso2_info['summary_plot_titles'][plot_name] = 'CRISPRessoWGS Modification Summary'
-        crispresso2_info['summary_plot_labels'][plot_name] = 'Each bar shows the total number of reads aligned to each amplicon, divided into the reads that are modified and unmodified. The vertical line shows the cutoff for analysis, set using the --min_reads_to_use_region parameter.'
-        crispresso2_info['summary_plot_datas'][plot_name] = [('CRISPRessoWGS summary',os.path.basename(samples_quantification_summary_filename))]
-
         plot_root = _jp("CRISPRessoWGS_reads_summary")
         CRISPRessoPlot.plot_reads_total(plot_root,df_summary_quantification,save_png,args.min_reads_to_use_region)
         plot_name = os.path.basename(plot_root)
@@ -591,9 +582,23 @@ def main():
         crispresso2_info['summary_plot_labels'][plot_name] = 'Each bar shows the total number of reads allocated to each amplicon. The vertical line shows the cutoff for analysis, set using the --min_reads_to_use_region parameter.'
         crispresso2_info['summary_plot_datas'][plot_name] = [('CRISPRessoWGS summary',os.path.basename(samples_quantification_summary_filename))]
 
+        plot_root = _jp("CRISPRessoWGS_modification_summary")
+        CRISPRessoPlot.plot_unmod_mod_pcts(plot_root,df_summary_quantification,save_png,args.min_reads_to_use_region)
+        plot_name = os.path.basename(plot_root)
+        crispresso2_info['modification_summary_plot'] = plot_name
+        crispresso2_info['summary_plot_names'].append(plot_name)
+        crispresso2_info['summary_plot_titles'][plot_name] = 'CRISPRessoWGS Modification Summary'
+        crispresso2_info['summary_plot_labels'][plot_name] = 'Each bar shows the total number of reads aligned to each amplicon, divided into the reads that are modified and unmodified. The vertical line shows the cutoff for analysis, set using the --min_reads_to_use_region parameter.'
+        crispresso2_info['summary_plot_datas'][plot_name] = [('CRISPRessoWGS summary',os.path.basename(samples_quantification_summary_filename))]
+
         if not args.suppress_report:
-            report_name = _jp('CRISPResso2WGS_report.html')
+            if (args.place_report_in_output_folder):
+                report_name = _jp("CRISPResso2WGS_report.html")
+            else:
+                report_name = OUTPUT_DIRECTORY+'.html'
             CRISPRessoReport.make_wgs_report_from_folder(report_name,crispresso2_info,OUTPUT_DIRECTORY,_ROOT)
+            crispresso2_info['report_location'] = report_name
+            crispresso2_info['report_filename'] = os.path.basename(report_name)
 
         cp.dump(crispresso2_info, open(crispresso2WGS_info_file, 'wb' ) )
 

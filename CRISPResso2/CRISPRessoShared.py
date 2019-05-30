@@ -142,6 +142,7 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('--debug', help='Show debug messages', action='store_true')
     parser.add_argument('--no_rerun', help="Don't rerun CRISPResso2 if a run using the same parameters has already been finished.", action='store_true')
     parser.add_argument('--suppress_report',  help='Suppress output report', action='store_true')
+    parser.add_argument('--place_report_in_output_folder',  help='If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output.', action='store_true')
     parser.add_argument('--suppress_plots',  help='Suppress output plots', action='store_true')
     parser.add_argument('--write_cleaned_report', action='store_true',help=argparse.SUPPRESS)#trims working directories from output in report (for web access)
 
@@ -352,7 +353,7 @@ def check_output_folder(output_folder):
     else:
         raise OutputFolderIncompleteException("The folder %s  is not a valid CRISPResso2 output folder. Cannot find quantification file '%s'." %(output_folder,quantification_file))
 
-def get_most_frequent_reads(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,min_paired_end_reads_overlap):
+def get_most_frequent_reads(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,min_paired_end_reads_overlap,debug=False):
     """
     Gets the most frequent amplicon from a fastq file (or after merging a r1 and r2 fastq file)
     Note: only works on paired end or single end reads (not interleaved)
@@ -388,6 +389,9 @@ def get_most_frequent_reads(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_
     count_frequent_cmd = file_generation_command + " | awk '((NR-2)%4==0){print $1}' | sort | uniq -c | sort -nr "
     def default_sigpipe():
         signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
+    if (debug):
+        print('command used: ' + count_frequent_cmd)
 
     piped_commands = count_frequent_cmd.split("|")
     pipes = [None] * len(piped_commands)
@@ -660,10 +664,9 @@ def get_amplicon_info_for_guides(ref_seq,guides,quantification_window_center,qua
                 raise NTException("Cannot parse analysis window coordinate '" + str(coord) + "' in '" + str(theseCoords) + "'. Coordinates must be given in the form start-end e.g. 5-10 . Please check the --analysis_window_coordinate parameter.")
         given_include_idxs = this_include_idxs
     elif this_sgRNA_cut_points and quantification_window_size>0:
-        half_window=max(1,quantification_window_size)
         for cut_p in this_sgRNA_cut_points:
-            st=max(0,cut_p-half_window+1)
-            en=min(ref_seq_length-1,cut_p+half_window+1)
+            st=max(0,cut_p-quantification_window_size+1)
+            en=min(ref_seq_length-1,cut_p+quantification_window_size+1)
             this_include_idxs.extend(range(st,en))
         given_include_idxs = this_include_idxs
     else:

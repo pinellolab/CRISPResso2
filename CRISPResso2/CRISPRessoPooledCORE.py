@@ -1021,8 +1021,13 @@ def main():
                          warn('Skipping:%s' %file_to_remove)
 
         if not args.suppress_report:
-            crispresso_report_file = _jp('CRISPResso2Pooled_report.html')
-            CRISPRessoReport.make_pooled_report_from_folder(crispresso_report_file,crispresso2_info,OUTPUT_DIRECTORY,_ROOT)
+            if (args.place_report_in_output_folder):
+                report_name = _jp("CRISPResso2Pooled_report.html")
+            else:
+                report_name = OUTPUT_DIRECTORY+'.html'
+            CRISPRessoReport.make_pooled_report_from_folder(report_name,crispresso2_info,OUTPUT_DIRECTORY,_ROOT)
+            crispresso2_info['report_location'] = report_name
+            crispresso2_info['report_filename'] = os.path.basename(report_name)
 
         cp.dump(crispresso2_info, open(crispresso2WGS_info_file, 'wb' ) )
 

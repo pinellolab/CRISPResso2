@@ -520,6 +520,12 @@ def main():
                                 crispresso2_info['summary_plot_titles'][plot_name] = ''
                             crispresso2_info['summary_plot_labels'][plot_name] = 'Composition of each base around the guide ' + sgRNA + ' for the amplicon ' + amplicon_name
                             crispresso2_info['summary_plot_datas'][plot_name] = [('Nucleotide frequencies',os.path.basename(nucleotide_frequency_summary_filename)),('Modification frequencies',os.path.basename(modification_frequency_summary_filename))]
+
+                            sub_nucleotide_frequency_summary_df = pd.concat([sub_nucleotide_frequency_summary_df.iloc[:,0:2],
+                                                                        sub_nucleotide_frequency_summary_df.iloc[:,2:].apply(pd.to_numeric)],axis=1)
+                            sub_nucleotide_frequency_summary_filename = _jp(amplicon_plot_name + 'Nucleotide_frequency_summary_around_sgRNA_'+sgRNA+'.txt')
+                            sub_nucleotide_frequency_summary_df.to_csv(sub_nucleotide_frequency_summary_filename,sep='\t',index=None)
+
                             if args.base_editor_output:
                                 this_window_nuc_conv_plot_name = _jp(amplicon_plot_name + 'Nucleotide_conversion_map_around_sgRNA_'+sgRNA)
                                 CRISPRessoPlot.plot_conversion_map(sub_nucleotide_percentage_summary_df,this_window_nuc_conv_plot_name,args.conversion_nuc_from,args.conversion_nuc_to,save_png,sgRNA_intervals=sub_sgRNA_intervals,quantification_window_idxs=include_idxs)
@@ -529,7 +535,7 @@ def main():
                                 if len(consensus_guides) == 1:
                                     crispresso2_info['summary_plot_titles'][plot_name] = ''
                                 crispresso2_info['summary_plot_labels'][plot_name] = args.conversion_nuc_from + '->' + args.conversion_nuc_to +' conversion rates around the guide ' + sgRNA + ' for the amplicon ' + amplicon_name
-                                crispresso2_info['summary_plot_datas'][plot_name] = [('Nucleotide frequencies',os.path.basename(nucleotide_frequency_summary_filename))]
+                                crispresso2_info['summary_plot_datas'][plot_name] = [('Nucleotide frequencies around sgRNA',os.path.basename(sub_nucleotide_frequency_summary_filename))]
 
                     if not args.suppress_plots: # plot the whole region
                         this_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt')
@@ -615,8 +621,13 @@ def main():
                         outfile.write(batchName + "\t" + line)
 
         if not args.suppress_report:
-            report_name = _jp('CRISPResso2Batch_report.html')
+            if (args.place_report_in_output_folder):
+                report_name = _jp("CRISPResso2Batch_report.html")
+            else:
+                report_name = OUTPUT_DIRECTORY+'.html'
             CRISPRessoReport.make_batch_report_from_folder(report_name,crispresso2_info,OUTPUT_DIRECTORY,_ROOT)
+            crispresso2_info['report_location'] = report_name
+            crispresso2_info['report_filename'] = os.path.basename(report_name)
 
         cp.dump(crispresso2_info, open(crispresso2Batch_info_file, 'wb' ) )
         info('Analysis Complete!')
