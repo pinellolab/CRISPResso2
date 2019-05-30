@@ -68,10 +68,10 @@
 					<div class='card-body'>
             <div class='tab-content'>
   					  <div class="tab-pane fade show active" id="log_aln" role="tabpanel">
-    						<a href="{{report_data['fig_locs']['plot_1a']}}.pdf"><img src="{{report_data['fig_locs']['plot_1a']}}.png" width='40%' ></a>
+						  <a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs']['plot_1a']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs']['plot_1a']}}.png" width='40%' ></a>
     						<label class="labelpadding">{{report_data['fig_captions']['plot_1a']}}</label>
 							  {% for (data_label,data_path) in report_data['fig_datas']['plot_1a'] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
   						</div>
   					  <div class="tab-pane fade text-left" id="log_params" role="tabpanel">
@@ -83,7 +83,7 @@
                 {% endif %}
                 <p>Command used: <pre class='pre-scrollable'>{{report_data['command_used']}}</pre></p>
                 <p>Parameters: <pre class='pre-scrollable'>{{report_data['params']}}</pre></p>
-                <p class='text-center m-0'><small><a href="{{report_data['run_data']['log_filename']}}">Running log</a></small></p>
+		<p class='text-center m-0'><small><a href="{{report_data['crispresso_data_path']}}{{report_data['run_data']['log_filename']}}">Running log</a></small></p>
   						</div>
             </div>
 					</div>
@@ -104,17 +104,17 @@
 					<div class='card-body'>
 						<div class="tab-content" id="tabContent">
 						  <div class="tab-pane fade show active" id="aln_pie" role="tabpanel" aria-labelledby="aln_pie-tab">
-								<a href="{{report_data['fig_locs']['plot_1b']}}.pdf"><img src="{{report_data['fig_locs']['plot_1b']}}.png" width='50%' ></a>
+							  <a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs']['plot_1b']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs']['plot_1b']}}.png" width='50%' ></a>
 								<label class="labelpadding">{{report_data['fig_captions']['plot_1b']}}</label>
 							  {% for (data_label,data_path) in report_data['fig_datas']['plot_1b'] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
 							</div>
 						  <div class="tab-pane fade" id="aln_bar" role="tabpanel" aria-labelledby="aln_bar-tab">
-								<a href="{{report_data['fig_locs']['plot_1c']}}.pdf"><img src="{{report_data['fig_locs']['plot_1c']}}.png" width='40%' ></a>
+							  <a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs']['plot_1c']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs']['plot_1c']}}.png" width='40%' ></a>
 								<label class="labelpadding">{{report_data['fig_captions']['plot_1c']}}</label>
 							  {% for (data_label,data_path) in report_data['fig_datas']['plot_1c'] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
 							</div>
 						</div>
@@ -129,10 +129,10 @@
     						<h5>Global frameshift analysis</h5>
 							</div>
 					<div class='card-body'>
-							<a href="{{report_data['fig_locs']['plot_5a']}}.pdf"><img src="{{report_data['fig_locs']['plot_5a']}}.png" width='70%' ></a>
+						<a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs']['plot_5a']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs']['plot_5a']}}.png" width='70%' ></a>
 							<label class="labelpadding">{{report_data['fig_captions']['plot_5a']}}</label>
 						  {% for (data_label,data_path) in report_data['fig_datas']['plot_5a'] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+						  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
               {% endfor %}
 						</div>
 					</div>
@@ -144,10 +144,10 @@
     						<h5>Global frameshift mutagenesis profiles</h5>
 							</div>
 					<div class='card-body'>
-							<a href="{{report_data['fig_locs']['plot_6a']}}.pdf"><img src="{{report_data['fig_locs']['plot_6a']}}.png" width='95%' ></a>
+						<a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs']['plot_6a']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs']['plot_6a']}}.png" width='95%' ></a>
 							<label class="labelpadding">{{report_data['fig_captions']['plot_6a']}}</label>
 						  {% for (data_label,data_path) in report_data['fig_datas']['plot_6a'] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+						  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
               {% endfor %}
 						</div>
 					</div>
@@ -159,10 +159,10 @@
     						<h5>Global splicing analysis</h5>
 							</div>
 					<div class='card-body'>
-							<a href="{{report_data['fig_locs']['plot_8a']}}.pdf"><img src="{{report_data['fig_locs']['plot_8a']}}.png" width='80%' ></a>
+						<a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs']['plot_8a']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs']['plot_8a']}}.png" width='80%' ></a>
 							<label class="labelpadding">{{report_data['fig_captions']['plot_8a']}}</label>
 						  {% for (data_label,data_path) in report_data['fig_datas']['plot_8a'] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+						  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
               {% endfor %}
 						</div>
 					</div>
@@ -223,15 +223,15 @@
       					<div class='card-body'>
 						{% if report_data['fig_locs'][amplicon_name]['plot_2a'] %}
 <div class='div_zoom_outer d-none d-md-block' style="height:100px;border:1px solid #DDDDDD;position:relative">
-  <div id="zoomview_nucs_{{amplicon_name}}" style="position:absolute;left:0;height:100%;width:100%;background-image: url({{report_data['fig_locs'][amplicon_name]['plot_2a']}}.png);background-size:auto 100%;background-repeat:no-repeat;"></div>
+	<div id="zoomview_nucs_{{amplicon_name}}" style="position:absolute;left:0;height:100%;width:100%;background-image: url({{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_2a']}}.png);background-size:auto 100%;background-repeat:no-repeat;"></div>
   <div class="d-lg-none" style="overflow-x:scroll;overflow-y:hidden;position:absolute;width:100%;height:100%">
-    <img src="{{report_data['fig_locs'][amplicon_name]['plot_2a']}}.png" style='height:100%'>
+	  <img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_2a']}}.png" style='height:100%'>
   </div>
 </div>
 <div style='position:relative;display:inline-block;width:95%'>
-  <a href="{{report_data['fig_locs'][amplicon_name]['plot_2a']}}.pdf">
+	<a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_2a']}}.pdf">
     <div id='zoomlens_nucs_{{amplicon_name}}' class="d-none d-lg-block" style='float: left;position: absolute;left: 0px;top: 0px;z-index: 1000;border: 1px solid #DDDDDD;height:100%;width:10%'></div>
-    <img id='tozoom_nucs_{{amplicon_name}}' src="{{report_data['fig_locs'][amplicon_name]['plot_2a']}}.png" width='100%' style='position:relative'>
+    <img id='tozoom_nucs_{{amplicon_name}}' src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_2a']}}.png" width='100%' style='position:relative'>
   </a>
 </div>
 
@@ -240,17 +240,17 @@
   {{report_data['fig_captions'][amplicon_name]['plot_2a']}}
 </label>
 							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name]['plot_2a'] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
 						{% endif %}
 
 						{% if report_data['sgRNA_based_fig_names'][amplicon_name] and  report_data['sgRNA_based_fig_names'][amplicon_name]['2b']%}
   							<div>
   								{% for fig_name in report_data['sgRNA_based_fig_names'][amplicon_name]['2b'] %}
-  								<a href="{{report_data['fig_locs'][amplicon_name][fig_name]}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name][fig_name]}}.png" width='95%' ></a>
+								<a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name][fig_name]}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name][fig_name]}}.png" width='95%' ></a>
 								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name][fig_name]}}</label>
 							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name][fig_name] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
   								{% endfor %}
   							</div>
@@ -282,20 +282,20 @@
   						<div class="tab-content" id="pills-tabContent">
 						{% if report_data['fig_locs'][amplicon_name]['plot_3a'] %}
   						  <div class="tab-pane fade show active" id="{{amplicon_name}}_3a" role="tabpanel">
-  								<a href="{{report_data['fig_locs'][amplicon_name]['plot_3a']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_3a']}}.png" width='40%' ></a>
+							  <a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_3a']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_3a']}}.png" width='40%' ></a>
 								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_3a']}}</label>
 							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name]['plot_3a'] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
   							</div>
 						{% endif %}
 
 						{% if report_data['fig_locs'][amplicon_name]['plot_3b'] %}
   						  <div class="tab-pane fade" id="{{amplicon_name}}_3b" role="tabpanel">
-  								<a href="{{report_data['fig_locs'][amplicon_name]['plot_3b']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_3b']}}.png" width='95%' ></a>
+							  <a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_3b']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_3b']}}.png" width='95%' ></a>
 								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_3b']}}</label>
 							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name]['plot_3b'] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
 							</div>
 						{% endif %}
@@ -347,59 +347,59 @@
   						<div class="tab-content" id="pills-tabContent">
 						{% if report_data['fig_locs'][amplicon_name]['plot_4a'] %}
 							  <div class="tab-pane fade" id="{{amplicon_name}}_4a" role="tabpanel">
-								<a href="{{report_data['fig_locs'][amplicon_name]['plot_4a']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_4a']}}.png" width='50%' ></a>
+								  <a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_4a']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_4a']}}.png" width='50%' ></a>
 								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_4a']}}</label>
 							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name]['plot_4a'] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
 							</div>
 						{% endif %}
 						{% if report_data['fig_locs'][amplicon_name]['plot_4b'] %}
 							  <div class="tab-pane fade show active" id="{{amplicon_name}}_4b" role="tabpanel">
-								<a href="{{report_data['fig_locs'][amplicon_name]['plot_4b']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_4b']}}.png" width='50%' ></a>
+								  <a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_4b']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_4b']}}.png" width='50%' ></a>
 								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_4b']}}</label>
 							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name]['plot_4b'] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
 							</div>
 						{% endif %}
 						{% if report_data['fig_locs'][amplicon_name]['plot_4c'] %}
 							  <div class="tab-pane fade" id="{{amplicon_name}}_4c" role="tabpanel">
-								<a href="{{report_data['fig_locs'][amplicon_name]['plot_4c']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_4c']}}.png" width='50%' ></a>
+								  <a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_4c']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_4c']}}.png" width='50%' ></a>
 
 								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_4c']}}</label>
 							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name]['plot_4c'] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
 							</div>
 						{% endif %}
 
 						{% if report_data['fig_locs'][amplicon_name]['plot_4d'] %}
 							  <div class="tab-pane fade" id="{{amplicon_name}}_4d" role="tabpanel">
-								<a href="{{report_data['fig_locs'][amplicon_name]['plot_4d']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_4d']}}.png" width='100%' ></a>
+								  <a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_4d']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_4d']}}.png" width='100%' ></a>
 								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_4d']}}</label>
 							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name]['plot_4d'] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
 							</div>
 						{% endif %}
 
 						{% if report_data['fig_locs'][amplicon_name]['plot_4e'] %}
 							  <div class="tab-pane fade" id="{{amplicon_name}}_4e" role="tabpanel">
-								<a href="{{report_data['fig_locs'][amplicon_name]['plot_4e']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_4e']}}.png" width='50%' ></a>
+								  <a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_4e']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_4e']}}.png" width='50%' ></a>
 								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_4e']}}</label>
 							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name]['plot_4e'] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
 							</div>
 						{% endif %}
 
 						{% if report_data['fig_locs'][amplicon_name]['plot_4f'] %}
 							  <div class="tab-pane fade" id="{{amplicon_name}}_4f" role="tabpanel">
-								<a href="{{report_data['fig_locs'][amplicon_name]['plot_4f']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_4f']}}.png" width='50%' ></a>
+								  <a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_4f']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_4f']}}.png" width='50%' ></a>
 								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_4f']}}</label>
 							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name]['plot_4f'] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
 							</div>
 						{% endif %}
@@ -418,10 +418,10 @@
 							{% endif %}
 								</div>
   					<div class='card-body'>
-								<a href="{{report_data['fig_locs'][amplicon_name]['plot_5']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_5']}}.png" width='70%' ></a>
+						<a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_5']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_5']}}.png" width='70%' ></a>
 								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_5']}}</label>
 							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name]['plot_5'] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
 							</div>
 						</div>
@@ -437,10 +437,10 @@
 							{% endif %}
 								</div>
   					<div class='card-body'>
-								<a href="{{report_data['fig_locs'][amplicon_name]['plot_6']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_6']}}.png" width='95%' ></a>
+						<a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_6']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_6']}}.png" width='95%' ></a>
 								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_6']}}</label>
 							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name]['plot_6'] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
 							</div>
 						</div>
@@ -456,10 +456,10 @@
 							{% endif %}
 								</div>
   					<div class='card-body'>
-								<a href="{{report_data['fig_locs'][amplicon_name]['plot_7']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_7']}}.png" width='40%' ></a>
+						<a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_7']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_7']}}.png" width='40%' ></a>
 								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_7']}}</label>
 							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name]['plot_7'] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
 							</div>
 						</div>
@@ -475,10 +475,10 @@
 							{% endif %}
 								</div>
   					<div class='card-body'>
-								<a href="{{report_data['fig_locs'][amplicon_name]['plot_8']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_8']}}.png" width='80%' ></a>
+						<a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_8']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_8']}}.png" width='80%' ></a>
 								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_8']}}</label>
 							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name]['plot_8'] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
 							</div>
 						</div>
@@ -497,10 +497,10 @@
 					<div class='card-body'>
 								{% for fig_name in report_data['sgRNA_based_fig_names'][amplicon_name]['9'] %}
                   <div class='mb-4'>
-  								<a href="{{report_data['fig_locs'][amplicon_name][fig_name]}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name][fig_name]}}.png" width='95%' ></a>
+			  <a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name][fig_name]}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name][fig_name]}}.png" width='95%' ></a>
 								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name][fig_name]}}</label>
 							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name][fig_name] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
                 </div>
 							{% endfor %}
@@ -544,38 +544,38 @@
 						{% if report_data['fig_locs'][amplicon_name]['plot_10c'] %}
 							  <div class="tab-pane fade show active" id="{{amplicon_name}}_10a" role="tabpanel">
                 <div class='mb-3'>
-  								<a href="{{report_data['fig_locs'][amplicon_name]['plot_10a']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_10a']}}.png" width='70%' ></a>
+			<a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_10a']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_10a']}}.png" width='70%' ></a>
   								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_10a']}}</label>
   							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name]['plot_10a'] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                   {% endfor %}
                 </div>
                 <div>
-								<a href="{{report_data['fig_locs'][amplicon_name]['plot_10b']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_10b']}}.png" width='35%' ></a>
-								<a href="{{report_data['fig_locs'][amplicon_name]['plot_10c']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_10c']}}.png" width='35%' ></a>
+			<a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_10b']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_10b']}}.png" width='35%' ></a>
+			<a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_10c']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_10c']}}.png" width='35%' ></a>
 								<label class="labelpadding">Figures 10a,b: Substitution frequencies across the entire amplicon (left) and in the quantification window (right).</label>
   							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name]['plot_10b'] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                   {% endfor %}
   							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name]['plot_10c'] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                   {% endfor %}
                 </div>
 							</div>
 						{% else %}
 						  <div class="tab-pane fade show active" id="{{amplicon_name}}_10a" role="tabpanel">
                 <div class='mb-3'>
-  								<a href="{{report_data['fig_locs'][amplicon_name]['plot_10a']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_10a']}}.png" width='70%' ></a>
+			<a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_10a']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_10a']}}.png" width='70%' ></a>
   								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_10a']}}</label>
   							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name]['plot_10a'] %}
-    							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                   {% endfor %}
                 </div>
                 <div>
-  								<a href="{{report_data['fig_locs'][amplicon_name]['plot_10b']}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name]['plot_10b']}}.png" width='35%' ></a>
+			<a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_10b']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name]['plot_10b']}}.png" width='35%' ></a>
   								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name]['plot_10b']}}</label>
   							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name]['plot_10b'] %}
-    							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                   {% endfor %}
                 </div>
   						</div>
@@ -584,10 +584,10 @@
 							  <div class="tab-pane fade" id="{{amplicon_name}}_10d" role="tabpanel">
   								{% for fig_name in report_data['sgRNA_based_fig_names'][amplicon_name]['10d'] %}
                   <div class='mb-4'>
-  								<a href="{{report_data['fig_locs'][amplicon_name][fig_name]}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name][fig_name]}}.png" width='95%' ></a>
+			  <a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name][fig_name]}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name][fig_name]}}.png" width='95%' ></a>
 								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name][fig_name]}}</label>
 							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name][fig_name] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
   							</div>
   								{% endfor %}
@@ -597,10 +597,10 @@
 							  <div class="tab-pane fade" id="{{amplicon_name}}_10e" role="tabpanel">
   								{% for fig_name in report_data['sgRNA_based_fig_names'][amplicon_name]['10e'] %}
                   <div class='mb-4'>
-  								<a href="{{report_data['fig_locs'][amplicon_name][fig_name]}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name][fig_name]}}.png" width='95%' ></a>
+			  <a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name][fig_name]}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name][fig_name]}}.png" width='95%' ></a>
 								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name][fig_name]}}</label>
 							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name][fig_name] %}
-							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
   							</div>
 								{% endfor %}
@@ -611,20 +611,20 @@
 							  <div class="tab-pane fade" id="{{amplicon_name}}_10f" role="tabpanel">
   								{% for fig_name in report_data['sgRNA_based_fig_names'][amplicon_name]['10f'] %}
                   <div class='mb-4'>
-    								<a href="{{report_data['fig_locs'][amplicon_name][fig_name]}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name][fig_name]}}.png" width='95%' ></a>
+			  <a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name][fig_name]}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name][fig_name]}}.png" width='95%' ></a>
     								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name][fig_name]}}</label>
     							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name][fig_name] %}
-    							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                     {% endfor %}
                   </div>
   								{% endfor %}
 
   								{% for fig_name in report_data['sgRNA_based_fig_names'][amplicon_name]['10g'] %}
                   <div class='mb-4'>
-    								<a href="{{report_data['fig_locs'][amplicon_name][fig_name]}}.pdf"><img src="{{report_data['fig_locs'][amplicon_name][fig_name]}}.png" width='95%' ></a>
+			  <a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name][fig_name]}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][amplicon_name][fig_name]}}.png" width='95%' ></a>
     								<label class="labelpadding">{{report_data['fig_captions'][amplicon_name][fig_name]}}</label>
     							  {% for (data_label,data_path) in report_data['fig_datas'][amplicon_name][fig_name] %}
-    							  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                     {% endfor %}
                     </div>
   								{% endfor %}
@@ -632,9 +632,7 @@
               </div>
 						{% endif %}
 
-
   							</div>
-  						</div>
   				</div> {# end card #}
 					{% endif %} {# end base editing card #}
 				</div> {# end this amplicon tab #} <!--end amp tab -->

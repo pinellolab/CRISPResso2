@@ -32,7 +32,7 @@ def run_crispresso(crispresso_cmds,descriptor,idx):
     elif return_value != 0:
         logging.warn('CRISPResso command failed (return value %d) on %s #%d: "%s"'%(return_value,descriptor,idx,crispresso_cmd))
     else:
-        logging.info('Finished CRISPResso %s #%d' %(descriptor,idx))
+        logging.info('Finished CRISPResso %s #%d' %(descriptor,idx+1))
     return return_value
 
 def run_crispresso_cmds(crispresso_cmds,n_processes=1,descriptor = 'region',continue_on_fail=False):

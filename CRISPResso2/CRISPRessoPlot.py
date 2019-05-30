@@ -502,7 +502,7 @@ def plot_subs_across_ref(ref_len, ref_seq, ref_name, ref_count, all_substitution
     pT = ax.bar(ind,all_substitution_base_vectors[ref_name+"_T"], color=color_lookup['T'],bottom=all_substitution_base_vectors[ref_name+"_A"]+all_substitution_base_vectors[ref_name+"_C"]+all_substitution_base_vectors[ref_name+"_G"])
     pN = ax.bar(ind,all_substitution_base_vectors[ref_name+"_N"], color=color_lookup['N'],bottom=all_substitution_base_vectors[ref_name+"_A"]+all_substitution_base_vectors[ref_name+"_C"]+all_substitution_base_vectors[ref_name+"_G"]+all_substitution_base_vectors[ref_name+"_T"])
     tots = all_substitution_base_vectors[ref_name+"_N"]+all_substitution_base_vectors[ref_name+"_A"]+all_substitution_base_vectors[ref_name+"_C"]+all_substitution_base_vectors[ref_name+"_G"]+all_substitution_base_vectors[ref_name+"_T"]
-    y_max = (max(max(tots),1))*1.1 #max to avoid ylim of 0,0 which makes python freak out
+    y_max = max(15,(max(max(tots),1))*1.1) #max to avoid ylim of 0,0 which makes python freak out
     ax.set_ylim(0,y_max) #max to avoid ylim of 0,0 which makes python freak out
     ax.set_xlim([0,ref_len])
 
@@ -535,7 +535,7 @@ def plot_subs_across_ref(ref_len, ref_seq, ref_name, ref_count, all_substitution
 #    lgd=ax.legend(legend_patches,legend_labels,ncol=1)
     lgd=ax.legend(handles=legend_patches, labels=legend_labels,loc='upper center', bbox_to_anchor=(0.3, -0.15),ncol=2, fancybox=True, shadow=True)
 
-    y_label_values= np.round(np.linspace(0, max(12,min(max(tots),max(ax.get_yticks()))),6))# np.arange(0,y_max,y_max/6.0)
+    y_label_values= np.round(np.linspace(0, max(y_max,min(max(tots),max(ax.get_yticks()))),6))# np.arange(0,y_max,y_max/6.0)
     plt.yticks(y_label_values,['%.1f%% (%d)' % (n_reads/ref_count*100,n_reads) for n_reads in y_label_values])
 
     plt.savefig(fig_filename_root + '.pdf',bbox_extra_artists=(lgd,),bbox_inches='tight')

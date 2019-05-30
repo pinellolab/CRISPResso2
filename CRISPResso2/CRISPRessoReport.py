@@ -8,6 +8,8 @@ import os
 import sys
 from jinja2 import Environment, FileSystemLoader
 import shutil
+import pandas as pd
+import re
 
 running_python3 = False
 if sys.version_info > (3, 0):
@@ -19,6 +21,18 @@ else:
     import cPickle as cp #python 2.7
 
 def make_report_from_folder(crispresso_report_file,crispresso_folder,_ROOT):
+    """
+    Makes an html report for a crispresso run
+
+    Parameters:
+    crispresso_report_file (string): name of the html file to create
+    crispresso_folder (string): path to the crispresso output
+    _ROOT (string): path to crispresso executables (for templates)
+
+    Returns:
+    Nothin
+    """
+
     info_file = os.path.join(crispresso_folder,'CRISPResso2_info.pickle')
     if not os.path.exists(info_file):
         raise Exception('CRISPResso run is not complete. Cannot create report for run at ' + crispresso_folder)
@@ -107,9 +121,17 @@ def make_report(run_data,crispresso_report_file,crispresso_folder,_ROOT):
     if run_data['args'].name != "":
         report_display_name = run_data['args'].name
 
+
+    #find path between the report and the data (if the report is in another directory vs in the same directory as the data)
+    crispresso_data_path = os.path.relpath(crispresso_folder,os.path.dirname(crispresso_report_file))
+    if crispresso_data_path == ".":
+        crispresso_data_path = ""
+    else:
+        crispresso_data_path += "/";
+
     report_data={'amplicons':amplicons,'fig_names':fig_names,'sgRNA_based_fig_names':sgRNA_based_fig_names,
             'fig_locs':fig_locs,'fig_titles':fig_titles,'fig_captions':fig_captions,'fig_datas':fig_datas,'run_data':run_data,
-            'command_used':run_data['command_used'],'params':run_data['args_string'],'report_display_name':report_display_name}
+            'command_used':run_data['command_used'],'params':run_data['args_string'],'report_display_name':report_display_name,'crispresso_data_path':crispresso_data_path}
 
     j2_env = Environment(loader=FileSystemLoader(os.path.join(_ROOT,'templates')))
     template = j2_env.get_template('report.html')
@@ -145,6 +167,13 @@ def make_batch_report_from_folder(crispressoBatch_report_file,crispresso2_info,b
     if 'summary_plot_datas' in crispresso2_info:
         summary_plot_datas = crispresso2_info['summary_plot_datas']
 
+    #find path between the report and the data (if the report is in another directory vs in the same directory as the data)
+    crispresso_data_path = os.path.relpath(batch_folder,os.path.dirname(crispressoBatch_report_file))
+    if crispresso_data_path == ".":
+        crispresso_data_path = ""
+    else:
+        crispresso_data_path += "/";
+
 
     sub_html_files = {}
     run_names = []
@@ -157,10 +186,15 @@ def make_batch_report_from_folder(crispressoBatch_report_file,crispresso2_info,b
         run_data = cp.load(open(info_file,'rb'))
         if not 'report_filename' in run_data:
             raise Exception('CRISPResso run %s has no report. Cannot add to batch report.'% sub_folder)
-        sub_html_files[display_name] = os.path.join(sub_folder,os.path.basename(run_data['report_filename']))
+
+        this_sub_html_file = sub_folder+".html"
+        if run_data['args'].place_report_in_output_folder:
+            this_sub_html_file = os.path.join(sub_folder,run_data['report_filename'])
+        sub_html_files[display_name] = this_sub_html_file
+
         run_names.append(display_name)
 
-    make_multi_report(run_names,sub_html_files,crispressoBatch_report_file,_ROOT,'CRISPResso Batch Output',
+    make_multi_report(run_names,sub_html_files,crispressoBatch_report_file,batch_folder,_ROOT,'CRISPResso Batch Output',
         summary_plot_names=summary_plot_names,summary_plot_titles=summary_plot_titles,summary_plot_labels=summary_plot_labels,summary_plot_datas=summary_plot_datas,
         window_nuc_pct_quilts=window_nuc_pct_quilts,
         nuc_pct_quilts=nuc_pct_quilts,
@@ -235,7 +269,11 @@ def make_multi_report_from_folder(crispresso2_info,names_arr,report_name,crispre
             raise Exception('CRISPResso run %s has no report. Cannot add to report.'% sub_folder)
 
         run_names.append(display_name)
-        sub_html_files[display_name] = os.path.join(folder_name,os.path.basename(run_data['report_filename']))
+
+        this_sub_html_file = os.path.basename(folder_name)+".html"
+        if run_data['args'].place_report_in_output_folder:
+            this_sub_html_file = os.path.join(os.path.basename(sub_folder),run_data['report_filename'])
+        sub_html_files[display_name] = this_sub_html_file
 
         this_sub_2a_labels = []
         this_sub_2a_pdfs = []
@@ -249,10 +287,10 @@ def make_multi_report_from_folder(crispresso2_info,names_arr,report_name,crispre
         sub_2a_pdfs[display_name] = this_sub_2a_pdfs
 
 
-    make_multi_report(run_names,sub_html_files,crispresso_report_file,_ROOT,report_name,
+    make_multi_report(run_names,sub_html_files,crispresso_report_file,folder,_ROOT,report_name,
             summary_plot_names=summary_plot_names,summary_plot_titles=summary_plot_titles,summary_plot_labels=summary_plot_labels,summary_plot_datas=summary_plot_datas)
 
-def make_multi_report(run_names,sub_html_files,crispresso_multi_report_file,_ROOT,report_name,
+def make_multi_report(run_names,sub_html_files,crispresso_multi_report_file,crispresso_folder,_ROOT,report_name,
     window_nuc_pct_quilts=[],
     nuc_pct_quilts=[],
     window_nuc_conv_plots=[],
@@ -270,6 +308,8 @@ def make_multi_report(run_names,sub_html_files,crispresso_multi_report_file,_ROO
         sub_html_files (dict): dict of run_name->file_loc
         crispresso_multi_report_file (string): path of file to write to
         report_name (string): description of report type to be shown at top of report
+        crispresso_folder (string): absolute path to the crispresso output
+        _ROOT (string): absolute path to the crispresso executable
 
         summary_plot_names (list): list of plot names - keys for following dicts
         summary_plot_titles (dict): dict of plot_name->plot_title
@@ -284,9 +324,15 @@ def make_multi_report(run_names,sub_html_files,crispresso_multi_report_file,_ROO
         j2_env.filters['dirname'] = dirname
         template = j2_env.get_template('multiReport.html')
 
+        crispresso_data_path = os.path.relpath(crispresso_folder,os.path.dirname(crispresso_multi_report_file))
+        if crispresso_data_path == ".":
+            crispresso_data_path = ""
+        else:
+            crispresso_data_path += "/";
+
         outfile = open(crispresso_multi_report_file,'w')
         outfile.write(template.render(window_nuc_pct_quilts=window_nuc_pct_quilts,nuc_pct_quilts=nuc_pct_quilts,
-            window_nuc_conv_plots=window_nuc_conv_plots,nuc_conv_plots=nuc_conv_plots,
+            window_nuc_conv_plots=window_nuc_conv_plots,nuc_conv_plots=nuc_conv_plots,crispresso_data_path=crispresso_data_path,
             summary_plot_names=summary_plot_names,summary_plot_titles=summary_plot_titles,summary_plot_labels=summary_plot_labels,summary_plot_datas=summary_plot_datas,
             run_names=run_names,sub_html_files=sub_html_files,report_name=report_name))
         outfile.close()

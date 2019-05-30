@@ -447,13 +447,12 @@ def main():
             if not clean_file_prefix.endswith("."):
                 clean_file_prefix += "."
 
-        _jp=lambda filename: os.path.join(OUTPUT_DIRECTORY,clean_file_prefix + filename) #handy function to put a file in the output directory
-
-
         OUTPUT_DIRECTORY='CRISPResso_on_%s' % database_id
 
         if args.output_folder:
             OUTPUT_DIRECTORY=os.path.join(os.path.abspath(args.output_folder),OUTPUT_DIRECTORY)
+
+        _jp=lambda filename: os.path.join(OUTPUT_DIRECTORY,clean_file_prefix + filename) #handy function to put a file in the output directory
 
         crispresso2_info_file = os.path.join(OUTPUT_DIRECTORY,'CRISPResso2_info.pickle')
         crispresso2_info = {} #keep track of all information for this run to be pickled and saved at the end of the run
@@ -532,7 +531,6 @@ def main():
             if len(amplicon_seq_arr) > 1:
                 plural_string = "s"
             info("Auto-detected %d reference amplicon%s"%(len(amplicon_seq_arr),plural_string))
-            print('namearr: ' + str(amplicon_name_arr))
 
             if args.debug:
                 for idx,seq in enumerate(amplicon_seq_arr):
@@ -3423,8 +3421,12 @@ def main():
 
 
         if not args.suppress_report:
-            report_name = _jp('CRISPResso2_report.html')
+            if (args.place_report_in_output_folder):
+                report_name = os.path.join(OUTPUT_DIRECTORY,"CRISPResso2_report.html")
+            else:
+                report_name = OUTPUT_DIRECTORY+'.html'
             CRISPRessoReport.make_report(crispresso2_info,report_name,OUTPUT_DIRECTORY,_ROOT)
+            crispresso2_info['report_location'] = report_name
             crispresso2_info['report_filename'] = os.path.basename(report_name)
 
         cp.dump(crispresso2_info, open(crispresso2_info_file, 'wb' ) )

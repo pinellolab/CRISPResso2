@@ -359,8 +359,13 @@ def main():
                         outfile.write(metaName + "\t" + line)
 
         if not args.suppress_report:
-            report_name = _jp('CRISPResso2Meta_report.html')
+            if (args.place_report_in_output_folder):
+                report_name = _jp("CRISPResso2Meta_report.html")
+            else:
+                report_name = OUTPUT_DIRECTORY+'.html'
             CRISPRessoReport.make_meta_report_from_folder(report_name,crispresso2_info,OUTPUT_DIRECTORY,_ROOT)
+            crispresso2_info['report_location'] = report_name
+            crispresso2_info['report_filename'] = os.path.basename(report_name)
 
         cp.dump(crispresso2_info, open(crispresso2Meta_info_file, 'wb' ) )
         info('Analysis Complete!')

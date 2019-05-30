@@ -58,7 +58,7 @@
               <div class='card-body p-0'>
                 <div class="list-group list-group-flush">
               {% for run_name in run_names %}
-                <a href="{{sub_html_files[run_name]}}" class="list-group-item list-group-item-action">{{run_name}}</a>
+	      <a href="{{crispresso_data_path}}{{sub_html_files[run_name]}}" class="list-group-item list-group-item-action">{{run_name}}</a>
                 {% endfor %}
               </div>
             </div>
@@ -73,10 +73,10 @@
               <div class='card-body'>
                 {% for plot_name in window_nuc_pct_quilts %}
                   <h5>{{summary_plot_titles[plot_name]}}</h5>
-                  <a href="{{plot_name}}.pdf"><img src="{{plot_name}}.png" width='80%' ></a>
+		  <a href="{{crispresso_data_path}}{{plot_name}}.pdf"><img src="{{crispresso_data_path}}{{plot_name}}.png" width='80%' ></a>
                   <label class="labelpadding">{{summary_plot_labels[plot_name]}}</label>
   							  {% for (data_label,data_path) in summary_plot_datas[plot_name] %}
-                    <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{crispresso_data_path}}{{data_path}}">{{data_label}}</a></small></p>
                   {% endfor %}
                 {% endfor %}
               </div>
@@ -91,10 +91,10 @@
               <div class='card-body'>
                 {% for plot_name in nuc_pct_quilts %}
                   <h5>{{summary_plot_titles[plot_name]}}</h5>
-                  <a href="{{plot_name}}.pdf"><img src="{{plot_name}}.png" width='80%' ></a>
+		  <a href="{{crispresso_data_path}}{{plot_name}}.pdf"><img src="{{crispresso_data_path}}{{plot_name}}.png" width='80%' ></a>
                   <label class="labelpadding">{{summary_plot_labels[plot_name]}}</label>
   							  {% for (data_label,data_path) in summary_plot_datas[plot_name] %}
-                    <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{crispresso_data_path}}{{data_path}}">{{data_label}}</a></small></p>
                   {% endfor %}
                 {% endfor %}
               </div>
@@ -109,10 +109,10 @@
               <div class='card-body'>
                 {% for plot_name in window_nuc_conv_plots %}
                   <h5>{{summary_plot_titles[plot_name]}}</h5>
-                  <a href="{{plot_name}}.pdf"><img src="{{plot_name}}.png" width='80%' ></a>
+		  <a href="{{crispresso_data_path}}{{plot_name}}.pdf"><img src="{{crispresso_data_path}}{{plot_name}}.png" width='80%' ></a>
                   <label class="labelpadding">{{summary_plot_labels[plot_name]}}</label>
   							  {% for (data_label,data_path) in summary_plot_datas[plot_name] %}
-                    <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{crispresso_data_path}}{{data_path}}">{{data_label}}</a></small></p>
                   {% endfor %}
                 {% endfor %}
               </div>
@@ -127,10 +127,10 @@
               <div class='card-body'>
                 {% for plot_name in nuc_conv_plots %}
                   <h5>{{summary_plot_titles[plot_name]}}</h5>
-                  <a href="{{plot_name}}.pdf"><img src="{{plot_name}}.png" width='80%' ></a>
+		  <a href="{{crispresso_data_path}}{{plot_name}}.pdf"><img src="{{crispresso_data_path}}{{plot_name}}.png" width='80%' ></a>
                   <label class="labelpadding">{{summary_plot_labels[plot_name]}}</label>
   							  {% for (data_label,data_path) in summary_plot_datas[plot_name] %}
-                    <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{crispresso_data_path}}{{data_path}}">{{data_label}}</a></small></p>
                   {% endfor %}
                 {% endfor %}
               </div>
@@ -144,10 +144,10 @@
                 <h5>{{summary_plot_titles[plot_name]}}</h5>
               </div>
               <div class='card-body'>
-                <a href="{{plot_name}}.pdf"><img src="{{plot_name}}.png" width='80%' ></a>
+		      <a href="{{crispresso_data_path}}{{plot_name}}.pdf"><img src="{{crispresso_data_path}}{{plot_name}}.png" width='80%' ></a>
                 <label class="labelpadding">{{summary_plot_labels[plot_name]}}</label>
 							  {% for (data_label,data_path) in summary_plot_datas[plot_name] %}
-                  <p class="m-0"><small>Data: <a href="{{data_path}}">{{data_label}}</a></small></p>
+							  <p class="m-0"><small>Data: <a href="{{crispresso_data_path}}{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
               </div>
             </div>
