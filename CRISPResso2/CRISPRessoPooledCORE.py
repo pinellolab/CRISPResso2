@@ -847,7 +847,6 @@ def main():
         empty_line_els = [np.nan]*(header_el_count-1)
         n_reads_index = header_els.index('Reads_total') - 1
         for idx,row in df_final_data.iterrows():
-
                 run_name = idx
                 if RUNNING_MODE=='ONLY_AMPLICONS' or RUNNING_MODE=='AMPLICONS_AND_GENOME':
                     run_name=idx
@@ -897,7 +896,7 @@ def main():
                     vals.extend([round(unmod_pct,8),round(mod_pct,8),n_aligned,n_tot,n_unmod,n_mod,n_discarded,n_insertion,n_deletion,n_substitution,n_only_insertion,n_only_deletion,n_only_substitution,n_insertion_and_deletion,n_insertion_and_substitution,n_deletion_and_substitution,n_insertion_and_deletion_and_substitution])
                     quantification_summary.append(vals)
 
-                    good_region_names.append(idx)
+                    good_region_names.append(run_name)
                     good_region_folders[idx] = folder_name
 
 
