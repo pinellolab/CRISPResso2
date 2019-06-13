@@ -4,7 +4,7 @@
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/crispresso2/README.html)
 
 # CRISPResso2
-CRISPResso2 is a software pipeline designed to enable rapid and intuitive interpretation of genome editing experiments.
+CRISPResso2 is a software pipeline designed to enable rapid and intuitive interpretation of genome editing experiments. A limited web implementation is available at: http://crispresso2.pinellolab.org/.
 
 Briefly, CRISPResso2:
 - aligns sequencing reads to a reference sequence
