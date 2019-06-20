@@ -355,8 +355,8 @@ def main():
              else:
                  output_forward_filename=_jp('reads.trimmed.fq.gz')
                  #Trimming with trimmomatic
-                 cmd='java -jar %s SE -phred33 %s  %s %s >>%s 2>&1'\
-                 % (get_data('trimmomatic-0.33.jar'),args.fastq_r1,
+                 cmd='%s SE -phred33 %s  %s %s >>%s 2>&1'\
+                 % (args.trimmomatic_command,args.fastq_r1,
                     output_forward_filename,
                     args.trimmomatic_options_string,
                     log_filename)
@@ -382,8 +382,8 @@ def main():
                  output_reverse_unpaired_filename=_jp('output_reverse_unpaired.fq.gz')
 
                  #Trimming with trimmomatic
-                 cmd='java -jar %s PE -phred33 %s  %s %s  %s  %s  %s %s >>%s 2>&1'\
-                 % (get_data('trimmomatic-0.33.jar'),
+                 cmd='%s PE -phred33 %s  %s %s  %s  %s  %s %s >>%s 2>&1'\
+                 % (args.trimmomatic_command,
                          args.fastq_r1,args.fastq_r2,output_forward_paired_filename,
                          output_forward_unpaired_filename,output_reverse_paired_filename,
                          output_reverse_unpaired_filename,args.trimmomatic_options_string,log_filename)
