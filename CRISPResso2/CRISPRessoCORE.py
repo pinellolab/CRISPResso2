@@ -3074,6 +3074,7 @@ def main():
             for ind,sgRNA in enumerate(sgRNA_sequences):
                 cut_point = sgRNA_cut_points[ind]
                 plot_idxs = sgRNA_plot_idxs[ind]
+                plot_half_window = max(1,args.plot_window_size)
                 df_allele_around_cut=CRISPRessoShared.get_dataframe_around_cut(df_alleles.loc[df_alleles['Reference_Name'] == ref_name],cut_point,plot_half_window)
 
                 #write alleles table to file
