@@ -29,7 +29,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.0.29"
+__version__ = "2.0.30"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -638,14 +638,14 @@ def get_amplicon_info_for_guides(ref_seq,guides,quantification_window_center,qua
     for guide_idx, current_guide_seq in enumerate(guides):
         offset_fw=quantification_window_center+len(current_guide_seq)-1
         offset_rc=(-quantification_window_center)-1
-        new_cut_points=[m.start() + offset_fw for m in re.finditer(current_guide_seq, ref_seq)]+\
-                         [m.start() + offset_rc for m in re.finditer(reverse_complement(current_guide_seq), ref_seq)]
+        new_cut_points=[m.start() + offset_fw for m in re.finditer(current_guide_seq, ref_seq, flags=re.IGNORECASE)]+\
+                         [m.start() + offset_rc for m in re.finditer(reverse_complement(current_guide_seq), ref_seq, flags=re.IGNORECASE)]
 
         if (new_cut_points):
             this_sgRNA_cut_points += new_cut_points
-            this_sgRNA_intervals+=[(m.start(),m.start()+len(current_guide_seq)-1) for m in re.finditer(current_guide_seq, ref_seq)]+\
-                                  [(m.start(),m.start()+len(current_guide_seq)-1) for m in re.finditer(reverse_complement(current_guide_seq), ref_seq)]
-            this_sgRNA_sequences.append(current_guide_seq)
+            this_sgRNA_intervals+=[(m.start(),m.start()+len(current_guide_seq)-1) for m in re.finditer(current_guide_seq, ref_seq, flags=re.IGNORECASE)]+\
+                                  [(m.start(),m.start()+len(current_guide_seq)-1) for m in re.finditer(reverse_complement(current_guide_seq), ref_seq, flags=re.IGNORECASE)]
+            this_sgRNA_sequences.append(current_guide_seq.upper())
 
     #create mask of positions in which to include/exclude indels for the quantification window
     #first, if exact coordinates have been given, set those
