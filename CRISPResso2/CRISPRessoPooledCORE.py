@@ -269,7 +269,7 @@ def main():
         info('Checking dependencies...')
 
         if check_samtools() and check_bowtie2():
-            info('\n All the required dependencies are present!')
+            info('All the required dependencies are present!')
         else:
             sys.exit(1)
 
@@ -463,10 +463,12 @@ def main():
             df_template.Coding_sequence=df_template.Coding_sequence.apply(capitalize_sequence)
 
             if not len(df_template.Amplicon_Sequence.unique())==df_template.shape[0]:
-                raise Exception('The amplicons should be all distinct!')
+                duplicated_entries = df_template.Amplicon_Sequence[df_template.Amplicon_Sequence.duplicated()]
+                raise Exception('The amplicon sequences must be distinct! (Duplicated entries: ' + str(duplicated_entries.values) + ')')
 
             if not len(df_template.Name.unique())==df_template.shape[0]:
-                raise Exception('The amplicon names should be all distinct!')
+                duplicated_entries = df_template.Name[df_template.Name.duplicated()]
+                raise Exception('The amplicon names must be distinct! (Duplicated names: ' + str(duplicated_entries.values) + ')')
 
             df_template=df_template.set_index('Name')
             df_template.index=df_template.index.to_series().str.replace(' ','_')

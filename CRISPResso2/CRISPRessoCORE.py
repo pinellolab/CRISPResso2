@@ -600,7 +600,8 @@ def main():
                 this_contains_guide = True
 
             for guide_idx, guide_seq in enumerate(guides):
-                if guide_seq in this_sgRNA_sequences:
+                #this_sgRNA_sequences contains all good guides contained in this amplicon
+                if guide_seq.upper() in this_sgRNA_sequences:
                     found_guide_seq[guide_idx] = True
 
             # Calculate coding sequence for this reference
@@ -1803,11 +1804,11 @@ def main():
                 unmod_pct = "NA"
                 mod_pct = "NA"
                 if n_aligned > 0:
-                    unmod_pct = 100*n_unmod/float(n_aligned)
-                    mod_pct = 100*n_mod/float(n_aligned)
+                    unmod_pct = round(100*n_unmod/float(n_aligned),8)
+                    mod_pct = round(100*n_mod/float(n_aligned),8)
 
                 vals = [ref_name]
-                vals.extend([str(x) for x in [round(unmod_pct,8),round(mod_pct,8),n_aligned,N_TOTAL,n_unmod,n_mod,n_discarded,n_insertion,n_deletion,n_substitution,n_only_insertion,n_only_deletion,n_only_substitution,n_insertion_and_deletion,n_insertion_and_substitution,n_deletion_and_substitution,n_insertion_and_deletion_and_substitution]])
+                vals.extend([str(x) for x in [unmod_pct,mod_pct,n_aligned,N_TOTAL,n_unmod,n_mod,n_discarded,n_insertion,n_deletion,n_substitution,n_only_insertion,n_only_deletion,n_only_substitution,n_insertion_and_deletion,n_insertion_and_substitution,n_deletion_and_substitution,n_insertion_and_deletion_and_substitution]])
                 outfile.write("\t".join(vals) + "\n")
 
         crispresso2_info['quant_of_editing_freq_filename'] = os.path.basename(quant_of_editing_freq_filename)
