@@ -55,9 +55,20 @@ Open a terminal and type:
 conda config --add channels defaults
 conda config --add channels bioconda
 conda config --add channels conda-forge
+```
 
+To install CRISPResso2 into the current conda environment, type:
+
+```
 conda install CRISPResso2
 ```
+
+Alternately, to create a new environment named `crispresso2_env` with CRISPResso2, type:
+
+```
+conda create -n crispresso2_env -c bioconda crispresso2 python=2.7
+```
+
 
 Verify that CRISPResso is installed using the command:
 
