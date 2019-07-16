@@ -807,7 +807,7 @@ def main():
                     this_seq_length = refs[ref_name]['sequence_length']
                     for (exon_interval_start,exon_interval_end) in refs[clone_ref_name]['exon_intervals']:
                         this_exon_start = s1inds[exon_interval_start]
-                        this_exon_end = s1inds[exon_interval_end]
+                        this_exon_end = s1inds[exon_interval_end -1] + 1 # in case where exon is entire amplicon, because the exon_end is beyond the upper bound, we have to make this change
                         this_exon_intervals.append((this_exon_start,this_exon_end))
                         this_exon_len_mods.append(((this_exon_end - this_exon_start)-(exon_interval_end - exon_interval_start)))
                         this_exon_positions = this_exon_positions.union(set(range(this_exon_start,this_exon_end)))
@@ -855,6 +855,7 @@ def main():
 
         N_READS_INPUT=get_n_reads_fastq(args.fastq_r1)
 
+        files_to_remove = [] #these files will be deleted at the end of the run
 
         args_string_arr = []
         clean_args_string_arr = []
@@ -881,7 +882,8 @@ def main():
                 args.fastq_r1,args.fastq_r2=split_paired_end_reads_single_file(args.fastq_r1,
                     output_filename_r1=_jp(os.path.basename(args.fastq_r1.replace('.fastq','')).replace('.gz','')+'_splitted_r1.fastq.gz'),
                     output_filename_r2=_jp(os.path.basename(args.fastq_r1.replace('.fastq','')).replace('.gz','')+'_splitted_r2.fastq.gz'),)
-                splitted_files_to_remove=[args.fastq_r1,args.fastq_r2]
+                files_to_remove+=[args.fastq_r1,args.fastq_r2]
+                N_READS_INPUT = N_READS_INPUT/2
 
                 info('Done!')
 
@@ -908,6 +910,8 @@ def main():
 
                 args.fastq_r1 = output_filename_r1
                 args.fastq_r2 = output_filename_r2
+                files_to_remove += [output_filename_r1]
+                files_to_remove += [output_filename_r2]
 
             else:
                 output_filename_r1=_jp(os.path.basename(args.fastq_r1.replace('.fastq','')).replace('.gz','')+'_filtered.fastq.gz')
@@ -916,6 +920,7 @@ def main():
                 filterFastqs.filterFastqs(fastq_r1=args.fastq_r1,fastq_r1_out=output_filename_r1,min_bp_qual_in_read=min_single_bp_quality,min_av_read_qual=min_av_quality,min_bp_qual_or_N=min_bp_quality_or_N)
 
                 args.fastq_r1 = output_filename_r1
+                files_to_remove += [output_filename_r1]
 
 
         if args.fastq_r2=='': #single end reads
@@ -939,6 +944,8 @@ def main():
                 if TRIMMOMATIC_STATUS:
                         raise CRISPRessoShared.TrimmomaticException('TRIMMOMATIC failed to run, please check the log file.')
                 crispresso2_info['trimmomatic_command'] = cmd
+
+                files_to_remove += [output_forward_filename]
 
 
             processed_output_filename=output_forward_filename
@@ -966,6 +973,9 @@ def main():
                 if TRIMMOMATIC_STATUS:
                     raise CRISPRessoShared.TrimmomaticException('TRIMMOMATIC failed to run, please check the log file.')
                 crispresso2_info['trimmomatic_command'] = cmd
+
+                files_to_remove += [output_forward_paired_filename]
+                files_to_remove += [output_reverse_paired_filename]
 
                 info('Done!')
 
@@ -1017,28 +1027,12 @@ def main():
                  OUTPUT_DIRECTORY,
                  output_prefix,
                  log_filename)
-            #cmd='flash %s %s --min-overlap %d --max-overlap %d -f %d -z -d %s >>%s 2>&1' %\
-            #(output_forward_paired_filename,
-            #     output_reverse_paired_filename,
-            #     args.min_paired_end_reads_overlap,
-            #     max_amplicon_len,
-            #     avg_read_length,
-            #     OUTPUT_DIRECTORY,log_filename)
-#            cmd='flash %s %s --min-overlap %d -f %d -r %d -s %d  -z -d %s >>%s 2>&1' %\
-#            (output_forward_paired_filename,
-#                 output_reverse_paired_filename,
-#                 args.min_paired_end_reads_overlap,
-#                 len_amplicon,avg_read_length,
-#                 std_fragment_length,
-#                 OUTPUT_DIRECTORY,log_filename)
 
             info('Running FLASH command: ' + cmd)
             crispresso2_info['flash_command'] = cmd
             FLASH_STATUS=sb.call(cmd,shell=True)
             if FLASH_STATUS:
                 raise CRISPRessoShared.FlashException('Flash failed to run, please check the log file.')
-
-            info('Done!')
 
             flash_hist_filename=_jp('out.hist')
             flash_histogram_filename=_jp('out.histogram')
@@ -1048,6 +1042,24 @@ def main():
             processed_output_filename=_jp('out.extendedFrags.fastq.gz')
             if os.path.isfile(processed_output_filename) is False:
                 raise CRISPRessoShared.FlashException('Flash failed to produce merged reads file, please check the log file.')
+
+            files_to_remove+=[processed_output_filename,flash_hist_filename,flash_histogram_filename,\
+                    flash_not_combined_1_filename,flash_not_combined_2_filename]
+
+            if (args.force_merge_pairs):
+                 old_flashed_filename = processed_output_filename
+                 new_merged_filename=_jp('out.forcemerged_uncombined.fastq.gz')
+                 num_reads_force_merged = CRISPRessoShared.force_merge_pairs(flash_not_combined_1_filename,flash_not_combined_2_filename,new_merged_filename)
+                 new_output_filename=_jp('out.forcemerged.fastq.gz')
+                 merge_command = "cat %s %s > %s"%(processed_output_filename,new_merged_filename,new_output_filename)
+                 MERGE_STATUS=sb.call(merge_command,shell=True)
+                 if MERGE_STATUS:
+                     raise FlashException('Force-merging read pairs failed to run, please check the log file.')
+                 processed_output_filename = new_output_filename
+
+                 files_to_remove+=[new_merged_filename]
+
+            info('Done!')
 
         #count reads
         N_READS_AFTER_PREPROCESSING=get_n_reads_fastq(processed_output_filename)
@@ -2703,7 +2715,6 @@ def main():
                     plt.plot(ref1_all_deletion_positions,'m',linewidth=3,label='Deletions')
                     plt.plot(ref1_all_substitution_positions,'g',linewidth=3,label='Substitutions')
 
-
                     ref1_cut_points = refs[ref_names[0]]['sgRNA_cut_points']
                     ref1_sgRNA_intervals = refs[ref_names[0]]['sgRNA_intervals']
                     ref1_include_idxs_list = sorted(list(refs[ref_names[0]]['include_idxs']))
@@ -2754,13 +2765,13 @@ def main():
                         plt.title('Mutation position distribution in all reads with reference to %s'%(ref_names[0]))
                         plot_root = _jp('4e.' + ref_names[0] + '.Global_mutations_in_all_reads')
                         crispresso2_info['refs'][ref_names[0]]['plot_4e_root'] = os.path.basename(plot_root)
-                        crispresso2_info['refs'][ref_names[0]]['plot_4e_caption'] = "Figure 4e: Modifications in all reads when aligned to the reference sequence. Insertions: red, deletions: purple, substitutions: green. All modifications (including those outside the quantification window) are shown."
+                        crispresso2_info['refs'][ref_names[0]]['plot_4e_caption'] = "Figure 4e: Positions of modifications in all reads when aligned to the reference sequence ("+ref_names[0]+"). Insertions: red, deletions: purple, substitutions: green. All modifications (including those outside the quantification window) are shown."
                         crispresso2_info['refs'][ref_names[0]]['plot_4e_data'] = []
                     elif ref_name == "HDR":
                         plt.title('Mutation position distribution in %s reads with reference to %s'%(ref_name,ref_names[0]))
                         plot_root = _jp('4f.' + ref_names[0] + '.Global_mutations_in_HDR_reads_with_reference_to_'+ref_names[0])
                         crispresso2_info['refs'][ref_names[0]]['plot_4f_root'] = os.path.basename(plot_root)
-                        crispresso2_info['refs'][ref_names[0]]['plot_4f_caption'] = "Figure 4f: Modifications in HDR reads with respect to the reference sequence. Insertions: red, deletions: purple, substitutions: green. All modifications (including those outside the quantification window) are shown."
+                        crispresso2_info['refs'][ref_names[0]]['plot_4f_caption'] = "Figure 4f: Positions of modifications in HDR reads with respect to the reference sequence ("+ref_names[0]+"). Insertions: red, deletions: purple, substitutions: green. All modifications (including those outside the quantification window) are shown."
                         crispresso2_info['refs'][ref_names[0]]['plot_4f_data'] = []
 
                     plt.savefig(plot_root+'.pdf',bbox_extra_artists=(lgd,),pad_inches=1,bbox_inches='tight')
@@ -3360,25 +3371,6 @@ def main():
 
         if not args.keep_intermediate:
             info('Removing Intermediate files...')
-
-            if args.fastq_r2!='':
-                files_to_remove=[processed_output_filename,flash_hist_filename,flash_histogram_filename,\
-                        flash_not_combined_1_filename,flash_not_combined_2_filename]
-            else:
-                files_to_remove=[processed_output_filename]
-
-            if args.trim_sequences and args.fastq_r2!='':
-                files_to_remove+=[output_forward_paired_filename,output_reverse_paired_filename,\
-                        output_forward_unpaired_filename,output_reverse_unpaired_filename]
-
-            if args.split_paired_end:
-                files_to_remove+=splitted_files_to_remove
-
-            if args.min_average_read_quality>0 or args.min_single_bp_quality>0 or args.min_bp_quality_or_N>0:
-                if args.fastq_r2!='':
-                    files_to_remove+=[args.fastq_r1,args.fastq_r2]
-                else:
-                    files_to_remove+=[args.fastq_r1]
 
             for file_to_remove in files_to_remove:
                 try:

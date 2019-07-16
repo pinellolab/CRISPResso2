@@ -6,6 +6,7 @@ Software pipeline for the analysis of genome editing outcomes from deep sequenci
 
 import argparse
 from collections import defaultdict
+import gzip
 import numpy as np
 import os
 import pandas as pd
@@ -104,6 +105,7 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('--min_paired_end_reads_overlap',  type=int, help='Parameter for the FLASH read merging step. Minimum required overlap length between two reads to provide a confident overlap. ', default=10)
     parser.add_argument('--max_paired_end_reads_overlap',  type=int, help='Parameter for the FLASH merging step.  Maximum overlap length expected in approximately 90%% of read pairs. Please see the FLASH manual for more information.', default=100)
     parser.add_argument('--stringent_flash_merging', help='Use stringent parameters for flash merging. In the case where flash could merge R1 and R2 reads ambiguously, the expected overlap is calculated as 2*average_read_length - amplicon_length. The flash parameters for --min-overlap and --max-overlap will be set to prefer merged reads with length within 10bp of the expected overlap. These values override the --min_paired_end_reads_overlap or --max_paired_end_reads_overlap CRISPResso parameters.', action='store_true')
+    parser.add_argument('--force_merge_pairs', help=argparse.SUPPRESS,action='store_true')#help=Force-merges R1 and R2 if they cannot be merged using flash (use with caution -- may create non-biological apparent indels at the joining site)
 
     parser.add_argument('-w', '--quantification_window_size','--window_around_sgrna', type=int, help='Defines the size (in bp) of the quantification window extending from the position specified by the "--cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence(s) (--sgRNA). Mutations within this number of bp from the quantification window center are used in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 1, 1bp on each side of the cleavage position for a total length of 2bp.', default=1)
     parser.add_argument('-wc','--quantification_window_center','--cleavage_offset', type=int, help="Center of quantification window to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17 to only include mutations near the 5' end of the sgRNA.", default=-3)
@@ -568,6 +570,65 @@ def guess_guides(amplicon_sequence,fastq_r1,fastq_r2,number_of_reads_to_consider
 
 
 ######
+# Fastq file manipulation
+######
+
+def force_merge_pairs(r1_filename, r2_filename, output_filename):
+    """
+    This can be useful in case paired end reads are too short to cover the amplicon.
+    Note that this should be used with extreme caution because non-biological indels will appear at the site of read merging.
+    R1------>     <-------R2
+    becomes
+    R1------><------R2
+
+    input:
+    r1_filename: path to fastq r1 (can be gzipped)
+    r2_filename: path to fastq r2 (can be gzipped)
+    output_filename: path to merged output filename
+
+    returns:
+    linecount: the number of lines of the resulting file
+    """
+
+    if r1_filename.endswith('.gz'):
+        f1 = gzip.open(r1_filename,'rb')
+    else:
+        f1 = open(r1_filename,'r')
+    if r2_filename.endswith('.gz'):
+        f2 = gzip.open(r2_filename,'rb')
+    else:
+        f2 = open(r2_filename,'r')
+
+    if output_filename.endswith('.gz'):
+        f_out = gzip.open(output_filename, 'wb')
+    else:
+        f_out = open(output_filename,'w')
+
+    lineCount = 0
+    id1 = f1.readline()
+    while id1 :
+        lineCount += 1
+        seq1 = f1.readline()
+        seq1 = seq1.strip()
+        plus1 = f1.readline()
+        qual1 = f1.readline()
+        qual1 = qual1.strip()
+
+        id2 = f2.readline()
+        seq2 = reverse_complement(f2.readline().strip())+"\n"
+        plus2 = f2.readline()
+        qual2 = f2.readline()
+
+        f_out.write(id1+seq1+seq2+plus1+qual1+qual2)
+
+        id1 = f1.readline()
+    f1.close()
+    f2.close()
+    f_out.close()
+
+    return(lineCount)
+
+######
 # allele modification functions
 ######
 
@@ -759,7 +820,7 @@ def get_crispresso_header(description,header_str):
         for i in range(len(logo_lines))[::-1]:
             output_line = (pad_string + logo_lines[i].ljust(max_logo_width) + pad_string).center(term_width) + "\n" + output_line
 
-    output_line += '\n'+('[CRISPresso version ' + __version__ + ']').center(term_width) + '\n' + ('[Kendell Clement and Luca Pinello 2019]').center(term_width) + "\n" + ('[For support contact kclement@mgh.harvard.edu]').center(term_width) + "\n"
+    output_line += '\n'+('[CRISPResso version ' + __version__ + ']').center(term_width) + '\n' + ('[Kendell Clement and Luca Pinello 2019]').center(term_width) + "\n" + ('[For support contact kclement@mgh.harvard.edu]').center(term_width) + "\n"
 
     description_str = ""
     for str in description:

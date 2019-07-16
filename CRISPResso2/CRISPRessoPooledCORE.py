@@ -58,36 +58,6 @@ def check_library(library_name):
                 error('You need to install %s module to use CRISPRessoPooled!' % library_name)
                 sys.exit(1)
 
-#GENOME_LOCAL_FOLDER=get_data('genomes')
-
-def force_symlink(src, dst):
-
-    if os.path.exists(dst) and os.path.samefile(src,dst):
-        return
-
-    try:
-        os.symlink(src, dst)
-    except OSError as exc:
-        if exc.errno == errno.EEXIST:
-            os.remove(dst)
-            os.symlink(src, dst)
-
-nt_complement=dict({'A':'T','C':'G','G':'C','T':'A','N':'N','_':'_','-':'-'})
-
-def reverse_complement(seq):
-        return "".join([nt_complement[c] for c in seq.upper()[-1::-1]])
-
-def find_wrong_nt(sequence):
-    return list(set(sequence.upper()).difference(set(['A','T','C','G','N'])))
-
-def capitalize_sequence(x):
-    return str(x).upper() if not pd.isnull(x) else x
-
-def check_file(filename):
-    try:
-        with open(filename): pass
-    except IOError:
-        raise Exception('I cannot open the file: '+filename)
 
 #the dependencies are bowtie2 and samtools
 def which(program):
@@ -274,18 +244,18 @@ def main():
             sys.exit(1)
 
         #check files
-        check_file(args.fastq_r1)
+        CRISPRessoShared.check_file(args.fastq_r1)
         if args.fastq_r2:
-            check_file(args.fastq_r2)
+            CRISPRessoShared.check_file(args.fastq_r2)
 
         if args.bowtie2_index:
-            check_file(args.bowtie2_index+'.1.bt2')
+            CRISPRessoShared.check_file(args.bowtie2_index+'.1.bt2')
 
         if args.amplicons_file:
-            check_file(args.amplicons_file)
+            CRISPRessoShared.check_file(args.amplicons_file)
 
         if args.gene_annotations:
-            check_file(args.gene_annotations)
+            CRISPRessoShared.check_file(args.gene_annotations)
 
         if args.amplicons_file and not args.bowtie2_index:
             RUNNING_MODE='ONLY_AMPLICONS'
@@ -350,7 +320,7 @@ def main():
              if not args.trim_sequences:
                  #create a symbolic link
                  symlink_filename=_jp(os.path.basename(args.fastq_r1))
-                 force_symlink(os.path.abspath(args.fastq_r1),symlink_filename)
+                 CRISPRessoShared.force_symlink(os.path.abspath(args.fastq_r1),symlink_filename)
                  output_forward_filename=symlink_filename
              else:
                  output_forward_filename=_jp('reads.trimmed.fq.gz')
@@ -414,14 +384,28 @@ def main():
              if FLASH_STATUS:
                  raise FlashException('Flash failed to run, please check the log file.')
 
-             info('Done!')
-
              flash_hist_filename=_jp('out.hist')
              flash_histogram_filename=_jp('out.histogram')
              flash_not_combined_1_filename=_jp('out.notCombined_1.fastq.gz')
              flash_not_combined_2_filename=_jp('out.notCombined_2.fastq.gz')
 
              processed_output_filename=_jp('out.extendedFrags.fastq.gz')
+
+             if args.force_merge_pairs:
+                 old_flashed_filename = processed_output_filename
+                 new_merged_filename=_jp('out.forcemerged_uncombined.fastq.gz')
+                 num_reads_force_merged = CRISPRessoShared.force_merge_pairs(flash_not_combined_1_filename,flash_not_combined_2_filename,new_merged_filename)
+                 new_output_filename=_jp('out.forcemerged.fastq.gz')
+                 merge_command = "cat %s %s > %s"%(processed_output_filename,new_merged_filename,new_output_filename)
+                 MERGE_STATUS=sb.call(merge_command,shell=True)
+                 if MERGE_STATUS:
+                     raise FlashException('Force-merging read pairs failed to run, please check the log file.')
+                 processed_output_filename = new_output_filename
+
+             info('Done!')
+
+
+
 
 
         #count reads
@@ -457,10 +441,10 @@ def main():
             df_template.dropna(subset=['Amplicon_Sequence'],inplace=True)
             df_template.dropna(subset=['Name'],inplace=True)
 
-            df_template.Amplicon_Sequence=df_template.Amplicon_Sequence.apply(capitalize_sequence)
-            df_template.Expected_HDR=df_template.Expected_HDR.apply(capitalize_sequence)
-            df_template.sgRNA=df_template.sgRNA.apply(capitalize_sequence)
-            df_template.Coding_sequence=df_template.Coding_sequence.apply(capitalize_sequence)
+            df_template.Amplicon_Sequence=df_template.Amplicon_Sequence.apply(CRISPRessoShared.capitalize_sequence)
+            df_template.Expected_HDR=df_template.Expected_HDR.apply(CRISPRessoShared.capitalize_sequence)
+            df_template.sgRNA=df_template.sgRNA.apply(CRISPRessoShared.capitalize_sequence)
+            df_template.Coding_sequence=df_template.Coding_sequence.apply(CRISPRessoShared.capitalize_sequence)
 
             if not len(df_template.Amplicon_Sequence.unique())==df_template.shape[0]:
                 duplicated_entries = df_template.Amplicon_Sequence[df_template.Amplicon_Sequence.duplicated()]
@@ -475,7 +459,7 @@ def main():
 
             for idx,row in df_template.iterrows():
 
-                wrong_nt=find_wrong_nt(row.Amplicon_Sequence)
+                wrong_nt=CRISPRessoShared.find_wrong_nt(row.Amplicon_Sequence)
                 if wrong_nt:
                      raise NTException('The amplicon sequence %s contains wrong characters:%s' % (idx,' '.join(wrong_nt)))
 
@@ -485,14 +469,14 @@ def main():
 
                     for current_guide_seq in row.sgRNA.strip().upper().split(','):
 
-                        wrong_nt=find_wrong_nt(current_guide_seq)
+                        wrong_nt=CRISPRessoShared.find_wrong_nt(current_guide_seq)
                         if wrong_nt:
                             raise NTException('The sgRNA sequence %s contains wrong characters:%s'  % (current_guide_seq, ' '.join(wrong_nt)))
 
                         offset_fw=args.quantification_window_center+len(current_guide_seq)-1
                         offset_rc=(-args.quantification_window_center)-1
                         cut_points+=[m.start() + offset_fw for \
-                                    m in re.finditer(current_guide_seq,  row.Amplicon_Sequence)]+[m.start() + offset_rc for m in re.finditer(reverse_complement(current_guide_seq),  row.Amplicon_Sequence)]
+                                    m in re.finditer(current_guide_seq,  row.Amplicon_Sequence)]+[m.start() + offset_rc for m in re.finditer(CRISPRessoShared.reverse_complement(current_guide_seq),  row.Amplicon_Sequence)]
 
                     if not cut_points:
                         warn('\nThe guide sequence/s provided: %s is(are) not present in the amplicon sequence:%s! \nNOTE: The guide will be ignored for the analysis. Please check your input!' % (row.sgRNA,row.Amplicon_Sequence))
@@ -590,8 +574,8 @@ def main():
 
             #Check reference is the same otherwise throw a warning
             for idx,row in df_template.iterrows():
-                if row.Amplicon_Sequence != row.Reference_Sequence and row.Amplicon_Sequence != reverse_complement(row.Reference_Sequence):
-                    warn('The amplicon sequence %s provided:\n%s\n\nis different from the reference sequence(both strand):\n\n%s\n\n%s\n' %(row.name,row.Amplicon_Sequence,row.Amplicon_Sequence,reverse_complement(row.Amplicon_Sequence)))
+                if row.Amplicon_Sequence != row.Reference_Sequence and row.Amplicon_Sequence != CRISPRessoShared.reverse_complement(row.Reference_Sequence):
+                    warn('The amplicon sequence %s provided:\n%s\n\nis different from the reference sequence(both strand):\n\n%s\n\n%s\n' %(row.name,row.Amplicon_Sequence,row.Amplicon_Sequence,CRISPRessoShared.reverse_complement(row.Amplicon_Sequence)))
 
 
         if RUNNING_MODE=='ONLY_GENOME' or RUNNING_MODE=='AMPLICONS_AND_GENOME':
@@ -996,6 +980,9 @@ def main():
              if args.fastq_r2!='':
                  files_to_remove=[processed_output_filename,flash_hist_filename,flash_histogram_filename,\
                               flash_not_combined_1_filename,flash_not_combined_2_filename]
+                 if args.force_merge_pairs:
+                    files_to_remove.append(new_merged_filename)
+                    files_to_remove.append(old_flashed_filename)
              else:
                  files_to_remove=[processed_output_filename]
 
