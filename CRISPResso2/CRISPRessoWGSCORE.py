@@ -323,7 +323,7 @@ def main():
         #check if bam has the index already
         if os.path.exists(rreplace(args.bam_file,".bam",".bai")):
             info('Index file for input .bam file exists, skipping generation.')
-            bam_index = args.bam_file.rreplace(".bam",".bai")
+            bam_index = args.bam_file.replace(".bam",".bai")
         elif os.path.exists(args.bam_file+'.bai'):
             info('Index file for input .bam file exists, skipping generation.')
             bam_index = args.bam_file+'.bai'
