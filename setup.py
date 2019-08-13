@@ -88,7 +88,7 @@ def main():
               ],
           install_requires=[
               'numpy>=1.9',
-              'pandas>=0.15',
+              'pandas>=0.15, <=0.24',
               'matplotlib>=1.3.1, <3.0.0',
               'biopython>=1.6.5',
               'argparse>=1.3',
