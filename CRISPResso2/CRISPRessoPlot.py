@@ -1353,7 +1353,8 @@ def plot_unmod_mod_pcts(fig_filename_root,df_summary_quantification,save_png,cut
     p2 = plt.barh(xs,df['Modified'],left=df['Unmodified'])
     plt.ylabel('Sample')
     plt.xlabel('Number of reads')
-    plt.yticks(xs,(df['Name']))
+    names = [((name[:20] + "..") if len(name) > 18 else name) for name in df['Name'].values]
+    plt.yticks(xs,names)
 
     if cutoff is not None:
         plt.axvline(cutoff,ls='dashed')
@@ -1391,7 +1392,8 @@ def plot_reads_total(fig_filename_root,df_summary_quantification,save_png,cutoff
     p1 = plt.barh(xs,df['Reads_total'])
     plt.ylabel('Sample')
     plt.xlabel('Number of reads')
-    plt.yticks(xs,(df['Name']))
+    names = [((name[:20] + "..") if len(name) > 18 else name) for name in df['Name'].values]
+    plt.yticks(xs,names)
     if cutoff is not None:
         plt.axvline(cutoff,ls='dashed')
     plt.tight_layout()
