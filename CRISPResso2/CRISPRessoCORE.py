@@ -3039,7 +3039,7 @@ def main():
                     crispresso2_info['refs'][ref_name]['plot_10b_data'] = [('Nucleotide frequencies',os.path.basename(nuc_freq_filename))]
 
                     #plot all substitution rates in quantification_window
-                    fig_filename_root = _jp('10c.'+ref_plot_name+'Substitution_frequency_barplot_around_sgRNA_'+sgRNA)
+                    fig_filename_root = _jp('10c.'+ref_plot_name+'Substitution_frequency_barplot_in_quantification_window')
                     CRISPRessoPlot.plot_sub_freqs(
                         alt_nuc_counts = alt_nuc_counts,
                         plot_title = get_plot_title_with_ref_name('Substitution frequency\nin quantification window', ref_name),
@@ -3049,8 +3049,6 @@ def main():
                     crispresso2_info['refs'][ref_name]['plot_10c_root'] = os.path.basename(fig_filename_root)
                     crispresso2_info['refs'][ref_name]['plot_10c_caption'] = "Figure 10c: Substitution frequencies in the quantification window"
                     crispresso2_info['refs'][ref_name]['plot_10c_data'] = [('Nucleotide frequencies in quantification window',os.path.basename(quant_window_sub_freq_filename))]
-
-
 
             ##new plots alleles around cut_sites
             sgRNA_sequences = refs[ref_name]['sgRNA_sequences']
@@ -3062,10 +3060,6 @@ def main():
             crispresso2_info['refs'][ref_name]['plot_9_captions'] = []
             crispresso2_info['refs'][ref_name]['plot_9_datas'] = []
             crispresso2_info['refs'][ref_name]['allele_frequency_files'] = []
-
-            crispresso2_info['refs'][ref_name]['plot_10c_roots'] = []
-            crispresso2_info['refs'][ref_name]['plot_10c_captions'] = []
-            crispresso2_info['refs'][ref_name]['plot_10c_datas'] = []
 
             crispresso2_info['refs'][ref_name]['plot_10d_roots'] = []
             crispresso2_info['refs'][ref_name]['plot_10d_captions'] = []

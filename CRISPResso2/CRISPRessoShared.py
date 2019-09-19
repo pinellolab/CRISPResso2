@@ -76,7 +76,7 @@ class OutputFolderIncompleteException(Exception):
 
 def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams={}):
     parser = argparse.ArgumentParser(description=parserTitle,formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--version', action='version', version='%(prog)s'+__version__)
+    parser.add_argument('--version', action='version', version='%(prog)s '+__version__)
     parser.add_argument('-r1','--fastq_r1', type=str,  help='First fastq file',default='Fastq filename',required='fastq_r1' in requiredParams)
     parser.add_argument('-r2','--fastq_r2', type=str,  help='Second fastq file for paired end reads',default='')
 
@@ -799,7 +799,7 @@ def get_crispresso_header(description,header_str):
 
     output_line = ""
     if header_str is not None:
-        header_str = header_str.strip()
+        header_str = header_str.rstrip()
 
         header_lines = header_str.splitlines()
         while(len(header_lines) < len(logo_lines)):
