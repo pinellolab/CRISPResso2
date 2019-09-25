@@ -30,7 +30,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.0.30"
+__version__ = "2.0.31"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -354,6 +354,20 @@ def check_output_folder(output_folder):
         return quantification_file,amplicons,amplicon_info
     else:
         raise OutputFolderIncompleteException("The folder %s  is not a valid CRISPResso2 output folder. Cannot find quantification file '%s'." %(output_folder,quantification_file))
+
+def load_crispresso_info(crispresso_output_folder=""):
+    """
+    loads the pickle associated with a crispresso run
+
+    input:
+    crispresso_output_folder: finished CRISPResso2 output folder
+    """
+    crispresso_info_file = os.path.join(crispresso_output_folder,'CRISPResso2_info.pickle')
+    if os.path.isfile(crispresso_info_file) is False:
+        raise Exception('Cannot open CRISPResso info file at ' + crispresso_info_file)
+    crispresso2_info = cp.load(open(crispresso_info_file,'rb'))
+    return crispresso2_info
+
 
 def get_most_frequent_reads(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,min_paired_end_reads_overlap,debug=False):
     """

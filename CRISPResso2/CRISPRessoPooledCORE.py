@@ -85,7 +85,7 @@ def check_samtools():
         return True
     else:
         sys.stdout.write('\nCRISPRessoPooled requires samtools')
-        sys.stdout.write('\n\nPlease install it and add to your path following the instructions at: http://www.htslib.org/download/')
+        sys.stdout.write('\n\nPlease install samtools and add it to your path following the instructions at: http://www.htslib.org/download/')
         return False
 
 def check_bowtie2():
@@ -97,7 +97,7 @@ def check_bowtie2():
         return True
     else:
         sys.stdout.write('\nCRISPRessoPooled requires Bowtie2!')
-        sys.stdout.write('\n\nPlease install it and add to your path following the instructions at: http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#obtaining-bowtie-2')
+        sys.stdout.write('\n\nPlease install Bowtie2 and add it to your path following the instructions at: http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#obtaining-bowtie-2')
         return False
 
 #this is overkilling to run for many sequences,
@@ -727,7 +727,12 @@ def main():
             info('Reporting problematic regions...')
             coordinates=[]
             for region in files_to_match:
-                coordinates.append(os.path.basename(region).replace('.fastq.gz','').replace('.fastq','').split('_')[1:4]+[region,get_n_reads_fastq(region)])
+                #region format: REGION_chr8_1077_1198.fastq.gz
+                #But if the chr has underscores, it could look like this:
+                #    REGION_chr8_KI270812v1_alt_1077_1198.fastq.gz
+                region_info = os.path.basename(region).replace('.fastq.gz','').replace('.fastq','').split('_')
+                chr_string = "_".join(region_info[1:len(region_info)-2]) #in case there are underscores
+                coordinates.append([chr_string] + region_info[-2:]+[region,get_n_reads_fastq(region)])
 
             df_regions=pd.DataFrame(coordinates,columns=['chr_id','bpstart','bpend','fastq_file','n_reads'])
 
