@@ -4,6 +4,7 @@ Software pipeline for the analysis of genome editing outcomes from deep sequenci
 (c) 2018 The General Hospital Corporation. All Rights Reserved.
 '''
 
+import os
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -20,8 +21,7 @@ sns.set_style("white")
 sns.set_context('poster')
 sns.set(font_scale=2.2)
 
-
-
+from CRISPResso2 import CRISPRessoShared
 
 def setMatplotlibDefaults():
     font = {'size'   : 22}
@@ -1018,7 +1018,7 @@ def prep_alleles_table_compare(df_alleles,sample_name_1,sample_name_2,MAX_N_ROWS
 
     return X,annot,y_labels,insertion_dict,per_element_annot_kws
 
-def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None):
+def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None,custom_colors=None):
     """
     Plots alleles in a heatmap (nucleotides color-coded for easy visualization)
     input:
@@ -1031,6 +1031,7 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
     -per_element_annot_kws: annotations for each cell (e.g. bold for substitutions, etc.)
     -SAVE_ALSO_PNG: whether to write png file as well
     -base_editor_output: if true, won't draw 'predicted cleavage' line
+    -custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     """
     plot_nuc_len=len(reference_seq)
 
@@ -1041,6 +1042,18 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
     C_color=get_nuc_color('C',alpha)
     G_color=get_nuc_color('G',alpha)
     INDEL_color = get_nuc_color('N',alpha)
+
+    if custom_colors is not None:
+        if 'A' in custom_colors:
+            A_color = custom_colors['A']
+        if 'T' in custom_colors:
+            T_color = custom_colors['T']
+        if 'C' in custom_colors:
+            C_color = custom_colors['C']
+        if 'G' in custom_colors:
+            G_color = custom_colors['G']
+        if 'N' in custom_colors:
+            INDEL_color = custom_colors['N']
 
     dna_to_numbers={'-':0,'A':1,'T':2,'C':3,'G':4,'N':5}
     seq_to_numbers= lambda seq: [dna_to_numbers[x] for x in seq]
@@ -1148,7 +1161,7 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
         plt.savefig(fig_filename_root+'.png',bbox_inches='tight',bbox_extra_artists=(lgd,))
     plt.close()
 
-def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,count_values,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None):
+def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,count_values,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None,custom_colors=None):
     """
     Plots alleles in a heatmap (nucleotides color-coded for easy visualization)
     input:
@@ -1161,6 +1174,7 @@ def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,i
     -per_element_annot_kws: annotations for each cell (e.g. bold for substitutions, etc.)
     -SAVE_ALSO_PNG: whether to write png file as well
     -base_editor_output: if true, won't draw 'predicted cleavage' line
+    -custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     """
     plot_nuc_len=len(reference_seq)
 
@@ -1171,6 +1185,18 @@ def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,i
     C_color=get_nuc_color('C',alpha)
     G_color=get_nuc_color('G',alpha)
     INDEL_color = get_nuc_color('N',alpha)
+
+    if custom_colors is not None:
+        if 'A' in custom_colors:
+            A_color = custom_colors['A']
+        if 'T' in custom_colors:
+            T_color = custom_colors['T']
+        if 'C' in custom_colors:
+            C_color = custom_colors['C']
+        if 'G' in custom_colors:
+            G_color = custom_colors['G']
+        if 'N' in custom_colors:
+            INDEL_color = custom_colors['N']
 
     dna_to_numbers={'-':0,'A':1,'T':2,'C':3,'G':4,'N':5}
     seq_to_numbers= lambda seq: [dna_to_numbers[x] for x in seq]
@@ -1274,7 +1300,7 @@ def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,i
         plt.savefig(fig_filename_root+'.png',bbox_inches='tight',bbox_extra_artists=(lgd,),pad=1)
     plt.close()
 
-def plot_alleles_table(reference_seq,df_alleles,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None):
+def plot_alleles_table(reference_seq,df_alleles,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None,custom_colors=None):
     """
     plots an allele table for a dataframe with allele frequencies
     input:
@@ -1285,11 +1311,12 @@ def plot_alleles_table(reference_seq,df_alleles,fig_filename_root,MIN_FREQUENCY=
     MAX_N_ROWS: max rows to plot
     SAVE_ALSO_PNG: whether to write png file as well
     sgRNA_intervals: locations where sgRNA is located
+    custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     """
     X,annot,y_labels,insertion_dict,per_element_annot_kws = prep_alleles_table(df_alleles,MAX_N_ROWS,MIN_FREQUENCY)
-    plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,base_editor_output,sgRNA_intervals)
+    plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,base_editor_output,sgRNA_intervals,custom_colors)
 
-def plot_alleles_table_from_file(alleles_file_name,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None):
+def plot_alleles_table_from_file(alleles_file_name,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None,custom_colors=None):
     """
     plots an allele table for a dataframe with allele frequencies
     infers the reference sequence by finding reference sequences without gaps (-)
@@ -1302,6 +1329,7 @@ def plot_alleles_table_from_file(alleles_file_name,fig_filename_root,MIN_FREQUEN
     MAX_N_ROWS: max rows to plot
     SAVE_ALSO_PNG: whether to write png file as well
     sgRNA_intervals: locations where sgRNA is located
+    custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     """
 
     df_alleles = pd.read_table(alleles_file_name)
@@ -1314,9 +1342,62 @@ def plot_alleles_table_from_file(alleles_file_name,fig_filename_root,MIN_FREQUEN
         raise Exception('Could not infer reference sequence from allele table')
 
     X,annot,y_labels,insertion_dict,per_element_annot_kws = prep_alleles_table(df_alleles,MAX_N_ROWS,MIN_FREQUENCY)
-    plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,base_editor_output,sgRNA_intervals)
+    plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,base_editor_output,sgRNA_intervals,custom_colors)
 
-def plot_alleles_table_compare(reference_seq,df_alleles,sample_name_1,sample_name_2,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None):
+def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,MIN_FREQUENCY=None,MAX_N_ROWS=None,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None,custom_colors=None):
+    """
+    plots an allele table for each sgRNA/amplicon in a CRISPresso run (useful for plotting after running using the plot harness)
+    This function is only used for one-off plotting purposes and not for the general CRISPResso analysis
+
+    input:
+    crispresso2 output folder
+    fig_filename_root: figure filename to plot (not including '.pdf' or '.png')
+    MIN_FREQUENCY: sum of alleles % must add to this to be plotted
+    MAX_N_ROWS: max rows to plot
+    SAVE_ALSO_PNG: whether to write png file as well
+    sgRNA_intervals: locations where sgRNA is located
+    custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
+
+    example:
+    from CRISPResso2 import CRISPRessoPlot
+    CRISPRessoPlot.plot_alleles_tables_from_folder('CRISPResso_on_allele_specific','test_plots')
+    custom_colors = {'A':(1,0,0,0.8), 'T':(0,1,0,0.8), 'C':(0,0,1,0.8), 'G':(1,1,0,0.8), 'N':(0,1,1,0.8)}
+    CRISPRessoPlot.plot_alleles_tables_from_folder('CRISPResso_on_allele_specific','test_plots_colors',custom_colors=custom_colors)
+    """
+    crispresso2_info = CRISPRessoShared.load_crispresso_info(crispresso_output_folder)
+
+    if MIN_FREQUENCY is None:
+        MIN_FREQUENCY = crispresso2_info['args'].min_frequency_alleles_around_cut_to_plot
+    if MAX_N_ROWS is None:
+        MAX_N_ROWS = crispresso2_info['args'].max_rows_alleles_around_cut_to_plot
+
+    plot_count = 0
+
+    ref_names = crispresso2_info['ref_names']
+    refs = crispresso2_info['refs']
+    for ref_name in ref_names:
+        sgRNA_sequences = refs[ref_name]['sgRNA_sequences']
+        sgRNA_cut_points = refs[ref_name]['sgRNA_cut_points']
+        sgRNA_intervals = refs[ref_name]['sgRNA_intervals']
+        sgRNA_plot_idxs = refs[ref_name]['sgRNA_plot_idxs']
+
+        reference_seq = refs[ref_name]['sequence']
+
+        for ind,sgRNA in enumerate(sgRNA_sequences):
+            alleles_filename = os.path.join(crispresso_output_folder,crispresso2_info['refs'][ref_name]['allele_frequency_files'][ind])
+            df_alleles = pd.read_table(alleles_filename)
+            df_alleles = df_alleles.reset_index().set_index('Aligned_Sequence')
+
+            cut_point = sgRNA_cut_points[ind]
+            plot_idxs = sgRNA_plot_idxs[ind]
+            plot_half_window = max(1,crispresso2_info['args'].plot_window_size)
+            ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_half_window+1:cut_point+plot_half_window+1]
+            X,annot,y_labels,insertion_dict,per_element_annot_kws = prep_alleles_table(df_alleles,MAX_N_ROWS,MIN_FREQUENCY)
+            plot_alleles_heatmap(ref_seq_around_cut,fig_filename_root+"_"+ref_name+"_"+sgRNA,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,base_editor_output,sgRNA_intervals,custom_colors)
+            plot_count += 1
+    print('Plotted ' + str(plot_count) + ' plots')
+
+def plot_alleles_table_compare(reference_seq,df_alleles,sample_name_1,sample_name_2,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None,custom_colors=None):
     """
     plots an allele table for a dataframe with allele frequencies from two CRISPResso runs
     input:
@@ -1327,9 +1408,10 @@ def plot_alleles_table_compare(reference_seq,df_alleles,sample_name_1,sample_nam
     MIN_FREQUENCY: sum of alleles % must add to this to be plotted
     MAX_N_ROWS: max rows to plot
     SAVE_ALSO_PNG: whether to write png file as well
+    custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     """
     X,annot,y_labels,insertion_dict,per_element_annot_kws = prep_alleles_table_compare(df_alleles,sample_name_1,sample_name_2,MAX_N_ROWS,MIN_FREQUENCY)
-    plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,base_editor_output,sgRNA_intervals)
+    plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,base_editor_output,sgRNA_intervals,custom_colors)
 
 def plot_unmod_mod_pcts(fig_filename_root,df_summary_quantification,save_png,cutoff=None,max_samples_to_include_unprocessed=20):
     """

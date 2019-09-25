@@ -96,7 +96,7 @@ def check_samtools():
         return True
     else:
         sys.stdout.write('\nCRISPRessoWGS requires samtools')
-        sys.stdout.write('\n\nPlease install it and add to your path following the instruction at: http://www.htslib.org/download/')
+        sys.stdout.write('\n\nPlease install samtools and add it to your path following the instructions at: http://www.htslib.org/download/')
         return False
 
 
@@ -109,7 +109,7 @@ def check_bowtie2():
         return True
     else:
         sys.stdout.write('\nCRISPRessoWGS requires Bowtie2!')
-        sys.stdout.write('\n\nPlease install it and add to your path following the instruction at: http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#obtaining-bowtie-2')
+        sys.stdout.write('\n\nPlease install Bowtie2 and add it to your path following the instructions at: http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#obtaining-bowtie-2')
         return False
 
 #if a reference index is provided aligne the reads to it
@@ -199,10 +199,6 @@ def write_trimmed_fastq(in_bam_filename,bpstart,bpend,out_fastq_filename):
                     outfile.write('@%s_%d\n%s\n+\n%s\n' %(name,n_reads,seq[st:en],qual[st:en]))
     return n_reads
 
-
-
-
-
 pd=check_library('pandas')
 np=check_library('numpy')
 
@@ -250,7 +246,7 @@ def main():
         parser.add_argument('--min_reads_to_use_region',  type=float, help='Minimum number of reads that align to a region to perform the CRISPResso analysis', default=10)
         parser.add_argument('--skip_failed',  help='Continue with pooled analysis even if one sample fails',action='store_true')
         parser.add_argument('--gene_annotations', type=str, help='Gene Annotation Table from UCSC Genome Browser Tables (http://genome.ucsc.edu/cgi-bin/hgTables?command=start), \
-        please select as table "knowGene", as output format "all fields from selected table" and as file returned "gzip compressed"', default='')
+        please select as table "knownGene", as output format "all fields from selected table" and as file returned "gzip compressed"', default='')
         parser.add_argument('-p','--n_processes',type=int, help='Specify the number of processes to use for the quantification.\
         Please use with caution since increasing this parameter will increase the memory required to run CRISPResso.',default=1)
         parser.add_argument('--crispresso_command', help='CRISPResso command to call',default='CRISPResso')
