@@ -100,6 +100,19 @@ def check_bowtie2():
         sys.stdout.write('\n\nPlease install Bowtie2 and add it to your path following the instructions at: http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#obtaining-bowtie-2')
         return False
 
+def print_full(x):
+    pd.set_option('display.max_rows', len(x))
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.width', 2000)
+    pd.set_option('display.float_format', '{:20,.2f}'.format)
+    pd.set_option('display.max_colwidth', -1)
+    print(x)
+    pd.reset_option('display.max_rows')
+    pd.reset_option('display.max_columns')
+    pd.reset_option('display.width')
+    pd.reset_option('display.float_format')
+    pd.reset_option('display.max_colwidth')
+
 #this is overkilling to run for many sequences,
 #but for few is fine and effective.
 def get_align_sequence(seq,bowtie2_index):
@@ -127,7 +140,9 @@ def get_region_from_fa(chr_id,bpstart,bpend,uncompressed_reference):
 
 def get_n_reads_fastq(fastq_filename):
      p = sb.Popen(('z' if fastq_filename.endswith('.gz') else '' ) +"cat < %s | wc -l" % fastq_filename , shell=True,stdout=sb.PIPE)
-     return int(float(p.communicate()[0])/4.0)
+     n_reads = int(float(p.communicate()[0])/4.0)
+     print('debug 142 n reads for ' + fastq_filename + ' is >' + str(n_reads) + '<')
+     return n_reads
 
 def get_n_aligned_bam(bam_filename):
      p = sb.Popen("samtools view -F 0x904 -c %s" % bam_filename , shell=True,stdout=sb.PIPE)
@@ -249,7 +264,11 @@ def main():
             CRISPRessoShared.check_file(args.fastq_r2)
 
         if args.bowtie2_index:
-            CRISPRessoShared.check_file(args.bowtie2_index+'.1.bt2')
+            if (os.path.isfile(args.bowtie2_index+'.1.bt2l')):
+                CRISPRessoShared.check_file(args.bowtie2_index+'.1.bt2l')
+            else:
+                CRISPRessoShared.check_file(args.bowtie2_index+'.1.bt2')
+
 
         if args.amplicons_file:
             CRISPRessoShared.check_file(args.amplicons_file)
@@ -559,6 +578,7 @@ def main():
             additional_columns=[]
             for idx,row in df_template.iterrows():
                 fields_to_append=list(np.take(get_align_sequence(row.Amplicon_Sequence, args.bowtie2_index).split('\t'),[0,1,2,3,5]))
+                print('debug 577 fields to append are ' + str(fields_to_append))
                 if fields_to_append[0]=='*':
                     info('The amplicon [%s] is not mappable to the reference genome provided!' % idx )
                     additional_columns.append([idx,'NOT_ALIGNED',0,-1,'+',''])
@@ -575,7 +595,7 @@ def main():
             #Check reference is the same otherwise throw a warning
             for idx,row in df_template.iterrows():
                 if row.Amplicon_Sequence != row.Reference_Sequence and row.Amplicon_Sequence != CRISPRessoShared.reverse_complement(row.Reference_Sequence):
-                    warn('The amplicon sequence %s provided:\n%s\n\nis different from the reference sequence(both strand):\n\n%s\n\n%s\n' %(row.name,row.Amplicon_Sequence,row.Amplicon_Sequence,CRISPRessoShared.reverse_complement(row.Amplicon_Sequence)))
+                    warn('The amplicon sequence %s provided:\n%s\n\nis different from the reference sequence(both strands):\n\n%s\n\n%s\n' %(row.name,row.Amplicon_Sequence,row.Amplicon_Sequence,CRISPRessoShared.reverse_complement(row.Amplicon_Sequence)))
 
 
         if RUNNING_MODE=='ONLY_GENOME' or RUNNING_MODE=='AMPLICONS_AND_GENOME':
@@ -679,10 +699,12 @@ def main():
 
                 #check if we have reads
                 fastq_filename_region=os.path.join(MAPPED_REGIONS,'REGION_%s_%s_%s.fastq.gz' % (row['chr_id'],row['bpstart'],row['bpend']))
+                print('debug 698 checking existence of ' + fastq_filename_region)
 
                 if os.path.exists(fastq_filename_region):
 
                     N_READS=get_n_reads_fastq(fastq_filename_region)
+                    print('debug  702 getting for ' + fastq_filename_region + ' got ' + str(N_READS))
                     n_reads_aligned_genome.append(N_READS)
                     fastq_region_filenames.append(fastq_filename_region)
                     files_to_match.remove(fastq_filename_region)
@@ -709,7 +731,7 @@ def main():
                 else:
                     fastq_region_filenames.append('')
                     n_reads_aligned_genome.append(0)
-                    warn("The amplicon %s doesn't have any read mapped to it!\n Please check your amplicon sequence." %  idx)
+                    warn("The amplicon %s doesn't have any reads mapped to it!\n Please check your amplicon sequence." %  idx)
 
             CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'amplicon',args.skip_failed)
 
@@ -828,6 +850,12 @@ def main():
         else:
             df_final_data=df_regions
 
+        print('DEBUG 831 df final data is ' + str(df_final_data))
+        print(df_final_data)
+        print_full(df_final_data)
+        print('nreads:')
+        print(df_final_data['n_reads'])
+
         all_region_names = []
         all_region_read_counts = {}
         good_region_names = []
@@ -922,6 +950,7 @@ def main():
             save_png = False
 
         plot_root = _jp("CRISPRessoPooled_reads_summary")
+        print('DEBUG 925 summary of quantificat: ' + str(df_summary_quantification))
         CRISPRessoPlot.plot_reads_total(plot_root,df_summary_quantification,save_png,args.min_reads_to_use_region)
         plot_name = os.path.basename(plot_root)
         crispresso2_info['summary_plot_root'] = plot_name
