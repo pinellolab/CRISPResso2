@@ -141,7 +141,6 @@ def get_region_from_fa(chr_id,bpstart,bpend,uncompressed_reference):
 def get_n_reads_fastq(fastq_filename):
      p = sb.Popen(('z' if fastq_filename.endswith('.gz') else '' ) +"cat < %s | wc -l" % fastq_filename , shell=True,stdout=sb.PIPE)
      n_reads = int(float(p.communicate()[0])/4.0)
-     print('debug 142 n reads for ' + fastq_filename + ' is >' + str(n_reads) + '<')
      return n_reads
 
 def get_n_aligned_bam(bam_filename):
@@ -578,7 +577,6 @@ def main():
             additional_columns=[]
             for idx,row in df_template.iterrows():
                 fields_to_append=list(np.take(get_align_sequence(row.Amplicon_Sequence, args.bowtie2_index).split('\t'),[0,1,2,3,5]))
-                print('debug 577 fields to append are ' + str(fields_to_append))
                 if fields_to_append[0]=='*':
                     info('The amplicon [%s] is not mappable to the reference genome provided!' % idx )
                     additional_columns.append([idx,'NOT_ALIGNED',0,-1,'+',''])
@@ -699,12 +697,10 @@ def main():
 
                 #check if we have reads
                 fastq_filename_region=os.path.join(MAPPED_REGIONS,'REGION_%s_%s_%s.fastq.gz' % (row['chr_id'],row['bpstart'],row['bpend']))
-                print('debug 698 checking existence of ' + fastq_filename_region)
 
                 if os.path.exists(fastq_filename_region):
 
                     N_READS=get_n_reads_fastq(fastq_filename_region)
-                    print('debug  702 getting for ' + fastq_filename_region + ' got ' + str(N_READS))
                     n_reads_aligned_genome.append(N_READS)
                     fastq_region_filenames.append(fastq_filename_region)
                     files_to_match.remove(fastq_filename_region)
@@ -850,12 +846,6 @@ def main():
         else:
             df_final_data=df_regions
 
-        print('DEBUG 831 df final data is ' + str(df_final_data))
-        print(df_final_data)
-        print_full(df_final_data)
-        print('nreads:')
-        print(df_final_data['n_reads'])
-
         all_region_names = []
         all_region_read_counts = {}
         good_region_names = []
@@ -950,7 +940,7 @@ def main():
             save_png = False
 
         plot_root = _jp("CRISPRessoPooled_reads_summary")
-        print('DEBUG 925 summary of quantificat: ' + str(df_summary_quantification))
+
         CRISPRessoPlot.plot_reads_total(plot_root,df_summary_quantification,save_png,args.min_reads_to_use_region)
         plot_name = os.path.basename(plot_root)
         crispresso2_info['summary_plot_root'] = plot_name
