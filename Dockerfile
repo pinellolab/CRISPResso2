@@ -2,7 +2,7 @@
 # Dockerfile to build CRISPResso2
 ############################################################
 
-FROM continuumio/miniconda:4.5.12
+FROM continuumio/miniconda:4.7.10
 
 # File Author / Maintainer
 MAINTAINER Kendell Clement
