@@ -185,6 +185,9 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
                 # 'sgRNA_intervals'
                 # 'sgRNA_sequences'
                 # 'sgRNA_cut_points'
+                # 'sgRNA_plot_idxs' #indices along reference sequence for which to plot the allele plot (allele frequency plot around sgRNA)
+                # 'sgRNA_names' #names of sgRNAs (in case there are multiple matches for a single sgRNA)
+                # 'sgRNA_mismatches' #indices along guide that are mismatched against a 'flexiguide'
                 # 'contains_coding_seq'
                 # 'exon_positions'
                 # 'exon_intervals'
@@ -493,6 +496,15 @@ def main():
                 if wrong_nt:
                     raise CRISPRessoShared.NTException('The sgRNA sequence contains bad characters:%s'  % ' '.join(wrong_nt))
                 guides.append(current_guide_seq)
+        guide_names = [""]*len(guides)
+        if args.guide_name:
+            guide_name_arr = args.guide_name.split(",")
+            if len(guide_name_arr) > len(guides):
+                raise CRISPRessoShared.BadParameterException("More guide names were given than guides. Guides: %d Guide names: %d"%(len(guides),len(guide_name_arr)))
+            for idx,guide_name in enumerate(guide_name_arr):
+                if guide_name != "":
+                    print('trying to add at index ' + str(idx) + ' when guides i ' + str(guides))
+                    guide_names[idx] = guide_name
 
         ###FRAMESHIFT SUPPORT###
         coding_seqs = []
@@ -519,6 +531,17 @@ def main():
             amp_dummy = ['']
             amp_dummy.extend(list(range(2,len(amplicon_seq_arr)+1)))
             amplicon_name_arr = ['Amplicon'+str(x) for x in amp_dummy]
+
+            if args.amplicon_seq is not None: #if user provides and amplicon sequence, add it to the guessed amplicons
+                amp_names = args.amplicon_seq.aplit(",")
+                for idx,amp_seq in enumerate(args.amplicon_seq.split(",")):
+                    if amp_seq not in amplicon_seq_arr:
+                        amplicon_seq_arr.append(amp_seq)
+                        if idx < len(amp_names):
+                            amplicon_name_arr.append(amp_names[idx])
+                        else:
+                            amplicon_name_arr.append('User-defined amplicon' + idx)
+
             if len(guides) == 0:
                 for amplicon_seq in amplicon_seq_arr:
                     (potential_guide,is_base_editor) = CRISPRessoShared.guess_guides(amplicon_seq,args.fastq_r1,args.fastq_r2,number_of_reads_to_consider,args.flash_command,
@@ -555,6 +578,57 @@ def main():
             amplicon_seq_arr.append(args.expected_hdr_amplicon_seq)
             amplicon_name_arr.append('HDR')
 
+        for idx,this_seq in enumerate(amplicon_seq_arr):
+            wrong_nt=CRISPRessoShared.find_wrong_nt(this_seq)
+            if wrong_nt:
+                this_name = amplicon_name_arr[idx]
+                raise CRISPRessoShared.NTException('Reference amplicon sequence %d (%s) contains invalid characters: %s'%(idx,this_name, ' '.join(wrong_nt)))
+
+        guide_mismatches = [[]]*len(guides) #all previous guides had no mismatches
+
+        #add flexi guides (that can contain mismatches)
+        if args.flexiguide:
+            flexi_guides = []
+            flexi_guide_mismatches = []
+            all_flexiguide_names = args.flexiguide_name.split(",")
+            flexi_guide_names = []
+            for idx,guide in enumerate(args.flexiguide.split(",")):
+
+                #for all amps in forward and reverse complement amps:
+                for amp_seq in amplicon_seq_arr + [CRISPRessoShared.reverse_complement(x) for x in amplicon_seq_arr]:
+                    ref_incentive = np.zeros(len(amp_seq)+1,dtype=np.int)
+                    s1,s2,score=CRISPResso2Align.global_align(guide,amp_seq,matrix=aln_matrix,gap_incentive=ref_incentive,gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
+                    potential_guide = s1.strip("-")
+                    if abs(len(potential_guide) - len(guide)) < 2: #if length of putative guide is off by less than 2, keep it (allows 1 gap)
+                        loc = s1.find(potential_guide)
+                        potential_ref = amp_seq[loc:loc+len(potential_guide)]
+                        #realign to test for number of mismatches
+                        ref_incentive = np.zeros(len(potential_ref)+1,dtype=np.int)
+                        sub_s1,sub_s2,sub_score=CRISPResso2Align.global_align(guide,potential_ref,matrix=aln_matrix,gap_incentive=ref_incentive,gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
+                        mismatches = []
+                        for i in range(len(sub_s1)):
+                            if sub_s1[i] != sub_s2[i]:
+                                mismatches.append(i)
+
+                        if sub_score > args.flexiguide_homology:
+                            flexi_guides.append(potential_ref)
+                            flexi_guide_mismatches.append(mismatches)
+                            this_flexiguide_name = ''
+                            if idx < len (all_flexiguide_names) and all_flexiguide_names[idx] != '':
+                                this_flexiguide_name = all_flexiguide_names[idx]
+                            flexi_guide_names.append(this_flexiguide_name)
+
+            flexi_guide_count = 0
+            for i in range(len(flexi_guides)):
+                flexi_guide = flexi_guides[i]
+                if flexi_guide not in guides:
+                    flexi_guide_count += 1
+                    guides.append(flexi_guide)
+                    guide_mismatches.append(flexi_guide_mismatches[i])
+                    guide_names.append(flexi_guide_names[i])
+            info('Added %d guides with flexible matching\noriginal flexiguides: %s\nfound guides: %s\nmismatch locations: %s'%(flexi_guide_count,str(args.flexiguide.split(",")),str(flexi_guides),str(flexi_guide_mismatches)))
+
+
         found_guide_seq = [False]*len(guides)
         found_coding_seq = [False]*len(coding_seqs)
 
@@ -577,10 +651,6 @@ def main():
             if idx < len(amplicon_name_arr):
                 this_name = amplicon_name_arr[idx]
 
-            wrong_nt=CRISPRessoShared.find_wrong_nt(this_seq)
-            if wrong_nt:
-                raise CRISPRessoShared.NTException('Reference amplicon sequence %d (%s) contains invalid characters:%s' % idx,this_name, ' '.join(wrong_nt))
-
             this_min_aln_score = args.default_min_aln_score
             if idx < len(amplicon_min_alignment_score_arr):
                 this_min_aln_score = amplicon_min_alignment_score_arr[idx]
@@ -591,8 +661,8 @@ def main():
 
 
             # Calculate cut sites for this reference
-            (this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_cut_points, this_sgRNA_plot_idxs, this_include_idxs,
-                this_exclude_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(this_seq,guides,args.quantification_window_center,
+            (this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_cut_points, this_sgRNA_plot_idxs, this_sgRNA_mismatches,this_sgRNA_names, this_include_idxs,
+                this_exclude_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(this_seq,guides,guide_mismatches,guide_names,args.quantification_window_center,
                 args.quantification_window_size,this_quant_window_coordinates,args.exclude_bp_from_left,args.exclude_bp_from_right,args.plot_window_size)
 
             this_contains_guide = False
@@ -669,6 +739,8 @@ def main():
                    'sgRNA_intervals':this_sgRNA_intervals,
                    'sgRNA_sequences':this_sgRNA_sequences,
                    'sgRNA_plot_idxs':this_sgRNA_plot_idxs,
+                   'sgRNA_names':this_sgRNA_names,
+                   'sgRNA_mismatches':this_sgRNA_mismatches,
                    'contains_guide':this_contains_guide,
                    'contains_coding_seq':this_contains_coding_seq,
                    'exon_positions':this_exon_positions,
@@ -722,6 +794,8 @@ def main():
 
         if clone_ref_name is not None:
             for ref_name in ref_names:
+                if clone_ref_name == ref_name:
+                    continue
                 cut_points = refs[ref_name]['sgRNA_cut_points']
                 sgRNA_intervals = refs[ref_name]['sgRNA_intervals']
                 exon_positions = refs[ref_name]['exon_positions']
@@ -735,6 +809,7 @@ def main():
                         info("Reference '%s' has cut points defined: %s. Not inferring."%(ref_name,cut_points))
                 else:
                     needs_cut_points = True
+
                 if sgRNA_intervals:
                     if len(ref_names) > 1 and args.debug:
                         info("Reference '%s' has sgRNA_intervals defined: %s. Not inferring."%(ref_name,sgRNA_intervals))
@@ -747,7 +822,7 @@ def main():
                 else:
                     needs_exon_positions = True
 
-                if not needs_cut_points and not needs_sgRNA_intervals and not needs_exon_positions:
+                if not needs_cut_points and not needs_sgRNA_intervals and not needs_exon_positions and args.quantification_window_coordinates is None:
                     continue
 
                 fws1,fws2,fwscore=CRISPResso2Align.global_align(refs[ref_name]['sequence'], refs[clone_ref_name]['sequence'],matrix=aln_matrix,gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,gap_incentive=refs[clone_ref_name]['gap_incentive'])
@@ -778,12 +853,24 @@ def main():
                         this_gap_incentive[cut_point + 1] = args.needleman_wunsch_gap_incentive
 
                     this_sgRNA_intervals = []
+                    this_sgRNA_mismatches = []
                     for (sgRNA_interval_start,sgRNA_interval_end) in refs[clone_ref_name]['sgRNA_intervals']:
                         this_sgRNA_intervals.append((s1inds[sgRNA_interval_start],s1inds[sgRNA_interval_end]))
+
+                        sgRNA_seq_clone = refs[clone_ref_name]['sequence'][sgRNA_interval_start:sgNRA_interval_end]
+                        sgRNA_seq_this = refs[ref_name]['sequence'][s1inds[sgRNA_interval_start]:s1inds[sgNRA_interval_end]]
+                        ref_incentive = np.zeros(len(sgRNA_seq_clone)+1,dtype=np.int)
+                        sub_s1,sub_s2,sub_score=CRISPResso2Align.global_align(sgRNA_seq_this,sgRNA_seq_clone,matrix=aln_matrix,gap_incentive=ref_incentive,gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
+                        mismatches = []
+                        for i in range(len(sub_s1)):
+                            if sub_s1[i] != sub_s2[i]:
+                                mismatches.append(i)
+                        this_sgRNA_mismatches.append(mismatches)
 
                     this_sgRNA_plot_idxs = []
                     for plot_idx_list in refs[clone_ref_name]['sgRNA_plot_idxs']:
                         this_sgRNA_plot_idxs.append([s1inds[x] for x in plot_idx_list])
+
 
                     this_include_idxs = [s1inds[x] for x in refs[clone_ref_name]['include_idxs']]
                     #subtract any indices in 'exclude_idxs' -- e.g. in case some of the cloned include_idxs were near the read ends (excluded)
@@ -795,8 +882,17 @@ def main():
                     refs[ref_name]['sgRNA_intervals'] = this_sgRNA_intervals
                     refs[ref_name]['sgRNA_sequences'] = refs[clone_ref_name]['sgRNA_sequences']
                     refs[ref_name]['sgRNA_plot_idxs'] = this_sgRNA_plot_idxs
+                    refs[ref_name]['sgRNA_mismatches'] = this_sgRNA_mismatches
+                    refs[ref_name]['sgRNA_names'] = refs[clone_ref_name]['sgRNA_names']
                     refs[ref_name]['include_idxs'] = this_include_idxs
                     refs[ref_name]['contains_guide'] = True
+
+                #quantification window coordinates override other options
+                if args.quantification_window_coordinates is not None:
+                    this_sgRNA_intervals = []
+                    for (sgRNA_interval_start,sgRNA_interval_end) in refs[clone_ref_name]['sgRNA_intervals']:
+                        this_sgRNA_intervals.append((s1inds[sgRNA_interval_start],s1inds[sgRNA_interval_end]))
+                    refs[ref_name]['sgRNA_intervals'] = this_sgRNA_intervals
 
 
                 if needs_exon_positions and clone_has_exons:
@@ -1018,7 +1114,7 @@ def main():
             output_prefix = "out"
             if clean_file_prefix != "":
                 output_prefix = clean_file_prefix + "out"
-            cmd='%s %s %s --min-overlap %d --max-overlap %d --allow-outies -z -d %s -o %s >>%s 2>&1' %\
+            cmd='%s "%s" "%s" --min-overlap %d --max-overlap %d --allow-outies -z -d %s -o %s >>%s 2>&1' %\
             (args.flash_command,
                  output_forward_paired_filename,
                  output_reverse_paired_filename,
@@ -1717,6 +1813,7 @@ def main():
                 'sgRNA_cut_points' + "\t" +
                 'sgRNA_intervals' + "\t" +
                 'sgRNA_plot_idxs' + "\t" +
+                'sgRNA_mismatches' + "\t" +
                 'sgRNA_sequences' + "\t" +
                 'contains_guide' + "\t" +
                 'contains_coding_seq' + "\t" +
@@ -1739,6 +1836,7 @@ def main():
                     str(refs[ref_name]['sgRNA_intervals']) + "\t" +
                     str(refs[ref_name]['sgRNA_sequences']) + "\t" +
                     str(refs[ref_name]['sgRNA_plot_idxs']) + "\t" +
+                    str(refs[ref_name]['sgRNA_mismatches']) + "\t" +
                     str(refs[ref_name]['contains_guide']) + "\t" +
                     str(refs[ref_name]['contains_coding_seq']) + "\t" +
                     str(refs[ref_name]['exon_positions']) + "\t" +
@@ -1769,12 +1867,33 @@ def main():
 
         allele_frequency_table_zip_filename = _jp('Alleles_frequency_table.zip')
 
-        df_alleles.ix[:,crispresso2Cols].to_csv(allele_frequency_table_fileLoc,sep='\t',header=True,index=None)
+        if args.dsODN == "":
+            df_alleles.ix[:,crispresso2Cols].to_csv(allele_frequency_table_fileLoc,sep='\t',header=True,index=None)
+        else:
+            info('Writing file for alleles with dsODN')
+            df_alleles["contains dsODN fw"] = df_alleles["Aligned_Sequence"].str.find(args.dsODN) > 0
+            df_alleles["contains dsODN rv"] = df_alleles["Aligned_Sequence"].str.find(CRISPRessoShared.reverse_complement(args.dsODN)) > 0
+            df_alleles["contains dsODN"] = df_alleles["contains dsODN fw"] | df_alleles["contains dsODN rv"]
+
+            dsODN_cols = crispresso2Cols[:]
+            dsODN_cols.append("contains dsODN")
+
+            if len(args.dsODN) > 6:
+                sub_dsODN = args.dsODN[3:-3]
+                df_alleles["contains dsODN fragment fw"] = df_alleles["Aligned_Sequence"].str.find(sub_dsODN) > 0
+                df_alleles["contains dsODN fragment rv"] = df_alleles["Aligned_Sequence"].str.find(CRISPRessoShared.reverse_complement(sub_dsODN)) > 0
+                df_alleles["contains dsODN fragment"] = df_alleles["contains dsODN fragment fw"] | df_alleles["contains dsODN fragment rv"]
+            dsODN_cols.append("contains dsODN fragment")
+
+            df_alleles.ix[:,dsODN_cols].to_csv(allele_frequency_table_fileLoc,sep='\t',header=True,index=None)
+
         with zipfile.ZipFile(allele_frequency_table_zip_filename,'w',zipfile.ZIP_DEFLATED) as myzip:
             myzip.write(allele_frequency_table_fileLoc,allele_frequency_table_filename)
         os.remove(allele_frequency_table_fileLoc)
         crispresso2_info['allele_frequency_table_filename'] = os.path.basename(allele_frequency_table_filename) #filename is the name of the file in the zip
         crispresso2_info['allele_frequency_table_zip_filename'] = os.path.basename(allele_frequency_table_zip_filename)
+
+
 
         if args.crispresso1_mode:
             with open(_jp('Quantification_of_editing_frequency.txt'),'w+') as outfile:
@@ -1795,7 +1914,7 @@ def main():
 
         quant_of_editing_freq_filename =_jp('CRISPResso_quantification_of_editing_frequency.txt')
         with open(quant_of_editing_freq_filename,'w+') as outfile:
-            outfile.write('Amplicon\tUnmodified%\tModified%\tReads_aligned\tReads_total\tUnmodified\tModified\tDiscarded\tInsertions\tDeletions\tSubstitutions\tOnly Insertions\tOnly Deletions\tOnly Substitutions\tInsertions and Deletions\tInsertions and Substitutions\tDeletions and Substitutions\tInsertions Deletions and Substitutions\n')
+            outfile.write('Amplicon\tUnmodified%\tModified%\tReads_in_input\tReads_aligned_all_amplicons\tReads_aligned\tUnmodified\tModified\tDiscarded\tInsertions\tDeletions\tSubstitutions\tOnly Insertions\tOnly Deletions\tOnly Substitutions\tInsertions and Deletions\tInsertions and Substitutions\tDeletions and Substitutions\tInsertions Deletions and Substitutions\n')
             for ref_name in ref_names:
                 n_aligned = counts_total[ref_name]
                 n_unmod = counts_unmodified[ref_name]
@@ -1820,7 +1939,7 @@ def main():
                     mod_pct = round(100*n_mod/float(n_aligned),8)
 
                 vals = [ref_name]
-                vals.extend([str(x) for x in [unmod_pct,mod_pct,n_aligned,N_TOTAL,n_unmod,n_mod,n_discarded,n_insertion,n_deletion,n_substitution,n_only_insertion,n_only_deletion,n_only_substitution,n_insertion_and_deletion,n_insertion_and_substitution,n_deletion_and_substitution,n_insertion_and_deletion_and_substitution]])
+                vals.extend([str(x) for x in [unmod_pct,mod_pct,N_READS_INPUT,N_TOTAL,n_aligned,n_unmod,n_mod,n_discarded,n_insertion,n_deletion,n_substitution,n_only_insertion,n_only_deletion,n_only_substitution,n_insertion_and_deletion,n_insertion_and_substitution,n_deletion_and_substitution,n_insertion_and_deletion_and_substitution]])
                 outfile.write("\t".join(vals) + "\n")
 
         crispresso2_info['quant_of_editing_freq_filename'] = os.path.basename(quant_of_editing_freq_filename)
@@ -2175,6 +2294,35 @@ def main():
             crispresso2_info['plot_1c_root'] = os.path.basename(plot_root)
             crispresso2_info['plot_1c_caption'] = "Figure 1c: Alignment and editing frequency of reads as determined by the percentage and number of sequence reads showing unmodified and modified alleles."
             crispresso2_info['plot_1c_data'] = [('Quantification of editing',os.path.basename(quant_of_editing_freq_filename))]
+
+
+            #1d for dsODN
+            if args.dsODN != "":
+                #(1b) a piechart of classes
+                n_contain_dsODN = df_alleles[df_alleles['contains dsODN'] == True]['#Reads'].sum()
+                n_not_contain_dsODN = df_alleles[df_alleles['contains dsODN'] == False]['#Reads'].sum()
+                labels = ['Contains dsODN\n('+str(n_contain_dsODN)+" reads)",
+                    'No dsODN\n('+str(n_not_contain_dsODN) + ' reads)']
+                sizes = [100*n_contain_dsODN/float(N_TOTAL),
+                    100*n_not_contain_dsODN/float(N_TOTAL)]
+
+                fig=plt.figure(figsize=(12,12))
+                ax = plt.subplot(111)
+                patches, texts, autotexts =ax.pie(sizes, labels=labels,\
+                                autopct='%1.2f%%')
+
+                plt.axis('off')
+                plt.axis("equal")
+
+                plot_root = _jp("1d.Detection_of_dsODN")
+                plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
+                if save_png:
+                    plt.savefig(plot_root+'.png',bbox_inches='tight')
+                plt.close()
+
+                crispresso2_info['plot_1d_root'] = os.path.basename(plot_root)
+                crispresso2_info['plot_1d_caption'] = "Figure 1d: Frequency of detection of dsODN " + args.dsODN
+                crispresso2_info['plot_1d_data'] = [('Allele table',os.path.basename(allele_frequency_table_filename))]
         ###############################################################################################################################################
 
 
@@ -2194,6 +2342,8 @@ def main():
 #            print('debug 2120 here: '+str(sgRNA_sequences))
             cut_points = refs[ref_name]['sgRNA_cut_points']
             sgRNA_intervals = refs[ref_name]['sgRNA_intervals']
+            sgRNA_names = refs[ref_name]['sgRNA_names']
+            sgRNA_mismatches = refs[ref_name]['sgRNA_mismatches']
             tot_aln_reads = counts_total[ref_name]
             n_this_category = counts_total[ref_name]
 
@@ -2260,8 +2410,6 @@ def main():
                 crispresso2_info['refs'][ref_name]['sub_freq_table_filename'] = os.path.basename(sub_freq_table_filename)
 
                 if not args.suppress_plots:
-
-
                     mod_pcts = []
                     tot = float(counts_total[ref_name])
                     mod_pcts.append(np.concatenate((['Insertions'], np.array(all_insertion_count_vectors[ref_name]).astype(np.float)/tot)))
@@ -2279,7 +2427,7 @@ def main():
                     mod_df_for_plot.insert(0,'Batch',ref_name)
 
                     plot_root = _jp('2a.'+ref_plot_name + 'Nucleotide_percentage_quilt')
-                    CRISPRessoPlot.plot_nucleotide_quilt(nuc_df_for_plot,mod_df_for_plot,plot_root,save_png,sgRNA_intervals=sgRNA_intervals,quantification_window_idxs=include_idxs_list)
+                    CRISPRessoPlot.plot_nucleotide_quilt(nuc_df_for_plot,mod_df_for_plot,plot_root,save_png,sgRNA_intervals=sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,quantification_window_idxs=include_idxs_list)
                     crispresso2_info['refs'][ref_name]['plot_2a_root'] = os.path.basename(plot_root)
                     crispresso2_info['refs'][ref_name]['plot_2a_caption'] = "Figure 2a: Nucleotide distribution across amplicon. At each base in the reference amplicon, the percentage of each base as observed in sequencing reads is shown (A = green; C = orange; G = yellow; T = purple). Black bars show the percentage of reads for which that base was deleted. Brown bars between bases show the percentage of reads having an insertion at that position."
                     crispresso2_info['refs'][ref_name]['plot_2a_data'] = [('Nucleotide frequency table',os.path.basename(nuc_freq_filename))]
@@ -2287,7 +2435,17 @@ def main():
                     crispresso2_info['refs'][ref_name]['plot_2b_roots'] = []
                     crispresso2_info['refs'][ref_name]['plot_2b_captions'] = []
                     crispresso2_info['refs'][ref_name]['plot_2b_datas'] = []
-                    for sgRNA,cut_point in zip(sgRNA_sequences,cut_points):
+                    for i in range(len(cut_points)):
+                        cut_point = cut_points[i]
+                        sgRNA = sgRNA_sequences[i]
+                        sgRNA_name = sgRNA_names[i]
+
+                        sgRNA_label = sgRNA # for file names
+                        sgRNA_legend = sgRNA # for legends
+                        if sgRNA_name != "":
+                            sgRNA_label = sgRNA_name
+                            sgRNA_legend = sgRNA_name + " (" + sgRNA +")"
+
                         #get nucleotide columns to print for this sgRNA
                         sel_cols = [0,1]
                         plot_half_window = max(1,args.plot_window_size)
@@ -2302,14 +2460,14 @@ def main():
                         new_include_idx = []
                         for x in include_idxs_list:
                             new_include_idx += [x - new_sel_cols_start]
-                        plot_root = _jp('2b.'+ref_plot_name + 'Nucleotide_percentage_quilt_around_sgRNA_' + sgRNA)
+                        plot_root = _jp('2b.'+ref_plot_name + 'Nucleotide_percentage_quilt_around_sgRNA_' + sgRNA_label)
                         CRISPRessoPlot.plot_nucleotide_quilt(
                                 nuc_df_for_plot.iloc[:,sel_cols],
                                 mod_df_for_plot.iloc[:,sel_cols],
                                 plot_root,
-                                save_png,sgRNA_intervals=new_sgRNA_intervals,quantification_window_idxs=new_include_idx)
+                                save_png,sgRNA_intervals=new_sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,quantification_window_idxs=new_include_idx)
                         crispresso2_info['refs'][ref_name]['plot_2b_roots'].append(os.path.basename(plot_root))
-                        crispresso2_info['refs'][ref_name]['plot_2b_captions'].append('Figure 2b: Nucleotide distribution around sgRNA ' + sgRNA + '.')
+                        crispresso2_info['refs'][ref_name]['plot_2b_captions'].append('Figure 2b: Nucleotide distribution around sgRNA ' + sgRNA_label + '.')
                         crispresso2_info['refs'][ref_name]['plot_2b_datas'].append([('Nucleotide frequency in quantification window',os.path.basename(quant_window_nuc_freq_filename))])
 
 
@@ -3055,6 +3213,7 @@ def main():
             sgRNA_cut_points = refs[ref_name]['sgRNA_cut_points']
             sgRNA_intervals = refs[ref_name]['sgRNA_intervals']
             sgRNA_plot_idxs = refs[ref_name]['sgRNA_plot_idxs']
+            sgRNA_mismatches = refs[ref_name]['sgRNA_mismatches']
 
             crispresso2_info['refs'][ref_name]['plot_9_roots'] = []
             crispresso2_info['refs'][ref_name]['plot_9_captions'] = []
@@ -3079,23 +3238,43 @@ def main():
 
             for ind,sgRNA in enumerate(sgRNA_sequences):
                 cut_point = sgRNA_cut_points[ind]
+                sgRNA_name = sgRNA_names[ind]
                 plot_idxs = sgRNA_plot_idxs[ind]
+
+                sgRNA_label = sgRNA # for file names
+                sgRNA_legend = sgRNA # for legends
+                if sgRNA_name != "":
+                    sgRNA_label = sgRNA_name
+                    sgRNA_legend = sgRNA_name + " (" + sgRNA +")"
+
                 plot_half_window = max(1,args.plot_window_size)
-                df_allele_around_cut=CRISPRessoShared.get_dataframe_around_cut(df_alleles.loc[df_alleles['Reference_Name'] == ref_name],cut_point,plot_half_window)
+                df_alleles_around_cut=CRISPRessoShared.get_dataframe_around_cut(df_alleles.loc[df_alleles['Reference_Name'] == ref_name],cut_point,plot_half_window)
 
                 #write alleles table to file
-                allele_filename = _jp(ref_plot_name+'Alleles_frequency_table_around_sgRNA_'+sgRNA+'.txt')
-                df_allele_around_cut.to_csv(allele_filename,sep='\t',header=True)
+                allele_filename = _jp(ref_plot_name+'Alleles_frequency_table_around_sgRNA_'+sgRNA_label+'.txt')
+                df_alleles_around_cut.to_csv(allele_filename,sep='\t',header=True)
                 crispresso2_info['refs'][ref_name]['allele_frequency_files'].append(os.path.basename(allele_filename))
 
                 ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_half_window+1:cut_point+plot_half_window+1]
-                fig_filename_root = _jp('9.'+ref_plot_name+'Alleles_frequency_table_around_sgRNA_'+sgRNA)
-                n_good = df_allele_around_cut.ix[df_allele_around_cut['%Reads']>=args.min_frequency_alleles_around_cut_to_plot].shape[0]
+                fig_filename_root = _jp('9.'+ref_plot_name+'Alleles_frequency_table_around_sgRNA_'+sgRNA_label)
+                n_good = df_alleles_around_cut.ix[df_alleles_around_cut['%Reads']>=args.min_frequency_alleles_around_cut_to_plot].shape[0]
                 if not args.suppress_plots and n_good > 0:
-                    CRISPRessoPlot.plot_alleles_table(ref_seq_around_cut,df_alleles=df_allele_around_cut,fig_filename_root=fig_filename_root,
-                        MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot,MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot,SAVE_ALSO_PNG=save_png,base_editor_output=args.base_editor_output,sgRNA_intervals=sgRNA_intervals)
+
+                    df_to_plot = df_alleles_around_cut
+                    if not args.expand_allele_plots_by_quantification:
+                        df_to_plot = df_alleles_around_cut.groupby(['Aligned_Sequence','Reference_Sequence']).sum().reset_index().set_index('Aligned_Sequence')
+                        df_to_plot.sort_values(by='%Reads',inplace=True,ascending=False)
+
+                    new_sgRNA_intervals = []
+                    #adjust coordinates of sgRNAs
+                    new_sel_cols_start = cut_point - plot_half_window
+                    for (int_start,int_end) in refs[ref_name]['sgRNA_intervals']:
+                        new_sgRNA_intervals += [(int_start - new_sel_cols_start,int_end - new_sel_cols_start)]
+
+                    CRISPRessoPlot.plot_alleles_table(ref_seq_around_cut,df_alleles=df_to_plot,fig_filename_root=fig_filename_root,
+                        MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot,MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot,SAVE_ALSO_PNG=save_png,base_editor_output=args.base_editor_output,sgRNA_intervals=new_sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches)
                     crispresso2_info['refs'][ref_name]['plot_9_roots'].append(os.path.basename(fig_filename_root))
-                    crispresso2_info['refs'][ref_name]['plot_9_captions'].append("Figure 9: Visualization of the distribution of identified alleles around each the cleavage site for the guide " + sgRNA + ". Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site.")
+                    crispresso2_info['refs'][ref_name]['plot_9_captions'].append("Figure 9: Visualization of the distribution of identified alleles around each the cleavage site for the guide " + sgRNA_legend + ". Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site.")
                     crispresso2_info['refs'][ref_name]['plot_9_datas'].append([('Allele frequency table',os.path.basename(allele_filename))])
 
 
@@ -3124,12 +3303,12 @@ def main():
                     just_sel_nuc_freqs = plot_nuc_freqs.iloc[:,from_nuc_indices].copy()
                     just_sel_nuc_freqs.columns = [args.conversion_nuc_from + str(pos+1) for pos in from_nuc_indices]
 
-                    quant_window_sel_nuc_pct_filename = _jp(ref_plot_name + 'Selected_nucleotide_percentage_table_around_sgRNA_'+sgRNA+'.txt')
+                    quant_window_sel_nuc_pct_filename = _jp(ref_plot_name + 'Selected_nucleotide_percentage_table_around_sgRNA_'+sgRNA_label+'.txt')
                     just_sel_nuc_pcts.to_csv(quant_window_sel_nuc_pct_filename,sep='\t',header=True,index=True)
 #                   not storing the name because it is unique to this sgRNA
 #                    crispresso2_info['quant_window_sel_nuc_pct_filename'] = os.path.basename(quant_window_sel_nuc_pct_filename)
 
-                    quant_window_sel_nuc_freq_filename = _jp(ref_plot_name + 'Selected_nucleotide_frequency_table_around_sgRNA_'+sgRNA+'.txt')
+                    quant_window_sel_nuc_freq_filename = _jp(ref_plot_name + 'Selected_nucleotide_frequency_table_around_sgRNA_'+sgRNA_label+'.txt')
                     just_sel_nuc_freqs.to_csv(quant_window_sel_nuc_freq_filename,sep='\t',header=True,index=True)
 #                   not storing the name because it is unique to this sgRNA
 #                    crispresso2_info['quant_window_sel_nuc_freq_filename'] = os.path.basename(quant_window_sel_nuc_freq_filename)
@@ -3146,40 +3325,40 @@ def main():
 
                     if not args.suppress_plots:
 
-                        fig_filename_root = _jp('10d.'+ref_plot_name+'Log2_nucleotide_frequency_around_sgRNA_'+sgRNA)
+                        fig_filename_root = _jp('10d.'+ref_plot_name+'Log2_nucleotide_frequency_around_sgRNA_'+sgRNA_label)
                         CRISPRessoPlot.plot_log_nuc_freqs(
                             df_nuc_freq = plot_nuc_freqs,
                             tot_aln_reads = tot_aln_reads,
-                            plot_title = get_plot_title_with_ref_name('Log2 Nucleotide Frequencies Around sgRNA ' + sgRNA,ref_name),
+                            plot_title = get_plot_title_with_ref_name('Log2 Nucleotide Frequencies Around sgRNA ' + sgRNA_legend,ref_name),
                             fig_filename_root = fig_filename_root,
                             save_also_png = save_png,
                             quantification_window_idxs = plot_quant_window_idxs
                             )
                         crispresso2_info['refs'][ref_name]['plot_10d_roots'].append(os.path.basename(fig_filename_root))
-                        crispresso2_info['refs'][ref_name]['plot_10d_captions'].append("Figure 10d: Log2 nucleotide frequencies for each position in the plotting window around the sgRNA " + sgRNA + ". The quantification window is outlined by the dotted box.")
+                        crispresso2_info['refs'][ref_name]['plot_10d_captions'].append("Figure 10d: Log2 nucleotide frequencies for each position in the plotting window around the sgRNA " + sgRNA_legend + ". The quantification window is outlined by the dotted box.")
                         crispresso2_info['refs'][ref_name]['plot_10d_datas'].append([])
 
 
-                        fig_filename_root = _jp('10e.'+ref_plot_name+'Selected_conversion_at_'+args.conversion_nuc_from+'s_around_sgRNA_'+sgRNA)
+                        fig_filename_root = _jp('10e.'+ref_plot_name+'Selected_conversion_at_'+args.conversion_nuc_from+'s_around_sgRNA_'+sgRNA_label)
                         CRISPRessoPlot.plot_conversion_at_sel_nucs(
                             df_subs = plot_nuc_pcts,
                             ref_name = ref_name,
                             ref_sequence = plot_ref_seq,
-                            plot_title = get_plot_title_with_ref_name('Substitution Frequencies at '+args.conversion_nuc_from+'s around sgRNA ' + sgRNA,ref_name),
+                            plot_title = get_plot_title_with_ref_name('Substitution Frequencies at '+args.conversion_nuc_from+'s around sgRNA ' + sgRNA_legend,ref_name),
                             conversion_nuc_from = args.conversion_nuc_from,
                             fig_filename_root = fig_filename_root,
                             save_also_png = save_png
                             )
                         crispresso2_info['refs'][ref_name]['plot_10e_roots'].append(os.path.basename(fig_filename_root))
-                        crispresso2_info['refs'][ref_name]['plot_10e_captions'].append("Figure 10e: Proportion of each base at each nucleotide targeted by base editors in the plotting window around the sgRNA " + sgRNA + ". The number of each target base is annotated on the reference sequence at the bottom of the plot.")
+                        crispresso2_info['refs'][ref_name]['plot_10e_captions'].append("Figure 10e: Proportion of each base at each nucleotide targeted by base editors in the plotting window around the sgRNA " + sgRNA_legend + ". The number of each target base is annotated on the reference sequence at the bottom of the plot.")
                         crispresso2_info['refs'][ref_name]['plot_10e_datas'].append([('Nucleotide frequencies at ' + args.conversion_nuc_from + 's',os.path.basename(quant_window_sel_nuc_freq_filename))])
 
-                        fig_filename_root = _jp('10f.'+ref_plot_name+'Selected_conversion_no_ref_at_'+args.conversion_nuc_from+'s_around_sgRNA_'+sgRNA)
+                        fig_filename_root = _jp('10f.'+ref_plot_name+'Selected_conversion_no_ref_at_'+args.conversion_nuc_from+'s_around_sgRNA_'+sgRNA_label)
                         CRISPRessoPlot.plot_conversion_at_sel_nucs_not_include_ref(
                             df_subs = plot_nuc_pcts,
                             ref_name = ref_name,
                             ref_sequence = plot_ref_seq,
-                            plot_title = get_plot_title_with_ref_name('Substitution Frequencies at '+args.conversion_nuc_from+'s around sgRNA ' + sgRNA,ref_name),
+                            plot_title = get_plot_title_with_ref_name('Substitution Frequencies at '+args.conversion_nuc_from+'s around sgRNA ' + sgRNA_legend,ref_name),
                             conversion_nuc_from = args.conversion_nuc_from,
                             fig_filename_root = fig_filename_root,
                             save_also_png = save_png
@@ -3188,12 +3367,12 @@ def main():
                         crispresso2_info['refs'][ref_name]['plot_10f_captions'].append("Figure 10f: Non-reference base proportions. For target nucleotides in the plotting window, this plot shows the proportion of non-reference (non-"+args.conversion_nuc_from + ") bases as a percentage of all non-reference sequences. The number of each target base is annotated on the reference sequence at the bottom of the plot.")
                         crispresso2_info['refs'][ref_name]['plot_10f_datas'].append([('Nucleotide frequencies at ' + args.conversion_nuc_from + 's',os.path.basename(quant_window_sel_nuc_freq_filename))])
 
-                        fig_filename_root = _jp('10g.'+ref_plot_name+'Selected_conversion_no_ref_scaled_at_'+args.conversion_nuc_from+'s_around_sgRNA_'+sgRNA)
+                        fig_filename_root = _jp('10g.'+ref_plot_name+'Selected_conversion_no_ref_scaled_at_'+args.conversion_nuc_from+'s_around_sgRNA_'+sgRNA_label)
                         CRISPRessoPlot.plot_conversion_at_sel_nucs_not_include_ref_scaled(
                             df_subs = plot_nuc_pcts,
                             ref_name = ref_name,
                             ref_sequence = plot_ref_seq,
-                            plot_title = get_plot_title_with_ref_name('Substitution Frequencies at '+args.conversion_nuc_from+'s around sgRNA ' + sgRNA,ref_name),
+                            plot_title = get_plot_title_with_ref_name('Substitution Frequencies at '+args.conversion_nuc_from+'s around sgRNA ' + sgRNA_legend,ref_name),
                             conversion_nuc_from = args.conversion_nuc_from,
                             fig_filename_root = fig_filename_root,
                             save_also_png = save_png

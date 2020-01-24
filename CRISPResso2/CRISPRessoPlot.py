@@ -77,13 +77,15 @@ def get_color_lookup(nucs,alpha):
         colorLookup[nuc] = get_nuc_color(nuc,alpha)
     return colorLookup
 
-def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=False,sgRNA_intervals=None,min_text_pct=0.5,max_text_pct=0.95,quantification_window_idxs=None):
+def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=False,sgRNA_intervals=None,min_text_pct=0.5,max_text_pct=0.95,quantification_window_idxs=None,sgRNA_names=None,sgRNA_mismatches=None):
     """Plots a nucleotide quilt with each square showing the percentage of each base at that position in the reference
     nuc_pct_df: dataframe with percents of each base (ACTGN-) at each position
     mod_pct_df: dataframe with percents of modifications at each position (this function uses 'Insertions_Left' to plot insertions)
     fig_filename_root: filename root (will add .pdf or .png)
     save_also_png: whether png should also be saved
     sgRNA_intervals: ranges for sgRNA annotation on plot
+    sgRNA_names: names to annotate sgRNAs with (if None, will just label left sgRNA with 'sgRNA')
+    sgRNA_mismatches: locations in the sgRNA where there are mismatches from an original guide (flexiguides)
     quantification_window_idxs: indices for quantification window annotation on plot
     min_text_pct: add text annotation if the percent is greater than this number
     max_text_pct: add text annotation if the percent is less than this number
@@ -182,38 +184,13 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=
 #    sampleLabs = list(nuc_pct_df.iloc[[((nSamples-1)-x)*nNucs for x in range(0,nSamples)],0]))
 #    print(mod_pct_df)
 #    sampleReadCounts = list(nuc_pct_df.iloc[[((nSamples-1)-x)*nNucs for x in range(0,nSamples)],0]))
-    ax.set_yticklabels(['Reference'] + list(nuc_pct_df.iloc[[((nSamples-1)-x)*nNucs for x in range(0,nSamples)],0]))
+    ax.set_yticklabels(['Reference'] + list(nuc_pct_df.iloc[[((nSamples-1)-x)*nNucs for x in range(0,nSamples)],0]),va='center')
 
     plot_y_start = ref_y_start
 
-    if sgRNA_intervals:
+    if sgRNA_intervals and len(sgRNA_intervals) > 0:
         plot_y_start = 0
-        sgRNA_y_start = 0.1
-        sgRNA_y_height = 0.2
-        min_sgRNA_x = None
-        for idx,sgRNA_int in enumerate(sgRNA_intervals):
-            this_sgRNA_start = max(0,sgRNA_int[0])
-            this_sgRNA_end = min(sgRNA_int[1],amp_len - 1)
-            ax.add_patch(
-                patches.Rectangle((2+this_sgRNA_start, sgRNA_y_start), 1+this_sgRNA_end-this_sgRNA_start, sgRNA_y_height,facecolor=(0,0,0,0.15))
-                )
-
-            #if plot has trimmed the sgRNA, add a mark
-            if this_sgRNA_start != sgRNA_int[0]:
-                ax.add_patch(
-                    patches.Rectangle((2.1+this_sgRNA_start, sgRNA_y_start), 0.1, sgRNA_y_height,facecolor='w')
-                    )
-            if this_sgRNA_end != sgRNA_int[1]:
-                ax.add_patch(
-                    patches.Rectangle((2.8+this_sgRNA_end, sgRNA_y_start), 0.1, sgRNA_y_height,facecolor='w')
-                    )
-
-            #set left-most sgrna start
-            if not min_sgRNA_x:
-                min_sgRNA_x = this_sgRNA_start
-            if this_sgRNA_start < min_sgRNA_x:
-                min_sgRNA_x = this_sgRNA_start
-        ax.text(2+min_sgRNA_x,sgRNA_y_start + sgRNA_y_height/2,'sgRNA ',horizontalalignment='right',verticalalignment='center')
+        add_sgRNA_to_ax(ax,sgRNA_intervals,sgRNA_y_start=0.1,sgRNA_y_height=0.2,amp_len=amp_len,x_offset=2,sgRNA_mismatches=sgRNA_mismatches,sgRNA_names=sgRNA_names)
 
     if quantification_window_idxs is not None and len(quantification_window_idxs) > 0:
         q_win_y_start = 0.05
@@ -290,7 +267,67 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=
         fig.savefig(fig_filename_root+'.png',bbox_inches='tight',pad=1)
     plt.close()
 
-def plot_conversion_map(nuc_pct_df,fig_filename_root,conversion_nuc_from,conversion_nuc_to,save_also_png,plotPct = 0.9,min_text_pct=0.3,max_text_pct=0.9,conversion_scale_max=None,sgRNA_intervals=None,quantification_window_idxs=None):
+def add_sgRNA_to_ax(ax,sgRNA_intervals,sgRNA_y_start,sgRNA_y_height,amp_len,x_offset=0,sgRNA_mismatches=None,sgRNA_names=None,font_size=None,clip_on=True):
+    """
+    Adds sgRNA to plot ax
+    params:
+    ax: ax to add sgRNA to
+    sgRNA_intervals: array of x coordinate tuples of start and stop
+    sgRNA_y_start: y coordinate of sgRNA(s)
+    sgRNA_y_height: y height of sgRNA(s)
+    amp_len: length of amplicon
+    x_offset: amount to move sgRNAs in x direction -- if labels or annotations are to the left of the plot, this may have to be non-zero. e.g. if the reference starts at x=2, set this to 2
+    sgRNA_mismatches: array (for each sgRNA_interval) of locations in sgRNA where there are mismatches
+    sgRNA_names: array (for each sgRNA_interval) of names of sgRNAs (otherwise empty)
+    clip_on: matplotlib parameter for whether sgRNAs should be drawn outside of clipping bounds (if sgRNAs aren't showing up, try setting this to False)
+    """
+
+    if font_size is None:
+        font_size = matplotlib.rcParams['font.size']
+
+    min_sgRNA_x = None #keep track of left-most sgRNA
+    label_left_sgRNA = True #whether to label left-most sgRNA (set to false if label another sgRNA (e.g. with sgRNA_name))
+    for idx,sgRNA_int in enumerate(sgRNA_intervals):
+        this_sgRNA_start = max(0,sgRNA_int[0])
+        this_sgRNA_end = min(sgRNA_int[1],amp_len - 1)
+        if this_sgRNA_start > amp_len or this_sgRNA_end < 0:
+            continue
+        ax.add_patch(
+            patches.Rectangle((x_offset+this_sgRNA_start, sgRNA_y_start), 1+this_sgRNA_end-this_sgRNA_start, sgRNA_y_height,facecolor=(0,0,0,0.15),clip_on=clip_on)
+            )
+
+        #if plot has trimmed the sgRNA, add a mark
+        if this_sgRNA_start != sgRNA_int[0]:
+            ax.add_patch(
+                patches.Rectangle((x_offset + 0.1+this_sgRNA_start, sgRNA_y_start), 0.1, sgRNA_y_height,facecolor='w',clip_on=clip_on)
+                )
+        if this_sgRNA_end != sgRNA_int[1]:
+            ax.add_patch(
+                patches.Rectangle((x_offset + 0.8+this_sgRNA_end, sgRNA_y_start), 0.1, sgRNA_y_height,facecolor='w',clip_on=clip_on)
+                )
+
+        if sgRNA_mismatches is not None:
+            this_sgRNA_mismatches = sgRNA_mismatches[idx]
+            for mismatch in this_sgRNA_mismatches:
+                mismatch_plot_pos = sgRNA_int[0] + mismatch
+                if mismatch_plot_pos > 0 and mismatch_plot_pos < amp_len - 1:
+                    ax.add_patch(
+                        patches.Rectangle((x_offset+this_sgRNA_start + mismatch, sgRNA_y_start), 1, sgRNA_y_height,facecolor='r',clip_on=clip_on)
+                        )
+
+        #set left-most sgrna start
+        if not min_sgRNA_x:
+            min_sgRNA_x = this_sgRNA_start
+        if this_sgRNA_start < min_sgRNA_x:
+            min_sgRNA_x = this_sgRNA_start
+        if sgRNA_names is not None and idx < len(sgRNA_names) and sgRNA_names[idx] != "":
+            ax.text(x_offset+this_sgRNA_start,sgRNA_y_start + sgRNA_y_height/2,sgRNA_names[idx] + " ",horizontalalignment='right',verticalalignment='center',fontsize = font_size)
+            label_left_sgRNA = False #already labeled at least one sgRNA
+
+    if min_sgRNA_x and label_left_sgRNA:
+        ax.text(x_offset+min_sgRNA_x,sgRNA_y_start + sgRNA_y_height/2,'sgRNA ',horizontalalignment='right',verticalalignment='center',fontsize=font_size)
+
+def plot_conversion_map(nuc_pct_df,fig_filename_root,conversion_nuc_from,conversion_nuc_to,save_also_png,plotPct = 0.9,min_text_pct=0.3,max_text_pct=0.9,conversion_scale_max=None,sgRNA_intervals=None,quantification_window_idxs=None,sgRNA_names=None,sgRNA_mismatches=None):
     """
     Plots a heatmap of conversion across several sequences
     :param nuc_pct_df combined df of multiple batches
@@ -298,6 +335,8 @@ def plot_conversion_map(nuc_pct_df,fig_filename_root,conversion_nuc_from,convers
     :param min_text_pct: add text annotation if the percent is greater than this number
     :param max_text_pct: add text annotation if the percent is less than this number
     :param quantification_window_idxs: indices for quantification window annotation on plot
+    :param sgRNA_names: names to annotate sgRNAs with (if None, will just label left sgRNA with 'sgRNA')
+    :param sgRNA_mismatches: locations in the sgRNA where there are mismatches from an original guide (flexiguides)
     """
 
     from_nuc = conversion_nuc_from
@@ -428,38 +467,13 @@ def plot_conversion_map(nuc_pct_df,fig_filename_root,conversion_nuc_from,convers
 #    plt.tick_params(top='off', bottom='off', left='off', right='off', labelleft='on', labelbottom='off')
 
     ax.set_yticks([ref_y_start + ref_y_height/2.0]+[x+0.5 for x in range(1,nSamples+1)])
-    ax.set_yticklabels(['Reference'] + list(nuc_pct_df.iloc[[((nSamples-1)-x)*nNucs for x in range(0,nSamples)],0]))
+    ax.set_yticklabels(['Reference'] + list(nuc_pct_df.iloc[[((nSamples-1)-x)*nNucs for x in range(0,nSamples)],0]),va='center')
 
     ax.set_xlim([2,amp_len+3])
     ax.set_ylim([ref_y_height - 0.2,nSamples+1.2])
 
-    if sgRNA_intervals:
-        sgRNA_y_start = 0.3
-        sgRNA_y_height = 0.1
-        min_sgRNA_x = None
-        for idx,sgRNA_int in enumerate(sgRNA_intervals):
-            this_sgRNA_start = max(0,sgRNA_int[0])
-            this_sgRNA_end = min(sgRNA_int[1],amp_len - 1)
-            ax.add_patch(
-                patches.Rectangle((2+this_sgRNA_start, sgRNA_y_start), 1+this_sgRNA_end-this_sgRNA_start, sgRNA_y_height,facecolor=(0,0,0,0.15))
-                )
-
-            #if plot has trimmed the sgRNA, add a mark
-            if this_sgRNA_start != sgRNA_int[0]:
-                ax.add_patch(
-                    patches.Rectangle((2.1+this_sgRNA_start, sgRNA_y_start), 0.1, sgRNA_y_height,facecolor='w')
-                    )
-            if this_sgRNA_end != sgRNA_int[1]:
-                ax.add_patch(
-                    patches.Rectangle((2.8+this_sgRNA_end, sgRNA_y_start), 0.1, sgRNA_y_height,facecolor='w')
-                    )
-
-            #set left-most sgrna start
-            if not min_sgRNA_x:
-                min_sgRNA_x = this_sgRNA_start
-            if this_sgRNA_start < min_sgRNA_x:
-                min_sgRNA_x = this_sgRNA_start
-        ax.text(2+min_sgRNA_x,sgRNA_y_start + sgRNA_y_height/2,'sgRNA ',horizontalalignment='right',verticalalignment='center')
+    if sgRNA_intervals and len(sgRNA_intervals) > 0:
+        add_sgRNA_to_ax(ax,sgRNA_intervals,sgRNA_y_start=0.3,sgRNA_y_height=0.1,amp_len=amp_len,x_offset=2,sgRNA_mismatches=sgRNA_mismatches,sgRNA_names=sgRNA_names)
 
     #legend
     #cbar_pad = max(0.05,nSamples * 0.01) #so the cbar label doesn't get written on the data for large numbers of samples
@@ -676,7 +690,7 @@ def plot_conversion_at_sel_nucs(df_subs,ref_name,ref_sequence,plot_title,convers
     ax.set_xlim([0,amp_len])
 
     ax.set_yticks([0.5])
-    ax.set_yticklabels(['Reference'])
+    ax.set_yticklabels(['Reference'],va='center')
 
 
     plt.tight_layout()
@@ -748,7 +762,7 @@ def plot_conversion_at_sel_nucs_not_include_ref(df_subs,ref_name,ref_sequence,pl
     ax.set_xlim([0,amp_len])
 
     ax.set_yticks([0.5])
-    ax.set_yticklabels(['Reference'])
+    ax.set_yticklabels(['Reference'],va='center')
 
 
     plt.tight_layout()
@@ -811,7 +825,7 @@ def plot_conversion_at_sel_nucs_not_include_ref_scaled(df_subs,ref_name,ref_sequ
     ax.set_xlim([0,amp_len])
 
     ax.set_yticks([0.5])
-    ax.set_yticklabels(['Reference'])
+    ax.set_yticklabels(['Reference'],va='center')
 
 
     plt.tight_layout()
@@ -878,7 +892,7 @@ class Custom_HeatMapper(sns.matrix._HeatMapper):
         # Add row and column labels
         ax.set(xticks=self.xticks, yticks=self.yticks)
         xtl = ax.set_xticklabels(self.xticklabels)
-        ytl = ax.set_yticklabels(self.yticklabels, rotation="vertical")
+        ytl = ax.set_yticklabels(self.yticklabels, rotation="vertical",va='center')
 
         # Possibly rotate them if they overlap
         plt.draw()
@@ -1018,7 +1032,7 @@ def prep_alleles_table_compare(df_alleles,sample_name_1,sample_name_2,MAX_N_ROWS
 
     return X,annot,y_labels,insertion_dict,per_element_annot_kws
 
-def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None,custom_colors=None):
+def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,custom_colors=None):
     """
     Plots alleles in a heatmap (nucleotides color-coded for easy visualization)
     input:
@@ -1031,6 +1045,9 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
     -per_element_annot_kws: annotations for each cell (e.g. bold for substitutions, etc.)
     -SAVE_ALSO_PNG: whether to write png file as well
     -base_editor_output: if true, won't draw 'predicted cleavage' line
+    -sgRNA_intervals: locations where sgRNA is located
+    -sgRNA_mismatches: array (for each sgRNA_interval) of locations in sgRNA where there are mismatches
+    -sgRNA_names: array (for each sgRNA_interval) of names of sgRNAs (otherwise empty)
     -custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     """
     plot_nuc_len=len(reference_seq)
@@ -1079,20 +1096,31 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
     N_ROWS=len(X)
     N_COLUMNS=plot_nuc_len
 
-    fig=plt.figure(figsize=(plot_nuc_len*0.3,(N_ROWS+1)*0.6))
-    gs1 = gridspec.GridSpec(N_ROWS+1,N_COLUMNS)
-    gs2 = gridspec.GridSpec(N_ROWS+1,N_COLUMNS)
+    if sgRNA_intervals and len(sgRNA_intervals) > 0:
+        fig=plt.figure(figsize=(plot_nuc_len*0.3,(N_ROWS+2)*0.6))
+        gs1 = gridspec.GridSpec(N_ROWS+2,N_COLUMNS)
+        gs2 = gridspec.GridSpec(N_ROWS+2,N_COLUMNS)
+        #ax_hm_ref heatmap for the reference
+        ax_hm_ref=plt.subplot(gs1[0:1, :])
+        ax_hm=plt.subplot(gs2[2:, :])
+    else:
+        fig=plt.figure(figsize=(plot_nuc_len*0.3,(N_ROWS+1)*0.6))
+        gs1 = gridspec.GridSpec(N_ROWS+1,N_COLUMNS)
+        gs2 = gridspec.GridSpec(N_ROWS+1,N_COLUMNS)
+        #ax_hm_ref heatmap for the reference
+        ax_hm_ref=plt.subplot(gs1[0, :])
+        ax_hm=plt.subplot(gs2[1:, :])
 
-    #ax_hm_ref heatmap for the reference
-    ax_hm_ref=plt.subplot(gs1[0, :])
-    ax_hm=plt.subplot(gs2[1:, :])
 
     custom_heatmap(ref_seq_hm,annot=ref_seq_annot_hm,annot_kws={'size':16},cmap=cmap,fmt='s',ax=ax_hm_ref,vmin=0,vmax=5,square=True)
     custom_heatmap(X,annot=np.array(annot),annot_kws={'size':16},cmap=cmap,fmt='s',ax=ax_hm,vmin=0,vmax=5,square=True, per_element_annot_kws=per_element_annot_kws)
 
     ax_hm.yaxis.tick_right()
-    ax_hm.yaxis.set_ticklabels(y_labels[::-1],rotation=True),
+    ax_hm.yaxis.set_ticklabels(y_labels[::-1],rotation=True,va='center')
     ax_hm.xaxis.set_ticks([])
+
+    if sgRNA_intervals and len(sgRNA_intervals) > 0:
+        add_sgRNA_to_ax(ax_hm_ref,sgRNA_intervals,sgRNA_y_start=-1,sgRNA_y_height=0.7,amp_len=plot_nuc_len,font_size='small',clip_on=False,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,x_offset=-1)
 
 # todo -- add sgRNAs below reference plot
 #    if sgRNA_intervals:
@@ -1118,11 +1146,7 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
     #create boxes for ins
     for idx,lss in insertion_dict.iteritems():
         for ls in lss:
-            for l in ls:
-                ax_hm.vlines([l],N_ROWS-idx-1,N_ROWS-idx,color='red',linewidths=3)
-
-            ax_hm.hlines(N_ROWS-idx-1,ls[0],ls[1],color='red',linewidths=3)
-            ax_hm.hlines(N_ROWS-idx,ls[0],ls[1],color='red',linewidths=3)
+            ax_hm.add_patch(patches.Rectangle((ls[0],N_ROWS-idx-1),ls[1]-ls[0],1,linewidth=3,edgecolor='r',fill=False))
 
     #cut point vertical line
     if base_editor_output is False:
@@ -1131,7 +1155,7 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
 
     ax_hm_ref.yaxis.tick_right()
     ax_hm_ref.xaxis.set_ticks([])
-    ax_hm_ref.yaxis.set_ticklabels(['Reference'],rotation=True)
+    ax_hm_ref.yaxis.set_ticklabels(['Reference'],rotation=True,va='center')
 
 
 
@@ -1143,7 +1167,7 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
     proxies = [matplotlib.lines.Line2D([0], [0], linestyle='none', mfc='black',
                     mec='none', marker=r'$\mathbf{{{}}}$'.format('bold'),ms=18),
                matplotlib.lines.Line2D([0], [0], linestyle='none', mfc='none',
-                    mec='red', marker='s',ms=8,markeredgewidth=2.5),
+                    mec='r', marker='s',ms=8,markeredgewidth=2.5),
               matplotlib.lines.Line2D([0], [0], linestyle='none', mfc='none',
                     mec='black', marker='_',ms=2,)]
     descriptions=['Substitutions','Insertions','Deletions']
@@ -1161,7 +1185,7 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
         plt.savefig(fig_filename_root+'.png',bbox_inches='tight',bbox_extra_artists=(lgd,))
     plt.close()
 
-def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,count_values,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None,custom_colors=None):
+def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,count_values,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,custom_colors=None):
     """
     Plots alleles in a heatmap (nucleotides color-coded for easy visualization)
     input:
@@ -1174,6 +1198,9 @@ def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,i
     -per_element_annot_kws: annotations for each cell (e.g. bold for substitutions, etc.)
     -SAVE_ALSO_PNG: whether to write png file as well
     -base_editor_output: if true, won't draw 'predicted cleavage' line
+    -sgRNA_intervals: locations where sgRNA is located
+    -sgRNA_mismatches: array (for each sgRNA_interval) of locations in sgRNA where there are mismatches
+    -sgRNA_names: array (for each sgRNA_interval) of names of sgRNAs (otherwise empty)
     -custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     """
     plot_nuc_len=len(reference_seq)
@@ -1233,7 +1260,7 @@ def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,i
     custom_heatmap(X,annot=np.array(annot),annot_kws={'size':16},cmap=cmap,fmt='s',ax=ax_hm,vmin=0,vmax=5,square=True, per_element_annot_kws=per_element_annot_kws)
 
     ax_hm.yaxis.tick_right()
-    ax_hm.yaxis.set_ticklabels(y_labels[::-1],rotation=True),
+    ax_hm.yaxis.set_ticklabels(y_labels[::-1],rotation=True,va='center')
     ax_hm.xaxis.set_ticks([])
 
 # todo -- add sgRNAs below reference plot
@@ -1261,16 +1288,12 @@ def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,i
     #create boxes for ins
     for idx,lss in insertion_dict.iteritems():
         for ls in lss:
-            for l in ls:
-                ax_hm.vlines([l],N_ROWS-idx-1,N_ROWS-idx,color='red',linewidths=3)
-
-            ax_hm.hlines(N_ROWS-idx-1,ls[0],ls[1],color='red',linewidths=3)
-            ax_hm.hlines(N_ROWS-idx,ls[0],ls[1],color='red',linewidths=3)
+            ax_hm.add_patch(patches.Rectangle((ls[0],N_ROWS-idx-1),ls[1]-ls[0],1,linewidth=3,edgecolor='r',fill=False))
 
 
     ax_hm_ref.yaxis.tick_right()
     ax_hm_ref.xaxis.set_ticks([])
-    ax_hm_ref.yaxis.set_ticklabels(['Reference'],rotation=True)
+    ax_hm_ref.yaxis.set_ticklabels(['Reference'],rotation=True,va='center')
 
 
 
@@ -1282,7 +1305,7 @@ def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,i
     proxies = [matplotlib.lines.Line2D([0], [0], linestyle='none', mfc='black',
                     mec='none', marker=r'$\mathbf{{{}}}$'.format('bold'),ms=18),
                matplotlib.lines.Line2D([0], [0], linestyle='none', mfc='none',
-                    mec='red', marker='s',ms=8,markeredgewidth=2.5),
+                    mec='r', marker='s',ms=8,markeredgewidth=2.5),
               matplotlib.lines.Line2D([0], [0], linestyle='none', mfc='none',
                     mec='black', marker='_',ms=2,)]
     descriptions=['Substitutions','Insertions','Deletions']
@@ -1300,7 +1323,7 @@ def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,i
         plt.savefig(fig_filename_root+'.png',bbox_inches='tight',bbox_extra_artists=(lgd,),pad=1)
     plt.close()
 
-def plot_alleles_table(reference_seq,df_alleles,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None,custom_colors=None):
+def plot_alleles_table(reference_seq,df_alleles,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,custom_colors=None):
     """
     plots an allele table for a dataframe with allele frequencies
     input:
@@ -1311,12 +1334,14 @@ def plot_alleles_table(reference_seq,df_alleles,fig_filename_root,MIN_FREQUENCY=
     MAX_N_ROWS: max rows to plot
     SAVE_ALSO_PNG: whether to write png file as well
     sgRNA_intervals: locations where sgRNA is located
+    sgRNA_mismatches: array (for each sgRNA_interval) of locations in sgRNA where there are mismatches
+    sgRNA_names: array (for each sgRNA_interval) of names of sgRNAs (otherwise empty)
     custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     """
     X,annot,y_labels,insertion_dict,per_element_annot_kws = prep_alleles_table(df_alleles,MAX_N_ROWS,MIN_FREQUENCY)
-    plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,base_editor_output,sgRNA_intervals,custom_colors)
+    plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,base_editor_output,sgRNA_intervals,sgRNA_names,sgRNA_mismatches,custom_colors)
 
-def plot_alleles_table_from_file(alleles_file_name,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None,custom_colors=None):
+def plot_alleles_table_from_file(alleles_file_name,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,custom_colors=None):
     """
     plots an allele table for a dataframe with allele frequencies
     infers the reference sequence by finding reference sequences without gaps (-)
@@ -1329,6 +1354,8 @@ def plot_alleles_table_from_file(alleles_file_name,fig_filename_root,MIN_FREQUEN
     MAX_N_ROWS: max rows to plot
     SAVE_ALSO_PNG: whether to write png file as well
     sgRNA_intervals: locations where sgRNA is located
+    sgRNA_mismatches: array (for each sgRNA_interval) of locations in sgRNA where there are mismatches
+    sgRNA_names: array (for each sgRNA_interval) of names of sgRNAs (otherwise empty)
     custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     """
 
@@ -1342,9 +1369,9 @@ def plot_alleles_table_from_file(alleles_file_name,fig_filename_root,MIN_FREQUEN
         raise Exception('Could not infer reference sequence from allele table')
 
     X,annot,y_labels,insertion_dict,per_element_annot_kws = prep_alleles_table(df_alleles,MAX_N_ROWS,MIN_FREQUENCY)
-    plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,base_editor_output,sgRNA_intervals,custom_colors)
+    plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,base_editor_output,sgRNA_intervals,sgRNA_names,sgRNA_mismatches,custom_colors)
 
-def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,MIN_FREQUENCY=None,MAX_N_ROWS=None,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None,custom_colors=None):
+def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,MIN_FREQUENCY=None,MAX_N_ROWS=None,SAVE_ALSO_PNG=False,custom_colors=None,base_editor_output=None,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None):
     """
     plots an allele table for each sgRNA/amplicon in a CRISPresso run (useful for plotting after running using the plot harness)
     This function is only used for one-off plotting purposes and not for the general CRISPResso analysis
@@ -1355,7 +1382,10 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,M
     MIN_FREQUENCY: sum of alleles % must add to this to be plotted
     MAX_N_ROWS: max rows to plot
     SAVE_ALSO_PNG: whether to write png file as well
-    sgRNA_intervals: locations where sgRNA is located
+    base_editor_output: if true, won't draw 'predicted cleavage' line (if set overrides settings used in crispresso folder)
+    sgRNA_intervals: locations where sgRNA is located (if set overrides settings used in crispresso folder)
+    sgRNA_mismatches: array (for each sgRNA_interval) of locations in sgRNA where there are mismatches (if set overrides settings used in crispresso folder)
+    sgRNA_names: array (for each sgRNA_interval) of names of sgRNAs (otherwise empty) (if set overrides settings used in crispresso folder)
     custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
 
     example:
@@ -1370,6 +1400,7 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,M
         MIN_FREQUENCY = crispresso2_info['args'].min_frequency_alleles_around_cut_to_plot
     if MAX_N_ROWS is None:
         MAX_N_ROWS = crispresso2_info['args'].max_rows_alleles_around_cut_to_plot
+    base_editor_output = crispresso2_info['args'].base_editor_output
 
     plot_count = 0
 
@@ -1379,6 +1410,8 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,M
         sgRNA_sequences = refs[ref_name]['sgRNA_sequences']
         sgRNA_cut_points = refs[ref_name]['sgRNA_cut_points']
         sgRNA_intervals = refs[ref_name]['sgRNA_intervals']
+        sgRNA_names = refs[ref_name]['sgRNA_names']
+        sgRNA_mismatches = refs[ref_name]['sgRNA_mismatches']
         sgRNA_plot_idxs = refs[ref_name]['sgRNA_plot_idxs']
 
         reference_seq = refs[ref_name]['sequence']
@@ -1388,16 +1421,27 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,M
             df_alleles = pd.read_table(alleles_filename)
             df_alleles = df_alleles.reset_index().set_index('Aligned_Sequence')
 
+            sgRNA_label = sgRNA # for file names
+            if sgRNA_names[ind] != "":
+                sgRNA_label = sgRNA_names[ind]
+
             cut_point = sgRNA_cut_points[ind]
             plot_idxs = sgRNA_plot_idxs[ind]
             plot_half_window = max(1,crispresso2_info['args'].plot_window_size)
             ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_half_window+1:cut_point+plot_half_window+1]
+
+            new_sgRNA_intervals = []
+            #adjust coordinates of sgRNAs
+            new_sel_cols_start = cut_point - plot_half_window
+            for (int_start,int_end) in refs[ref_name]['sgRNA_intervals']:
+                new_sgRNA_intervals += [(int_start - new_sel_cols_start,int_end - new_sel_cols_start)]
+
             X,annot,y_labels,insertion_dict,per_element_annot_kws = prep_alleles_table(df_alleles,MAX_N_ROWS,MIN_FREQUENCY)
-            plot_alleles_heatmap(ref_seq_around_cut,fig_filename_root+"_"+ref_name+"_"+sgRNA,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,base_editor_output,sgRNA_intervals,custom_colors)
+            plot_alleles_heatmap(ref_seq_around_cut,fig_filename_root+"_"+ref_name+"_"+sgRNA_label,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,base_editor_output,new_sgRNA_intervals,sgRNA_names,sgRNA_mismatches,custom_colors)
             plot_count += 1
     print('Plotted ' + str(plot_count) + ' plots')
 
-def plot_alleles_table_compare(reference_seq,df_alleles,sample_name_1,sample_name_2,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None,custom_colors=None):
+def plot_alleles_table_compare(reference_seq,df_alleles,sample_name_1,sample_name_2,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,custom_colors=None):
     """
     plots an allele table for a dataframe with allele frequencies from two CRISPResso runs
     input:
@@ -1408,10 +1452,13 @@ def plot_alleles_table_compare(reference_seq,df_alleles,sample_name_1,sample_nam
     MIN_FREQUENCY: sum of alleles % must add to this to be plotted
     MAX_N_ROWS: max rows to plot
     SAVE_ALSO_PNG: whether to write png file as well
+    sgRNA_intervals: locations where sgRNA is located
+    sgRNA_mismatches: array (for each sgRNA_interval) of locations in sgRNA where there are mismatches
+    sgRNA_names: array (for each sgRNA_interval) of names of sgRNAs (otherwise empty)
     custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     """
     X,annot,y_labels,insertion_dict,per_element_annot_kws = prep_alleles_table_compare(df_alleles,sample_name_1,sample_name_2,MAX_N_ROWS,MIN_FREQUENCY)
-    plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,base_editor_output,sgRNA_intervals,custom_colors)
+    plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,base_editor_output,sgRNA_intervals,sgRNA_names,sgRNA_mismatches,custom_colors)
 
 def plot_unmod_mod_pcts(fig_filename_root,df_summary_quantification,save_png,cutoff=None,max_samples_to_include_unprocessed=20):
     """

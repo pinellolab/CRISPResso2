@@ -206,8 +206,10 @@ def main():
                         wrong_nt=CRISPRessoShared.find_wrong_nt(curr_guide_seq)
                         if wrong_nt:
                             raise CRISPRessoShared.NTException('The sgRNA sequence in row %d (%s) contains incorrect characters:%s'  % (idx+1,curr_guide_seq, ' '.join(wrong_nt)))
-                    (this_sgRNA_sequences, this_sgRNA_intervals, this_cut_points, this_include_idxs,
-                        this_exclude_idxs, this_plot_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(curr_amplicon_seq,guides,row.quantification_window_center,
+                    guide_names = ['']*len(guides)
+                    guide_mismatches = [[]]*len(guides)
+                    (this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_cut_points, this_sgRNA_plot_idxs, this_sgRNA_names, this_include_idxs,
+                        this_exclude_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(curr_amplicon_seq,guides,guide_mismatches,guide_names,row.quantification_window_center,
                         row.quantification_window_size,row.quantification_window_coordinates,row.exclude_bp_from_left,row.exclude_bp_from_right,row.plot_window_size)
                     for guide_seq in this_sgRNA_sequences:
                         guides_are_in_amplicon[guide_seq] = 1
