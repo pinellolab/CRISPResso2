@@ -154,13 +154,6 @@ def clean_filename(filename):
     cleanedFilename = unicodedata.normalize('NFKD', unicode(filename)).encode('ASCII', 'ignore')
     return ''.join(c for c in cleanedFilename if c in validFilenameChars)
 
-def get_avg_read_lenght_fastq(fastq_filename):
-     cmd=('z' if fastq_filename.endswith('.gz') else '' ) +('cat < %s' % fastq_filename)+\
-                  r''' | awk 'BN {n=0;s=0;} NR%4 == 2 {s+=length($0);n++;} END { printf("%d\n",s/n)}' '''
-     p = sb.Popen(cmd, shell=True,stdout=sb.PIPE)
-     return int(p.communicate()[0].strip())
-
-
 def find_overlapping_genes(row,df_genes):
     df_genes_overlapping=df_genes.ix[(df_genes.chrom==row.chr_id) &
                                      (df_genes.txStart<=row.bpend) &
@@ -168,7 +161,18 @@ def find_overlapping_genes(row,df_genes):
     genes_overlapping=[]
 
     for idx_g,row_g in df_genes_overlapping.iterrows():
-        genes_overlapping.append( '%s (%s)' % (row_g.name2,row_g['name']))
+        if 'name' in row_g.keys() and 'name2' in row_g.keys():
+            genes_overlapping.append( '%s (%s)' % (row_g.name2,row_g['name']))
+        elif '#name' in row_g.keys() and 'name2' in row_g.keys():
+            genes_overlapping.append( '%s (%s)' % (row_g.name2,row_g['#name']))
+        elif '#name' in row_g.keys():
+            genes_overlapping.append( '%s' % (row_g['#name']))
+        elif 'name' in row_g.keys():
+            genes_overlapping.append( '%s' % (row_g['#name']))
+        else:
+            genes_overlapping.append( '%s' % (row_g[0]))
+
+
 
     row['gene_overlapping']=','.join(genes_overlapping)
 
@@ -333,7 +337,6 @@ def main():
                   outfile.write('[Command used]:\n%s\n\n[Execution log]:\n' % ' '.join(sys.argv))
 
         if args.fastq_r2=='': #single end reads
-
              #check if we need to trim
              if not args.trim_sequences:
                  #create a symbolic link
@@ -435,7 +438,7 @@ def main():
         if args.gene_annotations:
             info('Loading gene coordinates from annotation file: %s...' % args.gene_annotations)
             try:
-                df_genes=pd.read_table(args.gene_annotations,compression='gzip')
+                df_genes=pd.read_csv(args.gene_annotations,compression='gzip',sep="\t")
                 df_genes.txEnd=df_genes.txEnd.astype(int)
                 df_genes.txStart=df_genes.txStart.astype(int)
                 df_genes.head()

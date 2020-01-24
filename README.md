@@ -174,6 +174,10 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 -g or --guide_seq: sgRNA sequence, if more than one, please separate by commas. Note that the sgRNA needs to be input as the guide RNA sequence (usually 20 nt) immediately adjacent to but not including the PAM sequence (5' of NGG for SpCas9). If the PAM is found on the opposite strand with respect to the Amplicon Sequence, ensure the sgRNA sequence is also found on the opposite strand. The CRISPResso convention is to depict the expected cleavage position using the value of the parameter '--quantification_window_center' nucleotides from the 3' end of the guide. In addition, the use of alternate nucleases besides SpCas9 is supported. For example, if using the Cpf1 system, enter the sequence (usually 20 nt) immediately 3' of the PAM sequence and explicitly set the '--cleavage_offset' parameter to 1, since the default setting of -3 is suitable only for SpCas9. (default: )
 
+-fg or --flexiguide: sgRNA sequence (flexible). The flexiguide sequence will be aligned to the amplicon sequence(s), as long as the guide sequence has homology as set by --flexiguide_homology.
+
+-fh or --flexiguide_homology flexiguides will yield guides in amplicons with at least this homology to the flexiguide sequence (default:80 meaning 80% homology is required)
+
 -e or --expected_hdr_amplicon_seq: Amplicon sequence expected after HDR. The expected HDR amplicon sequence can be provided to quantify the number of reads showing a successful HDR repair. Note that the entire amplicon sequence must be provided, not just the donor template. CRISPResso2 will quantify identified instances of NHEJ, HDR, or mixed editing events. (default: )
 
 -c or --coding_seq: Subsequence/s of the amplicon sequence covering one or more coding sequences for frameshift analysis. Sequences of exons within the amplicon sequence can be provided to enable frameshift analysis and splice site analysis by CRISPResso2. If more than one (for example, split by intron/s), please separate by commas. Users should provide the subsequences of the reference amplicon sequence that correspond to coding sequences (not the whole exon sequence(s)!). (default: )
@@ -234,9 +238,11 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --plot_window_size or --offset_around_cut_to_plot: Defines the size of the window extending from the quantification window center to plot. Nucleotides within plot_window_size of the quantification_window_center for each guide are plotted. (default: 20)
 
---min_frequency_alleles_around_cut_to_plot: Minimum % reads required to report an allele in the alleles table plot. (default: 0.2)
+--min_frequency_alleles_around_cut_to_plot: Minimum % reads required to report an allele in the alleles table plot. This parameter only affects plotting. All alleles will be reported in data files. (default: 0.2 (i.e. 0.2\%))
 
 --max_rows_alleles_around_cut_to_plot: Maximum number of rows to report in the alleles table plot. (default: 50)
+
+--expand_allele_plots_by_quantification: If set, alleles with different modifications in the quantification window (but not necessarily in the plotting window (e.g. for another sgRNA)) are plotted on separate lines, even though they may have the same apparent sequence. To force the allele plot and the allele table to be the same, set this parameter. If unset, all alleles with the same sequence will be collapsed into one row. (default: False)
 
 --conversion_nuc_from: For base editor plots, this is the nucleotide targeted by the base editor (default: C)
 

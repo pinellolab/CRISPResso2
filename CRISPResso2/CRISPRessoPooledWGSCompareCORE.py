@@ -56,7 +56,8 @@ class PooledWGSOutputFolderIncompleteException(Exception):
 
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
-CRISPResso_compare_to_call = os.path.join(os.path.dirname(_ROOT),'CRISPRessoCompare.py')
+#CRISPResso_compare_to_call = os.path.join(os.path.dirname(_ROOT),'CRISPRessoCompare.py')
+CRISPResso_compare_to_call ='CRISPRessoCompare'
 
 
 
@@ -135,8 +136,8 @@ def main():
         #load data and calculate the difference
         df_quant_1=pd.read_table(quantification_summary_file_1)
         df_quant_2=pd.read_table(quantification_summary_file_2)
-        df_comp=df_quant_1.set_index(['Name','Amplicon']).join(df_quant_2.set_index(['Name','Amplicon']),lsuffix='_%s' % args.sample_1_name,rsuffix='_%s' % args.sample_2_name)
-        #df_comp=df_quant_1.set_index('Name').join(df_quant_2.set_index('Name'),lsuffix='_%s' % args.sample_1_name,rsuffix='_%s' % args.sample_2_name)
+#        df_comp=df_quant_1.set_index(['Name','Amplicon']).join(df_quant_2.set_index(['Name','Amplicon']),lsuffix='_%s' % args.sample_1_name,rsuffix='_%s' % args.sample_2_name)
+        df_comp=df_quant_1.set_index('Name').join(df_quant_2.set_index('Name'),lsuffix='_%s' % args.sample_1_name,rsuffix='_%s' % args.sample_2_name)
 
         df_comp['(%s-%s)_Unmodified%%' % (args.sample_1_name,args.sample_2_name)]=df_comp['Unmodified%%_%s' % args.sample_1_name]-df_comp['Unmodified%%_%s' % args.sample_2_name]
 

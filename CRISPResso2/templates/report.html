@@ -99,6 +99,11 @@
 						  <li class="nav-item">
 						    <a class="nav-link" id="aln_bar-tab" data-toggle="tab" href="#aln_bar" role="tab" aria-controls="aln_bar" aria-selected="false">Barplot</a>
 						  </li>
+    					{% if report_data['fig_locs']['plot_1d'] %}
+						  <li class="nav-item">
+						    <a class="nav-link" id="aln_dsODN-tab" data-toggle="tab" href="#aln_dsODN" role="tab" aria-controls="aln_dsODN" aria-selected="false">dsODN</a>
+						  </li>
+              {% endif %}
 						</ul>
 					</div>
 					<div class='card-body'>
@@ -117,6 +122,15 @@
 							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
 							</div>
+    					{% if report_data['fig_locs']['plot_1d'] %}
+						  <div class="tab-pane fade" id="aln_dsODN" role="tabpanel" aria-labelledby="aln_dsODN-tab">
+							  <a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs']['plot_1d']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs']['plot_1d']}}.png" width='40%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions']['plot_1d']}}</label>
+							  {% for (data_label,data_path) in report_data['fig_datas']['plot_1d'] %}
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
+                {% endfor %}
+							</div>
+              {% endif %}
 						</div>
 
 					</div>
