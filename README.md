@@ -174,6 +174,8 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 -g or --guide_seq: sgRNA sequence, if more than one, please separate by commas. Note that the sgRNA needs to be input as the guide RNA sequence (usually 20 nt) immediately adjacent to but not including the PAM sequence (5' of NGG for SpCas9). If the PAM is found on the opposite strand with respect to the Amplicon Sequence, ensure the sgRNA sequence is also found on the opposite strand. The CRISPResso convention is to depict the expected cleavage position using the value of the parameter '--quantification_window_center' nucleotides from the 3' end of the guide. In addition, the use of alternate nucleases besides SpCas9 is supported. For example, if using the Cpf1 system, enter the sequence (usually 20 nt) immediately 3' of the PAM sequence and explicitly set the '--cleavage_offset' parameter to 1, since the default setting of -3 is suitable only for SpCas9. (default: )
 
+-gn or --guide_name: sgRNA names, if more than one, please separate by commas. (default: sgRNA)
+
 -fg or --flexiguide: sgRNA sequence (flexible). The flexiguide sequence will be aligned to the amplicon sequence(s), as long as the guide sequence has homology as set by --flexiguide_homology.
 
 -fh or --flexiguide_homology flexiguides will yield guides in amplicons with at least this homology to the flexiguide sequence (default:80 meaning 80% homology is required)
@@ -249,6 +251,8 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 --conversion_nuc_to: For base editor plots, this is the nucleotide produced by the base editor (default: T)
 
 --base_editor_output: Outputs plots and tables to aid in analysis of base editor studies. If base editor output is selected, plots showing the frequency of substitutions in the quantification window are generated. The target and result bases can also be set to measure the rate of on-target conversion at bases in the quantification window. (default: False)
+
+--dsODN: dsODN sequence -- Reads containing the dsODN are labeled and quantified. (default: '')
 
 -qwc or --quantification_window_coordinates: Bp positions in the amplicon sequence specifying the quantification window. This parameter overrides values of the "--quantification_window_center", "-- cleavage_offset", "--window_around_sgrna" or "-- window_around_sgrna" values. Any indels/substitutions outside this window are excluded. Indexes are 0-based, meaning that the first nucleotide is position 0. Ranges are separated by the dash sign like "start-stop", and multiple ranges can be separated by the underscore (\_). A value of 0 disables this filter. (can be comma-separated list of values, corresponding to amplicon sequences given in --amplicon_seq e.g. 5-10,5-10_20-30 would specify the 5th-10th bp in the first reference and the 5th-10th and 20th-30th bp in the second reference) (default: None)
 
