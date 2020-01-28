@@ -626,7 +626,7 @@ def main():
                     guides.append(flexi_guide)
                     guide_mismatches.append(flexi_guide_mismatches[i])
                     guide_names.append(flexi_guide_names[i])
-            info('Added %d guides with flexible matching\noriginal flexiguides: %s\nfound guides: %s\nmismatch locations: %s'%(flexi_guide_count,str(args.flexiguide.split(",")),str(flexi_guides),str(flexi_guide_mismatches)))
+            info('Added %d guides with flexible matching\n\tOriginal flexiguides: %s\n\tFound guides: %s\n\tMismatch locations: %s'%(flexi_guide_count,str(args.flexiguide.split(",")),str(flexi_guides),str(flexi_guide_mismatches)))
 
 
         found_guide_seq = [False]*len(guides)
@@ -661,7 +661,7 @@ def main():
 
 
             # Calculate cut sites for this reference
-            (this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_cut_points, this_sgRNA_plot_idxs, this_sgRNA_mismatches,this_sgRNA_names, this_include_idxs,
+            (this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_cut_points, this_sgRNA_plot_idxs, this_sgRNA_mismatches, this_sgRNA_names, this_include_idxs,
                 this_exclude_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(this_seq,guides,guide_mismatches,guide_names,args.quantification_window_center,
                 args.quantification_window_size,this_quant_window_coordinates,args.exclude_bp_from_left,args.exclude_bp_from_right,args.plot_window_size)
 
@@ -854,18 +854,20 @@ def main():
 
                     this_sgRNA_intervals = []
                     this_sgRNA_mismatches = []
-                    for (sgRNA_interval_start,sgRNA_interval_end) in refs[clone_ref_name]['sgRNA_intervals']:
+                    for idx,(sgRNA_interval_start,sgRNA_interval_end) in enumerate(refs[clone_ref_name]['sgRNA_intervals']):
                         this_sgRNA_intervals.append((s1inds[sgRNA_interval_start],s1inds[sgRNA_interval_end]))
 
-                        sgRNA_seq_clone = refs[clone_ref_name]['sequence'][sgRNA_interval_start:sgNRA_interval_end]
-                        sgRNA_seq_this = refs[ref_name]['sequence'][s1inds[sgRNA_interval_start]:s1inds[sgNRA_interval_end]]
+                        sgRNA_seq_clone = refs[clone_ref_name]['sequence'][sgRNA_interval_start:sgRNA_interval_end]
+                        sgRNA_seq_this = refs[ref_name]['sequence'][s1inds[sgRNA_interval_start]:s1inds[sgRNA_interval_end]]
                         ref_incentive = np.zeros(len(sgRNA_seq_clone)+1,dtype=np.int)
                         sub_s1,sub_s2,sub_score=CRISPResso2Align.global_align(sgRNA_seq_this,sgRNA_seq_clone,matrix=aln_matrix,gap_incentive=ref_incentive,gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
-                        mismatches = []
-                        for i in range(len(sub_s1)):
+                        mismatches = {} #dict of mismatch locations
+                        for i in refs[clone_ref_name]['sgRNA_mismatches'][idx]: #first, add all existing mismatches (e.g. from flexiguide)
+                            mismatches[i] = 1
+                        for i in range(len(sub_s1)): #then add mismatches between the ref and alternate sequence
                             if sub_s1[i] != sub_s2[i]:
-                                mismatches.append(i)
-                        this_sgRNA_mismatches.append(mismatches)
+                                mismatches[i] = 1
+                        this_sgRNA_mismatches.append(sorted(list(mismatches.keys())))
 
                     this_sgRNA_plot_idxs = []
                     for plot_idx_list in refs[clone_ref_name]['sgRNA_plot_idxs']:
@@ -889,11 +891,12 @@ def main():
 
                 #quantification window coordinates override other options
                 if args.quantification_window_coordinates is not None:
-                    this_sgRNA_intervals = []
-                    for (sgRNA_interval_start,sgRNA_interval_end) in refs[clone_ref_name]['sgRNA_intervals']:
-                        this_sgRNA_intervals.append((s1inds[sgRNA_interval_start],s1inds[sgRNA_interval_end]))
-                    refs[ref_name]['sgRNA_intervals'] = this_sgRNA_intervals
-
+                    this_include_idxs = [s1inds[x] for x in refs[clone_ref_name]['include_idxs']]
+                    #subtract any indices in 'exclude_idxs' -- e.g. in case some of the cloned include_idxs were near the read ends (excluded)
+                    this_exclude_idxs = sorted(list(set(refs[ref_name]['exclude_idxs'])))
+                    this_include_idxs = sorted(list(set(np.setdiff1d(this_include_idxs,this_exclude_idxs))))
+                    refs[ref_name]['include_idxs'] = this_include_idxs
+                    refs[ref_name]['exclude_idxs'] = this_exclude_idxs
 
                 if needs_exon_positions and clone_has_exons:
                     this_exon_positions = set()
@@ -934,7 +937,6 @@ def main():
 
             crispresso_cmd_to_write = ' '.join(cmd_copy) #clean command doesn't show the absolute path to the executable or other files
         crispresso2_info['command_used'] = crispresso_cmd_to_write
-
 
         try:
             os.makedirs(OUTPUT_DIRECTORY)

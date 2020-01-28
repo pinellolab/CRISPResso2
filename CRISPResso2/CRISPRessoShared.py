@@ -713,6 +713,7 @@ def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,qua
     this_sgRNA_intervals : indices of each guide
     this_sgRNA_cut_points : cut points for each guide (defined by quantification_window_center)
     this_sgRNA_plot_idxs : list of indices to be plotted for each sgRNA
+    this_sgRNA_mismatches: list of mismatches between the guide and the amplicon
     this_sgRNA_names : list of names for each sgRNA (to disambiguate in case a sequence aligns to multiple positions)
     this_include_idxs : list of indices to be included in quantification
     this_exclude_idxs : list of indices to be excluded from quantification
