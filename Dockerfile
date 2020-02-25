@@ -28,16 +28,20 @@ RUN echo "deb http://httpredir.debian.org/debian jessie main contrib" > /etc/apt
   && apt-get install -y ttf-mscorefonts-installer \
   && apt-get clean \
   && apt-get autoremove -y \
-  && rm -rf /var/lib/apt/lists/*
+  && rm -rf /var/lib/apt/lists/* \
+  && rm -rf /usr/share/man/* \
+  && rm -rf /usr/share/doc/* \
+  && rm -rf /usr/share/zoneinfo
 
 # install crispresso
 COPY . /CRISPResso2
 WORKDIR /CRISPResso2
-RUN python setup.py install
-RUN CRISPResso -h \
+RUN python setup.py install \
+  && CRISPResso -h \
   && CRISPRessoBatch -h \
   && CRISPRessoPooled -h \
   && CRISPRessoWGS -h \
   && CRISPRessoCompare -h
+
 
 ENTRYPOINT ["python","/CRISPResso2/CRISPResso2_router.py"]
