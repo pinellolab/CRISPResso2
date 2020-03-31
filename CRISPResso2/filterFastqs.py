@@ -1,7 +1,7 @@
 '''
-CRISPResso2 - Kendell Clement and Luca Pinello 2018
+CRISPResso2 - Kendell Clement and Luca Pinello 2020
 Software pipeline for the analysis of genome editing outcomes from deep sequencing data
-(c) 2018 The General Hospital Corporation. All Rights Reserved.
+(c) 2020 The General Hospital Corporation. All Rights Reserved.
 '''
 
 import gzip
@@ -10,7 +10,6 @@ import io
 import os
 import datetime
 import numpy
-from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
 
 def main():
@@ -137,62 +136,89 @@ def filterFastqs(fastq_r1=None,fastq_r2=None,fastq_r1_out=None,fastq_r2_out=None
 
 
 def run_mBPN(f1_in,f1_out,min_bp_qual_in_read,min_av_read_qual,min_bp_qual_or_N):
-	iter1 = FastqGeneralIterator(f1_in)
-	for (idLine,seqLine,qualLine) in iter1:
+        idLine = f1_in.readline().rstrip()
+        while(idLine):
+                seqLine = f1_in.readline().rstrip()
+                plusLine = f1_in.readline().rstrip()
+                qualLine = f1_in.readline().rstrip()
 		npQualLine = numpy.fromstring(qualLine,dtype=numpy.uint8)-33 #assume illumina 1.7
 		npSeqLine = numpy.fromstring(seqLine,'c')
 		npSeqLine[npQualLine < min_bp_qual_or_N] = 'N'
 		f1_out.write("@%s\n%s\n%s\n%s\n"%(idLine,npSeqLine.tostring().decode('utf-8'),"+",qualLine))
+                idLine = f1_in.readline().rstrip()
 
 def run_mRQ(f1_in,f1_out,min_bp_qual_in_read,min_av_read_qual,min_bp_qual_or_N):
-	iter1 = FastqGeneralIterator(f1_in)
-	for (idLine,seqLine,qualLine) in iter1:
+        idLine = f1_in.readline().rstrip()
+        while(idLine):
+                seqLine = f1_in.readline().rstrip()
+                plusLine = f1_in.readline().rstrip()
+                qualLine = f1_in.readline().rstrip()
 		npQualLine = numpy.fromstring(qualLine,dtype=numpy.uint8)-33 #assume illumina 1.7
 		mean = numpy.mean(npQualLine)
 		if mean >= min_av_read_qual:
 			f1_out.write("@%s\n%s\n%s\n%s\n"%(idLine,seqLine,"+",qualLine))
+                idLine = f1_in.readline().rstrip()
 
 def run_mBP(f1_in,f1_out,min_bp_qual_in_read,min_av_read_qual,min_bp_qual_or_N):
-	iter1 = FastqGeneralIterator(f1_in)
-	for (idLine,seqLine,qualLine) in iter1:
+        idLine = f1_in.readline().rstrip()
+        while(idLine):
+                seqLine = f1_in.readline().rstrip()
+                plusLine = f1_in.readline().rstrip()
+                qualLine = f1_in.readline().rstrip()
 		npQualLine = numpy.fromstring(qualLine,dtype=numpy.uint8)-33 #assume illumina 1.7
 		min = numpy.min(npQualLine)
 		if min >= min_bp_qual_in_read:
 			f1_out.write("@%s\n%s\n%s\n%s\n"%(idLine,seqLine,"+",qualLine))
+                idLine = f1_in.readline().rstrip()
 
 def run_mBP_mRQ(f1_in,f1_out,min_bp_qual_in_read,min_av_read_qual,min_bp_qual_or_N):
-	iter1 = FastqGeneralIterator(f1_in)
-	for (idLine,seqLine,qualLine) in iter1:
+        idLine = f1_in.readline().rstrip()
+        while(idLine):
+                seqLine = f1_in.readline().rstrip()
+                plusLine = f1_in.readline().rstrip()
+                qualLine = f1_in.readline().rstrip()
 		npQualLine = numpy.fromstring(qualLine,dtype=numpy.uint8)-33 #assume illumina 1.7
 		mean = numpy.mean(npQualLine)
 		if mean >= min_av_read_qual:
 			min = numpy.min(npQualLine)
 			if min >= min_bp_qual_in_read:
 				f1_out.write("@%s\n%s\n%s\n%s\n"%(idLine,seqLine,"+",qualLine))
+                idLine = f1_in.readline().rstrip()
 
 def run_mBP_mBPN(f1_in,f1_out,min_bp_qual_in_read,min_av_read_qual,min_bp_qual_or_N):
-	iter1 = FastqGeneralIterator(f1_in)
-	for (idLine,seqLine,qualLine) in iter1:
+        idLine = f1_in.readline().rstrip()
+        while(idLine):
+                seqLine = f1_in.readline().rstrip()
+                plusLine = f1_in.readline().rstrip()
+                qualLine = f1_in.readline().rstrip()
 		npQualLine = numpy.fromstring(qualLine,dtype=numpy.uint8)-33 #assume illumina 1.7
 		min = numpy.min(npQualLine)
 		if min >= min_bp_qual_in_read:
 			npSeqLine = numpy.fromstring(seqLine,'c')
 			npSeqLine[npQualLine < min_bp_qual_or_N] = 'N'
 			f1_out.write("@%s\n%s\n%s\n%s\n"%(idLine,npSeqLine.tostring().decode('utf-8'),"+",qualLine))
+                idLine = f1_in.readline().rstrip()
 
 def run_mRQ_mBPN(f1_in,f1_out,min_bp_qual_in_read,min_av_read_qual,min_bp_qual_or_N):
-	iter1 = FastqGeneralIterator(f1_in)
-	for (idLine,seqLine,qualLine) in iter1:
+        idLine = f1_in.readline().rstrip()
+        while(idLine):
+                seqLine = f1_in.readline().rstrip()
+                plusLine = f1_in.readline().rstrip()
+                qualLine = f1_in.readline().rstrip()
 		npQualLine = numpy.fromstring(qualLine,dtype=numpy.uint8)-33 #assume illumina 1.7
 		mean = numpy.mean(npQualLine)
 		if mean >= min_av_read_qual:
 			npSeqLine = numpy.fromstring(seqLine,'c')
 			npSeqLine[npQualLine < min_bp_qual_or_N] = 'N'
 			f1_out.write("@%s\n%s\n%s\n%s\n"%(idLine,npSeqLine.tostring().decode('utf-8'),"+",qualLine))
+                idLine = f1_in.readline().rstrip()
 
 def run_mBP_mRQ_mBPN(f1_in,f1_out,min_bp_qual_in_read,min_av_read_qual,min_bp_qual_or_N):
-	iter1 = FastqGeneralIterator(f1_in)
-	for (idLine,seqLine,qualLine) in iter1:
+        idLine = f1_in.readline().rstrip()
+        while(idLine):
+                seqLine = f1_in.readline().rstrip()
+                plusLine = f1_in.readline().rstrip()
+                qualLine = f1_in.readline().rstrip()
 		npQualLine = numpy.fromstring(qualLine,dtype=numpy.uint8)-33 #assume illumina 1.7
 		min = numpy.min(npQualLine)
 		if min >= min_bp_qual_in_read:
@@ -201,14 +227,21 @@ def run_mBP_mRQ_mBPN(f1_in,f1_out,min_bp_qual_in_read,min_av_read_qual,min_bp_qu
 				npSeqLine = numpy.fromstring(seqLine,'c')
 				npSeqLine[npQualLine < min_bp_qual_or_N] = 'N'
 				f1_out.write("@%s\n%s\n%s\n%s\n"%(idLine,npSeqLine.tostring().decode('utf-8'),"+",qualLine))
+                idLine = f1_in.readline().rstrip()
 
 
 #PAIRED
 def run_mBPN_pair(f1_in,f1_out,f2_in,f2_out,min_bp_qual_in_read,min_av_read_qual,min_bp_qual_or_N):
-	iter1 = FastqGeneralIterator(f1_in)
-	iter2 = FastqGeneralIterator(f2_in)
-	for (idLine,seqLine,qualLine) in iter1:
-		(idLine2,seqLine2,qualLine2) = next(iter2)
+        idLine = f1_in.readline().rstrip()
+        idLine2 = f2_in.readline().rstrip()
+        while(idLine):
+                seqLine = f1_in.readline().rstrip()
+                plusLine = f1_in.readline().rstrip()
+                qualLine = f1_in.readline().rstrip()
+                seqLine2 = f2_in.readline().rstrip()
+                plusLine2 = f2_in.readline().rstrip()
+                qualLine2 = f2_in.readline().rstrip()
+
 		npQualLine = numpy.fromstring(qualLine,dtype=numpy.uint8)-33 #assume illumina 1.7
 		npQualLine2 = numpy.fromstring(qualLine2,dtype=numpy.uint8)-33 #assume illumina 1.7
 		npSeqLine = numpy.fromstring(seqLine,'c')
@@ -218,11 +251,20 @@ def run_mBPN_pair(f1_in,f1_out,f2_in,f2_out,min_bp_qual_in_read,min_av_read_qual
 		npSeqLine2[npQualLine2 < min_bp_qual_or_N] = 'N'
 		f2_out.write("@%s\n%s\n%s\n%s\n"%(idLine2,npSeqLine2.tostring().decode('utf-8'),"+",qualLine2))
 
+                idLine = f1_in.readline().rstrip()
+                idLine2 = f2_in.readline().rstrip()
+
 def run_mRQ_pair(f1_in,f1_out,f2_in,f2_out,min_bp_qual_in_read,min_av_read_qual,min_bp_qual_or_N):
-	iter1 = FastqGeneralIterator(f1_in)
-	iter2 = FastqGeneralIterator(f2_in)
-	for (idLine,seqLine,qualLine) in iter1:
-		(idLine2,seqLine2,qualLine2) = next(iter2)
+        idLine = f1_in.readline().rstrip()
+        idLine2 = f2_in.readline().rstrip()
+        while(idLine):
+                seqLine = f1_in.readline().rstrip()
+                plusLine = f1_in.readline().rstrip()
+                qualLine = f1_in.readline().rstrip()
+                seqLine2 = f2_in.readline().rstrip()
+                plusLine2 = f2_in.readline().rstrip()
+                qualLine2 = f2_in.readline().rstrip()
+
 		npQualLine = numpy.fromstring(qualLine,dtype=numpy.uint8)-33 #assume illumina 1.7
 		mean = numpy.mean(npQualLine)
 		npQualLine2 = numpy.fromstring(qualLine2,dtype=numpy.uint8)-33 #assume illumina 1.7
@@ -230,12 +272,20 @@ def run_mRQ_pair(f1_in,f1_out,f2_in,f2_out,min_bp_qual_in_read,min_av_read_qual,
 		if mean >= min_av_read_qual and mean2 > min_av_read_qual:
 			f1_out.write("@%s\n%s\n%s\n%s\n"%(idLine,seqLine,"+",qualLine))
 			f2_out.write("@%s\n%s\n%s\n%s\n"%(idLine2,seqLine2,"+",qualLine2))
+                idLine = f1_in.readline().rstrip()
+                idLine2 = f2_in.readline().rstrip()
 
 def run_mBP_pair(f1_in,f1_out,f2_in,f2_out,min_bp_qual_in_read,min_av_read_qual,min_bp_qual_or_N):
-	iter1 = FastqGeneralIterator(f1_in)
-	iter2 = FastqGeneralIterator(f2_in)
-	for (idLine,seqLine,qualLine) in iter1:
-		(idLine2,seqLine2,qualLine2) = next(iter2)
+        idLine = f1_in.readline().rstrip()
+        idLine2 = f2_in.readline().rstrip()
+        while(idLine):
+                seqLine = f1_in.readline().rstrip()
+                plusLine = f1_in.readline().rstrip()
+                qualLine = f1_in.readline().rstrip()
+                seqLine2 = f2_in.readline().rstrip()
+                plusLine2 = f2_in.readline().rstrip()
+                qualLine2 = f2_in.readline().rstrip()
+
 		npQualLine = numpy.fromstring(qualLine,dtype=numpy.uint8)-33 #assume illumina 1.7
 		min = numpy.min(npQualLine)
 		npQualLine2 = numpy.fromstring(qualLine2,dtype=numpy.uint8)-33 #assume illumina 1.7
@@ -244,11 +294,20 @@ def run_mBP_pair(f1_in,f1_out,f2_in,f2_out,min_bp_qual_in_read,min_av_read_qual,
 			f1_out.write("@%s\n%s\n%s\n%s\n"%(idLine,seqLine,"+",qualLine))
 			f2_out.write("@%s\n%s\n%s\n%s\n"%(idLine2,seqLine2,"+",qualLine2))
 
+                idLine = f1_in.readline().rstrip()
+                idLine2 = f2_in.readline().rstrip()
+
 def run_mBP_mRQ_pair(f1_in,f1_out,f2_in,f2_out,min_bp_qual_in_read,min_av_read_qual,min_bp_qual_or_N):
-	iter1 = FastqGeneralIterator(f1_in)
-	iter2 = FastqGeneralIterator(f2_in)
-	for (idLine,seqLine,qualLine) in iter1:
-		(idLine2,seqLine2,qualLine2) = next(iter2)
+        idLine = f1_in.readline().rstrip()
+        idLine2 = f2_in.readline().rstrip()
+        while(idLine):
+                seqLine = f1_in.readline().rstrip()
+                plusLine = f1_in.readline().rstrip()
+                qualLine = f1_in.readline().rstrip()
+                seqLine2 = f2_in.readline().rstrip()
+                plusLine2 = f2_in.readline().rstrip()
+                qualLine2 = f2_in.readline().rstrip()
+
 		npQualLine = numpy.fromstring(qualLine,dtype=numpy.uint8)-33 #assume illumina 1.7
 		npQualLine2 = numpy.fromstring(qualLine2,dtype=numpy.uint8)-33 #assume illumina 1.7
 		mean = numpy.mean(npQualLine)
@@ -259,12 +318,20 @@ def run_mBP_mRQ_pair(f1_in,f1_out,f2_in,f2_out,min_bp_qual_in_read,min_av_read_q
 			if min >= min_bp_qual_in_read and min2 >= min_bp_qual_in_read:
 				f1_out.write("@%s\n%s\n%s\n%s\n"%(idLine,seqLine,"+",qualLine))
 				f2_out.write("@%s\n%s\n%s\n%s\n"%(idLine2,seqLine2,"+",qualLine2))
+                idLine = f1_in.readline().rstrip()
+                idLine2 = f2_in.readline().rstrip()
 
 def run_mBP_mBPN_pair(f1_in,f1_out,f2_in,f2_out,min_bp_qual_in_read,min_av_read_qual,min_bp_qual_or_N):
-	iter1 = FastqGeneralIterator(f1_in)
-	iter2 = FastqGeneralIterator(f2_in)
-	for (idLine,seqLine,qualLine) in iter1:
-		(idLine2,seqLine2,qualLine2) = next(iter2)
+        idLine = f1_in.readline().rstrip()
+        idLine2 = f2_in.readline().rstrip()
+        while(idLine):
+                seqLine = f1_in.readline().rstrip()
+                plusLine = f1_in.readline().rstrip()
+                qualLine = f1_in.readline().rstrip()
+                seqLine2 = f2_in.readline().rstrip()
+                plusLine2 = f2_in.readline().rstrip()
+                qualLine2 = f2_in.readline().rstrip()
+
 		npQualLine = numpy.fromstring(qualLine,dtype=numpy.uint8)-33 #assume illumina 1.7
 		npQualLine2 = numpy.fromstring(qualLine2,dtype=numpy.uint8)-33 #assume illumina 1.7
 		min = numpy.min(npQualLine)
@@ -276,12 +343,20 @@ def run_mBP_mBPN_pair(f1_in,f1_out,f2_in,f2_out,min_bp_qual_in_read,min_av_read_
 			npSeqLine2 = numpy.fromstring(seqLine2,'c')
 			npSeqLine2[npQualLine2 < min_bp_qual_or_N] = 'N'
 			f2_out.write("@%s\n%s\n%s\n%s\n"%(idLine2,npSeqLine2.tostring().decode('utf-8'),"+",qualLine2))
+                idLine = f1_in.readline().rstrip()
+                idLine2 = f2_in.readline().rstrip()
 
 def run_mRQ_mBPN_pair(f1_in,f1_out,f2_in,f2_out,min_bp_qual_in_read,min_av_read_qual,min_bp_qual_or_N):
-	iter1 = FastqGeneralIterator(f1_in)
-	iter2 = FastqGeneralIterator(f2_in)
-	for (idLine,seqLine,qualLine) in iter1:
-		(idLine2,seqLine2,qualLine2) = next(iter2)
+        idLine = f1_in.readline().rstrip()
+        idLine2 = f2_in.readline().rstrip()
+        while(idLine):
+                seqLine = f1_in.readline().rstrip()
+                plusLine = f1_in.readline().rstrip()
+                qualLine = f1_in.readline().rstrip()
+                seqLine2 = f2_in.readline().rstrip()
+                plusLine2 = f2_in.readline().rstrip()
+                qualLine2 = f2_in.readline().rstrip()
+
 		npQualLine = numpy.fromstring(qualLine,dtype=numpy.uint8)-33 #assume illumina 1.7
 		npQualLine2 = numpy.fromstring(qualLine2,dtype=numpy.uint8)-33 #assume illumina 1.7
 		mean = numpy.mean(npQualLine)
@@ -293,12 +368,20 @@ def run_mRQ_mBPN_pair(f1_in,f1_out,f2_in,f2_out,min_bp_qual_in_read,min_av_read_
 			npSeqLine2 = numpy.fromstring(seqLine2,'c')
 			npSeqLine2[npQualLine2 < min_bp_qual_or_N] = 'N'
 			f2_out.write("@%s\n%s\n%s\n%s\n"%(idLine2,npSeqLine2.tostring().decode('utf-8'),"+",qualLine2))
+                idLine = f1_in.readline().rstrip()
+                idLine2 = f2_in.readline().rstrip()
 
 def run_mBP_mRQ_mBPN_pair(f1_in,f1_out,f2_in,f2_out,min_bp_qual_in_read,min_av_read_qual,min_bp_qual_or_N):
-	iter1 = FastqGeneralIterator(f1_in)
-	iter2 = FastqGeneralIterator(f2_in)
-	for (idLine,seqLine,qualLine) in iter1:
-		(idLine2,seqLine2,qualLine2) = next(iter2)
+        idLine = f1_in.readline().rstrip()
+        idLine2 = f2_in.readline().rstrip()
+        while(idLine):
+                seqLine = f1_in.readline().rstrip()
+                plusLine = f1_in.readline().rstrip()
+                qualLine = f1_in.readline().rstrip()
+                seqLine2 = f2_in.readline().rstrip()
+                plusLine2 = f2_in.readline().rstrip()
+                qualLine2 = f2_in.readline().rstrip()
+
 		npQualLine = numpy.fromstring(qualLine,dtype=numpy.uint8)-33 #assume illumina 1.7
 		npQualLine2 = numpy.fromstring(qualLine2,dtype=numpy.uint8)-33 #assume illumina 1.7
 		min = numpy.min(npQualLine)
@@ -313,6 +396,8 @@ def run_mBP_mRQ_mBPN_pair(f1_in,f1_out,f2_in,f2_out,min_bp_qual_in_read,min_av_r
 				npSeqLine2 = numpy.fromstring(seqLine2,'c')
 				npSeqLine2[npQualLine2 < min_bp_qual_or_N] = 'N'
 				f2_out.write("@%s\n%s\n%s\n%s\n"%(idLine2,npSeqLine2.tostring().decode('utf-8'),"+",qualLine2))
+                idLine = f1_in.readline().rstrip()
+                idLine2 = f2_in.readline().rstrip()
 
 
 
