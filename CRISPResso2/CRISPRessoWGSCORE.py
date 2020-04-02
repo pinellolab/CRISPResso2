@@ -167,8 +167,6 @@ def get_reference_positions( pos, cigar,full_length=True):
 
     return positions
 
-
-
 def write_trimmed_fastq(in_bam_filename,bpstart,bpend,out_fastq_filename):
     p = sb.Popen(
                 'samtools view %s | cut -f1,4,6,10,11' % in_bam_filename,
@@ -201,6 +199,42 @@ def write_trimmed_fastq(in_bam_filename,bpstart,bpend,out_fastq_filename):
 
 pd=check_library('pandas')
 np=check_library('numpy')
+
+def get_n_reads_fastq(fastq_filename):
+     p = sb.Popen(('z' if fastq_filename.endswith('.gz') else '' ) +"cat < %s | wc -l" % fastq_filename , shell=True,stdout=sb.PIPE)
+     n_reads = int(float(p.communicate()[0])/4.0)
+     return n_reads
+
+def extract_reads(row):
+    if row.sequence:
+        #create place-holder fastq files
+        open(row.fastq_file_trimmed_reads_in_region, 'w+').close()
+
+        region='%s:%d-%d' % (row.chr_id,row.bpstart,row.bpend-1)
+
+        info('Extracting reads in:%s and creating .bam file: %s' % (region,row.bam_file_with_reads_in_region))
+
+        cmd=r'''samtools view -b -F 4 %s %s > %s ''' % (row.original_bam, region, row.bam_file_with_reads_in_region)
+        sb.call(cmd,shell=True)
+
+        cmd=r'''samtools index %s ''' % (row.bam_file_with_reads_in_region)
+        sb.call(cmd,shell=True)
+
+        #trim reads in bam and convert in fastq
+        row.n_reads=write_trimmed_fastq(row.bam_file_with_reads_in_region,row.bpstart,row.bpend,row.fastq_file_trimmed_reads_in_region)
+    else:
+        row.n_reads = 0
+        row.bam_file_with_reads_in_region = ''
+        row.fastq_file_trimmed_reads_in_region = ''
+
+    return row
+
+def extract_reads_chunk(df):
+    new_df = pd.DataFrame(columns=df.columns)
+    for i in range(len(df)):
+        new_df = new_df.append(extract_reads(df.iloc[i].copy()))
+    return(new_df)
+
 
 ###EXCEPTIONS############################
 
@@ -364,7 +398,7 @@ def main():
         if not len(df_regions.Name.unique())==df_regions.shape[0]:
             raise Exception('The amplicon names should be all distinct!')
 
-        df_regions=df_regions.set_index('Name')
+        df_regions.set_index('Name',inplace=True)
         #df_regions.index=df_regions.index.str.replace(' ','_')
         df_regions.index=df_regions.index.to_series().str.replace(' ','_')
 
@@ -377,6 +411,7 @@ def main():
             info('Indexing reference file... Please be patient!')
             sb.call('samtools faidx %s >>%s 2>&1' % (uncompressed_reference,log_filename),shell=True)
 
+        info('Retrieving reference sequences for amplicons and checking for sgRNAs')
         df_regions['sequence']=df_regions.apply(lambda row: get_region_from_fa(row.chr_id,row.bpstart,row.bpend,uncompressed_reference),axis=1)
 
         for idx,row in df_regions.iterrows():
@@ -398,6 +433,7 @@ def main():
 
                 if not cut_points:
                     df_regions.ix[idx,'sgRNA']=''
+                    info('Cannot find guide ' + row.sgRNA + ' in amplicon ' + row.index)
 
         df_regions['bpstart'] = pd.to_numeric(df_regions['bpstart'])
         df_regions['bpend'] = pd.to_numeric(df_regions['bpend'])
@@ -417,46 +453,40 @@ def main():
         if not os.path.exists(ANALYZED_REGIONS):
             os.mkdir(ANALYZED_REGIONS)
 
-        df_regions['n_reads']=0
-        df_regions['bam_file_with_reads_in_region']=''
-        df_regions['fastq.gz_file_trimmed_reads_in_region']=''
 
-        for idx,row in df_regions.iterrows():
+        df_regions['region_number'] = np.arange(len(df_regions))
 
-            if row['sequence']:
+        def set_filenames(row):
+            row_fastq_exists = False
+            fastq_gz_filename=os.path.join(ANALYZED_REGIONS,'%s.fastq.gz' % clean_filename('REGION_'+str(row.region_number)))
+            bam_region_filename=os.path.join(ANALYZED_REGIONS,'%s.bam' % clean_filename('REGION_'+str(row.region_number)))
+            #if bam file already exists, don't regenerate it
+            if os.path.isfile(fastq_gz_filename):
+                row_fastq_exists = True
+            return bam_region_filename,fastq_gz_filename,row_fastq_exists
 
-                fastq_gz_filename=os.path.join(ANALYZED_REGIONS,'%s.fastq.gz' % clean_filename('REGION_'+str(idx)))
-                bam_region_filename=os.path.join(ANALYZED_REGIONS,'%s.bam' % clean_filename('REGION_'+str(idx)))
-
-                #create place-holder fastq files
-                open(fastq_gz_filename, 'w+').close()
-
-                region='%s:%d-%d' % (row.chr_id,row.bpstart,row.bpend-1)
-                info('\nExtracting reads in:%s and create the .bam file: %s' % (region,bam_region_filename))
-
-                #extract reads in region
-                cmd=r'''samtools view -b -F 4 %s %s > %s ''' % (args.bam_file, region, bam_region_filename)
-                #print cmd
-                sb.call(cmd,shell=True)
+        df_regions['bam_file_with_reads_in_region'], df_regions['fastq_file_trimmed_reads_in_region'], df_regions['row_fastq_exists'] = zip(*df_regions.apply(set_filenames,axis=1))
+        df_regions['n_reads'] = 0
+        df_regions['original_bam'] = args.bam_file #stick this in the df so we can parallelize the analysis and not pass params
 
 
-                #index bam file
-                cmd=r'''samtools index %s ''' % (bam_region_filename)
-                #print cmd
-                sb.call(cmd,shell=True)
+        report_reads_aligned_filename = _jp('REPORT_READS_ALIGNED_TO_SELECTED_REGIONS_WGS.txt')
+        num_rows_without_fastq = len(df_regions[df_regions.row_fastq_exists == False])
 
-                info('Trim reads and create a fastq.gz file in: %s' % fastq_gz_filename)
-                #trim reads in bam and convert in fastq
-                n_reads=write_trimmed_fastq(bam_region_filename,row['bpstart'],row['bpend'],fastq_gz_filename)
-                df_regions.ix[idx,'n_reads']=n_reads
-                df_regions.ix[idx,'bam_file_with_reads_in_region']=bam_region_filename
-                df_regions.ix[idx,'fastq.gz_file_trimmed_reads_in_region']=fastq_gz_filename
+        if args.no_rerun and num_rows_without_fastq == 0 and os.path.isfile(report_reads_aligned_filename):
+            info('Skipping generation of fastq files for each amplicon.')
+            df_regions = pd.read_csv(report_reads_aligned_filename,sep="\t")
+            df_regions.set_index('Name',inplace=True)
 
-
-        df_regions.fillna('NA').to_csv(_jp('REPORT_READS_ALIGNED_TO_SELECTED_REGIONS_WGS.txt'),sep='\t')
+        else:
+            #run region extraction here
+            df_regions = CRISPRessoMultiProcessing.run_pandas_apply_parallel(df_regions,extract_reads_chunk,args.n_processes)
+            df_regions.sort_values('region_number',inplace=True)
+            cols_to_print = ["chr_id","bpstart","bpend","sgRNA","Expected_HDR","Coding_sequence","sequence","n_reads","bam_file_with_reads_in_region","fastq_file_trimmed_reads_in_region"]
+            df_regions.fillna('NA').to_csv(report_reads_aligned_filename,sep='\t',columns = cols_to_print,index_label="Name")
 
         #Run Crispresso
-        info('\nRunning CRISPResso on each region...')
+        info('Running CRISPResso on each region...')
         crispresso_cmds = []
         for idx,row in df_regions.iterrows():
 
@@ -464,7 +494,7 @@ def main():
                     info('\nThe region [%s] has enough reads (%d) mapped to it!' % (idx,row['n_reads']))
 
                     crispresso_cmd= args.crispresso_command + ' -r1 %s -a %s -o %s --name %s' %\
-                    (row['fastq.gz_file_trimmed_reads_in_region'],row['sequence'],OUTPUT_DIRECTORY,idx)
+                    (row['fastq_file_trimmed_reads_in_region'],row['sequence'],OUTPUT_DIRECTORY,idx)
 
                     if row['sgRNA'] and not pd.isnull(row['sgRNA']):
                         crispresso_cmd+=' -g %s' % row['sgRNA']

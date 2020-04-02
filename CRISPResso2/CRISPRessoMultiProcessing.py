@@ -11,6 +11,8 @@ import multiprocessing as mp
 import signal
 import subprocess as sb
 from functools import partial
+import numpy as np
+import pandas as pd
 
 def run_crispresso(crispresso_cmds,descriptor,idx):
     """
@@ -72,3 +74,48 @@ def run_crispresso_cmds(crispresso_cmds,n_processes=1,descriptor = 'region',cont
         logging.info("Finished all " + plural)
         pool.close()
     pool.join()
+
+def run_pandas_apply_parallel(input_df, input_function_chunk, n_processes=1):
+    """
+    Runs a function on chunks of the input_df
+    This is a little clunky, but seems to work better than serial runs
+    The input_function should be a wrapper that takes in df chunks and applies a real function on the rows
+    For example, the input_function should be:
+    def input_function_chunk(df):
+        return df.apply(input_function,axis=1)
+    or this (apply runs the function twice on the first row -- this loop doesn't)
+    def input_function_chunk(df):
+        new_df = pd.DataFrame(columns=df.columns)
+        for i in range(len(df)):
+            new_df = new_df.append(input_function(df.iloc[i].copy()))
+        return(new_df)
+
+    The wrapped function should add to rows and return the row
+    e.g.  def input_function(row):
+            row['newval'] = row['oldval']*row['oldval2']
+            return row
+    This is useful for functions for which the operation on the row takes a significant amount of time and the overhead
+        of dataframe manipulation is relatively small
+    """
+    #shuffle the dataset to avoid finishing all the ones on top while leaving the ones on the bottom unfinished
+    n_splits = min(n_processes,len(input_df))
+    df_split = np.array_split(input_df.sample(frac=1),n_splits)
+    pool = mp.Pool(processes = n_splits)
+
+    #handle signals -- bug in python 2.7 (https://stackoverflow.com/questions/11312525/catch-ctrlc-sigint-and-exit-multiprocesses-gracefully-in-python)
+    original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
+    signal.signal(signal.SIGINT, original_sigint_handler)
+    try:
+        df_new = pd.concat(pool.map(input_function_chunk,df_split))
+    except KeyboardInterrupt:
+        pool.terminate()
+        logging.warn('Caught SIGINT. Program Terminated')
+        raise Exception('CRISPResso2 Terminated')
+        exit (0)
+    except Exception as e:
+        print('CRISPResso2 failed')
+        raise e
+    else:
+        pool.close()
+    pool.join()
+    return df_new
