@@ -810,7 +810,11 @@ def main():
                 cmd=s1+s2.replace('__OUTPUTPATH__',MAPPED_REGIONS)
 
                 info('Demultiplexing reads by location...')
+                if args.debug:
+                    info(cmd)
                 sb.call(cmd,shell=True)
+
+                #todo: sometimes no reads align -- we should alert the user and display an error here
 
                 #gzip the missing ones
                 sb.call('gzip -f %s/*.fastq' % MAPPED_REGIONS,shell=True)
@@ -849,7 +853,11 @@ def main():
                     N_READS=get_n_reads_fastq(fastq_filename_region)
                     n_reads_aligned_genome.append(N_READS)
                     fastq_region_filenames.append(fastq_filename_region)
-                    files_to_match.remove(fastq_filename_region)
+                    if fastq_filename_region in files_to_match:
+                        files_to_match.remove(fastq_filename_region)
+                    else:
+                         info('Warning: Fastq filename ' + fastq_filename_region + ' is not in ' + str(files_to_match))
+                         #debug here??
                     if N_READS>=args.min_reads_to_use_region:
                         info('\nThe amplicon [%s] has enough reads (%d) mapped to it! Running CRISPResso!\n' % (idx,N_READS))
 
