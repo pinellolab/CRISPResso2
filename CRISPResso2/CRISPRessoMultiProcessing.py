@@ -106,7 +106,9 @@ def run_pandas_apply_parallel(input_df, input_function_chunk, n_processes=1):
     original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGINT, original_sigint_handler)
     try:
-        df_new = pd.concat(pool.map(input_function_chunk,df_split))
+        r = pool.map_async(input_function_chunk,df_split)
+        results = r.get(60*60*10) # Without the timeout this blocking call ignores all signals.
+        df_new = pd.concat(results)
     except KeyboardInterrupt:
         pool.terminate()
         logging.warn('Caught SIGINT. Program Terminated')
@@ -119,3 +121,31 @@ def run_pandas_apply_parallel(input_df, input_function_chunk, n_processes=1):
         pool.close()
     pool.join()
     return df_new
+
+
+def run_function_on_array_parallel(input_array, input_function, n_processes=1):
+    """
+    Runs a function on each element of input_array
+    input_array: array of values
+    input_function: function to run on each value
+    """
+    pool = mp.Pool(processes = n_processes)
+
+    #handle signals -- bug in python 2.7 (https://stackoverflow.com/questions/11312525/catch-ctrlc-sigint-and-exit-multiprocesses-gracefully-in-python)
+    original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
+    signal.signal(signal.SIGINT, original_sigint_handler)
+    try:
+        r = pool.map_async(input_function,input_array)
+        results = r.get(60*60*10) # Without the timeout this blocking call ignores all signals.
+    except KeyboardInterrupt:
+        pool.terminate()
+        logging.warn('Caught SIGINT. Program Terminated')
+        raise Exception('CRISPResso2 Terminated')
+        exit (0)
+    except Exception as e:
+        print('CRISPResso2 failed')
+        raise e
+    else:
+        pool.close()
+    pool.join()
+    return results

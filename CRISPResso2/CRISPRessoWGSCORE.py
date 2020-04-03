@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 '''
-CRISPResso2 - Kendell Clement and Luca Pinello 2018
+CRISPResso2 - Kendell Clement and Luca Pinello 2020
 Software pipeline for the analysis of genome editing outcomes from deep sequencing data
-(c) 2018 The General Hospital Corporation. All Rights Reserved.
+(c) 2020 The General Hospital Corporation. All Rights Reserved.
 '''
 
 
 import argparse
+from datetime import datetime
 import gzip
 import os
 import re
@@ -260,6 +261,9 @@ def main():
             traceback.print_exc(file=sys.stdout)
             error(traceback.format_exc())
     try:
+        start_time =  datetime.now()
+        start_time_string =  start_time.strftime('%Y-%m-%d %H:%M:%S')
+
         description = ['~~~CRISPRessoWGS~~~','-Analysis of CRISPR/Cas9 outcomes from WGS data-']
         wgs_string = r'''
  ____________
@@ -338,12 +342,47 @@ def main():
         with open(log_filename,'w+') as outfile:
                   outfile.write('[Command used]:\n%s\n\n[Execution log]:\n' % ' '.join(sys.argv))
 
-        crispresso2WGS_info_file = os.path.join(OUTPUT_DIRECTORY,'CRISPResso2WGS_info.pickle')
+        crispresso2_info_file = os.path.join(OUTPUT_DIRECTORY,'CRISPResso2WGS_info.pickle')
         crispresso2_info = {} #keep track of all information for this run to be pickled and saved at the end of the run
         crispresso2_info['version'] = CRISPRessoShared.__version__
         crispresso2_info['args'] = deepcopy(args)
 
         crispresso2_info['log_filename'] = os.path.basename(log_filename)
+        crispresso2_info['finished_steps'] = {}
+
+        #keep track of args to see if it is possible to skip computation steps on rerun
+        can_finish_incomplete_run = False
+        if args.no_rerun:
+            if os.path.exists(crispresso2_info_file):
+                previous_run_data = cp.load(open(crispresso2_info_file,'rb'))
+                if previous_run_data['version'] == CRISPRessoShared.__version__:
+                    args_are_same = True
+                    for arg in vars(args):
+                        if arg is "no_rerun":
+                            continue
+                        if arg not in vars(previous_run_data['args']):
+                            info('Comparing current run to previous run: old run had argument ' + str(arg) + ' \nRerunning.')
+                            args_are_same = False
+                        elif str(getattr(previous_run_data['args'],arg)) != str(getattr(args,arg)):
+                            info('Comparing current run to previous run:\n\told argument ' + str(arg) + ' = ' + str(getattr(previous_run_data['args'],arg)) + '\n\tnew argument: ' + str(arg) + ' = ' + str(getattr(args,arg)) + '\nRerunning.')
+                            args_are_same = False
+
+                    if args_are_same:
+                        if 'end_time_string' in previous_run_data:
+                            info('Analysis already completed on %s!'%previous_run_data['end_time_string'])
+                            sys.exit(0)
+                        else:
+                            can_finish_incomplete_run = True
+                            if 'finished_steps' in previous_run_data:
+                                for key in previous_run_data['finished_steps'].keys():
+                                    crispresso2_info['finished_steps'][key] = previous_run_data['finished_steps'][key]
+                                    if args.debug:
+                                        info('finished: ' + key)
+                else:
+                    info('The no_rerun flag is set, but this analysis will be rerun because the existing run was performed using an old version of CRISPResso (' + str(previous_run_data['version']) + ').')
+
+        #write this file early on so we can check the params if we have to rerun
+        cp.dump(crispresso2_info, open(crispresso2_info_file, 'wb' ) )
 
         def rreplace(s, old, new):
             li = s.rsplit(old)
@@ -473,7 +512,7 @@ def main():
         report_reads_aligned_filename = _jp('REPORT_READS_ALIGNED_TO_SELECTED_REGIONS_WGS.txt')
         num_rows_without_fastq = len(df_regions[df_regions.row_fastq_exists == False])
 
-        if args.no_rerun and num_rows_without_fastq == 0 and os.path.isfile(report_reads_aligned_filename):
+        if can_finish_incomplete_run and num_rows_without_fastq == 0 and os.path.isfile(report_reads_aligned_filename) and 'generation_of_fastq_files_for_each_amplicon' in crispresso2_info['finished_steps']:
             info('Skipping generation of fastq files for each amplicon.')
             df_regions = pd.read_csv(report_reads_aligned_filename,sep="\t")
             df_regions.set_index('Name',inplace=True)
@@ -484,6 +523,11 @@ def main():
             df_regions.sort_values('region_number',inplace=True)
             cols_to_print = ["chr_id","bpstart","bpend","sgRNA","Expected_HDR","Coding_sequence","sequence","n_reads","bam_file_with_reads_in_region","fastq_file_trimmed_reads_in_region"]
             df_regions.fillna('NA').to_csv(report_reads_aligned_filename,sep='\t',columns = cols_to_print,index_label="Name")
+
+            #save progress
+            crispresso2_info['finished_steps']['generation_of_fastq_files_for_each_amplicon'] = True
+            with open(crispresso2_info_file,"wb") as info_file:
+                cp.dump(crispresso2_info, info_file)
 
         #Run Crispresso
         info('Running CRISPResso on each region...')
@@ -626,7 +670,17 @@ def main():
             crispresso2_info['report_location'] = report_name
             crispresso2_info['report_filename'] = os.path.basename(report_name)
 
-        cp.dump(crispresso2_info, open(crispresso2WGS_info_file, 'wb' ) )
+        end_time =  datetime.now()
+        end_time_string =  end_time.strftime('%Y-%m-%d %H:%M:%S')
+        running_time = end_time - start_time
+        running_time_string =  str(running_time)
+
+        crispresso2_info['end_time'] = end_time
+        crispresso2_info['end_time_string'] = end_time_string
+        crispresso2_info['running_time'] = running_time
+        crispresso2_info['running_time_string'] = running_time_string
+
+        cp.dump(crispresso2_info, open(crispresso2_info_file, 'wb' ) )
 
         info('Analysis Complete!')
         print(CRISPRessoShared.get_crispresso_footer())
