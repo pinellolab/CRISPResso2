@@ -6,6 +6,7 @@ Software pipeline for the analysis of genome editing outcomes from deep sequenci
 
 import argparse
 from collections import defaultdict
+import errno
 import gzip
 import numpy as np
 import os
@@ -30,7 +31,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.0.32"
+__version__ = "2.0.33"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
