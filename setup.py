@@ -6,12 +6,13 @@ Setup script for CRISPResso2 -- Software pipeline for the analysis of genome edi
 @author:  Kendell Clement
 @contact: kclement@mgh.harvard.edu
 
-CRISPResso2 - Kendell Clement and Luca Pinello 2018
+CRISPResso2 - Kendell Clement and Luca Pinello 2020
 Software pipeline for the analysis of genome editing outcomes from deep sequencing data
-(c) 2018 The General Hospital Corporation. All Rights Reserved.
+(c) 2020 The General Hospital Corporation. All Rights Reserved.
 """
 
 from setuptools import setup, Extension
+from io import open
 
 # Use build_ext from Cython if found
 command_classes = {}
