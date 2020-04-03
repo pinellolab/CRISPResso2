@@ -2607,14 +2607,15 @@ def main():
                         if include_idxs_list[idx] == lastIdx + 1:
                             lastIdx = include_idxs_list[idx]
                         else:
-                            p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart)-0.5, y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
+                            p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart), y_max,facecolor=(0,0,0,0.05),edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
                             plt.gca().add_patch(p) #gca = get current axis
                             lastStart = include_idxs_list[idx]
                             lastIdx = include_idxs_list[idx]
-                    p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart)-0.5, y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
+                    p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart), y_max,facecolor=(0,0,0,0.05),edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
                     plt.gca().add_patch(p)
 
                 plt.plot(all_indelsub_count_vectors[ref_name],'r',lw=3,label=get_plot_title_with_ref_name('Combined Insertions/Deletions/Substitutions',ref_name))
+#                plt.plot(all_indelsub_count_vectors[ref_name],marker='o')
                  #plt.hold(True)
 
                 if cut_points:
@@ -2669,11 +2670,11 @@ def main():
                         if include_idxs_list[idx] == lastIdx + 1:
                             lastIdx = include_idxs_list[idx]
                         else:
-                            p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart)-0.5, y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
+                            p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart), y_max,facecolor=(0,0,0,0.05),edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
                             plt.gca().add_patch(p) #gca = get current axis
                             lastStart = include_idxs_list[idx]
                             lastIdx = include_idxs_list[idx]
-                    p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart)-0.5, y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
+                    p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart), y_max,facecolor=(0,0,0,0.05),edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
                     plt.gca().add_patch(p)
 
                 plt.plot(all_insertion_count_vectors[ref_name],'r',lw=3,label='Insertions')
@@ -2739,11 +2740,11 @@ def main():
                         if include_idxs_list[idx] == lastIdx + 1:
                             lastIdx = include_idxs_list[idx]
                         else:
-                            p = matplotlib.patches.Rectangle((lastStart -0.5, 0), 1+(lastIdx-lastStart)-0.5, y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
+                            p = matplotlib.patches.Rectangle((lastStart -0.5, 0), 1+(lastIdx-lastStart), y_max,facecolor=(0,0,0,0.05),edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
                             plt.gca().add_patch(p) #gca = get current axis
                             lastStart = include_idxs_list[idx]
                             lastIdx = include_idxs_list[idx]
-                    p = matplotlib.patches.Rectangle((lastStart -0.5, 0), 1+(lastIdx-lastStart)-0.5, y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
+                    p = matplotlib.patches.Rectangle((lastStart -0.5, 0), 1+(lastIdx-lastStart), y_max,facecolor=(0,0,0,0.05),edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
                     plt.gca().add_patch(p)
 
 
@@ -2886,11 +2887,11 @@ def main():
                             if include_idxs_list[idx] == lastIdx + 1:
                                 lastIdx = include_idxs_list[idx]
                             else:
-                                p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart)-0.5, y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
+                                p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart), y_max,facecolor=(0,0,0,0.05),edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
                                 plt.gca().add_patch(p) #gca = get current axis
                                 lastStart = include_idxs_list[idx]
                                 lastIdx = include_idxs_list[idx]
-                        p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart)-0.5, y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
+                        p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart), y_max,facecolor=(0,0,0,0.05),edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
                         plt.gca().add_patch(p)
 
                     if ref1_cut_points:
@@ -3123,11 +3124,11 @@ def main():
                             if include_idxs_list[idx] == lastIdx + 1:
                                 lastIdx = include_idxs_list[idx]
                             else:
-                                p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart)-0.5, y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
+                                p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart), y_max,facecolor=(0,0,0,0.05),edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
                                 plt.gca().add_patch(p) #gca = get current axis
                                 lastStart = include_idxs_list[idx]
                                 lastIdx = include_idxs_list[idx]
-                        p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart)-0.5, y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
+                        p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart), y_max,facecolor=(0,0,0,0.05),edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
                         plt.gca().add_patch(p)
 
                     if cut_points:
@@ -3271,7 +3272,7 @@ def main():
                     #adjust coordinates of sgRNAs
                     new_sel_cols_start = cut_point - plot_half_window
                     for (int_start,int_end) in refs[ref_name]['sgRNA_intervals']:
-                        new_sgRNA_intervals += [(int_start - new_sel_cols_start,int_end - new_sel_cols_start)]
+                        new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1,int_end - new_sel_cols_start - 1)]
 
                     CRISPRessoPlot.plot_alleles_table(ref_seq_around_cut,df_alleles=df_to_plot,fig_filename_root=fig_filename_root,
                         MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot,MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot,SAVE_ALSO_PNG=save_png,base_editor_output=args.base_editor_output,sgRNA_intervals=new_sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches)

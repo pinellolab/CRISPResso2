@@ -297,8 +297,9 @@ def add_sgRNA_to_ax(ax,sgRNA_intervals,sgRNA_y_start,sgRNA_y_height,amp_len,x_of
             )
 
         #if plot has trimmed the sgRNA, add a mark
-        if this_sgRNA_start != sgRNA_int[0]:
+        if (this_sgRNA_start) != sgRNA_int[0]:
             ax.add_patch(
+                #patches.Rectangle((x_offset + 0.1+this_sgRNA_start, sgRNA_y_start), 0.1, sgRNA_y_height,facecolor='w',clip_on=clip_on)
                 patches.Rectangle((x_offset + 0.1+this_sgRNA_start, sgRNA_y_start), 0.1, sgRNA_y_height,facecolor='w',clip_on=clip_on)
                 )
         if this_sgRNA_end != sgRNA_int[1]:
@@ -1096,6 +1097,19 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
     N_ROWS=len(X)
     N_COLUMNS=plot_nuc_len
 
+    if N_ROWS < 1:
+        fig=plt.figure()
+        ax = fig.add_subplot(111)
+        plt.text(0.5, 0.5,'No Alleles',horizontalalignment='center',verticalalignment='center',transform = ax.transAxes)
+        txt.set_clip_on(False)
+
+        plt.savefig(fig_filename_root+'.pdf',bbox_inches='tight',bbox_extra_artists=(lgd,))
+        if SAVE_ALSO_PNG:
+            plt.savefig(fig_filename_root+'.png',bbox_inches='tight',bbox_extra_artists=(lgd,))
+        plt.close()
+        return
+
+
     if sgRNA_intervals and len(sgRNA_intervals) > 0:
         fig=plt.figure(figsize=(plot_nuc_len*0.3,(N_ROWS+2)*0.6))
         gs1 = gridspec.GridSpec(N_ROWS+2,N_COLUMNS)
@@ -1120,7 +1134,7 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
     ax_hm.xaxis.set_ticks([])
 
     if sgRNA_intervals and len(sgRNA_intervals) > 0:
-        add_sgRNA_to_ax(ax_hm_ref,sgRNA_intervals,sgRNA_y_start=-1,sgRNA_y_height=0.7,amp_len=plot_nuc_len,font_size='small',clip_on=False,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,x_offset=-1)
+        add_sgRNA_to_ax(ax_hm_ref,sgRNA_intervals,sgRNA_y_start=-1,sgRNA_y_height=0.7,amp_len=plot_nuc_len,font_size='small',clip_on=False,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,x_offset=0)
 
 # todo -- add sgRNAs below reference plot
 #    if sgRNA_intervals:
