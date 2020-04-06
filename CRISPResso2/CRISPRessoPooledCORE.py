@@ -133,20 +133,20 @@ def get_align_sequence(seq,bowtie2_index):
     return p.communicate()[0]
 
 
-#get n_reads and region data from region
-def summarize_region_fastq(region):
+#get n_reads and region data from region fastq file (location is pulled from filename)
+def summarize_region_fastq(input):
+    region_fastq,uncompressed_reference = input.split(" ")
     #region format: REGION_chr8_1077_1198.fastq.gz
     #But if the chr has underscores, it could look like this:
     #    REGION_chr8_KI270812v1_alt_1077_1198.fastq.gz
-    region_info = os.path.basename(region).replace('.fastq.gz','').replace('.fastq','').split('_')
+    region_info = os.path.basename(region_fastq).replace('.fastq.gz','').replace('.fastq','').split('_')
     chr_string = "_".join(region_info[1:len(region_info)-2]) #in case there are underscores
-    return [chr_string] + region_info[-2:]+[region,get_n_reads_fastq(region)]
-
-#extract region
-def get_region_from_fa(chr_id,bpstart,bpend,uncompressed_reference):
-    region='%s:%d-%d' % (chr_id,bpstart,bpend-1)
-    p = sb.Popen("samtools faidx %s %s |   grep -v ^\> | tr -d '\n'" %(uncompressed_reference,region), shell=True,stdout=sb.PIPE)
-    return p.communicate()[0]
+    region_string='%s:%s-%d' % (chr_string,region_info[-2],int(region_info[-1])-1)
+    p = sb.Popen("samtools faidx %s %s | grep -v ^\> | tr -d '\n'" %(uncompressed_reference,region_string), shell=True,stdout=sb.PIPE)
+    seq = p.communicate()[0]
+    p = sb.Popen(('z' if region_fastq.endswith('.gz') else '' ) +"cat < %s | wc -l" % region_fastq, shell=True,stdout=sb.PIPE)
+    n_reads = int(float(p.communicate()[0])/4.0)
+    return [chr_string] + region_info[-2:]+[region_fastq,n_reads,seq]
 
 #                                                              Consumes  Consumes
 # Op  BAM Description                                             query  reference
@@ -297,6 +297,7 @@ def main():
         parser.add_argument('--bowtie2_options_string', type=str, help='Override options for the Bowtie2 alignment command',default=' -k 1 --end-to-end -N 0 --np 0 ')
         parser.add_argument('--min_reads_to_use_region',  type=float, help='Minimum number of reads that align to a region to perform the CRISPResso analysis', default=1000)
         parser.add_argument('--skip_failed',  help='Continue with pooled analysis even if one sample fails',action='store_true')
+        parser.add_argument('--skip_reporting_problematic_regions',help='Skip reporting of problematic regions. By default, when both amplicons (-f) and genome (-x) are provided, problematic reads that align to the genome but to positions other than where the amplicons align are reported as problematic')
         parser.add_argument('--crispresso_command', help='CRISPResso command to call',default='CRISPResso')
 
         args = parser.parse_args()
@@ -758,9 +759,12 @@ def main():
                 N_READS_ALIGNED = crispresso2_info['finished_steps']['n_reads_aligned_genome']
             else:
                 info('Aligning reads to the provided genome index...')
-                aligner_command= 'bowtie2 -x %s -p %s %s -U %s 2>>%s| samtools view -bS - > %s' %(args.bowtie2_index,args.n_processes,args.bowtie2_options_string,processed_output_filename,log_filename,bam_filename_genome)
+                aligner_command= 'bowtie2 -x %s -p %s %s -U %s 2>>%s| samtools view -bS - | samtools sort -@ %d - -o %s' %(args.bowtie2_index,args.n_processes,
+                    args.bowtie2_options_string,processed_output_filename,log_filename,args.n_processes,bam_filename_genome)
                 info('aligning with command: ' + aligner_command)
                 sb.call(aligner_command,shell=True)
+
+                sb.call('samtools index %s' % bam_filename_genome,shell=True)
 
                 N_READS_ALIGNED=get_n_aligned_bam(bam_filename_genome)
 
@@ -779,7 +783,16 @@ def main():
             else:
                 #REDISCOVER LOCATIONS and DEMULTIPLEX READS
 
-                s1=r'''samtools view -F 0x0004 %s 2>>%s |''' % (bam_filename_genome,log_filename)+\
+                cmd = "samtools view -H %s" % bam_filename_genome
+                p = sb.Popen(cmd, shell=True,stdout=sb.PIPE)
+                chr_lines = p.communicate()[0].split("\n")
+                chrs = []
+                for chr_line in chr_lines:
+                    m = re.match(r'@SQ\s+SN:(\S+)\s+LN:',chr_line)
+                    if m:
+                        chrs.append(m.group(1))
+
+                s1=r'''samtools view -F 0x0004 %s __CHR__ 2>>%s |''' % (bam_filename_genome,log_filename)+\
                 r'''awk '{OFS="\t"; bpstart=$4;  bpend=bpstart; split ($6,a,"[MIDNSHP]"); n=0;\
                 for (i=1; i in a; i++){\
                     n+=1+length(a[i]);\
@@ -809,10 +822,21 @@ def main():
                 }' '''
                 cmd=s1+s2.replace('__OUTPUTPATH__',MAPPED_REGIONS)
 
+                chr_commands = []
+                for chr in chrs:
+                    chr_cmd=cmd.replace('__CHR__',chr)
+                    chr_commands.append(chr_cmd)
+                    info(chr_cmd)
+
+                print('chr commands')
+                print(str(chr_commands))
+
+
+
                 info('Demultiplexing reads by location...')
                 if args.debug:
                     info(cmd)
-                sb.call(cmd,shell=True)
+                CRISPRessoMultiProcessing.run_parallel_commands(chr_commands,n_processes=args.n_processes,descriptor='Demultiplexing reads by location',continue_on_fail=args.skip_failed)
 
                 #todo: sometimes no reads align -- we should alert the user and display an error here
 
@@ -855,8 +879,8 @@ def main():
                     fastq_region_filenames.append(fastq_filename_region)
                     if fastq_filename_region in files_to_match:
                         files_to_match.remove(fastq_filename_region)
-                    else:
-                         info('Warning: Fastq filename ' + fastq_filename_region + ' is not in ' + str(files_to_match))
+                    #else:
+                         #info('Warning: Fastq filename ' + fastq_filename_region + ' is not in ' + str(files_to_match))
                          #debug here??
                     if N_READS>=args.min_reads_to_use_region:
                         info('\nThe amplicon [%s] has enough reads (%d) mapped to it! Running CRISPResso!\n' % (idx,N_READS))
@@ -896,42 +920,43 @@ def main():
 
             #write another file with the not amplicon regions
 
-            filename_problematic_regions = _jp('REPORTS_READS_ALIGNED_TO_GENOME_NOT_MATCHING_AMPLICONS.txt')
-            if can_finish_incomplete_run and 'reporting_problematic_regions' in crispresso2_info['finished_steps']:
-                info('Skipping previously-computed reporting of problematic regions')
-                df_regions = pd.read_csv(filename_problematic_regions,sep='\t')
+            if args.skip_reporting_problematic_regions:
+                df_regions=pd.DataFrame(columns=['chr_id','bpstart','bpend','fastq_file','n_reads','Reference_sequence'])
             else:
-                info('Reporting problematic regions...')
-                coordinates = CRISPRessoMultiProcessing.run_function_on_array_parallel(files_to_match,summarize_region_fastq)
-                df_regions=pd.DataFrame(coordinates,columns=['chr_id','bpstart','bpend','fastq_file','n_reads'])
-                df_regions.dropna(inplace=True) #remove regions in chrUn
-
-                df_regions['bpstart'] = pd.to_numeric(df_regions['bpstart'])
-                df_regions['bpend'] = pd.to_numeric(df_regions['bpend'])
-                df_regions['n_reads'] = pd.to_numeric(df_regions['n_reads'])
-
-                df_regions.bpstart=df_regions.bpstart.astype(int)
-                df_regions.bpend=df_regions.bpend.astype(int)
-
-                df_regions['n_reads_aligned_%']=df_regions['n_reads']/float(N_READS_ALIGNED)*100
-
-                df_regions['Reference_sequence']=df_regions.apply(lambda row: get_region_from_fa(row.chr_id,row.bpstart,row.bpend,uncompressed_reference),axis=1)
-
-
-                if args.gene_annotations:
-                    info('Checking overlapping genes...')
-                    df_regions=df_regions.apply(lambda row: find_overlapping_genes(row, df_genes),axis=1)
-
-                if np.sum(np.array(map(int,pd.__version__.split('.')))*(100,10,1))< 170:
-                    df_regions.sort('n_reads',ascending=False,inplace=True)
+                filename_problematic_regions = _jp('REPORTS_READS_ALIGNED_TO_GENOME_NOT_MATCHING_AMPLICONS.txt')
+                if can_finish_incomplete_run and 'reporting_problematic_regions' in crispresso2_info['finished_steps']:
+                    info('Skipping previously-computed reporting of problematic regions')
+                    df_regions = pd.read_csv(filename_problematic_regions,sep='\t')
                 else:
-                    df_regions.sort_values(by='n_reads',ascending=False,inplace=True)
+                    info('Reporting problematic regions...')
+                    summarize_region_fastq_input = [f+" "+uncompressed_reference for f in files_to_match] #pass both params to parallel function
+                    coordinates = CRISPRessoMultiProcessing.run_function_on_array_parallel(summarize_region_fastq_input,summarize_region_fastq)
+                    df_regions=pd.DataFrame(coordinates,columns=['chr_id','bpstart','bpend','fastq_file','n_reads','Reference_sequence'])
+                    df_regions.dropna(inplace=True) #remove regions in chrUn
 
-                df_regions.fillna('NA').to_csv(filename_problematic_regions,sep='\t',index=None)
+                    df_regions['bpstart'] = pd.to_numeric(df_regions['bpstart'])
+                    df_regions['bpend'] = pd.to_numeric(df_regions['bpend'])
+                    df_regions['n_reads'] = pd.to_numeric(df_regions['n_reads'])
 
-                crispresso2_info['finished_steps']['reporting_problematic_regions'] = True
-                with open(crispresso2_info_file,"wb") as info_file:
-                    cp.dump(crispresso2_info, info_file)
+                    df_regions.bpstart=df_regions.bpstart.astype(int)
+                    df_regions.bpend=df_regions.bpend.astype(int)
+
+                    df_regions['n_reads_aligned_%']=df_regions['n_reads']/float(N_READS_ALIGNED)*100
+
+                    if args.gene_annotations:
+                        info('Checking overlapping genes...')
+                        df_regions=df_regions.apply(lambda row: find_overlapping_genes(row, df_genes),axis=1)
+
+                    if np.sum(np.array(map(int,pd.__version__.split('.')))*(100,10,1))< 170:
+                        df_regions.sort('n_reads',ascending=False,inplace=True)
+                    else:
+                        df_regions.sort_values(by='n_reads',ascending=False,inplace=True)
+
+                    df_regions.fillna('NA').to_csv(filename_problematic_regions,sep='\t',index=None)
+
+                    crispresso2_info['finished_steps']['reporting_problematic_regions'] = True
+                    with open(crispresso2_info_file,"wb") as info_file:
+                        cp.dump(crispresso2_info, info_file)
 
 
         if RUNNING_MODE=='ONLY_GENOME' :
@@ -943,8 +968,9 @@ def main():
             else:
                 info('Parsing the demultiplexed files and extracting locations and reference sequences...')
                 files_to_match = glob.glob(os.path.join(MAPPED_REGIONS,'REGION*.fastq.gz'))
-                coordinates = CRISPRessoMultiProcessing.run_function_on_array_parallel(files_to_match,summarize_region_fastq)
-                df_regions=pd.DataFrame(coordinates,columns=['chr_id','bpstart','bpend','fastq_file','n_reads'])
+                summarize_region_fastq_input = [f+" "+uncompressed_reference for f in files_to_match] #pass both params to parallel function
+                coordinates = CRISPRessoMultiProcessing.run_function_on_array_parallel(summarize_region_fastq_input,summarize_region_fastq)
+                df_regions=pd.DataFrame(coordinates,columns=['chr_id','bpstart','bpend','fastq_file','n_reads','sequence'])
 
                 df_regions.dropna(inplace=True) #remove regions in chrUn
 
@@ -954,7 +980,6 @@ def main():
 
                 df_regions.bpstart=df_regions.bpstart.astype(int)
                 df_regions.bpend=df_regions.bpend.astype(int)
-                df_regions['sequence']=df_regions.apply(lambda row: get_region_from_fa(row.chr_id,row.bpstart,row.bpend,uncompressed_reference),axis=1)
 
                 df_regions['n_reads_aligned_%']=df_regions['n_reads']/float(N_READS_ALIGNED)*100
 
