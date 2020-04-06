@@ -1,2 +1,4 @@
 .git*
 tests
+dist
+CRISPResso2/*.c
