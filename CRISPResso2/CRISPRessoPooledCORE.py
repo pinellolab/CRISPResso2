@@ -297,7 +297,7 @@ def main():
         parser.add_argument('--bowtie2_options_string', type=str, help='Override options for the Bowtie2 alignment command',default=' -k 1 --end-to-end -N 0 --np 0 ')
         parser.add_argument('--min_reads_to_use_region',  type=float, help='Minimum number of reads that align to a region to perform the CRISPResso analysis', default=1000)
         parser.add_argument('--skip_failed',  help='Continue with pooled analysis even if one sample fails',action='store_true')
-        parser.add_argument('--skip_reporting_problematic_regions',help='Skip reporting of problematic regions. By default, when both amplicons (-f) and genome (-x) are provided, problematic reads that align to the genome but to positions other than where the amplicons align are reported as problematic')
+        parser.add_argument('--skip_reporting_problematic_regions',help='Skip reporting of problematic regions. By default, when both amplicons (-f) and genome (-x) are provided, problematic reads that align to the genome but to positions other than where the amplicons align are reported as problematic',action='store_true')
         parser.add_argument('--crispresso_command', help='CRISPResso command to call',default='CRISPResso')
 
         args = parser.parse_args()
