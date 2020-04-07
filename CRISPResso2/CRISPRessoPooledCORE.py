@@ -930,7 +930,7 @@ def main():
                 else:
                     info('Reporting problematic regions...')
                     summarize_region_fastq_input = [f+" "+uncompressed_reference for f in files_to_match] #pass both params to parallel function
-                    coordinates = CRISPRessoMultiProcessing.run_function_on_array_parallel(summarize_region_fastq_input,summarize_region_fastq)
+                    coordinates = CRISPRessoMultiProcessing.run_function_on_array_parallel(summarize_region_fastq_input,summarize_region_fastq,n_processes=args.n_processes)
                     df_regions=pd.DataFrame(coordinates,columns=['chr_id','bpstart','bpend','fastq_file','n_reads','Reference_sequence'])
                     df_regions.dropna(inplace=True) #remove regions in chrUn
 
@@ -969,7 +969,7 @@ def main():
                 info('Parsing the demultiplexed files and extracting locations and reference sequences...')
                 files_to_match = glob.glob(os.path.join(MAPPED_REGIONS,'REGION*.fastq.gz'))
                 summarize_region_fastq_input = [f+" "+uncompressed_reference for f in files_to_match] #pass both params to parallel function
-                coordinates = CRISPRessoMultiProcessing.run_function_on_array_parallel(summarize_region_fastq_input,summarize_region_fastq)
+                coordinates = CRISPRessoMultiProcessing.run_function_on_array_parallel(summarize_region_fastq_input,summarize_region_fastq,n_processes=args.n_processes)
                 df_regions=pd.DataFrame(coordinates,columns=['chr_id','bpstart','bpend','fastq_file','n_reads','sequence'])
 
                 df_regions.dropna(inplace=True) #remove regions in chrUn
