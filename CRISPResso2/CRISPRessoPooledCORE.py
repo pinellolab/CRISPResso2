@@ -134,19 +134,23 @@ def get_align_sequence(seq,bowtie2_index):
 
 
 #get n_reads and region data from region fastq file (location is pulled from filename)
-def summarize_region_fastq(input):
-    region_fastq,uncompressed_reference = input.split(" ")
-    #region format: REGION_chr8_1077_1198.fastq.gz
-    #But if the chr has underscores, it could look like this:
-    #    REGION_chr8_KI270812v1_alt_1077_1198.fastq.gz
-    region_info = os.path.basename(region_fastq).replace('.fastq.gz','').replace('.fastq','').split('_')
-    chr_string = "_".join(region_info[1:len(region_info)-2]) #in case there are underscores
-    region_string='%s:%s-%d' % (chr_string,region_info[-2],int(region_info[-1])-1)
-    p = sb.Popen("samtools faidx %s %s | grep -v ^\> | tr -d '\n'" %(uncompressed_reference,region_string), shell=True,stdout=sb.PIPE)
-    seq = p.communicate()[0]
-    p = sb.Popen(('z' if region_fastq.endswith('.gz') else '' ) +"cat < %s | wc -l" % region_fastq, shell=True,stdout=sb.PIPE)
-    n_reads = int(float(p.communicate()[0])/4.0)
-    return [chr_string] + region_info[-2:]+[region_fastq,n_reads,seq]
+def summarize_region_fastq_chunk(input_arr):
+    ret_val = []
+    for input in input_arr:
+#        print('doing region ' + str(input))
+        region_fastq,uncompressed_reference = input.split(" ")
+        #region format: REGION_chr8_1077_1198.fastq.gz
+        #But if the chr has underscores, it could look like this:
+        #    REGION_chr8_KI270812v1_alt_1077_1198.fastq.gz
+        region_info = os.path.basename(region_fastq).replace('.fastq.gz','').replace('.fastq','').split('_')
+        chr_string = "_".join(region_info[1:len(region_info)-2]) #in case there are underscores
+        region_string='%s:%s-%d' % (chr_string,region_info[-2],int(region_info[-1])-1)
+        p = sb.Popen("samtools faidx %s %s | grep -v ^\> | tr -d '\n'" %(uncompressed_reference,region_string), shell=True,stdout=sb.PIPE)
+        seq = p.communicate()[0]
+        p = sb.Popen(('z' if region_fastq.endswith('.gz') else '' ) +"cat < %s | wc -l" % region_fastq, shell=True,stdout=sb.PIPE)
+        n_reads = int(float(p.communicate()[0])/4.0)
+        ret_val.append([chr_string] + region_info[-2:]+[region_fastq,n_reads,seq])
+    return ret_val
 
 #                                                              Consumes  Consumes
 # Op  BAM Description                                             query  reference
@@ -428,6 +432,9 @@ def main():
         with open(log_filename,'w+') as outfile:
                   outfile.write('[Command used]:\n%s\n\n[Execution log]:\n' % ' '.join(sys.argv))
 
+        info('Processing input')
+
+        #read filtering (for quality) is done at the individual crispresso run
         if args.fastq_r2=='': #single end reads
              #check if we need to trim
              if not args.trim_sequences:
@@ -518,13 +525,15 @@ def main():
              info('Done!')
 
 
-
-
-
+        if can_finish_incomplete_run and 'count_input_reads' in crispresso2_info['finished_steps']:
+            (N_READS_INPUT,N_READS_AFTER_PREPROCESSING) = crispresso2_info['finished_steps']['count_input_reads']
         #count reads
-        N_READS_INPUT=get_n_reads_fastq(args.fastq_r1)
-        N_READS_AFTER_PREPROCESSING=get_n_reads_fastq(processed_output_filename)
-
+        else:
+            N_READS_INPUT=get_n_reads_fastq(args.fastq_r1)
+            N_READS_AFTER_PREPROCESSING=get_n_reads_fastq(processed_output_filename)
+            crispresso2_info['finished_steps']['count_input_reads'] = (N_READS_INPUT,N_READS_AFTER_PREPROCESSING) 
+            with open(crispresso2_info_file,"wb") as info_file:
+                cp.dump(crispresso2_info, info_file)
 
         #load gene annotation
         if args.gene_annotations:
@@ -820,28 +829,21 @@ def main():
                     }\
                 print "@"$5"\n"$6"\n+\n"$7 >> fastq_filename;\
                 }' '''
-                cmd=s1+s2.replace('__OUTPUTPATH__',MAPPED_REGIONS)
+                s3=" && gzip -f __OUTPUTPATH__/REGION___CHR__*.fastq ";
+                cmd=(s1+s2+s3).replace('__OUTPUTPATH__',MAPPED_REGIONS)
 
                 chr_commands = []
                 for chr in chrs:
                     chr_cmd=cmd.replace('__CHR__',chr)
                     chr_commands.append(chr_cmd)
-                    info(chr_cmd)
-
-                print('chr commands')
-                print(str(chr_commands))
-
-
 
                 info('Demultiplexing reads by location...')
-                if args.debug:
-                    info(cmd)
                 CRISPRessoMultiProcessing.run_parallel_commands(chr_commands,n_processes=args.n_processes,descriptor='Demultiplexing reads by location',continue_on_fail=args.skip_failed)
 
                 #todo: sometimes no reads align -- we should alert the user and display an error here
 
                 #gzip the missing ones
-                sb.call('gzip -f %s/*.fastq' % MAPPED_REGIONS,shell=True)
+                #sb.call('gzip -qf %s/*.fastq' % MAPPED_REGIONS,shell=True)
 
                 crispresso2_info['finished_steps']['genome_demultiplexing'] = True
                 with open(crispresso2_info_file,"wb") as info_file:
@@ -864,50 +866,58 @@ def main():
             n_reads_aligned_genome=[]
             fastq_region_filenames=[]
 
-            crispresso_cmds = []
-            for idx,row in df_template.iterrows():
+            if can_finish_incomplete_run and 'crispresso_amplicons_and_genome' in crispresso2_info['finished_steps']:
+                info('Using previously-computed crispresso runs')
+                (n_reads_aligned_genome,fastq_region_filenames,files_to_match) = crispresso2_info['finished_steps']['crispresso_amplicons_and_genome'];
+            else:
+                crispresso_cmds = []
+                for idx,row in df_template.iterrows():
 
-                info('Processing amplicon: %s' % idx )
+                    info('Processing amplicon: %s' % idx )
 
-                #check if we have reads
-                fastq_filename_region=os.path.join(MAPPED_REGIONS,'REGION_%s_%s_%s.fastq.gz' % (row['chr_id'],row['bpstart'],row['bpend']))
+                    #check if we have reads
+                    fastq_filename_region=os.path.join(MAPPED_REGIONS,'REGION_%s_%s_%s.fastq.gz' % (row['chr_id'],row['bpstart'],row['bpend']))
 
-                if os.path.exists(fastq_filename_region):
+                    if os.path.exists(fastq_filename_region):
 
-                    N_READS=get_n_reads_fastq(fastq_filename_region)
-                    n_reads_aligned_genome.append(N_READS)
-                    fastq_region_filenames.append(fastq_filename_region)
-                    if fastq_filename_region in files_to_match:
-                        files_to_match.remove(fastq_filename_region)
-                    #else:
-                         #info('Warning: Fastq filename ' + fastq_filename_region + ' is not in ' + str(files_to_match))
-                         #debug here??
-                    if N_READS>=args.min_reads_to_use_region:
-                        info('\nThe amplicon [%s] has enough reads (%d) mapped to it! Running CRISPResso!\n' % (idx,N_READS))
+                        N_READS=get_n_reads_fastq(fastq_filename_region)
+                        n_reads_aligned_genome.append(N_READS)
+                        fastq_region_filenames.append(fastq_filename_region)
+                        if fastq_filename_region in files_to_match:
+                            files_to_match.remove(fastq_filename_region)
+                        #else:
+                             #info('Warning: Fastq filename ' + fastq_filename_region + ' is not in ' + str(files_to_match))
+                             #debug here??
+                        if N_READS>=args.min_reads_to_use_region:
+                            info('\nThe amplicon [%s] has enough reads (%d) mapped to it! Running CRISPResso!\n' % (idx,N_READS))
 
-                        crispresso_cmd= args.crispresso_command + ' -r1 %s -a %s -o %s --name %s' % (fastq_filename_region,row['Amplicon_Sequence'],OUTPUT_DIRECTORY,idx)
+                            crispresso_cmd= args.crispresso_command + ' -r1 %s -a %s -o %s --name %s' % (fastq_filename_region,row['Amplicon_Sequence'],OUTPUT_DIRECTORY,idx)
 
-                        if row['sgRNA'] and not pd.isnull(row['sgRNA']):
-                            crispresso_cmd+=' -g %s' % row['sgRNA']
+                            if row['sgRNA'] and not pd.isnull(row['sgRNA']):
+                                crispresso_cmd+=' -g %s' % row['sgRNA']
 
-                        if row['Expected_HDR'] and not pd.isnull(row['Expected_HDR']):
-                            crispresso_cmd+=' -e %s' % row['Expected_HDR']
+                            if row['Expected_HDR'] and not pd.isnull(row['Expected_HDR']):
+                                crispresso_cmd+=' -e %s' % row['Expected_HDR']
 
-                        if row['Coding_sequence'] and not pd.isnull(row['Coding_sequence']):
-                            crispresso_cmd+=' -c %s' % row['Coding_sequence']
+                            if row['Coding_sequence'] and not pd.isnull(row['Coding_sequence']):
+                                crispresso_cmd+=' -c %s' % row['Coding_sequence']
 
-                        crispresso_cmd=CRISPRessoShared.propagate_crispresso_options(crispresso_cmd,crispresso_options_for_pooled,args)
-                        info('Running CRISPResso:%s' % crispresso_cmd)
-                        crispresso_cmds.append(crispresso_cmd)
+                            crispresso_cmd=CRISPRessoShared.propagate_crispresso_options(crispresso_cmd,crispresso_options_for_pooled,args)
+                            info('Running CRISPResso:%s' % crispresso_cmd)
+                            crispresso_cmds.append(crispresso_cmd)
 
+                        else:
+                             warn('The amplicon [%s] has not enough reads (%d) mapped to it! Skipping the execution of CRISPResso!' % (idx,N_READS))
                     else:
-                         warn('The amplicon [%s] has not enough reads (%d) mapped to it! Skipping the execution of CRISPResso!' % (idx,N_READS))
-                else:
-                    fastq_region_filenames.append('')
-                    n_reads_aligned_genome.append(0)
-                    warn("The amplicon %s doesn't have any reads mapped to it!\n Please check your amplicon sequence." %  idx)
+                        fastq_region_filenames.append('')
+                        n_reads_aligned_genome.append(0)
+                        warn("The amplicon %s doesn't have any reads mapped to it!\n Please check your amplicon sequence." %  idx)
 
-            CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'amplicon',args.skip_failed)
+                CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'amplicon',args.skip_failed)
+
+                crispresso2_info['finished_steps']['crispresso_amplicons_and_genome'] = (n_reads_aligned_genome,fastq_region_filenames,files_to_match)
+                with open(crispresso2_info_file,"wb") as info_file:
+                    cp.dump(crispresso2_info, info_file)
 
             df_template['Amplicon_Specific_fastq.gz_filename']=fastq_region_filenames
             df_template['n_reads']=n_reads_aligned_genome
@@ -930,7 +940,7 @@ def main():
                 else:
                     info('Reporting problematic regions...')
                     summarize_region_fastq_input = [f+" "+uncompressed_reference for f in files_to_match] #pass both params to parallel function
-                    coordinates = CRISPRessoMultiProcessing.run_function_on_array_parallel(summarize_region_fastq_input,summarize_region_fastq,n_processes=args.n_processes)
+                    coordinates = CRISPRessoMultiProcessing.run_function_on_array_chunk_parallel(summarize_region_fastq_input,summarize_region_fastq_chunk,n_processes=args.n_processes)
                     df_regions=pd.DataFrame(coordinates,columns=['chr_id','bpstart','bpend','fastq_file','n_reads','Reference_sequence'])
                     df_regions.dropna(inplace=True) #remove regions in chrUn
 
@@ -969,7 +979,7 @@ def main():
                 info('Parsing the demultiplexed files and extracting locations and reference sequences...')
                 files_to_match = glob.glob(os.path.join(MAPPED_REGIONS,'REGION*.fastq.gz'))
                 summarize_region_fastq_input = [f+" "+uncompressed_reference for f in files_to_match] #pass both params to parallel function
-                coordinates = CRISPRessoMultiProcessing.run_function_on_array_parallel(summarize_region_fastq_input,summarize_region_fastq,n_processes=args.n_processes)
+                coordinates = CRISPRessoMultiProcessing.run_function_on_array_chunk_parallel(summarize_region_fastq_input,summarize_region_fastq_chunk,n_processes=args.n_processes)
                 df_regions=pd.DataFrame(coordinates,columns=['chr_id','bpstart','bpend','fastq_file','n_reads','sequence'])
 
                 df_regions.dropna(inplace=True) #remove regions in chrUn
@@ -1001,18 +1011,25 @@ def main():
 
             #run CRISPResso
             #demultiplex reads in the amplicons and call crispresso!
-            info('Running CRISPResso on the regions discovered...')
-            crispresso_cmds = []
-            for idx,row in df_regions.iterrows():
+            if can_finish_incomplete_run and 'crispresso_genome_only' in crispresso2_info['finished_steps']:
+                info('Using previously-computed crispresso runs')
+            else:
+                info('Running CRISPResso on the regions discovered...')
+                crispresso_cmds = []
+                for idx,row in df_regions.iterrows():
 
-                if row.n_reads > args.min_reads_to_use_region:
-                    info('\nRunning CRISPResso on: %s-%d-%d...'%(row.chr_id,row.bpstart,row.bpend ))
-                    crispresso_cmd= args.crispresso_command + ' -r1 %s -a %s -o %s' %(row.fastq_file,row.sequence,OUTPUT_DIRECTORY)
-                    crispresso_cmd=CRISPRessoShared.propagate_crispresso_options(crispresso_cmd,crispresso_options_for_pooled,args)
-                    crispresso_cmds.append(crispresso_cmd)
-                else:
-                    info('Skipping region: %s-%d-%d , not enough reads (%d)' %(row.chr_id,row.bpstart,row.bpend, row.n_reads))
-            CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'region',args.skip_failed)
+                    if row.n_reads > args.min_reads_to_use_region:
+                        info('\nRunning CRISPResso on: %s-%d-%d...'%(row.chr_id,row.bpstart,row.bpend ))
+                        crispresso_cmd= args.crispresso_command + ' -r1 %s -a %s -o %s' %(row.fastq_file,row.sequence,OUTPUT_DIRECTORY)
+                        crispresso_cmd=CRISPRessoShared.propagate_crispresso_options(crispresso_cmd,crispresso_options_for_pooled,args)
+                        crispresso_cmds.append(crispresso_cmd)
+                    else:
+                        info('Skipping region: %s-%d-%d , not enough reads (%d)' %(row.chr_id,row.bpstart,row.bpend, row.n_reads))
+                CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'region',args.skip_failed)
+
+                crispresso2_info['finished_steps']['crispresso_genome_only'] = True
+                with open(crispresso2_info_file,"wb") as info_file:
+                    cp.dump(crispresso2_info, info_file)
 
         #write alignment statistics
         with open(_jp('MAPPING_STATISTICS.txt'),'w+') as outfile:
@@ -1118,24 +1135,25 @@ def main():
         if args.suppress_report:
             save_png = False
 
-        plot_root = _jp("CRISPRessoPooled_reads_summary")
+        if not args.suppress_plots:
+            plot_root = _jp("CRISPRessoPooled_reads_summary")
 
-        CRISPRessoPlot.plot_reads_total(plot_root,df_summary_quantification,save_png,args.min_reads_to_use_region)
-        plot_name = os.path.basename(plot_root)
-        crispresso2_info['summary_plot_root'] = plot_name
-        crispresso2_info['summary_plot_names'].append(plot_name)
-        crispresso2_info['summary_plot_titles'][plot_name] = 'CRISPRessoPooled Read Allocation Summary'
-        crispresso2_info['summary_plot_labels'][plot_name] = 'Each bar shows the total number of reads allocated to each amplicon. The vertical line shows the cutoff for analysis, set using the --min_reads_to_use_region parameter.'
-        crispresso2_info['summary_plot_datas'][plot_name] = [('CRISPRessoPooled summary',os.path.basename(samples_quantification_summary_filename))]
+            CRISPRessoPlot.plot_reads_total(plot_root,df_summary_quantification,save_png,args.min_reads_to_use_region)
+            plot_name = os.path.basename(plot_root)
+            crispresso2_info['summary_plot_root'] = plot_name
+            crispresso2_info['summary_plot_names'].append(plot_name)
+            crispresso2_info['summary_plot_titles'][plot_name] = 'CRISPRessoPooled Read Allocation Summary'
+            crispresso2_info['summary_plot_labels'][plot_name] = 'Each bar shows the total number of reads allocated to each amplicon. The vertical line shows the cutoff for analysis, set using the --min_reads_to_use_region parameter.'
+            crispresso2_info['summary_plot_datas'][plot_name] = [('CRISPRessoPooled summary',os.path.basename(samples_quantification_summary_filename))]
 
-        plot_root = _jp("CRISPRessoPooled_modification_summary")
-        CRISPRessoPlot.plot_unmod_mod_pcts(plot_root,df_summary_quantification,save_png,args.min_reads_to_use_region)
-        plot_name = os.path.basename(plot_root)
-        crispresso2_info['summary_plot_root'] = plot_name
-        crispresso2_info['summary_plot_names'].append(plot_name)
-        crispresso2_info['summary_plot_titles'][plot_name] = 'CRISPRessoPooled Modification Summary'
-        crispresso2_info['summary_plot_labels'][plot_name] = 'Each bar shows the total number of reads aligned to each amplicon, divided into the reads that are modified and unmodified. The vertical line shows the cutoff for analysis, set using the --min_reads_to_use_region parameter.'
-        crispresso2_info['summary_plot_datas'][plot_name] = [('CRISPRessoPooled summary',os.path.basename(samples_quantification_summary_filename))]
+            plot_root = _jp("CRISPRessoPooled_modification_summary")
+            CRISPRessoPlot.plot_unmod_mod_pcts(plot_root,df_summary_quantification,save_png,args.min_reads_to_use_region)
+            plot_name = os.path.basename(plot_root)
+            crispresso2_info['summary_plot_root'] = plot_name
+            crispresso2_info['summary_plot_names'].append(plot_name)
+            crispresso2_info['summary_plot_titles'][plot_name] = 'CRISPRessoPooled Modification Summary'
+            crispresso2_info['summary_plot_labels'][plot_name] = 'Each bar shows the total number of reads aligned to each amplicon, divided into the reads that are modified and unmodified. The vertical line shows the cutoff for analysis, set using the --min_reads_to_use_region parameter.'
+            crispresso2_info['summary_plot_datas'][plot_name] = [('CRISPRessoPooled summary',os.path.basename(samples_quantification_summary_filename))]
 
 
 
@@ -1153,7 +1171,7 @@ def main():
     			this_bam_filename = bam_filename_amplicons
     		#if less than 1/2 of reads aligned, find most common unaligned reads and advise the user
     		if N_READS_INPUT > 0 and tot_reads/float(N_READS_INPUT) < 0.5:
-    			warn('Less than half (%d/%d) of reads aligned. Finding most frequent unaligned reads.'%(tot_reads,N_READS_INPUT))
+    			warn('Less than half (%d/%d) of reads aligned to amplicons. Finding most frequent unaligned reads.'%(tot_reads,N_READS_INPUT))
     			###
     			###this results in the unpretty messages being printed:
     			### sort: write failed: standard output: Broken pipe
@@ -1211,7 +1229,7 @@ def main():
                  except:
                          warn('Skipping:%s' %file_to_remove)
 
-        if not args.suppress_report:
+        if not args.suppress_report and not args.suppress_plots:
             if (args.place_report_in_output_folder):
                 report_name = _jp("CRISPResso2Pooled_report.html")
             else:

@@ -122,11 +122,12 @@ def run_pandas_apply_parallel(input_df, input_function_chunk, n_processes=1):
     return df_new
 
 
-def run_function_on_array_parallel(input_array, input_function, n_processes=1):
+def run_function_on_array_chunk_parallel(input_array, input_function, n_processes=1):
     """
-    Runs a function on each element of input_array
+    Runs a function on chunks of input_array
     input_array: array of values
-    input_function: function to run on each value
+    input_function: function to run on chunks of the array
+        input_function should take in a smaller array of objects
     """
     pool = mp.Pool(processes = n_processes)
 
@@ -134,7 +135,9 @@ def run_function_on_array_parallel(input_array, input_function, n_processes=1):
     original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGINT, original_sigint_handler)
     try:
-        r = pool.map_async(input_function,input_array)
+        n = int(max(10,len(input_array)/n_processes)) #don't parallelize unless at least 10 tasks
+        input_chunks = [input_array[i * n:(i + 1) * n] for i in range((len(input_array) + n - 1) // n )]
+        r = pool.map_async(input_function,input_chunks)
         results = r.get(60*60*60) # Without the timeout this blocking call ignores all signals.
     except KeyboardInterrupt:
         pool.terminate()
@@ -147,7 +150,9 @@ def run_function_on_array_parallel(input_array, input_function, n_processes=1):
     else:
         pool.close()
     pool.join()
-    return results
+    return [y for x in results for y in x]
+
+
 
 def run_subprocess(cmd):
     return sb.call(cmd,shell=True)
