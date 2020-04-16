@@ -267,7 +267,7 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=
         fig.savefig(fig_filename_root+'.png',bbox_inches='tight',pad=1)
     plt.close()
 
-def add_sgRNA_to_ax(ax,sgRNA_intervals,sgRNA_y_start,sgRNA_y_height,amp_len,x_offset=0,sgRNA_mismatches=None,sgRNA_names=None,font_size=None,clip_on=True):
+def add_sgRNA_to_ax(ax,sgRNA_intervals,sgRNA_y_start,sgRNA_y_height,amp_len,x_offset=0,sgRNA_mismatches=None,sgRNA_names=None,font_size=None,clip_on=True,label_at_zero=False):
     """
     Adds sgRNA to plot ax
     params:
@@ -280,6 +280,7 @@ def add_sgRNA_to_ax(ax,sgRNA_intervals,sgRNA_y_start,sgRNA_y_height,amp_len,x_of
     sgRNA_mismatches: array (for each sgRNA_interval) of locations in sgRNA where there are mismatches
     sgRNA_names: array (for each sgRNA_interval) of names of sgRNAs (otherwise empty)
     clip_on: matplotlib parameter for whether sgRNAs should be drawn outside of clipping bounds (if sgRNAs aren't showing up, try setting this to False)
+    label_at_zero: whether first sgRNA should be forced to be at 0 instead of off the plot to the left beyond 0 (some plots are ok with this)
     """
 
     if font_size is None:
@@ -322,11 +323,17 @@ def add_sgRNA_to_ax(ax,sgRNA_intervals,sgRNA_y_start,sgRNA_y_height,amp_len,x_of
         if this_sgRNA_start < min_sgRNA_x:
             min_sgRNA_x = this_sgRNA_start
         if sgRNA_names is not None and idx < len(sgRNA_names) and sgRNA_names[idx] != "":
-            ax.text(x_offset+this_sgRNA_start,sgRNA_y_start + sgRNA_y_height/2,sgRNA_names[idx] + " ",horizontalalignment='right',verticalalignment='center',fontsize = font_size)
+            if (label_at_zero and x_offset + this_sgRNA_start < 5):
+                ax.text(0,sgRNA_y_start + sgRNA_y_height/2,sgRNA_names[idx] + " ",horizontalalignment='left',verticalalignment='center',fontsize = font_size)
+            else:
+                ax.text(x_offset+this_sgRNA_start,sgRNA_y_start + sgRNA_y_height/2,sgRNA_names[idx] + " ",horizontalalignment='right',verticalalignment='center',fontsize = font_size)
             label_left_sgRNA = False #already labeled at least one sgRNA
 
-    if min_sgRNA_x and label_left_sgRNA:
-        ax.text(x_offset+min_sgRNA_x,sgRNA_y_start + sgRNA_y_height/2,'sgRNA ',horizontalalignment='right',verticalalignment='center',fontsize=font_size)
+    if min_sgRNA_x is not None and label_left_sgRNA:
+        if (label_at_zero and x_offset + min_sgRNA_x < 5):
+            ax.text(0,sgRNA_y_start + sgRNA_y_height/2,'sgRNA ',horizontalalignment='left',verticalalignment='center',fontsize=font_size)
+        else:
+            ax.text(x_offset+min_sgRNA_x,sgRNA_y_start + sgRNA_y_height/2,'sgRNA ',horizontalalignment='right',verticalalignment='center',fontsize=font_size)
 
 def plot_conversion_map(nuc_pct_df,fig_filename_root,conversion_nuc_from,conversion_nuc_to,save_also_png,plotPct = 0.9,min_text_pct=0.3,max_text_pct=0.9,conversion_scale_max=None,sgRNA_intervals=None,quantification_window_idxs=None,sgRNA_names=None,sgRNA_mismatches=None):
     """
@@ -1134,7 +1141,7 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
     ax_hm.xaxis.set_ticks([])
 
     if sgRNA_intervals and len(sgRNA_intervals) > 0:
-        add_sgRNA_to_ax(ax_hm_ref,sgRNA_intervals,sgRNA_y_start=-1,sgRNA_y_height=0.7,amp_len=plot_nuc_len,font_size='small',clip_on=False,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,x_offset=0)
+        add_sgRNA_to_ax(ax_hm_ref,sgRNA_intervals,sgRNA_y_start=-1,sgRNA_y_height=0.7,amp_len=plot_nuc_len,font_size='small',clip_on=False,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,x_offset=0,label_at_zero=True)
 
 # todo -- add sgRNAs below reference plot
 #    if sgRNA_intervals:
