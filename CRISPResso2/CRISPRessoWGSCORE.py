@@ -118,7 +118,7 @@ def check_bowtie2():
 def get_region_from_fa(chr_id,bpstart,bpend,uncompressed_reference):
     region='%s:%d-%d' % (chr_id,bpstart,bpend-1)
     p = sb.Popen("samtools faidx %s %s |   grep -v ^\> | tr -d '\n'" %(uncompressed_reference,region), shell=True,stdout=sb.PIPE)
-    return p.communicate()[0]
+    return p.communicate()[0].upper()
 
 
 #get a clean name that we can use for a filename
@@ -472,7 +472,7 @@ def main():
 
                 if not cut_points:
                     df_regions.ix[idx,'sgRNA']=''
-                    info('Cannot find guide ' + row.sgRNA + ' in amplicon ' + row.index)
+                    info('Cannot find guide ' + row.sgRNA + ' in amplicon ' + idx + ' (' + row.sequence + ')')
 
         df_regions['bpstart'] = pd.to_numeric(df_regions['bpstart'])
         df_regions['bpend'] = pd.to_numeric(df_regions['bpend'])
