@@ -57,7 +57,7 @@ def run_crispresso_cmds(crispresso_cmds,n_processes=1,descriptor = 'region',cont
             if ret == 137:
                 raise Exception('CRISPResso %s #%d was killed by your system. Please decrease the number of processes (-p) and run again.'%(descriptor,idx))
             if ret != 0 and not continue_on_fail:
-                raise Exception('CRISPResso %s #%d failed'%(descriptor,idx))
+                raise Exception('CRISPResso %s #%d failed. For more information, try running the command: "%s"'%(descriptor,idx,crispresso_cmds[idx]))
     except KeyboardInterrupt:
         pool.terminate()
         logging.warn('Caught SIGINT. Program Terminated')
