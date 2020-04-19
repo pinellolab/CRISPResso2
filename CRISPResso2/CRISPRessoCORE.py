@@ -3637,7 +3637,7 @@ def main():
     except CRISPRessoShared.AlignmentException as e:
         print_stacktrace_if_debug()
         error('Alignment error, please check your input.\n\nERROR: %s' % e)
-        sys.exit(8)
+        sys.exit(9)
     except CRISPRessoShared.ExonSequenceException as e:
         print_stacktrace_if_debug()
         error('Coding sequence error, please check your input.\n\nERROR: %s' % e)

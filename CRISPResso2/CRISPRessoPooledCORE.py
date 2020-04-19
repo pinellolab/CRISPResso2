@@ -401,7 +401,7 @@ def main():
                 if previous_run_data['version'] == CRISPRessoShared.__version__:
                     args_are_same = True
                     for arg in vars(args):
-                        if arg is "no_rerun":
+                        if arg is "no_rerun" or arg is "debug" or arg is "n_processes":
                             continue
                         if arg not in vars(previous_run_data['args']):
                             info('Comparing current run to previous run: old run had argument ' + str(arg) + ' \nRerunning.')
@@ -531,7 +531,7 @@ def main():
         else:
             N_READS_INPUT=get_n_reads_fastq(args.fastq_r1)
             N_READS_AFTER_PREPROCESSING=get_n_reads_fastq(processed_output_filename)
-            crispresso2_info['finished_steps']['count_input_reads'] = (N_READS_INPUT,N_READS_AFTER_PREPROCESSING) 
+            crispresso2_info['finished_steps']['count_input_reads'] = (N_READS_INPUT,N_READS_AFTER_PREPROCESSING)
             with open(crispresso2_info_file,"wb") as info_file:
                 cp.dump(crispresso2_info, info_file)
 
