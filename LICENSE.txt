@@ -1,6 +1,6 @@
 CRISPResso2 is made available for free to academic researchers under this limited license for non-commercial use.
 
-IMPORTANT: If you plan to use the CRISPResso2 for-profit, you will need to purchase a license. Please contact crispresso2licensing@pinellolab.org for more information. 
+IMPORTANT: If you plan to use the CRISPResso2 for-profit, you will need to purchase a license. Please contact licensing@edilytics.com for more information. 
 
 CRISPResso2
 END USER LICENSE AGREEMENT
