@@ -221,7 +221,7 @@ def find_overlapping_genes(row,df_genes):
         elif '#name' in row_g.keys():
             genes_overlapping.append( '%s' % (row_g['#name']))
         elif 'name' in row_g.keys():
-            genes_overlapping.append( '%s' % (row_g['#name']))
+            genes_overlapping.append( '%s' % (row_g['name']))
         else:
             genes_overlapping.append( '%s' % (row_g[0]))
 
