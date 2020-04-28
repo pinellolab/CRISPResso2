@@ -228,7 +228,9 @@ def propagate_crispresso_options(cmd,options,params):
                     pass
                 elif type(val)==str:
                     if val != "":
-                        if " " in val or "-" in val:
+                        if re.match(r'-\d+$',val):
+                            cmd+=' --%s %s' % (option,str(val))
+                        elif " " in val or "-" in val:
                             cmd+=' --%s "%s"' % (option,str(val)) # quotes for options with spaces
                         else:
                             cmd+=' --%s %s' % (option,str(val))
@@ -833,6 +835,7 @@ def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,qua
             else:
                 raise NTException("Cannot parse analysis window coordinate '" + str(coord) + "' in '" + str(theseCoords) + "'. Coordinates must be given in the form start-end e.g. 5-10 . Please check the --analysis_window_coordinate parameter.")
         given_include_idxs = coordinate_include_idxs
+        this_include_idxs = coordinate_include_idxs
     #otherwise, take quantification centers + windows calculated for each guide above
     elif this_sgRNA_cut_points and len(this_include_idxs) > 0:
         given_include_idxs = this_include_idxs
@@ -889,9 +892,10 @@ def set_guide_array(vals, guides, property_name):
     """
     #if only one is given, set it for all guides
     vals_array = vals.split(",")
-    ret_array = [vals_array[0]]*len(guides)
-    if len(vals_array) > len(guides):
-        raise CRISPRessoShared.BadParameterException("More %s values were given than guides. Guides: %d %ss: %d"%(property_name,len(guides),property_name,len(guide_qw_center_array)))
+    ret_array = [int(vals_array[0])]*max(1,len(guides))
+    #len(vals_array) is always one -- don't freak out if it's longer than 0 guides
+    if len(vals_array) > 1 and len(vals_array) > len(guides):
+        raise BadParameterException("More %s values were given than guides. Guides: %d %ss: %d"%(property_name,len(guides),property_name,len(vals_array)))
     for idx, val in enumerate(vals_array):
         if val != '':
             ret_array[idx] = int(val)
