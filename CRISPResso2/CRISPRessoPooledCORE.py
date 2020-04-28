@@ -594,14 +594,16 @@ def main():
 
                     cut_points=[]
 
-                    for current_guide_seq in row.sgRNA.strip().upper().split(','):
+                    guides = row.sgRNA.strip().upper().split(',')
+                    guide_qw_centers = CRISPRessoShared.set_guide_array(args.quantification_window_center,guides,'guide quantification center')
+                    for idx,current_guide_seq in enumerate(guides):
 
                         wrong_nt=CRISPRessoShared.find_wrong_nt(current_guide_seq)
                         if wrong_nt:
                             raise NTException('The sgRNA sequence %s contains wrong characters:%s'  % (current_guide_seq, ' '.join(wrong_nt)))
 
-                        offset_fw=args.quantification_window_center+len(current_guide_seq)-1
-                        offset_rc=(-args.quantification_window_center)-1
+                        offset_fw=guide_qw_centers[idx]+len(current_guide_seq)-1
+                        offset_rc=(-guide_qw_centers[idx])-1
                         cut_points+=[m.start() + offset_fw for \
                                     m in re.finditer(current_guide_seq,  row.Amplicon_Sequence)]+[m.start() + offset_rc for m in re.finditer(CRISPRessoShared.reverse_complement(current_guide_seq),  row.Amplicon_Sequence)]
 

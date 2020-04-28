@@ -558,8 +558,8 @@ def main():
                     if potential_guide is not None and potential_guide not in guides:
                         guides.append(potential_guide)
                         guide_names.append('Guessed sgRNA')
-                        guide_qw_centers.append(args.quantification_window_center.split(",")[0])
-                        guide_qw_sizes.append(args.quantification_window_size.split(",")[0])
+                        guide_qw_centers.append(int(args.quantification_window_center.split(",")[0]))
+                        guide_qw_sizes.append(int(args.quantification_window_size.split(",")[0]))
                         guide_plot_cut_points.append(True)
 
             amplicon_min_alignment_score_arr = []
@@ -599,6 +599,7 @@ def main():
         if args.expected_hdr_amplicon_seq != "":
             amplicon_seq_arr.append(args.expected_hdr_amplicon_seq)
             amplicon_name_arr.append('HDR')
+            amplicon_quant_window_coordinates_arr.append('')
 
         #Prime editing
         if args.prime_editing_extension_seq != "":
@@ -632,8 +633,8 @@ def main():
                 raise CRISPRessoShared.NTException('The prime editing spacer sgRNA sequence contains bad characters:%s'  % ' '.join(wrong_nt))
             guides.append(args.prime_editing_spacer_seq)
             guide_names.append('PE spacer sgRNA')
-            guide_qw_centers.append(guide_qw_centers[0])
-            guide_qw_sizes.append(guide_qw_sizes[0])
+            guide_qw_centers.append(int(args.quantification_window_center.split(",")[0]))
+            guide_qw_sizes.append(int(args.quantification_window_size.split(",")[0]))
             guide_plot_cut_points.append(True)
 
         if args.prime_editing_nicking_guide_seq:
@@ -642,8 +643,8 @@ def main():
                 raise CRISPRessoShared.NTException('The prime editing nicking sgRNA sequence contains bad characters:%s'  % ' '.join(wrong_nt))
             guides.append(args.prime_editing_nicking_guide_seq)
             guide_names.append('PE nicking sgRNA')
-            guide_qw_centers.append(guide_qw_centers[0])
-            guide_qw_sizes.append(guide_qw_sizes[0])
+            guide_qw_centers.append(int(args.quantification_window_center.split(",")[0]))
+            guide_qw_sizes.append(int(args.quantification_window_size.split(",")[0]))
             guide_plot_cut_points.append(True)
 
 
@@ -694,8 +695,8 @@ def main():
                     guides.append(flexi_guide)
                     guide_mismatches.append(flexi_guide_mismatches[i])
                     guide_names.append(flexi_guide_names[i])
-                    guide_qw_centers.append(args.quantification_window_center.split(",")[0])
-                    guide_qw_sizes.append(args.quantification_window_size.split(",")[0])
+                    guide_qw_centers.append(int(args.quantification_window_center.split(",")[0]))
+                    guide_qw_sizes.append(int(args.quantification_window_size.split(",")[0]))
                     if args.base_editor_output:
                         guide_plot_cut_points.append(False)
                     else:
@@ -799,7 +800,6 @@ def main():
                 if potentialSeed not in seq_rc:
                     seeds.append(potentialSeed)
                     rc_seeds.append(seed_rc)
-
 
             refObj = {'name':this_name,
                    'sequence':this_seq,
@@ -2982,10 +2982,10 @@ def main():
                     if ref1_cut_points:
                         for idx,ref1_cut_point in enumerate(ref1_cut_points):
                             added_legend = False
-                            if not added_legend and plot_cut_points[idx]:
+                            if not added_legend and ref1_plot_cut_points[idx]:
                                 plt.plot([ref1_cut_point+0.5,ref1_cut_point+0.5],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
                                 added_legend = True
-                            elif plot_cut_points[idx]:
+                            elif ref1_plot_cut_points[idx]:
                                 plt.plot([ref1_cut_point+0.5,ref1_cut_point+0.5],[0,y_max],'--k',linewidth=2,label='_nolegend_')
 
 
