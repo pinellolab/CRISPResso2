@@ -31,7 +31,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.0.35"
+__version__ = "2.0.36"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -89,14 +89,19 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('--expand_ambiguous_alignments', help='If more than one reference amplicon is given, reads that align to multiple reference amplicons will count equally toward each amplicon. Default behavior is to exclude ambiguous alignments.', action='store_true')
     parser.add_argument('-g','--guide_seq','--sgRNA', help="sgRNA sequence, if more than one, please separate by commas. Note that the sgRNA needs to be input as the guide RNA sequence (usually 20 nt) immediately adjacent to but not including the PAM sequence (5' of NGG for SpCas9). If the PAM is found on the opposite strand with respect to the Amplicon Sequence, ensure the sgRNA sequence is also found on the opposite strand. The CRISPResso convention is to depict the expected cleavage position using the value of the parameter '--quantification_window_center' nucleotides from the 3' end of the guide. In addition, the use of alternate nucleases besides SpCas9 is supported. For example, if using the Cpf1 system, enter the sequence (usually 20 nt) immediately 3' of the PAM sequence and explicitly set the '--cleavage_offset' parameter to 1, since the default setting of -3 is suitable only for SpCas9.", default='')
     parser.add_argument('-gn','--guide_name', help="sgRNA names, if more than one, please separate by commas.", default='')
-    parser.add_argument('-fg','--flexiguide', help="sgRNA sequence (flexible) (can be comma-separated list of multiple flexiguides). The flexiguide sequence will be aligned to the amplicon sequence(s), as long as the guide sequence has homology as set by --flexiguide_homology.")
+    parser.add_argument('-fg','--flexiguide_seq', help="sgRNA sequence (flexible) (can be comma-separated list of multiple flexiguides). The flexiguide sequence will be aligned to the amplicon sequence(s), as long as the guide sequence has homology as set by --flexiguide_homology.")
     parser.add_argument('-fh','--flexiguide_homology', help="flexiguides will yield guides in amplicons with at least this homology to the flexiguide sequence.",default=80)
     parser.add_argument('-fgn','--flexiguide_name', help="flexiguide name",default='')
     parser.add_argument('-e','--expected_hdr_amplicon_seq', help='Amplicon sequence expected after HDR', default='')
     parser.add_argument('-c','--coding_seq',  help='Subsequence/s of the amplicon sequence covering one or more coding sequences for frameshift analysis. If more than one (for example, split by intron/s), please separate by commas.', default='')
+
+
+    #quality filtering options
     parser.add_argument('-q','--min_average_read_quality', type=int, help='Minimum average quality score (phred33) to keep a read', default=0)
     parser.add_argument('-s','--min_single_bp_quality', type=int, help='Minimum single bp score (phred33) to keep a read', default=0)
     parser.add_argument('--min_bp_quality_or_N', type=int, help='Bases with a quality score (phred33) less than this value will be set to "N"', default=0)
+
+    #output options
     parser.add_argument('--file_prefix',  help='File prefix for output plots and tables', default='')
     parser.add_argument('-n','--name',  help='Output name of the report (default: the names is obtained from the filename of the fastq file/s used in input)', default='')
     parser.add_argument('-o','--output_folder',  help='Output folder to use for the analysis (default: current folder)', default='')
@@ -112,8 +117,9 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('--stringent_flash_merging', help='Use stringent parameters for flash merging. In the case where flash could merge R1 and R2 reads ambiguously, the expected overlap is calculated as 2*average_read_length - amplicon_length. The flash parameters for --min-overlap and --max-overlap will be set to prefer merged reads with length within 10bp of the expected overlap. These values override the --min_paired_end_reads_overlap or --max_paired_end_reads_overlap CRISPResso parameters.', action='store_true')
     parser.add_argument('--force_merge_pairs', help=argparse.SUPPRESS,action='store_true')#help=Force-merges R1 and R2 if they cannot be merged using flash (use with caution -- may create non-biological apparent indels at the joining site)
 
-    parser.add_argument('-w', '--quantification_window_size','--window_around_sgrna', type=int, help='Defines the size (in bp) of the quantification window extending from the position specified by the "--cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence(s) (--sgRNA). Mutations within this number of bp from the quantification window center are used in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 1, 1bp on each side of the cleavage position for a total length of 2bp.', default=1)
-    parser.add_argument('-wc','--quantification_window_center','--cleavage_offset', type=int, help="Center of quantification window to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17 to only include mutations near the 5' end of the sgRNA.", default=-3)
+    #quantification window params
+    parser.add_argument('-w', '--quantification_window_size','--window_around_sgrna', type=str, help='Defines the size (in bp) of the quantification window extending from the position specified by the "--cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence(s) (--sgRNA). Mutations within this number of bp from the quantification window center are used in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 1, 1bp on each side of the cleavage position for a total length of 2bp. Multiple quantification window sizes (corresponding to each guide specified by --guide_seq) can be specified with a comma-separated list.', default='1')
+    parser.add_argument('-wc','--quantification_window_center','--cleavage_offset', type=str, help="Center of quantification window to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17 to only include mutations near the 5' end of the sgRNA. Multiple quantification window centers (corresponding to each guide specified by --guide_seq) can be specified with a comma-separated list.", default='-3')
     #    parser.add_argument('--cleavage_offset', type=str, help="Predicted cleavage position for cleaving nucleases with respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. The default value of -3 is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. To suppress the cleavage offset, enter 'N'.", default=-3)
     parser.add_argument('--exclude_bp_from_left', type=int, help='Exclude bp from the left side of the amplicon sequence for the quantification of the indels', default=15)
     parser.add_argument('--exclude_bp_from_right', type=int, help='Exclude bp from the right side of the amplicon sequence for the quantification of the indels', default=15)
@@ -122,9 +128,6 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('--ignore_insertions',help='Ignore insertions events for the quantification and visualization',action='store_true')
     parser.add_argument('--ignore_deletions',help='Ignore deletions events for the quantification and visualization',action='store_true')
     parser.add_argument('--discard_indel_reads',help='Discard reads with indels in the quantification window from analysis',action='store_true')
-
-    parser.add_argument('--dsODN',help='Label reads with the dsODN sequence provided',default='')
-
 
     # alignment parameters
     parser.add_argument('--needleman_wunsch_gap_open',type=int,help='Gap open option for Needleman-Wunsch alignment',default=-20)
@@ -145,6 +148,8 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     #verbosity parameters
     parser.add_argument('--keep_intermediate',help='Keep all the  intermediate files',action='store_true')
     parser.add_argument('--dump',help='Dump numpy arrays and pandas dataframes to file for debugging purposes',action='store_true')
+
+    #report style parameters
     parser.add_argument('--max_rows_alleles_around_cut_to_plot',  type=int, help='Maximum number of rows to report in the alleles table plot. ', default=50)
     parser.add_argument('--suppress_report',  help='Suppress output report', action='store_true')
     parser.add_argument('--place_report_in_output_folder',  help='If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output.', action='store_true')
@@ -156,13 +161,21 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('--conversion_nuc_from',  help='For base editor plots, this is the nucleotide targeted by the base editor',default='C')
     parser.add_argument('--conversion_nuc_to',  help='For base editor plots, this is the nucleotide produced by the base editor',default='T')
 
+    #prime editing parameters
+    parser.add_argument('--prime_editing_spacer_seq',type=str,help="Spacer sgRNA sequence used in prime editing. The spacer should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the sequence.",default='')
+    parser.add_argument('--prime_editing_extension_seq',type=str,help="Extension sequence used in prime editing. The sequence should be given such that the left end of the sequence overlaps with the primer binding site (PBS) and the right end of the sequence is the 3' flap.",default='')
+    parser.add_argument('--prime_editing_extension_quantification_window_size',type=int,help="Quantification window size (in bp) at flap site for measuring modifications anchored at the right side of the extension sequence. Similar to the --quantification_window parameter, the total length of the quantification window will be 2x this parameter. Default: 5bp (10bp total window size)",default=5)
+    parser.add_argument('--prime_editing_nicking_guide_seq',type=str,help="Nicking sgRNA sequence used in prime editing. The sgRNA should not include the PAM sequence. The sequence should be given in the RNA 5'-3' order, so for Cas9, the PAM would be on the right side of the sequence",default='')
+
+    #special running modes
     parser.add_argument('--crispresso1_mode', help='Parameter usage as in CRISPResso 1',action='store_true')
+    parser.add_argument('--dsODN',help='Label reads with the dsODN sequence provided',default='')
     parser.add_argument('--auto', help='Infer amplicon sequence from most common reads',action='store_true')
     parser.add_argument('--debug', help='Show debug messages', action='store_true')
     parser.add_argument('--no_rerun', help="Don't rerun CRISPResso2 if a run using the same parameters has already been finished.", action='store_true')
 
 
-    #depreciated params
+    #deprecated params
     parser.add_argument('--save_also_png',default=False,help=argparse.SUPPRESS) #help='Save also .png images in addition to .pdf files') #depreciated -- now pngs are automatically created. Pngs can be suppressed by '--suppress_report'
 
     return parser
@@ -693,7 +706,7 @@ def get_dataframe_around_cut_debug(df_alleles, cut_point,offset):
     df_alleles_around_cut['Unedited']=df_alleles_around_cut['Unedited']>0
     return df_alleles_around_cut
 
-def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,quantification_window_center,quantification_window_size,quantification_window_coordinates,exclude_bp_from_left,exclude_bp_from_right,plot_window_size):
+def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,quantification_window_centers,quantification_window_sizes,quantification_window_coordinates,exclude_bp_from_left,exclude_bp_from_right,plot_window_size,guide_plot_cut_points):
     """
     gets cut site and other info for a reference sequence and a given list of guides
 
@@ -701,18 +714,20 @@ def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,qua
     ref_seq : reference sequence
     guides : a list of guide sequences
     guide_mismatches : a list of positions where a guide may have mismatches (for flexiguides)
-    guide_names : a list of names for guides
-    quantification_window_center : for each guide, quantification is centered at this position
-    quantification_window_size : length of quantification window extending from quantification_window_center
-    quantification_window_coordinates: if given, these override quantification_window_center and quantification_window_size for setting quantification window
+    guide_names : a list of names for each guide
+    quantification_window_centers : a list of positions where quantification is centered for each guide
+    quantification_window_sizes : a list of lengths of quantification windows extending from quantification_window_center for each guide
+    quantification_window_coordinates: if given, these override quantification_window_center and quantification_window_size for setting quantification window. These are specific for this amplicon.
     exclude_bp_from_left : these bp are excluded from the quantification window
     exclude_bp_from_right : these bp are excluded from the quantification window
     plot_window_size : length of window extending from quantification_window_center to plot
+    guide_plot_cut_points : whether or not to add cut point to plot (prime editing flaps don't have cut points)
 
     returns:
     this_sgRNA_sequences : list of sgRNAs that are in this amplicon
     this_sgRNA_intervals : indices of each guide
     this_sgRNA_cut_points : cut points for each guide (defined by quantification_window_center)
+    this_sgRNA_plot_cut_points : whether or not a cut point is plotted
     this_sgRNA_plot_idxs : list of indices to be plotted for each sgRNA
     this_sgRNA_mismatches: list of mismatches between the guide and the amplicon
     this_sgRNA_names : list of names for each sgRNA (to disambiguate in case a sequence aligns to multiple positions)
@@ -724,6 +739,7 @@ def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,qua
     this_sgRNA_sequences = []
     this_sgRNA_intervals = []
     this_sgRNA_cut_points = []
+    this_sgRNA_plot_cut_points = []
     this_sgRNA_plot_idxs=[]
     this_sgRNA_mismatches = []
     this_sgRNA_names = []
@@ -733,8 +749,8 @@ def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,qua
     seen_cut_points = {} #keep track of cut points in case 2 gudes cut at same position (so they can get different names)
     seen_guide_names = {} #keep track of guide names (so we don't assign a guide the same name as another guide)
     for guide_idx, current_guide_seq in enumerate(guides):
-        offset_fw=quantification_window_center+len(current_guide_seq)-1
-        offset_rc=(-quantification_window_center)-1
+        offset_fw=quantification_window_centers[guide_idx]+len(current_guide_seq)-1
+        offset_rc=(-quantification_window_centers[guide_idx])-1
 
         #.. run once with findall to get number of matches
         fw_matches = re.findall(current_guide_seq, ref_seq, flags=re.IGNORECASE)
@@ -746,11 +762,19 @@ def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,qua
         rv_matches = re.finditer(reverse_complement(current_guide_seq), ref_seq, flags=re.IGNORECASE)
 
         #for every match, append:
-        # this_sgRNA_cut_points, this_sgRNA_intervals,this_sgRNA_mismatches,this_sgRNA_names,this_sgRNA_sequences
+        # this_sgRNA_cut_points, this_sgRNA_intervals,this_sgRNA_mismatches,this_sgRNA_names,this_sgRNA_sequences,include_idxs
         for m in fw_matches:
-            this_sgRNA_cut_points.append(m.start() + offset_fw)
+            cut_p = m.start() + offset_fw
+            this_sgRNA_cut_points.append(cut_p)
+            this_sgRNA_plot_cut_points.append(guide_plot_cut_points[guide_idx])
             this_sgRNA_intervals.append((m.start(),m.start() + len(current_guide_seq)-1))
             this_sgRNA_mismatches.append(guide_mismatches[guide_idx])
+
+            if quantification_window_sizes[guide_idx] > 0:
+                st=max(0,cut_p-quantification_window_sizes[guide_idx]+1)
+                en=min(ref_seq_length-1,cut_p+quantification_window_sizes[guide_idx]+1)
+                this_include_idxs.extend(range(st,en))
+
             this_sgRNA_name = guide_names[guide_idx]
             if match_count == 1:
                 this_sgRNA_names.append(this_sgRNA_name)
@@ -766,9 +790,17 @@ def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,qua
             this_sgRNA_sequences.append(current_guide_seq.upper())
 
         for m in rv_matches:
-            this_sgRNA_cut_points.append(m.start() + offset_rc)
+            cut_p = m.start() + offset_rc #cut position
+            this_sgRNA_cut_points.append(cut_p)
+            this_sgRNA_plot_cut_points.append(guide_plot_cut_points[guide_idx])
             this_sgRNA_intervals.append((m.start(),m.start() + len(current_guide_seq)-1))
             this_sgRNA_mismatches.append(guide_mismatches[guide_idx])
+
+            if quantification_window_sizes[guide_idx] > 0:
+                st=max(0,cut_p-quantification_window_sizes[guide_idx]+1)
+                en=min(ref_seq_length-1,cut_p+quantification_window_sizes[guide_idx]+1)
+                this_include_idxs.extend(range(st,en))
+
             this_sgRNA_name = guide_names[guide_idx]
             if match_count == 1:
                 this_sgRNA_names.append(this_sgRNA_name)
@@ -783,10 +815,12 @@ def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,qua
                 this_sgRNA_names.append(this_potential_name)
             this_sgRNA_sequences.append(current_guide_seq.upper())
 
+
     #create mask of positions in which to include/exclude indels for the quantification window
     #first, if exact coordinates have been given, set those
     given_include_idxs = []
     if quantification_window_coordinates is not None:
+        coordinate_include_idxs=[]
         theseCoords = quantification_window_coordinates.split("_")
         for coord in theseCoords:
             coordRE = re.match(r'^(\d+)-(\d+)$',coord)
@@ -795,18 +829,15 @@ def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,qua
                 end = int(coordRE.group(2)) + 1
                 if end > ref_seq_length:
                     raise NTException("End coordinate " + str(end) + " for '" + str(coord) + "' in '" + str(theseCoords) + "' is longer than the sequence length ("+str(ref_seq_length)+")")
-                this_include_idxs.extend(range(start,end))
+                coordinate_include_idxs.extend(range(start,end))
             else:
                 raise NTException("Cannot parse analysis window coordinate '" + str(coord) + "' in '" + str(theseCoords) + "'. Coordinates must be given in the form start-end e.g. 5-10 . Please check the --analysis_window_coordinate parameter.")
-        given_include_idxs = this_include_idxs
-    elif this_sgRNA_cut_points and quantification_window_size>0:
-        for cut_p in this_sgRNA_cut_points:
-            st=max(0,cut_p-quantification_window_size+1)
-            en=min(ref_seq_length-1,cut_p+quantification_window_size+1)
-            this_include_idxs.extend(range(st,en))
+        given_include_idxs = coordinate_include_idxs
+    #otherwise, take quantification centers + windows calculated for each guide above
+    elif this_sgRNA_cut_points and len(this_include_idxs) > 0:
         given_include_idxs = this_include_idxs
     else:
-       this_include_idxs=range(ref_seq_length)
+        this_include_idxs=range(ref_seq_length)
 
     if exclude_bp_from_left:
        this_exclude_idxs+=range(exclude_bp_from_left)
@@ -845,8 +876,26 @@ def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,qua
     this_include_idxs = np.sort(list(this_include_idxs))
     this_exclude_idxs = np.sort(list(this_exclude_idxs))
 
-    return this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_cut_points, this_sgRNA_plot_idxs, this_sgRNA_mismatches,this_sgRNA_names, this_include_idxs, this_exclude_idxs
+    return this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_cut_points, this_sgRNA_plot_cut_points, this_sgRNA_plot_idxs, this_sgRNA_mismatches,this_sgRNA_names, this_include_idxs, this_exclude_idxs
 
+def set_guide_array(vals, guides, property_name):
+    """
+    creates an int array of vals of the same length as guide, filling in missing values with the first item in vals
+    vals: comma-separated string of values
+    guides: list of guides
+    property_name: property name, useful for creating warning to user
+
+    returns: list of int vals
+    """
+    #if only one is given, set it for all guides
+    vals_array = vals.split(",")
+    ret_array = [vals_array[0]]*len(guides)
+    if len(vals_array) > len(guides):
+        raise CRISPRessoShared.BadParameterException("More %s values were given than guides. Guides: %d %ss: %d"%(property_name,len(guides),property_name,len(guide_qw_center_array)))
+    for idx, val in enumerate(vals_array):
+        if val != '':
+            ret_array[idx] = int(val)
+    return ret_array
 
 ######
 # terminal functions

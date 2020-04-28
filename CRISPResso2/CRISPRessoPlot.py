@@ -1040,7 +1040,7 @@ def prep_alleles_table_compare(df_alleles,sample_name_1,sample_name_2,MAX_N_ROWS
 
     return X,annot,y_labels,insertion_dict,per_element_annot_kws
 
-def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,custom_colors=None):
+def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG=False,plot_cut_point=True,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,custom_colors=None):
     """
     Plots alleles in a heatmap (nucleotides color-coded for easy visualization)
     input:
@@ -1052,7 +1052,7 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
     -insertion_dict: locations of insertions -- red squares will be drawn around these
     -per_element_annot_kws: annotations for each cell (e.g. bold for substitutions, etc.)
     -SAVE_ALSO_PNG: whether to write png file as well
-    -base_editor_output: if true, won't draw 'predicted cleavage' line
+    -plot_cut_point: if false, won't draw 'predicted cleavage' line
     -sgRNA_intervals: locations where sgRNA is located
     -sgRNA_mismatches: array (for each sgRNA_interval) of locations in sgRNA where there are mismatches
     -sgRNA_names: array (for each sgRNA_interval) of names of sgRNAs (otherwise empty)
@@ -1170,7 +1170,7 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
             ax_hm.add_patch(patches.Rectangle((ls[0],N_ROWS-idx-1),ls[1]-ls[0],1,linewidth=3,edgecolor='r',fill=False))
 
     #cut point vertical line
-    if base_editor_output is False:
+    if plot_cut_point:
         ax_hm.vlines([plot_nuc_len/2],*ax_hm.get_ylim(),linestyles='dashed')
 
 
@@ -1193,7 +1193,7 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
                     mec='black', marker='_',ms=2,)]
     descriptions=['Substitutions','Insertions','Deletions']
 
-    if base_editor_output is False:
+    if plot_cut_point:
         proxies.append(
               matplotlib.lines.Line2D([0], [1], linestyle='--',c='black',ms=6))
         descriptions.append('Predicted cleavage position')
@@ -1206,7 +1206,7 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
         plt.savefig(fig_filename_root+'.png',bbox_inches='tight',bbox_extra_artists=(lgd,))
     plt.close()
 
-def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,count_values,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,custom_colors=None):
+def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,count_values,SAVE_ALSO_PNG=False,plot_cut_point=True,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,custom_colors=None):
     """
     Plots alleles in a heatmap (nucleotides color-coded for easy visualization)
     input:
@@ -1218,7 +1218,7 @@ def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,i
     -insertion_dict: locations of insertions -- red squares will be drawn around these
     -per_element_annot_kws: annotations for each cell (e.g. bold for substitutions, etc.)
     -SAVE_ALSO_PNG: whether to write png file as well
-    -base_editor_output: if true, won't draw 'predicted cleavage' line
+    -plot_cut_point: if false, won't draw 'predicted cleavage' line
     -sgRNA_intervals: locations where sgRNA is located
     -sgRNA_mismatches: array (for each sgRNA_interval) of locations in sgRNA where there are mismatches
     -sgRNA_names: array (for each sgRNA_interval) of names of sgRNAs (otherwise empty)
@@ -1303,7 +1303,7 @@ def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,i
     #print lines
 
     #cut point vertical line
-    if base_editor_output is False:
+    if plot_cut_point:
         ax_hm.vlines([plot_nuc_len/2],*ax_hm.get_ylim(),linestyles='dashed')
 
     #create boxes for ins
@@ -1331,7 +1331,7 @@ def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,i
                     mec='black', marker='_',ms=2,)]
     descriptions=['Substitutions','Insertions','Deletions']
 
-    if base_editor_output is False:
+    if plot_cut_point:
         proxies.append(
               matplotlib.lines.Line2D([0], [1], linestyle='--',c='black',ms=6))
         descriptions.append('Predicted cleavage position')
@@ -1344,7 +1344,7 @@ def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,i
         plt.savefig(fig_filename_root+'.png',bbox_inches='tight',bbox_extra_artists=(lgd,),pad=1)
     plt.close()
 
-def plot_alleles_table(reference_seq,df_alleles,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,custom_colors=None):
+def plot_alleles_table(reference_seq,df_alleles,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,plot_cut_point=True,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,custom_colors=None):
     """
     plots an allele table for a dataframe with allele frequencies
     input:
@@ -1354,15 +1354,16 @@ def plot_alleles_table(reference_seq,df_alleles,fig_filename_root,MIN_FREQUENCY=
     MIN_FREQUENCY: sum of alleles % must add to this to be plotted
     MAX_N_ROWS: max rows to plot
     SAVE_ALSO_PNG: whether to write png file as well
+    plot_cut_point: if false, won't draw 'predicted cleavage' line
     sgRNA_intervals: locations where sgRNA is located
     sgRNA_mismatches: array (for each sgRNA_interval) of locations in sgRNA where there are mismatches
     sgRNA_names: array (for each sgRNA_interval) of names of sgRNAs (otherwise empty)
     custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     """
     X,annot,y_labels,insertion_dict,per_element_annot_kws = prep_alleles_table(df_alleles,MAX_N_ROWS,MIN_FREQUENCY)
-    plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,base_editor_output,sgRNA_intervals,sgRNA_names,sgRNA_mismatches,custom_colors)
+    plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,plot_cut_point,sgRNA_intervals,sgRNA_names,sgRNA_mismatches,custom_colors)
 
-def plot_alleles_table_from_file(alleles_file_name,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,custom_colors=None):
+def plot_alleles_table_from_file(alleles_file_name,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,plot_cut_point=True,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,custom_colors=None):
     """
     plots an allele table for a dataframe with allele frequencies
     infers the reference sequence by finding reference sequences without gaps (-)
@@ -1374,6 +1375,7 @@ def plot_alleles_table_from_file(alleles_file_name,fig_filename_root,MIN_FREQUEN
     MIN_FREQUENCY: sum of alleles % must add to this to be plotted
     MAX_N_ROWS: max rows to plot
     SAVE_ALSO_PNG: whether to write png file as well
+    plot_cut_point: if false, won't draw 'predicted cleavage' line
     sgRNA_intervals: locations where sgRNA is located
     sgRNA_mismatches: array (for each sgRNA_interval) of locations in sgRNA where there are mismatches
     sgRNA_names: array (for each sgRNA_interval) of names of sgRNAs (otherwise empty)
@@ -1390,9 +1392,9 @@ def plot_alleles_table_from_file(alleles_file_name,fig_filename_root,MIN_FREQUEN
         raise Exception('Could not infer reference sequence from allele table')
 
     X,annot,y_labels,insertion_dict,per_element_annot_kws = prep_alleles_table(df_alleles,MAX_N_ROWS,MIN_FREQUENCY)
-    plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,base_editor_output,sgRNA_intervals,sgRNA_names,sgRNA_mismatches,custom_colors)
+    plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,plot_cut_point,sgRNA_intervals,sgRNA_names,sgRNA_mismatches,custom_colors)
 
-def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,MIN_FREQUENCY=None,MAX_N_ROWS=None,SAVE_ALSO_PNG=False,custom_colors=None,base_editor_output=None,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None):
+def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,MIN_FREQUENCY=None,MAX_N_ROWS=None,SAVE_ALSO_PNG=False,custom_colors=None,plot_cut_point=True,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None):
     """
     plots an allele table for each sgRNA/amplicon in a CRISPresso run (useful for plotting after running using the plot harness)
     This function is only used for one-off plotting purposes and not for the general CRISPResso analysis
@@ -1403,7 +1405,7 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,M
     MIN_FREQUENCY: sum of alleles % must add to this to be plotted
     MAX_N_ROWS: max rows to plot
     SAVE_ALSO_PNG: whether to write png file as well
-    base_editor_output: if true, won't draw 'predicted cleavage' line (if set overrides settings used in crispresso folder)
+    plot_cut_point: if false, won't draw 'predicted cleavage' line
     sgRNA_intervals: locations where sgRNA is located (if set overrides settings used in crispresso folder)
     sgRNA_mismatches: array (for each sgRNA_interval) of locations in sgRNA where there are mismatches (if set overrides settings used in crispresso folder)
     sgRNA_names: array (for each sgRNA_interval) of names of sgRNAs (otherwise empty) (if set overrides settings used in crispresso folder)
@@ -1421,7 +1423,6 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,M
         MIN_FREQUENCY = crispresso2_info['args'].min_frequency_alleles_around_cut_to_plot
     if MAX_N_ROWS is None:
         MAX_N_ROWS = crispresso2_info['args'].max_rows_alleles_around_cut_to_plot
-    base_editor_output = crispresso2_info['args'].base_editor_output
 
     plot_count = 0
 
@@ -1430,6 +1431,7 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,M
     for ref_name in ref_names:
         sgRNA_sequences = refs[ref_name]['sgRNA_sequences']
         sgRNA_cut_points = refs[ref_name]['sgRNA_cut_points']
+        sgRNA_plot_cut_points = refs[ref_name]['sgRNA_plot_cut_points']
         sgRNA_intervals = refs[ref_name]['sgRNA_intervals']
         sgRNA_names = refs[ref_name]['sgRNA_names']
         sgRNA_mismatches = refs[ref_name]['sgRNA_mismatches']
@@ -1447,6 +1449,7 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,M
                 sgRNA_label = sgRNA_names[ind]
 
             cut_point = sgRNA_cut_points[ind]
+            plot_cut_point = sgRNA_plot_cut_points[ind]
             plot_idxs = sgRNA_plot_idxs[ind]
             plot_half_window = max(1,crispresso2_info['args'].plot_window_size)
             ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_half_window+1:cut_point+plot_half_window+1]
@@ -1458,11 +1461,11 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,M
                 new_sgRNA_intervals += [(int_start - new_sel_cols_start,int_end - new_sel_cols_start)]
 
             X,annot,y_labels,insertion_dict,per_element_annot_kws = prep_alleles_table(df_alleles,MAX_N_ROWS,MIN_FREQUENCY)
-            plot_alleles_heatmap(ref_seq_around_cut,fig_filename_root+"_"+ref_name+"_"+sgRNA_label,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,base_editor_output,new_sgRNA_intervals,sgRNA_names,sgRNA_mismatches,custom_colors)
+            plot_alleles_heatmap(ref_seq_around_cut,fig_filename_root+"_"+ref_name+"_"+sgRNA_label,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,plot_cut_point,new_sgRNA_intervals,sgRNA_names,sgRNA_mismatches,custom_colors)
             plot_count += 1
     print('Plotted ' + str(plot_count) + ' plots')
 
-def plot_alleles_table_compare(reference_seq,df_alleles,sample_name_1,sample_name_2,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,base_editor_output=False,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,custom_colors=None):
+def plot_alleles_table_compare(reference_seq,df_alleles,sample_name_1,sample_name_2,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,plot_cut_point=True,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,custom_colors=None):
     """
     plots an allele table for a dataframe with allele frequencies from two CRISPResso runs
     input:
@@ -1473,13 +1476,14 @@ def plot_alleles_table_compare(reference_seq,df_alleles,sample_name_1,sample_nam
     MIN_FREQUENCY: sum of alleles % must add to this to be plotted
     MAX_N_ROWS: max rows to plot
     SAVE_ALSO_PNG: whether to write png file as well
+    plot_cut_point: if false, won't draw 'predicted cleavage' line
     sgRNA_intervals: locations where sgRNA is located
     sgRNA_mismatches: array (for each sgRNA_interval) of locations in sgRNA where there are mismatches
     sgRNA_names: array (for each sgRNA_interval) of names of sgRNAs (otherwise empty)
     custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     """
     X,annot,y_labels,insertion_dict,per_element_annot_kws = prep_alleles_table_compare(df_alleles,sample_name_1,sample_name_2,MAX_N_ROWS,MIN_FREQUENCY)
-    plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,base_editor_output,sgRNA_intervals,sgRNA_names,sgRNA_mismatches,custom_colors)
+    plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,plot_cut_point,sgRNA_intervals,sgRNA_names,sgRNA_mismatches,custom_colors)
 
 def plot_unmod_mod_pcts(fig_filename_root,df_summary_quantification,save_png,cutoff=None,max_samples_to_include_unprocessed=20):
     """

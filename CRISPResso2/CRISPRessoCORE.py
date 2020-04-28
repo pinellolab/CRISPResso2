@@ -2,9 +2,9 @@
 # -*- coding: utf8 -*-
 
 '''
-CRISPResso2 - Kendell Clement and Luca Pinello 2018
+CRISPResso2 - Kendell Clement and Luca Pinello 2020
 Software pipeline for the analysis of genome editing outcomes from deep sequencing data
-(c) 2018 The General Hospital Corporation. All Rights Reserved.
+(c) 2020 The General Hospital Corporation. All Rights Reserved.
 '''
 
 
@@ -185,9 +185,10 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
                 # 'sgRNA_intervals'
                 # 'sgRNA_sequences'
                 # 'sgRNA_cut_points'
+                # 'sgRNA_plot_cut_points'#whether cut points should be plotted (not plotted for base editing, prime editing flap)
                 # 'sgRNA_plot_idxs' #indices along reference sequence for which to plot the allele plot (allele frequency plot around sgRNA)
                 # 'sgRNA_names' #names of sgRNAs (in case there are multiple matches for a single sgRNA)
-                # 'sgRNA_mismatches' #indices along guide that are mismatched against a 'flexiguide'
+                # 'sgRNA_mismatches' #indices along guide that are mismatched against a 'flexiguide_seq'
                 # 'contains_coding_seq'
                 # 'exon_positions'
                 # 'exon_intervals'
@@ -196,7 +197,7 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
                 # 'include_idxs' # sorted numpy array
                 # 'exclude_idxs'
                 # 'plot_idxs' #sorted numpy array
-                # 'idx_cloned_from' #if this reference didn't contain a guide (or exon sequence), it was aligned to 'idx_cloned_from' reference, and cut_points, gap_incentive, sgRNA_intervals, inculde_idx, ane exon information were cloned from it (at the appropriate indices)
+                # 'idx_cloned_from' #if this reference didn't contain a guide (or exon sequence), it was aligned to 'idx_cloned_from' reference, and cut_points, plot_cut_points, gap_incentive, sgRNA_intervals, inculde_idx, ane exon information were cloned from it (at the appropriate indices)
            Examples of these seqences can include:
            -the amplicon sequence
            -the repaired CRISPR expected output
@@ -496,6 +497,8 @@ def main():
                 if wrong_nt:
                     raise CRISPRessoShared.NTException('The sgRNA sequence contains bad characters:%s'  % ' '.join(wrong_nt))
                 guides.append(current_guide_seq)
+
+        #each guide has a name, quantification window centers (relative to the end of the guide), and quantification window sizes
         guide_names = [""]*len(guides)
         if args.guide_name:
             guide_name_arr = args.guide_name.split(",")
@@ -503,8 +506,14 @@ def main():
                 raise CRISPRessoShared.BadParameterException("More guide names were given than guides. Guides: %d Guide names: %d"%(len(guides),len(guide_name_arr)))
             for idx,guide_name in enumerate(guide_name_arr):
                 if guide_name != "":
-                    print('trying to add at index ' + str(idx) + ' when guides i ' + str(guides))
                     guide_names[idx] = guide_name
+
+        guide_qw_centers = CRISPRessoShared.set_guide_array(args.quantification_window_center,guides,'guide quantification center')
+        guide_qw_sizes = CRISPRessoShared.set_guide_array(args.quantification_window_size,guides,'guide quantification size')
+
+        guide_plot_cut_points = [True]*len(guides) #whether to plot cut point -- prime editing cut points aren't plotted
+        if (args.base_editor_output):
+            guide_plot_cut_points = [False]*len(guides) #whether to plot cut point -- prime editing cut points aren't plotted
 
         ###FRAMESHIFT SUPPORT###
         coding_seqs = []
@@ -548,6 +557,10 @@ def main():
                         args.max_paired_end_reads_overlap,args.min_paired_end_reads_overlap,aln_matrix,args.needleman_wunsch_gap_open,args.needleman_wunsch_gap_extend)
                     if potential_guide is not None and potential_guide not in guides:
                         guides.append(potential_guide)
+                        guide_names.append('Guessed sgRNA')
+                        guide_qw_centers.append(args.quantification_window_center.split(",")[0])
+                        guide_qw_sizes.append(args.quantification_window_size.split(",")[0])
+                        guide_plot_cut_points.append(True)
 
             amplicon_min_alignment_score_arr = []
             plural_string = ""
@@ -574,9 +587,65 @@ def main():
             #split on commas, only accept empty values
             amplicon_min_alignment_score_arr = [float(x) for x in args.amplicon_min_alignment_score.split(",") if x]
 
+
+        amplicon_quant_window_coordinates_arr = ['']*len(amplicon_seq_arr)
+        if args.quantification_window_coordinates is not None:
+             tmp_arr = args.quantification_window_coordinates.split(",")
+             #fill in quant window coordinates if they are given for each amplicon, because we're about to add some amplicons
+             for i in range(len(amplicon_quant_window_coordinates_arr)):
+                 if tmp_arr[i] != "":
+                     amplicon_quant_window_coordinates_arr[i] = tmp_arr[i]
+
         if args.expected_hdr_amplicon_seq != "":
             amplicon_seq_arr.append(args.expected_hdr_amplicon_seq)
             amplicon_name_arr.append('HDR')
+
+        #Prime editing
+        if args.prime_editing_extension_seq != "":
+            #first, align the extension seq to the reference amplicon
+            #we're going to consider the first reference only (so if multiple alleles exist at the editing position, this may get messy)
+            ref_incentive = np.zeros(len(amplicon_seq_arr[0])+1,dtype=np.int)
+            s1,s2,score=CRISPResso2Align.global_align(args.prime_editing_extension_seq,amplicon_seq_arr[0],matrix=aln_matrix,gap_incentive=ref_incentive,gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
+            range_start_dashes = 0
+            m = re.search(r'^-+',s1)
+            if (m):
+                range_start_dashes = m.span()[1]
+            range_end_dashes = len(amplicon_seq_arr[0])
+            m = re.search(r'-+$',s1)
+            if (m):
+                range_end_dashes = m.span()[0]
+            new_ref = amplicon_seq_arr[0][0:range_start_dashes] + args.prime_editing_extension_seq + amplicon_seq_arr[0][range_end_dashes:]
+            amplicon_seq_arr.append(new_ref)
+            amplicon_name_arr.append('Prime-edited')
+            amplicon_quant_window_coordinates_arr.append('')
+
+            flap_seq = args.prime_editing_extension_seq[-2*args.prime_editing_extension_quantification_window_size:]
+            guides.append(flap_seq)
+            guide_names.append('PE flap')
+            guide_qw_centers.append(-1*args.prime_editing_extension_quantification_window_size)
+            guide_qw_sizes.append(args.prime_editing_extension_quantification_window_size)
+            guide_plot_cut_points.append(False)
+
+        if args.prime_editing_spacer_seq:
+            wrong_nt=CRISPRessoShared.find_wrong_nt(args.prime_editing_spacer_seq)
+            if wrong_nt:
+                raise CRISPRessoShared.NTException('The prime editing spacer sgRNA sequence contains bad characters:%s'  % ' '.join(wrong_nt))
+            guides.append(args.prime_editing_spacer_seq)
+            guide_names.append('PE spacer sgRNA')
+            guide_qw_centers.append(guide_qw_centers[0])
+            guide_qw_sizes.append(guide_qw_sizes[0])
+            guide_plot_cut_points.append(True)
+
+        if args.prime_editing_nicking_guide_seq:
+            wrong_nt=CRISPRessoShared.find_wrong_nt(args.prime_editing_nicking_guide_seq)
+            if wrong_nt:
+                raise CRISPRessoShared.NTException('The prime editing nicking sgRNA sequence contains bad characters:%s'  % ' '.join(wrong_nt))
+            guides.append(args.prime_editing_nicking_guide_seq)
+            guide_names.append('PE nicking sgRNA')
+            guide_qw_centers.append(guide_qw_centers[0])
+            guide_qw_sizes.append(guide_qw_sizes[0])
+            guide_plot_cut_points.append(True)
+
 
         for idx,this_seq in enumerate(amplicon_seq_arr):
             wrong_nt=CRISPRessoShared.find_wrong_nt(this_seq)
@@ -587,13 +656,12 @@ def main():
         guide_mismatches = [[]]*len(guides) #all previous guides had no mismatches
 
         #add flexi guides (that can contain mismatches)
-        if args.flexiguide:
+        if args.flexiguide_seq:
             flexi_guides = []
             flexi_guide_mismatches = []
             all_flexiguide_names = args.flexiguide_name.split(",")
             flexi_guide_names = []
-            for idx,guide in enumerate(args.flexiguide.split(",")):
-
+            for idx,guide in enumerate(args.flexiguide_seq.split(",")):
                 #for all amps in forward and reverse complement amps:
                 for amp_seq in amplicon_seq_arr + [CRISPRessoShared.reverse_complement(x) for x in amplicon_seq_arr]:
                     ref_incentive = np.zeros(len(amp_seq)+1,dtype=np.int)
@@ -626,18 +694,21 @@ def main():
                     guides.append(flexi_guide)
                     guide_mismatches.append(flexi_guide_mismatches[i])
                     guide_names.append(flexi_guide_names[i])
-            info('Added %d guides with flexible matching\n\tOriginal flexiguides: %s\n\tFound guides: %s\n\tMismatch locations: %s'%(flexi_guide_count,str(args.flexiguide.split(",")),str(flexi_guides),str(flexi_guide_mismatches)))
+                    guide_qw_centers.append(args.quantification_window_center.split(",")[0])
+                    guide_qw_sizes.append(args.quantification_window_size.split(",")[0])
+                    if args.base_editor_output:
+                        guide_plot_cut_points.append(False)
+                    else:
+                        guide_plot_cut_points.append(True)
+            info('Added %d guides with flexible matching\n\tOriginal flexiguides: %s\n\tFound guides: %s\n\tMismatch locations: %s'%(flexi_guide_count,str(args.flexiguide_seq.split(",")),str(flexi_guides),str(flexi_guide_mismatches)))
 
 
+        #now that we're done with adding possible guides and amplicons, go through each amplicon and compute quantification windows
         found_guide_seq = [False]*len(guides)
         found_coding_seq = [False]*len(coding_seqs)
 
         max_amplicon_len = 0 #for flash
         min_amplicon_len = 99**99 #for flash
-
-        quant_window_coordinates_arr = []
-        if args.quantification_window_coordinates is not None:
-            quant_window_coordinates_arr = args.quantification_window_coordinates.split(",")
 
         for idx,seq in enumerate(amplicon_seq_arr):
             this_seq = seq.strip().upper()
@@ -656,14 +727,14 @@ def main():
                 this_min_aln_score = amplicon_min_alignment_score_arr[idx]
 
             this_quant_window_coordinates = None
-            if idx < len(quant_window_coordinates_arr) and quant_window_coordinates_arr[idx] != "":
-                this_quant_window_coordinates = quant_window_coordinates_arr[idx]
+            if amplicon_quant_window_coordinates_arr[idx] != "":
+                this_quant_window_coordinates = amplicon_quant_window_coordinates_arr[idx]
 
 
             # Calculate cut sites for this reference
-            (this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_cut_points, this_sgRNA_plot_idxs, this_sgRNA_mismatches, this_sgRNA_names, this_include_idxs,
-                this_exclude_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(this_seq,guides,guide_mismatches,guide_names,args.quantification_window_center,
-                args.quantification_window_size,this_quant_window_coordinates,args.exclude_bp_from_left,args.exclude_bp_from_right,args.plot_window_size)
+            (this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_cut_points, this_sgRNA_plot_cut_points, this_sgRNA_plot_idxs, this_sgRNA_mismatches, this_sgRNA_names, this_include_idxs,
+                this_exclude_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(this_seq,guides,guide_mismatches,guide_names,guide_qw_centers,
+                guide_qw_sizes,this_quant_window_coordinates,args.exclude_bp_from_left,args.exclude_bp_from_right,args.plot_window_size,guide_plot_cut_points)
 
             this_contains_guide = False
             if len(this_sgRNA_sequences) > 0:
@@ -738,6 +809,7 @@ def main():
                    'sgRNA_cut_points':this_sgRNA_cut_points,
                    'sgRNA_intervals':this_sgRNA_intervals,
                    'sgRNA_sequences':this_sgRNA_sequences,
+                   'sgRNA_plot_cut_points':this_sgRNA_plot_cut_points,
                    'sgRNA_plot_idxs':this_sgRNA_plot_idxs,
                    'sgRNA_names':this_sgRNA_names,
                    'sgRNA_mismatches':this_sgRNA_mismatches,
@@ -869,6 +941,7 @@ def main():
                                 mismatches[i] = 1
                         this_sgRNA_mismatches.append(sorted(list(mismatches.keys())))
 
+
                     this_sgRNA_plot_idxs = []
                     for plot_idx_list in refs[clone_ref_name]['sgRNA_plot_idxs']:
                         this_sgRNA_plot_idxs.append([s1inds[x] for x in plot_idx_list])
@@ -883,6 +956,7 @@ def main():
                     refs[ref_name]['sgRNA_cut_points'] = this_cut_points
                     refs[ref_name]['sgRNA_intervals'] = this_sgRNA_intervals
                     refs[ref_name]['sgRNA_sequences'] = refs[clone_ref_name]['sgRNA_sequences']
+                    refs[ref_name]['sgRNA_plot_cut_points'] = refs[clone_ref_name]['sgRNA_plot_cut_points']
                     refs[ref_name]['sgRNA_plot_idxs'] = this_sgRNA_plot_idxs
                     refs[ref_name]['sgRNA_mismatches'] = this_sgRNA_mismatches
                     refs[ref_name]['sgRNA_names'] = refs[clone_ref_name]['sgRNA_names']
@@ -1813,6 +1887,7 @@ def main():
                 'min_aln_score' + "\t" +
                 'gap_incentive' + "\t" +
                 'sgRNA_cut_points' + "\t" +
+                'sgRNA_plot_cut_points' + "\t" +
                 'sgRNA_intervals' + "\t" +
                 'sgRNA_plot_idxs' + "\t" +
                 'sgRNA_mismatches' + "\t" +
@@ -1835,6 +1910,7 @@ def main():
                     str(refs[ref_name]['min_aln_score']) + "\t" +
                     str(refs[ref_name]['gap_incentive']) + "\t" +
                     str(refs[ref_name]['sgRNA_cut_points']) + "\t" +
+                    str(refs[ref_name]['sgRNA_plot_cut_points']) + "\t" +
                     str(refs[ref_name]['sgRNA_intervals']) + "\t" +
                     str(refs[ref_name]['sgRNA_sequences']) + "\t" +
                     str(refs[ref_name]['sgRNA_plot_idxs']) + "\t" +
@@ -2343,6 +2419,7 @@ def main():
             sgRNA_sequences = refs[ref_name]['sgRNA_sequences']
 #            print('debug 2120 here: '+str(sgRNA_sequences))
             cut_points = refs[ref_name]['sgRNA_cut_points']
+            plot_cut_points = refs[ref_name]['sgRNA_plot_cut_points']
             sgRNA_intervals = refs[ref_name]['sgRNA_intervals']
             sgRNA_names = refs[ref_name]['sgRNA_names']
             sgRNA_mismatches = refs[ref_name]['sgRNA_mismatches']
@@ -2442,8 +2519,8 @@ def main():
                         sgRNA = sgRNA_sequences[i]
                         sgRNA_name = sgRNA_names[i]
 
-                        sgRNA_label = sgRNA # for file names
-                        sgRNA_legend = sgRNA # for legends
+                        sgRNA_label = "sgRNA_"+sgRNA # for file names
+                        sgRNA_legend = "sgRNA " + sgRNA # for legends
                         if sgRNA_name != "":
                             sgRNA_label = sgRNA_name
                             sgRNA_legend = sgRNA_name + " (" + sgRNA +")"
@@ -2462,14 +2539,14 @@ def main():
                         new_include_idx = []
                         for x in include_idxs_list:
                             new_include_idx += [x - new_sel_cols_start]
-                        plot_root = _jp('2b.'+ref_plot_name + 'Nucleotide_percentage_quilt_around_sgRNA_' + sgRNA_label)
+                        plot_root = _jp('2b.'+ref_plot_name + 'Nucleotide_percentage_quilt_around_' + sgRNA_label)
                         CRISPRessoPlot.plot_nucleotide_quilt(
                                 nuc_df_for_plot.iloc[:,sel_cols],
                                 mod_df_for_plot.iloc[:,sel_cols],
                                 plot_root,
                                 save_png,sgRNA_intervals=new_sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,quantification_window_idxs=new_include_idx)
                         crispresso2_info['refs'][ref_name]['plot_2b_roots'].append(os.path.basename(plot_root))
-                        crispresso2_info['refs'][ref_name]['plot_2b_captions'].append('Figure 2b: Nucleotide distribution around sgRNA ' + sgRNA_label + '.')
+                        crispresso2_info['refs'][ref_name]['plot_2b_captions'].append('Figure 2b: Nucleotide distribution around ' + sgRNA_legend + '.')
                         crispresso2_info['refs'][ref_name]['plot_2b_datas'].append([('Nucleotide frequency in quantification window',os.path.basename(quant_window_nuc_freq_filename))])
 
 
@@ -2620,9 +2697,11 @@ def main():
 
                 if cut_points:
                     for idx,cut_point in enumerate(cut_points):
-                        if idx==0:
+                        added_legend = False
+                        if not added_legend and plot_cut_points[idx]:
                             plt.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',lw=2,label='Predicted cleavage position')
-                        else:
+                            added_legend = True
+                        elif plot_cut_points[idx]:
                             plt.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',lw=2,label='_nolegend_')
 
                     for idx,sgRNA_int in enumerate(sgRNA_intervals):
@@ -2687,9 +2766,11 @@ def main():
 
                 if cut_points:
                     for idx,cut_point in enumerate(cut_points):
-                        if idx==0:
+                        added_legend = False
+                        if not added_legend and plot_cut_points[idx]:
                             plt.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',lw=2,label='Predicted cleavage position')
-                        else:
+                            added_legend = True
+                        elif plot_cut_points[idx]:
                             plt.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',lw=2,label='_nolegend_')
 
                     for idx,sgRNA_int in enumerate(sgRNA_intervals):
@@ -2756,11 +2837,12 @@ def main():
 
                 if cut_points:
                     for idx,cut_point in enumerate(cut_points):
-                        if idx==0:
-                            plt.plot([cut_point+.5,cut_point+.5],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
-                        else:
-                            plt.plot([cut_point+.5,cut_point+.5],[0,y_max],'--k',linewidth=2,label='_nolegend_')
-
+                        added_legend = False
+                        if not added_legend and plot_cut_points[idx]:
+                            plt.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',lw=2,label='Predicted cleavage position')
+                            added_legend = True
+                        elif plot_cut_points[idx]:
+                            plt.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',lw=2,label='_nolegend_')
 
                     for idx,sgRNA_int in enumerate(sgRNA_intervals):
                         if idx==0:
@@ -2808,12 +2890,13 @@ def main():
                 #plt.hold(True)
                 y_max=max(insertion_length_vectors[ref_name])*1.1
                 if cut_points:
-
                     for idx,cut_point in enumerate(cut_points):
-                        if idx==0:
-                            ax1.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
-                        else:
-                            ax1.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='_nolegend_')
+                        added_legend = False
+                        if not added_legend and plot_cut_points[idx]:
+                            ax1.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',lw=2,label='Predicted cleavage position')
+                            added_legend = True
+                        elif plot_cut_points[idx]:
+                            ax1.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',lw=2,label='_nolegend_')
 
                 plt.xticks(np.arange(0,ref_len,max(3,(ref_len/6) - (ref_len/6)%5)).astype(int) )
                 plt.xlabel('Reference amplicon position (bp)')
@@ -2831,12 +2914,13 @@ def main():
                 #plt.hold(True)
                 y_max=max(deletion_length_vectors[ref_name])*1.1
                 if cut_points:
-
                     for idx,cut_point in enumerate(cut_points):
-                        if idx==0:
-                            ax2.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
-                        else:
-                            ax2.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='_nolegend_')
+                        added_legend = False
+                        if not added_legend and plot_cut_points[idx]:
+                            ax2.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',lw=2,label='Predicted cleavage position')
+                            added_legend = True
+                        elif plot_cut_points[idx]:
+                            ax2.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',lw=2,label='_nolegend_')
 
                 plt.xticks(np.arange(0,ref_len,max(3,(ref_len/6) - (ref_len/6)%5)).astype(int) )
                 plt.xlabel('Reference amplicon position (bp)')
@@ -2877,6 +2961,7 @@ def main():
                     plt.plot(ref1_all_substitution_positions,'g',linewidth=3,label='Substitutions')
 
                     ref1_cut_points = refs[ref_names[0]]['sgRNA_cut_points']
+                    ref1_plot_cut_points = refs[ref_names[0]]['sgRNA_plot_cut_points']
                     ref1_sgRNA_intervals = refs[ref_names[0]]['sgRNA_intervals']
                     ref1_include_idxs_list = sorted(list(refs[ref_names[0]]['include_idxs']))
                     #shade quantification window
@@ -2896,9 +2981,11 @@ def main():
 
                     if ref1_cut_points:
                         for idx,ref1_cut_point in enumerate(ref1_cut_points):
-                            if idx==0:
+                            added_legend = False
+                            if not added_legend and plot_cut_points[idx]:
                                 plt.plot([ref1_cut_point+0.5,ref1_cut_point+0.5],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
-                            else:
+                                added_legend = True
+                            elif plot_cut_points[idx]:
                                 plt.plot([ref1_cut_point+0.5,ref1_cut_point+0.5],[0,y_max],'--k',linewidth=2,label='_nolegend_')
 
 
@@ -2947,6 +3034,7 @@ def main():
                 #make frameshift plots
                 ref_len = refs[ref_name]['sequence_length']
                 cut_points = refs[ref_name]['sgRNA_cut_points']
+                plot_cut_points = refs[ref_name]['sgRNA_plot_cut_points']
                 sgRNA_intervals = refs[ref_name]['sgRNA_intervals']
                 MODIFIED_FRAMESHIFT = counts_modified_frameshift[ref_name]
                 MODIFIED_NON_FRAMESHIFT = counts_modified_non_frameshift[ref_name]
@@ -2987,11 +3075,12 @@ def main():
 #                        ax2.plot(cut_points+1,np.zeros(len(cut_points)),'vr', ms=25,label='Predicted cleavage position')
 
                         for idx,cut_point in enumerate(cut_points):
-                            if not args.base_editor_output:
-                                if idx==0:
-                                        ax2.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
-                                else:
-                                        ax2.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='_nolegend_')
+                            added_legend = False
+                            if not added_legend and plot_cut_points[idx]:
+                                ax2.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
+                                added_legend = True
+                            elif plot_cut_points[idx]:
+                                ax2.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='_nolegend_')
 
                             for idx,sgRNA_int in enumerate(sgRNA_intervals):
                                 if idx==0:
@@ -3133,11 +3222,12 @@ def main():
 
                     if cut_points:
                         for idx,cut_point in enumerate(cut_points):
-                            if not args.base_editor_output:
-                                if idx==0:
-                                        plt.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
-                                else:
-                                        plt.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='_nolegend_')
+                            added_legend = False
+                            if not added_legend and plot_cut_points[idx]:
+                                plt.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
+                                added_legend = True
+                            elif plot_cut_points[idx]:
+                                plt.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='_nolegend_')
 
                             for idx,sgRNA_int in enumerate(sgRNA_intervals):
                                 if idx==0:
@@ -3214,6 +3304,7 @@ def main():
             ##new plots alleles around cut_sites
             sgRNA_sequences = refs[ref_name]['sgRNA_sequences']
             sgRNA_cut_points = refs[ref_name]['sgRNA_cut_points']
+            sgRNA_plot_cut_points = refs[ref_name]['sgRNA_plot_cut_points']
             sgRNA_intervals = refs[ref_name]['sgRNA_intervals']
             sgRNA_plot_idxs = refs[ref_name]['sgRNA_plot_idxs']
             sgRNA_mismatches = refs[ref_name]['sgRNA_mismatches']
@@ -3241,11 +3332,12 @@ def main():
 
             for ind,sgRNA in enumerate(sgRNA_sequences):
                 cut_point = sgRNA_cut_points[ind]
+                plot_cut_point = sgRNA_plot_cut_points[ind]
                 sgRNA_name = sgRNA_names[ind]
                 plot_idxs = sgRNA_plot_idxs[ind]
 
-                sgRNA_label = sgRNA # for file names
-                sgRNA_legend = sgRNA # for legends
+                sgRNA_label = "sgRNA_"+sgRNA # for file names
+                sgRNA_legend = "sgRNA " + sgRNA # for legends
                 if sgRNA_name != "":
                     sgRNA_label = sgRNA_name
                     sgRNA_legend = sgRNA_name + " (" + sgRNA +")"
@@ -3254,12 +3346,12 @@ def main():
                 df_alleles_around_cut=CRISPRessoShared.get_dataframe_around_cut(df_alleles.loc[df_alleles['Reference_Name'] == ref_name],cut_point,plot_half_window)
 
                 #write alleles table to file
-                allele_filename = _jp(ref_plot_name+'Alleles_frequency_table_around_sgRNA_'+sgRNA_label+'.txt')
+                allele_filename = _jp(ref_plot_name+'Alleles_frequency_table_around_'+sgRNA_label+'.txt')
                 df_alleles_around_cut.to_csv(allele_filename,sep='\t',header=True)
                 crispresso2_info['refs'][ref_name]['allele_frequency_files'].append(os.path.basename(allele_filename))
 
                 ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_half_window+1:cut_point+plot_half_window+1]
-                fig_filename_root = _jp('9.'+ref_plot_name+'Alleles_frequency_table_around_sgRNA_'+sgRNA_label)
+                fig_filename_root = _jp('9.'+ref_plot_name+'Alleles_frequency_table_around_'+sgRNA_label)
                 n_good = df_alleles_around_cut.ix[df_alleles_around_cut['%Reads']>=args.min_frequency_alleles_around_cut_to_plot].shape[0]
                 if not args.suppress_plots and n_good > 0:
 
@@ -3275,7 +3367,7 @@ def main():
                         new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1,int_end - new_sel_cols_start - 1)]
 
                     CRISPRessoPlot.plot_alleles_table(ref_seq_around_cut,df_alleles=df_to_plot,fig_filename_root=fig_filename_root,
-                        MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot,MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot,SAVE_ALSO_PNG=save_png,base_editor_output=args.base_editor_output,sgRNA_intervals=new_sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches)
+                        MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot,MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot,SAVE_ALSO_PNG=save_png,plot_cut_point=plot_cut_point,sgRNA_intervals=new_sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches)
                     crispresso2_info['refs'][ref_name]['plot_9_roots'].append(os.path.basename(fig_filename_root))
                     crispresso2_info['refs'][ref_name]['plot_9_captions'].append("Figure 9: Visualization of the distribution of identified alleles around each the cleavage site for the guide " + sgRNA_legend + ". Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site.")
                     crispresso2_info['refs'][ref_name]['plot_9_datas'].append([('Allele frequency table',os.path.basename(allele_filename))])
@@ -3306,12 +3398,12 @@ def main():
                     just_sel_nuc_freqs = plot_nuc_freqs.iloc[:,from_nuc_indices].copy()
                     just_sel_nuc_freqs.columns = [args.conversion_nuc_from + str(pos+1) for pos in from_nuc_indices]
 
-                    quant_window_sel_nuc_pct_filename = _jp(ref_plot_name + 'Selected_nucleotide_percentage_table_around_sgRNA_'+sgRNA_label+'.txt')
+                    quant_window_sel_nuc_pct_filename = _jp(ref_plot_name + 'Selected_nucleotide_percentage_table_around_'+sgRNA_label+'.txt')
                     just_sel_nuc_pcts.to_csv(quant_window_sel_nuc_pct_filename,sep='\t',header=True,index=True)
 #                   not storing the name because it is unique to this sgRNA
 #                    crispresso2_info['quant_window_sel_nuc_pct_filename'] = os.path.basename(quant_window_sel_nuc_pct_filename)
 
-                    quant_window_sel_nuc_freq_filename = _jp(ref_plot_name + 'Selected_nucleotide_frequency_table_around_sgRNA_'+sgRNA_label+'.txt')
+                    quant_window_sel_nuc_freq_filename = _jp(ref_plot_name + 'Selected_nucleotide_frequency_table_around_'+sgRNA_label+'.txt')
                     just_sel_nuc_freqs.to_csv(quant_window_sel_nuc_freq_filename,sep='\t',header=True,index=True)
 #                   not storing the name because it is unique to this sgRNA
 #                    crispresso2_info['quant_window_sel_nuc_freq_filename'] = os.path.basename(quant_window_sel_nuc_freq_filename)
@@ -3328,40 +3420,40 @@ def main():
 
                     if not args.suppress_plots:
 
-                        fig_filename_root = _jp('10d.'+ref_plot_name+'Log2_nucleotide_frequency_around_sgRNA_'+sgRNA_label)
+                        fig_filename_root = _jp('10d.'+ref_plot_name+'Log2_nucleotide_frequency_around_'+sgRNA_label)
                         CRISPRessoPlot.plot_log_nuc_freqs(
                             df_nuc_freq = plot_nuc_freqs,
                             tot_aln_reads = tot_aln_reads,
-                            plot_title = get_plot_title_with_ref_name('Log2 Nucleotide Frequencies Around sgRNA ' + sgRNA_legend,ref_name),
+                            plot_title = get_plot_title_with_ref_name('Log2 Nucleotide Frequencies Around ' + sgRNA_legend,ref_name),
                             fig_filename_root = fig_filename_root,
                             save_also_png = save_png,
                             quantification_window_idxs = plot_quant_window_idxs
                             )
                         crispresso2_info['refs'][ref_name]['plot_10d_roots'].append(os.path.basename(fig_filename_root))
-                        crispresso2_info['refs'][ref_name]['plot_10d_captions'].append("Figure 10d: Log2 nucleotide frequencies for each position in the plotting window around the sgRNA " + sgRNA_legend + ". The quantification window is outlined by the dotted box.")
+                        crispresso2_info['refs'][ref_name]['plot_10d_captions'].append("Figure 10d: Log2 nucleotide frequencies for each position in the plotting window around the " + sgRNA_legend + ". The quantification window is outlined by the dotted box.")
                         crispresso2_info['refs'][ref_name]['plot_10d_datas'].append([])
 
 
-                        fig_filename_root = _jp('10e.'+ref_plot_name+'Selected_conversion_at_'+args.conversion_nuc_from+'s_around_sgRNA_'+sgRNA_label)
+                        fig_filename_root = _jp('10e.'+ref_plot_name+'Selected_conversion_at_'+args.conversion_nuc_from+'s_around_'+sgRNA_label)
                         CRISPRessoPlot.plot_conversion_at_sel_nucs(
                             df_subs = plot_nuc_pcts,
                             ref_name = ref_name,
                             ref_sequence = plot_ref_seq,
-                            plot_title = get_plot_title_with_ref_name('Substitution Frequencies at '+args.conversion_nuc_from+'s around sgRNA ' + sgRNA_legend,ref_name),
+                            plot_title = get_plot_title_with_ref_name('Substitution Frequencies at '+args.conversion_nuc_from+'s around ' + sgRNA_legend,ref_name),
                             conversion_nuc_from = args.conversion_nuc_from,
                             fig_filename_root = fig_filename_root,
                             save_also_png = save_png
                             )
                         crispresso2_info['refs'][ref_name]['plot_10e_roots'].append(os.path.basename(fig_filename_root))
-                        crispresso2_info['refs'][ref_name]['plot_10e_captions'].append("Figure 10e: Proportion of each base at each nucleotide targeted by base editors in the plotting window around the sgRNA " + sgRNA_legend + ". The number of each target base is annotated on the reference sequence at the bottom of the plot.")
+                        crispresso2_info['refs'][ref_name]['plot_10e_captions'].append("Figure 10e: Proportion of each base at each nucleotide targeted by base editors in the plotting window around " + sgRNA_legend + ". The number of each target base is annotated on the reference sequence at the bottom of the plot.")
                         crispresso2_info['refs'][ref_name]['plot_10e_datas'].append([('Nucleotide frequencies at ' + args.conversion_nuc_from + 's',os.path.basename(quant_window_sel_nuc_freq_filename))])
 
-                        fig_filename_root = _jp('10f.'+ref_plot_name+'Selected_conversion_no_ref_at_'+args.conversion_nuc_from+'s_around_sgRNA_'+sgRNA_label)
+                        fig_filename_root = _jp('10f.'+ref_plot_name+'Selected_conversion_no_ref_at_'+args.conversion_nuc_from+'s_around_'+sgRNA_label)
                         CRISPRessoPlot.plot_conversion_at_sel_nucs_not_include_ref(
                             df_subs = plot_nuc_pcts,
                             ref_name = ref_name,
                             ref_sequence = plot_ref_seq,
-                            plot_title = get_plot_title_with_ref_name('Substitution Frequencies at '+args.conversion_nuc_from+'s around sgRNA ' + sgRNA_legend,ref_name),
+                            plot_title = get_plot_title_with_ref_name('Substitution Frequencies at '+args.conversion_nuc_from+'s around ' + sgRNA_legend,ref_name),
                             conversion_nuc_from = args.conversion_nuc_from,
                             fig_filename_root = fig_filename_root,
                             save_also_png = save_png
@@ -3370,12 +3462,12 @@ def main():
                         crispresso2_info['refs'][ref_name]['plot_10f_captions'].append("Figure 10f: Non-reference base proportions. For target nucleotides in the plotting window, this plot shows the proportion of non-reference (non-"+args.conversion_nuc_from + ") bases as a percentage of all non-reference sequences. The number of each target base is annotated on the reference sequence at the bottom of the plot.")
                         crispresso2_info['refs'][ref_name]['plot_10f_datas'].append([('Nucleotide frequencies at ' + args.conversion_nuc_from + 's',os.path.basename(quant_window_sel_nuc_freq_filename))])
 
-                        fig_filename_root = _jp('10g.'+ref_plot_name+'Selected_conversion_no_ref_scaled_at_'+args.conversion_nuc_from+'s_around_sgRNA_'+sgRNA_label)
+                        fig_filename_root = _jp('10g.'+ref_plot_name+'Selected_conversion_no_ref_scaled_at_'+args.conversion_nuc_from+'s_around_'+sgRNA_label)
                         CRISPRessoPlot.plot_conversion_at_sel_nucs_not_include_ref_scaled(
                             df_subs = plot_nuc_pcts,
                             ref_name = ref_name,
                             ref_sequence = plot_ref_seq,
-                            plot_title = get_plot_title_with_ref_name('Substitution Frequencies at '+args.conversion_nuc_from+'s around sgRNA ' + sgRNA_legend,ref_name),
+                            plot_title = get_plot_title_with_ref_name('Substitution Frequencies at '+args.conversion_nuc_from+'s around ' + sgRNA_legend,ref_name),
                             conversion_nuc_from = args.conversion_nuc_from,
                             fig_filename_root = fig_filename_root,
                             save_also_png = save_png
