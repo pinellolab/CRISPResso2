@@ -285,8 +285,8 @@ def main():
         parser.add_argument('--skip_failed',  help='Continue with pooled analysis even if one sample fails',action='store_true')
         parser.add_argument('--gene_annotations', type=str, help='Gene Annotation Table from UCSC Genome Browser Tables (http://genome.ucsc.edu/cgi-bin/hgTables?command=start), \
         please select as table "knownGene", as output format "all fields from selected table" and as file returned "gzip compressed"', default='')
-        parser.add_argument('-p','--n_processes',type=int, help='Specify the number of processes to use for the quantification.\
-        Please use with caution since increasing this parameter will increase the memory required to run CRISPResso.',default=1)
+        parser.add_argument('-p','--n_processes',type=str, help='The number of processes to use for the quantification.\
+        Please use with caution since increasing this parameter will increase the memory required to run CRISPResso. Can be set to \'max\'.',default="1")
         parser.add_argument('--crispresso_command', help='CRISPResso command to call',default='CRISPResso')
 
         args = parser.parse_args()
@@ -312,6 +312,12 @@ def main():
         if args.gene_annotations:
             check_file(args.gene_annotations)
 
+
+        n_processes = 1
+        if args.n_processes == "max":
+            n_processes = CRISPRessoMultiProcessing.get_max_processes()
+        else:
+            n_processes = int(args.n_processes)
 
         #INIT
         get_name_from_bam=lambda  x: os.path.basename(x).replace('.bam','')
@@ -519,7 +525,7 @@ def main():
 
         else:
             #run region extraction here
-            df_regions = CRISPRessoMultiProcessing.run_pandas_apply_parallel(df_regions,extract_reads_chunk,args.n_processes)
+            df_regions = CRISPRessoMultiProcessing.run_pandas_apply_parallel(df_regions,extract_reads_chunk,n_processes)
             df_regions.sort_values('region_number',inplace=True)
             cols_to_print = ["chr_id","bpstart","bpend","sgRNA","Expected_HDR","Coding_sequence","sequence","n_reads","bam_file_with_reads_in_region","fastq_file_trimmed_reads_in_region"]
             df_regions.fillna('NA').to_csv(report_reads_aligned_filename,sep='\t',columns = cols_to_print,index_label="Name")
@@ -557,7 +563,7 @@ def main():
                else:
                     info('\nThe region [%s] has too few reads mapped to it (%d)! Not running CRISPResso!' % (idx,row['n_reads']))
 
-        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'region',args.skip_failed)
+        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,n_processes,'region',args.skip_failed)
 
         quantification_summary=[]
         all_region_names = []

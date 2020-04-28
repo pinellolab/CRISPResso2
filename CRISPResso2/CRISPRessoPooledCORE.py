@@ -295,8 +295,8 @@ def main():
         #tool specific optional
         parser.add_argument('--gene_annotations', type=str, help='Gene Annotation Table from UCSC Genome Browser Tables (http://genome.ucsc.edu/cgi-bin/hgTables?command=start), \
         please select as table "knownGene", as output format "all fields from selected table" and as file returned "gzip compressed"', default='')
-        parser.add_argument('-p','--n_processes',type=int, help='Specify the number of processes to use for Bowtie2.\
-        Please use with caution since increasing this parameter will increase significantly the memory required to run CRISPResso.',default=1)
+        parser.add_argument('-p','--n_processes',type=str, help='Specify the number of processes to use for analysis.\
+        Please use with caution since increasing this parameter will significantly increase the memory required to run CRISPResso. Can be set to \'max\'.',default='1')
         parser.add_argument('-x','--bowtie2_index', type=str, help='Basename of Bowtie2 index for the reference genome', default='')
         parser.add_argument('--bowtie2_options_string', type=str, help='Override options for the Bowtie2 alignment command',default=' -k 1 --end-to-end -N 0 --np 0 ')
         parser.add_argument('--min_reads_to_use_region',  type=float, help='Minimum number of reads that align to a region to perform the CRISPResso analysis', default=1000)
@@ -352,6 +352,11 @@ def main():
             error('Please provide the amplicons description file (-f or --amplicons_file option) or the bowtie2 reference genome index file (-x or --bowtie2_index option) or both.')
             sys.exit(1)
 
+        n_processes = 1
+        if args.n_processes == "max":
+            n_processes = CRISPRessoMultiProcessing.get_max_processes()
+        else:
+            n_processes = int(args.n_processes)
 
 
         ####TRIMMING AND MERGING
@@ -628,7 +633,7 @@ def main():
             #align the file to the amplicons (MODE 1)
             info('Align reads to the amplicons...')
             bam_filename_amplicons= _jp('CRISPResso_AMPLICONS_ALIGNED.bam')
-            aligner_command= 'bowtie2 -x %s -p %s %s -U %s 2>>%s | samtools view -bS - > %s' %(custom_index_filename,args.n_processes,args.bowtie2_options_string,processed_output_filename,log_filename,bam_filename_amplicons)
+            aligner_command= 'bowtie2 -x %s -p %s %s -U %s 2>>%s | samtools view -bS - > %s' %(custom_index_filename,n_processes,args.bowtie2_options_string,processed_output_filename,log_filename,bam_filename_amplicons)
 
 
             info('Alignment command: ' + aligner_command)
@@ -667,7 +672,7 @@ def main():
                 else:
                     warn('Skipping amplicon [%s] because no reads align to it\n'% idx)
 
-            CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'amplicon',args.skip_failed)
+            CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,n_processes,'amplicon',args.skip_failed)
 
             df_template['n_reads']=n_reads_aligned_amplicons
             df_template['n_reads_aligned_%']=df_template['n_reads']/float(N_READS_ALIGNED)*100
@@ -693,7 +698,7 @@ def main():
                     for idx,row in df_template.iterrows():
                         fastas.write('>%s\n%s\n'%(idx,row.Amplicon_Sequence))
 
-                aligner_command= 'bowtie2 -x %s -p %s %s -f -U %s --no-hd --no-sq 2> %s > %s ' %(args.bowtie2_index,args.n_processes,args.bowtie2_options_string, \
+                aligner_command= 'bowtie2 -x %s -p %s %s -f -U %s --no-hd --no-sq 2> %s > %s ' %(args.bowtie2_index,n_processes,args.bowtie2_options_string, \
                     filename_amplicon_seqs_fasta,filename_aligned_amplicons_sam_log,filename_aligned_amplicons_sam)
                 bowtie_status=sb.call(aligner_command,shell=True)
                 if bowtie_status:
@@ -768,8 +773,8 @@ def main():
                 N_READS_ALIGNED = crispresso2_info['finished_steps']['n_reads_aligned_genome']
             else:
                 info('Aligning reads to the provided genome index...')
-                aligner_command= 'bowtie2 -x %s -p %s %s -U %s 2>>%s| samtools view -bS - | samtools sort -@ %d - -o %s' %(args.bowtie2_index,args.n_processes,
-                    args.bowtie2_options_string,processed_output_filename,log_filename,args.n_processes,bam_filename_genome)
+                aligner_command= 'bowtie2 -x %s -p %s %s -U %s 2>>%s| samtools view -bS - | samtools sort -@ %d - -o %s' %(args.bowtie2_index,n_processes,
+                    args.bowtie2_options_string,processed_output_filename,log_filename,n_processes,bam_filename_genome)
                 info('aligning with command: ' + aligner_command)
                 sb.call(aligner_command,shell=True)
 
@@ -838,7 +843,7 @@ def main():
                     chr_commands.append(chr_cmd)
 
                 info('Demultiplexing reads by location...')
-                CRISPRessoMultiProcessing.run_parallel_commands(chr_commands,n_processes=args.n_processes,descriptor='Demultiplexing reads by location',continue_on_fail=args.skip_failed)
+                CRISPRessoMultiProcessing.run_parallel_commands(chr_commands,n_processes=n_processes,descriptor='Demultiplexing reads by location',continue_on_fail=args.skip_failed)
 
                 #todo: sometimes no reads align -- we should alert the user and display an error here
 
@@ -913,7 +918,7 @@ def main():
                         n_reads_aligned_genome.append(0)
                         warn("The amplicon %s doesn't have any reads mapped to it!\n Please check your amplicon sequence." %  idx)
 
-                CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'amplicon',args.skip_failed)
+                CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,n_processes,'amplicon',args.skip_failed)
 
                 crispresso2_info['finished_steps']['crispresso_amplicons_and_genome'] = (n_reads_aligned_genome,fastq_region_filenames,files_to_match)
                 with open(crispresso2_info_file,"wb") as info_file:
@@ -940,7 +945,7 @@ def main():
                 else:
                     info('Reporting problematic regions...')
                     summarize_region_fastq_input = [f+" "+uncompressed_reference for f in files_to_match] #pass both params to parallel function
-                    coordinates = CRISPRessoMultiProcessing.run_function_on_array_chunk_parallel(summarize_region_fastq_input,summarize_region_fastq_chunk,n_processes=args.n_processes)
+                    coordinates = CRISPRessoMultiProcessing.run_function_on_array_chunk_parallel(summarize_region_fastq_input,summarize_region_fastq_chunk,n_processes=n_processes)
                     df_regions=pd.DataFrame(coordinates,columns=['chr_id','bpstart','bpend','fastq_file','n_reads','Reference_sequence'])
                     df_regions.dropna(inplace=True) #remove regions in chrUn
 
@@ -979,7 +984,7 @@ def main():
                 info('Parsing the demultiplexed files and extracting locations and reference sequences...')
                 files_to_match = glob.glob(os.path.join(MAPPED_REGIONS,'REGION*.fastq.gz'))
                 summarize_region_fastq_input = [f+" "+uncompressed_reference for f in files_to_match] #pass both params to parallel function
-                coordinates = CRISPRessoMultiProcessing.run_function_on_array_chunk_parallel(summarize_region_fastq_input,summarize_region_fastq_chunk,n_processes=args.n_processes)
+                coordinates = CRISPRessoMultiProcessing.run_function_on_array_chunk_parallel(summarize_region_fastq_input,summarize_region_fastq_chunk,n_processes=n_processes)
                 df_regions=pd.DataFrame(coordinates,columns=['chr_id','bpstart','bpend','fastq_file','n_reads','sequence'])
 
                 df_regions.dropna(inplace=True) #remove regions in chrUn
@@ -1025,7 +1030,7 @@ def main():
                         crispresso_cmds.append(crispresso_cmd)
                     else:
                         info('Skipping region: %s-%d-%d , not enough reads (%d)' %(row.chr_id,row.bpstart,row.bpend, row.n_reads))
-                CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'region',args.skip_failed)
+                CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,n_processes,'region',args.skip_failed)
 
                 crispresso2_info['finished_steps']['crispresso_genome_only'] = True
                 with open(crispresso2_info_file,"wb") as info_file:

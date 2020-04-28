@@ -14,6 +14,9 @@ from functools import partial
 import numpy as np
 import pandas as pd
 
+def get_max_processes():
+    return mp.cpu_count()
+
 def run_crispresso(crispresso_cmds,descriptor,idx):
     """
     Runs a specified crispresso command specified by idx

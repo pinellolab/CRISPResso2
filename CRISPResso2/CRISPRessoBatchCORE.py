@@ -151,14 +151,6 @@ def main():
         if batch_params.drop_duplicates('name').shape[0] != batch_params.shape[0]:
             raise CRISPRessoShared.BadParameterException('Batch input names must be unique. The given names are not unique: ' + str(batch_params.loc[:,'name']))
 
-        quantification_window_center = -3 #default value
-        if args.quantification_window_center is not None:
-            quantification_window_center = args.quantification_window_center
-        plot_window_size = 20 #default value
-        if args.plot_window_size is not None:
-            plot_window_size = args.plot_window_size
-
-
         #Check files
         batch_params["sgRNA_intervals"] = '' #create empty array for sgRNA intervals
         batch_params["sgRNA_intervals"] = batch_params["sgRNA_intervals"].apply(list)
@@ -198,9 +190,12 @@ def main():
                             raise CRISPRessoShared.NTException('The sgRNA sequence in row %d (%s) contains incorrect characters:%s'  % (idx+1,curr_guide_seq, ' '.join(wrong_nt)))
                     guide_mismatches = [[]]*len(guides)
                     guide_names = [""]*len(guides)
-                    (this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_cut_points, this_sgRNA_plot_idxs, this_sgRNA_mismatches,this_sgRNA_names, this_include_idxs,
-                        this_exclude_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(curr_amplicon_seq,guides,guide_mismatches,guide_names,row.quantification_window_center,
-                        row.quantification_window_size,row.quantification_window_coordinates,row.exclude_bp_from_left,row.exclude_bp_from_right,row.plot_window_size)
+                    guide_qw_centers = CRISPRessoShared.set_guide_array(row.quantification_window_center,guides,'guide quantification center')
+                    guide_qw_sizes = CRISPRessoShared.set_guide_array(row.quantification_window_size,guides,'guide quantification size')
+                    guide_plot_cut_points = [1]*len(guides)
+                    (this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_cut_points, this_sgRNA_plot_cut_points, this_sgRNA_plot_idxs, this_sgRNA_mismatches,this_sgRNA_names, this_include_idxs,
+                        this_exclude_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(curr_amplicon_seq,guides,guide_mismatches,guide_names,guide_qw_centers,
+                        guide_qw_sizes,row.quantification_window_coordinates,row.exclude_bp_from_left,row.exclude_bp_from_right,row.plot_window_size,guide_plot_cut_points)
                     for guide_seq in this_sgRNA_sequences:
                         guides_are_in_amplicon[guide_seq] = 1
 
