@@ -1965,7 +1965,7 @@ def main():
 
             df_alleles.ix[:,dsODN_cols].to_csv(allele_frequency_table_fileLoc,sep='\t',header=True,index=None)
 
-        with zipfile.ZipFile(allele_frequency_table_zip_filename,'w',zipfile.ZIP_DEFLATED) as myzip:
+        with zipfile.ZipFile(allele_frequency_table_zip_filename,'w',zipfile.ZIP_DEFLATED, allowZip64=True) as myzip:
             myzip.write(allele_frequency_table_fileLoc,allele_frequency_table_filename)
         os.remove(allele_frequency_table_fileLoc)
         crispresso2_info['allele_frequency_table_filename'] = os.path.basename(allele_frequency_table_filename) #filename is the name of the file in the zip
