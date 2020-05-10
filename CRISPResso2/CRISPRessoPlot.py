@@ -1190,10 +1190,12 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
         plt.close()
         return
 
-    sgRNA_rows = get_rows_for_sgRNA_annotation(sgRNA_intervals,plot_nuc_len)
-    num_sgRNA_rows = max(sgRNA_rows) + 1
+    sgRNA_rows = []
+    num_sgRNA_rows = 0
 
     if sgRNA_intervals and len(sgRNA_intervals) > 0:
+        sgRNA_rows = get_rows_for_sgRNA_annotation(sgRNA_intervals,plot_nuc_len)
+        num_sgRNA_rows = max(sgRNA_rows) + 1
         fig=plt.figure(figsize=(plot_nuc_len*0.3,(N_ROWS+1 + num_sgRNA_rows)*0.6))
         gs1 = gridspec.GridSpec(N_ROWS+2,N_COLUMNS)
         gs2 = gridspec.GridSpec(N_ROWS+2,N_COLUMNS)
