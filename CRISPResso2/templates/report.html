@@ -183,6 +183,49 @@
 					{% endif %}
           {# end of global coding sequence analysis #}
 
+            {# start prime editing report #}
+						{% if report_data['fig_locs'][report_data.amplicons[0]]['plot_11a'] %}
+							<div class='card text-center mb-2'>
+								<div class='card-header'>
+							{% if report_data.amplicons|length == 1 %} {# if only one amplicon #}
+									<h5>Prime editing report</h5>
+							{% else %}
+  						<h5>Prime editing report (all reads aligned to {{report_data.amplicons[0]}})</h5>
+							{% endif %}
+								</div>
+  					<div class='card-body'>
+						<a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][report_data.amplicons[0]]['plot_11a']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][report_data.amplicons[0]]['plot_11a']}}.png" width='80%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions'][report_data.amplicons[0]]['plot_11a']}}</label>
+							  {% for (data_label,data_path) in report_data['fig_datas'][report_data.amplicons[0]]['plot_11a'] %}
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
+                {% endfor %}
+							</div>
+						</div>
+						{% endif %}
+
+				{% if report_data['sgRNA_based_fig_names'][report_data.amplicons[0]] and  report_data['sgRNA_based_fig_names'][report_data.amplicons[0]]['11b']%}
+				<div class='card text-center mb-2'>
+					<div class='card-header'>
+							{% if report_data.amplicons|length == 1 %} {# if only one amplicon #}
+						<h5>Prime editing summary plots at analysis positions</h5>
+							{% else %}
+  						<h5>Prime editing summary plots at analysis positions (aligned to {{report_data.amplicons[0]}})</h5>
+							{% endif %}
+					</div>
+					<div class='card-body'>
+								{% for fig_name in report_data['sgRNA_based_fig_names'][report_data.amplicons[0]]['11b'] %}
+                  <div class='mb-4'>
+			  <a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][report_data.amplicons[0]][fig_name]}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][report_data.amplicons[0]][fig_name]}}.png" width='95%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions'][report_data.amplicons[0]][fig_name]}}</label>
+							  {% for (data_label,data_path) in report_data['fig_datas'][report_data.amplicons[0]][fig_name] %}
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
+                {% endfor %}
+                </div>
+							{% endfor %}
+						</div>
+					</div>
+					{% endif %} {# end plot 11b for prime editing #}
+
 
 					{% if report_data.amplicons|length == 1 %}
           <div> {# if only one amplicon, just a normal div #}
@@ -649,6 +692,7 @@
   							</div>
   				</div> {# end card #}
 					{% endif %} {# end base editing card #}
+
 				</div> {# end this amplicon tab #} <!--end amp tab -->
 
 					{% endfor %}
