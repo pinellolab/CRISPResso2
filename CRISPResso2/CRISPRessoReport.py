@@ -92,14 +92,14 @@ def make_report(run_data,crispresso_report_file,crispresso_folder,_ROOT):
 
 
 
-        for fig in ['2a','3a','3b','4a','4b','4c','4d','4e','4f','5','6','7','8','10a','10b','10c']:
+        for fig in ['2a','3a','3b','4a','4b','4c','4d','4e','4f','5','6','7','8','10a','10b','10c','11a']:
             fig_name = 'plot_'+ fig
             if fig_name + '_root' in run_data['refs'][amplicon_name]:
                 add_fig_if_exists(fig_name,run_data['refs'][amplicon_name][fig_name + '_root'],'Figure ' + fig_name,run_data['refs'][amplicon_name][fig_name + '_caption'],run_data['refs'][amplicon_name][fig_name + '_data'],
                         amplicon_fig_names,amplicon_fig_locs,amplicon_fig_titles,amplicon_fig_captions,amplicon_fig_datas)
 
         this_sgRNA_based_fig_names = {}
-        for fig in ['2b','9','10d','10e','10f','10g']:
+        for fig in ['2b','9','10d','10e','10f','10g','11b']:
         #fig 2b's
             this_fig_names = []
             if 'plot_'+fig+'_roots' in run_data['refs'][amplicon_name]:

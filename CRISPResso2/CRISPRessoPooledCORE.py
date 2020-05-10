@@ -1299,6 +1299,7 @@ def main():
 
              if RUNNING_MODE=='ONLY_GENOME' or RUNNING_MODE=='AMPLICONS_AND_GENOME':
                      files_to_remove+=[bam_filename_genome]
+                     files_to_remove+=[bam_filename_genome+".bai"]
 
              if RUNNING_MODE=='ONLY_AMPLICONS':
                 files_to_remove+=[bam_filename_amplicons,amplicon_fa_filename]

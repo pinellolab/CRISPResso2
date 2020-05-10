@@ -42,7 +42,7 @@ def find_indels_substitutions(_read_seq_al,_ref_seq_al,_include_indx):
 
             if c in nucSet:
                 ref_positions.append(idx)
-                if ref_seq_al[idx_c]!=read_seq_al[idx_c] and read_seq_al[idx_c]!='-' and ref_seq_al[idx_c]!='-':
+                if ref_seq_al[idx_c]!=read_seq_al[idx_c] and read_seq_al[idx_c]!='-' and read_seq_al[idx_c] != 'N':
                     all_substitution_positions.append(idx)
                     all_substitution_values.append(read_seq_al[idx_c])
                     if idx in _include_indx:

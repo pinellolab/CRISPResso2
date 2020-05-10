@@ -1,7 +1,7 @@
 '''
-CRISPResso2 - Kendell Clement and Luca Pinello 2018
+CRISPResso2 - Kendell Clement and Luca Pinello 2020
 Software pipeline for the analysis of genome editing outcomes from deep sequencing data
-(c) 2018 The General Hospital Corporation. All Rights Reserved.
+(c) 2020 The General Hospital Corporation. All Rights Reserved.
 '''
 
 import argparse
@@ -31,7 +31,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.0.36"
+__version__ = "2.0.37"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -142,12 +142,14 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('--plot_window_size','--offset_around_cut_to_plot',  type=int, help='Defines the size of the window extending from the quantification window center to plot. Nucleotides within plot_window_size of the quantification_window_center for each guide are plotted.', default=20)
     parser.add_argument('--min_frequency_alleles_around_cut_to_plot', type=float, help='Minimum %% reads required to report an allele in the alleles table plot.', default=0.2)
     parser.add_argument('--expand_allele_plots_by_quantification', help='If set, alleles with different modifications in the quantification window (but not necessarily in the plotting window (e.g. for another sgRNA)) are plotted on separate lines, even though they may have the same apparent sequence. To force the allele plot and the allele table to be the same, set this parameter. If unset, all alleles with the same sequence will be collapsed into one row.', action='store_true')
+    parser.add_argument('--allele_plot_pcts_only_for_assigned_reference',help='If set, in the allele plots, the percentages will show the percentage as a percent of reads aligned to the assigned reference. Default behavior is to show percentage as a percent of all reads.',action='store_true')
     parser.add_argument('-qwc','--quantification_window_coordinates', type=str, help='Bp positions in the amplicon sequence specifying the quantification window. This parameter overrides values of the "--quantification_window_center", "--cleavage_offset", "--window_around_sgrna" or "--window_around_sgrna" values. Any indels/substitutions outside this window are excluded. Indexes are 0-based, meaning that the first nucleotide is position 0. Ranges are separted by the dash sign (e.g. "start-stop"), and multiple ranges can be separated by the underscore (_). ' +
         'A value of 0 disables this filter. (can be comma-separated list of values, corresponding to amplicon sequences given in --amplicon_seq e.g. 5-10,5-10_20-30 would specify the 5th-10th bp in the first reference and the 5th-10th and 20th-30th bp in the second reference)', default=None)
 
     #verbosity parameters
     parser.add_argument('--keep_intermediate',help='Keep all the  intermediate files',action='store_true')
     parser.add_argument('--dump',help='Dump numpy arrays and pandas dataframes to file for debugging purposes',action='store_true')
+    parser.add_argument('--write_detailed_allele_table',help='If set, a detailed allele table will be written including alignment scores for each read sequence.',action='store_true')
 
     #report style parameters
     parser.add_argument('--max_rows_alleles_around_cut_to_plot',  type=int, help='Maximum number of rows to report in the alleles table plot. ', default=50)
@@ -162,10 +164,11 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('--conversion_nuc_to',  help='For base editor plots, this is the nucleotide produced by the base editor',default='T')
 
     #prime editing parameters
-    parser.add_argument('--prime_editing_spacer_seq',type=str,help="Spacer sgRNA sequence used in prime editing. The spacer should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the sequence.",default='')
-    parser.add_argument('--prime_editing_extension_seq',type=str,help="Extension sequence used in prime editing. The sequence should be given such that the left end of the sequence overlaps with the primer binding site (PBS) and the right end of the sequence is the 3' flap.",default='')
-    parser.add_argument('--prime_editing_extension_quantification_window_size',type=int,help="Quantification window size (in bp) at flap site for measuring modifications anchored at the right side of the extension sequence. Similar to the --quantification_window parameter, the total length of the quantification window will be 2x this parameter. Default: 5bp (10bp total window size)",default=5)
-    parser.add_argument('--prime_editing_nicking_guide_seq',type=str,help="Nicking sgRNA sequence used in prime editing. The sgRNA should not include the PAM sequence. The sequence should be given in the RNA 5'-3' order, so for Cas9, the PAM would be on the right side of the sequence",default='')
+    parser.add_argument('--prime_editing_pegRNA_spacer_seq',type=str,help="pegRNA spacer sgRNA sequence used in prime editing. The spacer should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the given sequence.",default='')
+    parser.add_argument('--prime_editing_pegRNA_extension_seq',type=str,help="Extension sequence used in prime editing. The sequence should be given in the RNA 5'->3' order, such that the sequence starts with the RT template including the edit, followed by the Primer-binding site (PBS).",default='')
+    parser.add_argument('--prime_editing_pegRNA_extension_quantification_window_size',type=int,help="Quantification window size (in bp) at flap site for measuring modifications anchored at the right side of the extension sequence. Similar to the --quantification_window parameter, the total length of the quantification window will be 2x this parameter. Default: 5bp (10bp total window size)",default=5)
+    parser.add_argument('--prime_editing_pegRNA_scaffold_sequence',type=str,help="If given, reads containing any of this scaffold sequence before extension sequence (provided by --prime_editing_extension_seq) will be classified as 'Scaffold Incorporated'. The sequence should be given in the 5'->3' order such that the RT template directly follows this sequence. A common value is 'GGCACCGAGUCGGUGC'.",default='')
+    parser.add_argument('--prime_editing_nicking_guide_seq',type=str,help="Nicking sgRNA sequence used in prime editing. The sgRNA should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the sequence",default='')
 
     #special running modes
     parser.add_argument('--crispresso1_mode', help='Parameter usage as in CRISPResso 1',action='store_true')
@@ -680,6 +683,8 @@ def get_row_around_cut(row,cut_point,offset):
 
 
 def get_dataframe_around_cut(df_alleles, cut_point,offset,collapse_by_sequence=True):
+    if df_alleles.shape[0] == 0:
+        return df_alleles
     ref1 = df_alleles['Reference_Sequence'].iloc[0]
     ref1 = ref1.replace('-','')
     if (cut_point + offset + 1 > len(ref1)):
@@ -796,7 +801,7 @@ def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,qua
             this_sgRNA_cut_points.append(cut_p)
             this_sgRNA_plot_cut_points.append(guide_plot_cut_points[guide_idx])
             this_sgRNA_intervals.append((m.start(),m.start() + len(current_guide_seq)-1))
-            this_sgRNA_mismatches.append(guide_mismatches[guide_idx])
+            this_sgRNA_mismatches.append([len(current_guide_seq)-x for x in guide_mismatches[guide_idx]])
 
             if quantification_window_sizes[guide_idx] > 0:
                 st=max(0,cut_p-quantification_window_sizes[guide_idx]+1)
@@ -892,10 +897,14 @@ def set_guide_array(vals, guides, property_name):
     """
     #if only one is given, set it for all guides
     vals_array = vals.split(",")
-    ret_array = [int(vals_array[0])]*max(1,len(guides))
+    ret_array = [int(vals_array[0])]*len(guides)
     #len(vals_array) is always one -- don't freak out if it's longer than 0 guides
     if len(vals_array) > 1 and len(vals_array) > len(guides):
         raise BadParameterException("More %s values were given than guides. Guides: %d %ss: %d"%(property_name,len(guides),property_name,len(vals_array)))
+
+    if len(guides) == 0:
+        return []
+
     for idx, val in enumerate(vals_array):
         if val != '':
             ret_array[idx] = int(val)

@@ -77,8 +77,9 @@ def get_color_lookup(nucs,alpha):
         colorLookup[nuc] = get_nuc_color(nuc,alpha)
     return colorLookup
 
-def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=False,sgRNA_intervals=None,min_text_pct=0.5,max_text_pct=0.95,quantification_window_idxs=None,sgRNA_names=None,sgRNA_mismatches=None):
-    """Plots a nucleotide quilt with each square showing the percentage of each base at that position in the reference
+def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=False,sgRNA_intervals=None,min_text_pct=0.5,max_text_pct=0.95,quantification_window_idxs=None,sgRNA_names=None,sgRNA_mismatches=None,shade_unchanged=True):
+    """
+    Plots a nucleotide quilt with each square showing the percentage of each base at that position in the reference
     nuc_pct_df: dataframe with percents of each base (ACTGN-) at each position
     mod_pct_df: dataframe with percents of modifications at each position (this function uses 'Insertions_Left' to plot insertions)
     fig_filename_root: filename root (will add .pdf or .png)
@@ -89,12 +90,13 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=
     quantification_window_idxs: indices for quantification window annotation on plot
     min_text_pct: add text annotation if the percent is greater than this number
     max_text_pct: add text annotation if the percent is less than this number
+    shade_unchanged: if true, unchanged/reference nucleotides will be shaded (only changes with regard to reference will be dark)
     """
     plotPct = 0.9 #percent of vertical space to plot in (the rest will be white)
     min_plot_pct = 0.01 #if value is less than this, it won't plot the rectangle (with white boundary)
 
-    if nuc_pct_df.iloc[1,2] > 1:
-        raise Exception('Expecting nucleotide percentage. Instead, got numbers in nuc_pct_df: ' + str(nuc_pct_df.iloc[1,5]))
+    if float(nuc_pct_df.iloc[1,2]) > 1:
+        raise Exception('Expecting nucleotide percentage. Instead, got numbers in nuc_pct_df: ' + str(nuc_pct_df.iloc[1,2]))
 
     nrows = nuc_pct_df.shape[0]
     amp_len = nuc_pct_df.shape[1] - 2 #Batch, Nucleotide, nuc1, nuc2, nuc3 ...
@@ -108,6 +110,7 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=
 
     # make a color map of fixed colors
     color_lookup = get_color_lookup(['A','T','C','G','N','INS','-'],alpha=1)
+    unchanged_color_lookup = get_color_lookup(['A','T','C','G','N','INS','-'],alpha=0.3)
 
     #fig = plt.figure(figsize=(amp_len/2.0,nSamples*2))
     #fig = plt.figure(figsize=(amp_len,nSamples))
@@ -121,26 +124,56 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=
         spine.set_visible(False)
 
 
-    for pos_ind in range(2,amp_len+2): #iterate over all nucleotide positions in the sequence (0=Batch, 1=Nucleotide, so start at 2)
-        x_start = pos_ind
-        x_end = pos_ind + 1
-        for i in range(nSamples): #iterate over all samples
-            sample_row_start = nNucs * i
-            y_start = nSamples - i
-            sumPct = 0
-            for nuc_ind in range(nNucs): #iterate over each nucleotide at this position in this sample
-                pct = float(nuc_pct_df.iloc[sample_row_start + nuc_ind, pos_ind])
-                sumPct += pct
-                if pct > min_plot_pct:
-                    obs_pct = pct * plotPct
-                    curr_nuc = nuc_pct_df.iloc[sample_row_start + nuc_ind,1]
-                    ax.add_patch(
-                        patches.Rectangle((x_start, y_start), x_end-x_start, obs_pct,facecolor=color_lookup[curr_nuc],edgecolor='w')
-                        )
-                    if pct > min_text_pct and pct < max_text_pct:
-                        ax.text(x_start+0.55,y_start + obs_pct/2.0,format(pct*100,'.1f'),horizontalalignment='center',verticalalignment='center',rotation=90)
-                    y_start += obs_pct
+    if not shade_unchanged: #shade all nucs equally
+        for pos_ind in range(2,amp_len+2): #iterate over all nucleotide positions in the sequence (0=Batch, 1=Nucleotide, so start at 2)
+            x_start = pos_ind
+            x_end = pos_ind + 1
+            for i in range(nSamples): #iterate over all samples
+                sample_row_start = nNucs * i
+                y_start = nSamples - i
+                sumPct = 0
+                for nuc_ind in range(nNucs): #iterate over each nucleotide at this position in this sample
+                    pct = float(nuc_pct_df.iloc[sample_row_start + nuc_ind, pos_ind])
+                    sumPct += pct
+                    if pct > min_plot_pct:
+                        obs_pct = pct * plotPct
+                        curr_nuc = nuc_pct_df.iloc[sample_row_start + nuc_ind,1]
+                        ax.add_patch(
+                            patches.Rectangle((x_start, y_start), x_end-x_start, obs_pct,facecolor=color_lookup[curr_nuc],edgecolor='w')
+                            )
+                        if pct > min_text_pct and pct < max_text_pct:
+                            ax.text(x_start+0.55,y_start + obs_pct/2.0,format(pct*100,'.1f'),horizontalalignment='center',verticalalignment='center',rotation=90)
+                        y_start += obs_pct
 
+    else: #shade unchanged bases
+        ref_seq = nuc_pct_df.columns.values
+        for pos_ind in range(2,amp_len+2): #iterate over all nucleotide positions in the sequence (0=Batch, 1=Nucleotide, so start at 2)
+            x_start = pos_ind
+            x_end = pos_ind + 1
+            for i in range(nSamples): #iterate over all samples
+                sample_row_start = nNucs * i
+                y_start = nSamples - i
+                sumPct = 0
+                for nuc_ind in range(nNucs): #iterate over each nucleotide at this position in this sample
+                    pct = float(nuc_pct_df.iloc[sample_row_start + nuc_ind, pos_ind])
+                    sumPct += pct
+                    if pct > min_plot_pct:
+                        obs_pct = pct * plotPct
+                        curr_nuc = nuc_pct_df.iloc[sample_row_start + nuc_ind,1]
+                        if curr_nuc == ref_seq[pos_ind]: #if is reference
+                            ax.add_patch(
+                                patches.Rectangle((x_start, y_start), x_end-x_start, obs_pct,facecolor=unchanged_color_lookup[curr_nuc],edgecolor='w')
+                                )
+                        else:
+                            ax.add_patch(
+                                patches.Rectangle((x_start, y_start), x_end-x_start, obs_pct,facecolor=color_lookup[curr_nuc],edgecolor='w')
+                                )
+
+                        if pct > min_text_pct and pct < max_text_pct:
+                            ax.text(x_start+0.55,y_start + obs_pct/2.0,format(pct*100,'.1f'),horizontalalignment='center',verticalalignment='center',rotation=90)
+                        y_start += obs_pct
+
+    #add insertions
     for pos_ind in range(2,amp_len+1): #iterate over all nucleotide positions in the sequence (0=Batch, 1=Nucleotide, so start at 2)
         x_start = pos_ind + 0.7
         x_end = pos_ind + 1.3
@@ -189,12 +222,15 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=
     plot_y_start = ref_y_start
 
     if sgRNA_intervals and len(sgRNA_intervals) > 0:
-        plot_y_start = 0
-        add_sgRNA_to_ax(ax,sgRNA_intervals,sgRNA_y_start=0.1,sgRNA_y_height=0.2,amp_len=amp_len,x_offset=2,sgRNA_mismatches=sgRNA_mismatches,sgRNA_names=sgRNA_names)
+        sgRNA_rows = get_rows_for_sgRNA_annotation(sgRNA_intervals,amp_len)
+        num_sgRNA_rows = max(sgRNA_rows) + 1
+        sgRNA_y_height = num_sgRNA_rows * 0.3
+        plot_y_start = ref_y_start - (sgRNA_y_height + 0.1)
+        add_sgRNA_to_ax(ax,sgRNA_intervals,sgRNA_y_start=plot_y_start + 0.1,sgRNA_y_height=sgRNA_y_height-0.1,amp_len=amp_len,x_offset=2,sgRNA_mismatches=sgRNA_mismatches,sgRNA_names=sgRNA_names,sgRNA_rows=sgRNA_rows)
 
     if quantification_window_idxs is not None and len(quantification_window_idxs) > 0:
-        q_win_y_start = 0.05
-        q_win_y_height = nSamples+1
+        q_win_y_start = plot_y_start + 0.05
+        q_win_y_height = nSamples+1 - q_win_y_start
 
         q_list = sorted(list(quantification_window_idxs))
 
@@ -267,7 +303,36 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=
         fig.savefig(fig_filename_root+'.png',bbox_inches='tight',pad=1)
     plt.close()
 
-def add_sgRNA_to_ax(ax,sgRNA_intervals,sgRNA_y_start,sgRNA_y_height,amp_len,x_offset=0,sgRNA_mismatches=None,sgRNA_names=None,font_size=None,clip_on=True,label_at_zero=False):
+def get_rows_for_sgRNA_annotation(sgRNA_intervals,amp_len):
+    """
+    Returns an array specifying the row number that an sgRNA should be plotted on in order to avoid overlap
+    params:
+    sgRNA_intervals: array of x coordinate tuples of start and stop
+    amp_len: length of amplicon
+    returns: sgRNA_plot_rows: list of index on which row to plot
+
+    """
+    #figure out how many rows are needed to show all sgRNAs
+    sgRNA_plot_rows = [0]*len(sgRNA_intervals) # which row each sgRNA should be plotted on
+    sgRNA_plot_occupancy = [] # which idxs are already filled on each row
+    sgRNA_plot_occupancy.append([])
+    for idx,sgRNA_int in enumerate(sgRNA_intervals):
+        this_sgRNA_start = max(0,sgRNA_int[0])
+        this_sgRNA_end = min(sgRNA_int[1],amp_len - 1)
+        curr_row = 0
+        if this_sgRNA_start > amp_len or this_sgRNA_end < 0:
+            sgRNA_plot_rows[idx] = curr_row
+            continue
+        while len(np.intersect1d(sgRNA_plot_occupancy[curr_row],range(this_sgRNA_start,this_sgRNA_end))) > 0:
+            next_row = curr_row + 1
+            if not next_row in sgRNA_plot_occupancy:
+                sgRNA_plot_occupancy.append([])
+            curr_row = next_row
+        sgRNA_plot_rows[idx] = curr_row
+        sgRNA_plot_occupancy[curr_row].extend(range(this_sgRNA_start,this_sgRNA_end))
+    return(np.subtract(max(sgRNA_plot_rows),sgRNA_plot_rows))
+
+def add_sgRNA_to_ax(ax,sgRNA_intervals,sgRNA_y_start,sgRNA_y_height,amp_len,x_offset=0,sgRNA_mismatches=None,sgRNA_names=None,sgRNA_rows=None,font_size=None,clip_on=True,label_at_zero=False):
     """
     Adds sgRNA to plot ax
     params:
@@ -279,12 +344,20 @@ def add_sgRNA_to_ax(ax,sgRNA_intervals,sgRNA_y_start,sgRNA_y_height,amp_len,x_of
     x_offset: amount to move sgRNAs in x direction -- if labels or annotations are to the left of the plot, this may have to be non-zero. e.g. if the reference starts at x=2, set this to 2
     sgRNA_mismatches: array (for each sgRNA_interval) of locations in sgRNA where there are mismatches
     sgRNA_names: array (for each sgRNA_interval) of names of sgRNAs (otherwise empty)
+    sgRNA_rows: which row to plot the sgRNA on so they don't overlap (y-axis-wise)
     clip_on: matplotlib parameter for whether sgRNAs should be drawn outside of clipping bounds (if sgRNAs aren't showing up, try setting this to False)
     label_at_zero: whether first sgRNA should be forced to be at 0 instead of off the plot to the left beyond 0 (some plots are ok with this)
     """
 
     if font_size is None:
         font_size = matplotlib.rcParams['font.size']
+
+    #figure out how many rows are needed to show all sgRNAs
+    if sgRNA_rows is None:
+        sgRNA_rows = [0]*len(sgRNA_intervals)
+    max_sgRNA_row = max(sgRNA_rows)+1
+    this_sgRNA_y_height = sgRNA_y_height/float(max_sgRNA_row)
+
 
     min_sgRNA_x = None #keep track of left-most sgRNA
     label_left_sgRNA = True #whether to label left-most sgRNA (set to false if label another sgRNA (e.g. with sgRNA_name))
@@ -293,19 +366,20 @@ def add_sgRNA_to_ax(ax,sgRNA_intervals,sgRNA_y_start,sgRNA_y_height,amp_len,x_of
         this_sgRNA_end = min(sgRNA_int[1],amp_len - 1)
         if this_sgRNA_start > amp_len or this_sgRNA_end < 0:
             continue
+        this_sgRNA_y_start = sgRNA_y_start + this_sgRNA_y_height*sgRNA_rows[idx]
         ax.add_patch(
-            patches.Rectangle((x_offset+this_sgRNA_start, sgRNA_y_start), 1+this_sgRNA_end-this_sgRNA_start, sgRNA_y_height,facecolor=(0,0,0,0.15),clip_on=clip_on)
+            patches.Rectangle((x_offset+this_sgRNA_start, this_sgRNA_y_start), 1+this_sgRNA_end-this_sgRNA_start, this_sgRNA_y_height,facecolor=(0,0,0,0.15),clip_on=clip_on)
             )
 
         #if plot has trimmed the sgRNA, add a mark
         if (this_sgRNA_start) != sgRNA_int[0]:
             ax.add_patch(
                 #patches.Rectangle((x_offset + 0.1+this_sgRNA_start, sgRNA_y_start), 0.1, sgRNA_y_height,facecolor='w',clip_on=clip_on)
-                patches.Rectangle((x_offset + 0.1+this_sgRNA_start, sgRNA_y_start), 0.1, sgRNA_y_height,facecolor='w',clip_on=clip_on)
+                patches.Rectangle((x_offset + 0.1+this_sgRNA_start, this_sgRNA_y_start), 0.1, this_sgRNA_y_height,facecolor='w',clip_on=clip_on)
                 )
         if this_sgRNA_end != sgRNA_int[1]:
             ax.add_patch(
-                patches.Rectangle((x_offset + 0.8+this_sgRNA_end, sgRNA_y_start), 0.1, sgRNA_y_height,facecolor='w',clip_on=clip_on)
+                patches.Rectangle((x_offset + 0.8+this_sgRNA_end, this_sgRNA_y_start), 0.1, this_sgRNA_y_height,facecolor='w',clip_on=clip_on)
                 )
 
         if sgRNA_mismatches is not None:
@@ -314,7 +388,7 @@ def add_sgRNA_to_ax(ax,sgRNA_intervals,sgRNA_y_start,sgRNA_y_height,amp_len,x_of
                 mismatch_plot_pos = sgRNA_int[0] + mismatch
                 if mismatch_plot_pos > 0 and mismatch_plot_pos < amp_len - 1:
                     ax.add_patch(
-                        patches.Rectangle((x_offset+this_sgRNA_start + mismatch, sgRNA_y_start), 1, sgRNA_y_height,facecolor='r',clip_on=clip_on)
+                        patches.Rectangle((x_offset+ mismatch_plot_pos, this_sgRNA_y_start), 1, this_sgRNA_y_height,facecolor='r',clip_on=clip_on)
                         )
 
         #set left-most sgrna start
@@ -323,17 +397,17 @@ def add_sgRNA_to_ax(ax,sgRNA_intervals,sgRNA_y_start,sgRNA_y_height,amp_len,x_of
         if this_sgRNA_start < min_sgRNA_x:
             min_sgRNA_x = this_sgRNA_start
         if sgRNA_names is not None and idx < len(sgRNA_names) and sgRNA_names[idx] != "":
-            if (label_at_zero and x_offset + this_sgRNA_start < 5):
-                ax.text(0,sgRNA_y_start + sgRNA_y_height/2,sgRNA_names[idx] + " ",horizontalalignment='left',verticalalignment='center',fontsize = font_size)
+            if (label_at_zero and x_offset + this_sgRNA_start < len(sgRNA_names[idx])*0.66):
+                ax.text(0,this_sgRNA_y_start + this_sgRNA_y_height/2,sgRNA_names[idx] + " ",horizontalalignment='left',verticalalignment='center',fontsize = font_size)
             else:
-                ax.text(x_offset+this_sgRNA_start,sgRNA_y_start + sgRNA_y_height/2,sgRNA_names[idx] + " ",horizontalalignment='right',verticalalignment='center',fontsize = font_size)
+                ax.text(x_offset+this_sgRNA_start,this_sgRNA_y_start + this_sgRNA_y_height/2,sgRNA_names[idx] + " ",horizontalalignment='right',verticalalignment='center',fontsize = font_size)
             label_left_sgRNA = False #already labeled at least one sgRNA
 
     if min_sgRNA_x is not None and label_left_sgRNA:
         if (label_at_zero and x_offset + min_sgRNA_x < 5):
-            ax.text(0,sgRNA_y_start + sgRNA_y_height/2,'sgRNA ',horizontalalignment='left',verticalalignment='center',fontsize=font_size)
+            ax.text(0,this_sgRNA_y_start + this_sgRNA_y_height/2,'sgRNA ',horizontalalignment='left',verticalalignment='center',fontsize=font_size)
         else:
-            ax.text(x_offset+min_sgRNA_x,sgRNA_y_start + sgRNA_y_height/2,'sgRNA ',horizontalalignment='right',verticalalignment='center',fontsize=font_size)
+            ax.text(x_offset+min_sgRNA_x,this_sgRNA_y_start + this_sgRNA_y_height/2,'sgRNA ',horizontalalignment='right',verticalalignment='center',fontsize=font_size)
 
 def plot_conversion_map(nuc_pct_df,fig_filename_root,conversion_nuc_from,conversion_nuc_to,save_also_png,plotPct = 0.9,min_text_pct=0.3,max_text_pct=0.9,conversion_scale_max=None,sgRNA_intervals=None,quantification_window_idxs=None,sgRNA_names=None,sgRNA_mismatches=None):
     """
@@ -1116,9 +1190,11 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
         plt.close()
         return
 
+    sgRNA_rows = get_rows_for_sgRNA_annotation(sgRNA_intervals,plot_nuc_len)
+    num_sgRNA_rows = max(sgRNA_rows) + 1
 
     if sgRNA_intervals and len(sgRNA_intervals) > 0:
-        fig=plt.figure(figsize=(plot_nuc_len*0.3,(N_ROWS+2)*0.6))
+        fig=plt.figure(figsize=(plot_nuc_len*0.3,(N_ROWS+1 + num_sgRNA_rows)*0.6))
         gs1 = gridspec.GridSpec(N_ROWS+2,N_COLUMNS)
         gs2 = gridspec.GridSpec(N_ROWS+2,N_COLUMNS)
         #ax_hm_ref heatmap for the reference
@@ -1141,7 +1217,9 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
     ax_hm.xaxis.set_ticks([])
 
     if sgRNA_intervals and len(sgRNA_intervals) > 0:
-        add_sgRNA_to_ax(ax_hm_ref,sgRNA_intervals,sgRNA_y_start=-1,sgRNA_y_height=0.7,amp_len=plot_nuc_len,font_size='small',clip_on=False,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,x_offset=0,label_at_zero=True)
+        this_sgRNA_y_start = -1*num_sgRNA_rows
+        this_sgRNA_y_height = num_sgRNA_rows - 0.3
+        add_sgRNA_to_ax(ax_hm_ref,sgRNA_intervals,sgRNA_y_start=this_sgRNA_y_start,sgRNA_y_height=this_sgRNA_y_height,amp_len=plot_nuc_len,font_size='small',clip_on=False,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,x_offset=0,label_at_zero=True,sgRNA_rows=sgRNA_rows)
 
 # todo -- add sgRNAs below reference plot
 #    if sgRNA_intervals:
@@ -1484,6 +1562,84 @@ def plot_alleles_table_compare(reference_seq,df_alleles,sample_name_1,sample_nam
     """
     X,annot,y_labels,insertion_dict,per_element_annot_kws = prep_alleles_table_compare(df_alleles,sample_name_1,sample_name_2,MAX_N_ROWS,MIN_FREQUENCY)
     plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,plot_cut_point,sgRNA_intervals,sgRNA_names,sgRNA_mismatches,custom_colors)
+
+def plot_nucleotide_quilt_from_folder(crispresso_output_folder,fig_filename_root,save_also_png=False,sgRNA_intervals=None,min_text_pct=0.5,max_text_pct=0.95,quantification_window_idxs=None,sgRNA_names=None,sgRNA_mismatches=None,shade_unchanged=True):
+    """
+    plots an allele table for each sgRNA/amplicon in a CRISPresso run (useful for plotting after running using the plot harness)
+    This function is only used for one-off plotting purposes and not for the general CRISPResso analysis
+
+    input:
+    crispresso2 output folder
+    fig_filename_root: figure filename to plot (not including '.pdf' or '.png')
+    sgRNA_intervals: ranges for sgRNA annotation on plot
+    sgRNA_names: names to annotate sgRNAs with (if None, will just label left sgRNA with 'sgRNA')
+    sgRNA_mismatches: locations in the sgRNA where there are mismatches from an original guide (flexiguides)
+    quantification_window_idxs: indices for quantification window annotation on plot
+    min_text_pct: add text annotation if the percent is greater than this number
+    max_text_pct: add text annotation if the percent is less than this number
+    shade_unchanged: if true, unchanged/reference nucleotides will be shaded (only changes with regard to reference will be dark)
+
+    example:
+    from CRISPResso2 import CRISPRessoPlot
+    CRISPRessoPlot.plot_nucleotide_quilt_from_folder('CRISPResso_on_allele_specific','test_plots')
+    """
+    crispresso2_info = CRISPRessoShared.load_crispresso_info(crispresso_output_folder)
+
+    plot_count = 0
+
+    ref_names = crispresso2_info['ref_names']
+    refs = crispresso2_info['refs']
+    for ref_name in ref_names:
+        sgRNA_sequences = refs[ref_name]['sgRNA_sequences']
+        sgRNA_cut_points = refs[ref_name]['sgRNA_cut_points']
+        sgRNA_plot_cut_points = refs[ref_name]['sgRNA_plot_cut_points']
+        sgRNA_intervals = refs[ref_name]['sgRNA_intervals']
+        sgRNA_names = refs[ref_name]['sgRNA_names']
+        sgRNA_mismatches = refs[ref_name]['sgRNA_mismatches']
+        sgRNA_plot_idxs = refs[ref_name]['sgRNA_plot_idxs']
+
+        reference_seq = refs[ref_name]['sequence']
+
+        nucleotide_pct_file = os.path.join(crispresso_output_folder,run_data['refs'][ref_name]['nuc_pct_filename'])
+        ampSeq_np,nuc_pcts = CRISPRessoShared.parse_count_file(nucleotide_pct_file)
+
+        mod_count_file = os.path.join(crispresso_output_folder,run_data['refs'][ref_name]['mod_count_filename'])
+        ampSeq_cf,mod_counts = CRISPRessoShared.parse_count_file(mod_count_file)
+
+        mod_pcts = {}
+        for key in mod_counts:
+            mod_pcts[key] = np.array(mod_counts[key]).astype(np.float)/float(mod_counts['Total'][0])
+
+        modification_percentage_summary = []
+        for mod in ['Insertions','Insertions_Left','Deletions','Substitutions','All_modifications']:
+            pct_row = [batchName,mod]
+            pct_row.extend(mod_pcts[mod])
+            modification_percentage_summary.append(pct_row)
+
+        modification_frequency_summary_df = pd.DataFrame(modification_frequency_summary,columns=colnames)
+        print('mod frq sum: ' + str(modification_frequency_summary_df))
+
+
+        for ind,sgRNA in enumerate(sgRNA_sequences):
+            sgRNA_label = sgRNA # for file names
+            if sgRNA_names[ind] != "":
+                sgRNA_label = sgRNA_names[ind]
+
+            cut_point = sgRNA_cut_points[ind]
+            plot_cut_point = sgRNA_plot_cut_points[ind]
+            plot_idxs = sgRNA_plot_idxs[ind]
+            plot_half_window = max(1,crispresso2_info['args'].plot_window_size)
+            ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_half_window+1:cut_point+plot_half_window+1]
+
+            new_sgRNA_intervals = []
+            #adjust coordinates of sgRNAs
+            new_sel_cols_start = cut_point - plot_half_window
+            for (int_start,int_end) in refs[ref_name]['sgRNA_intervals']:
+                new_sgRNA_intervals += [(int_start - new_sel_cols_start,int_end - new_sel_cols_start)]
+
+            plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=False,sgRNA_intervals=None,min_text_pct=0.5,max_text_pct=0.95,quantification_window_idxs=None,sgRNA_names=None,sgRNA_mismatches=None,shade_unchanged=True)
+            plot_count += 1
+    print('Plotted ' + str(plot_count) + ' plots')
 
 def plot_unmod_mod_pcts(fig_filename_root,df_summary_quantification,save_png,cutoff=None,max_samples_to_include_unprocessed=20):
     """
