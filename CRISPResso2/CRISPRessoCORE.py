@@ -953,7 +953,7 @@ def main():
                 flexi_guide_names = []
                 for idx,guide in enumerate(args.flexiguide_seq.split(",")):
                     #for all amps in forward and reverse complement amps:
-                    for amp_seq in this_seq + [CRISPRessoShared.reverse_complement(this_seq)]:
+                    for amp_seq in [this_seq,CRISPRessoShared.reverse_complement(this_seq)]:
                         ref_incentive = np.zeros(len(amp_seq)+1,dtype=np.int)
                         s1,s2,score=CRISPResso2Align.global_align(guide,amp_seq,matrix=aln_matrix,gap_incentive=ref_incentive,gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
                         potential_guide = s1.strip("-")
