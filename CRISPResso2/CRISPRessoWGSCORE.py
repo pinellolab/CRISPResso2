@@ -341,12 +341,9 @@ def main():
                  info('Done!')
         except:
                  warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
-
+                 
         log_filename=_jp('CRISPRessoWGS_RUNNING_LOG.txt')
         logging.getLogger().addHandler(logging.FileHandler(log_filename))
-
-        with open(log_filename,'w+') as outfile:
-                  outfile.write('[Command used]:\n%s\n\n[Execution log]:\n' % ' '.join(sys.argv))
 
         crispresso2_info_file = os.path.join(OUTPUT_DIRECTORY,'CRISPResso2WGS_info.pickle')
         crispresso2_info = {} #keep track of all information for this run to be pickled and saved at the end of the run
@@ -355,6 +352,21 @@ def main():
 
         crispresso2_info['log_filename'] = os.path.basename(log_filename)
         crispresso2_info['finished_steps'] = {}
+
+
+        crispresso_cmd_to_write = ' '.join(sys.argv)
+        if args.write_cleaned_report:
+            cmd_copy = sys.argv[:]
+            cmd_copy[0] = 'CRISPRessoWGS'
+            for i in range(len(cmd_copy)):
+                if os.sep in cmd_copy[i]:
+                    cmd_copy[i] = os.path.basename(cmd_copy[i])
+
+            crispresso_cmd_to_write = ' '.join(cmd_copy) #clean command doesn't show the absolute path to the executable or other files
+        crispresso2_info['command_used'] = crispresso_cmd_to_write
+
+        with open(log_filename,'w+') as outfile:
+            outfile.write('CRISPResso version %s\n[Command used]:\n%s\n\n[Execution log]:\n' %(CRISPRessoShared.__version__,crispresso_cmd_to_write))
 
         #keep track of args to see if it is possible to skip computation steps on rerun
         can_finish_incomplete_run = False
