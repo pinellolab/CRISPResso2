@@ -434,12 +434,24 @@ def main():
                 else:
                     info('The no_rerun flag is set, but this analysis will be rerun because the existing run was performed using an old version of CRISPResso (' + str(previous_run_data['version']) + ').')
 
+
+        crispresso_cmd_to_write = ' '.join(sys.argv)
+        if args.write_cleaned_report:
+            cmd_copy = sys.argv[:]
+            cmd_copy[0] = 'CRISPRessoPooled'
+            for i in range(len(cmd_copy)):
+                if os.sep in cmd_copy[i]:
+                    cmd_copy[i] = os.path.basename(cmd_copy[i])
+
+            crispresso_cmd_to_write = ' '.join(cmd_copy) #clean command doesn't show the absolute path to the executable or other files
+        crispresso2_info['command_used'] = crispresso_cmd_to_write
+
         #write this file early on so we can check the params if we have to rerun
         with open(crispresso2_info_file,"wb") as info_file:
             cp.dump(crispresso2_info, info_file )
 
         with open(log_filename,'w+') as outfile:
-                  outfile.write('[Command used]:\n%s\n\n[Execution log]:\n' % ' '.join(sys.argv))
+                outfile.write('CRISPResso version %s\n[Command used]:\n%s\n\n[Execution log]:\n' %(CRISPRessoShared.__version__,crispresso_cmd_to_write))
 
         info('Processing input')
 

@@ -2,7 +2,7 @@
 # Dockerfile to build CRISPResso2
 ############################################################
 
-FROM continuumio/miniconda:4.7.10
+FROM continuumio/miniconda:4.7.12
 
 # File Author / Maintainer
 MAINTAINER Kendell Clement
@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install gcc g++ bowtie2 samtools \
   && conda config --add channels bioconda \
   && conda config --set remote_connect_timeout_secs 60 \
   && conda config --set ssl_verify no \
-  && conda install --debug -c bioconda trimmomatic flash numpy==1.12.1 cython \
+  && conda install --debug -c bioconda trimmomatic flash numpy==1.12.1 cython jinja2==2.10 \
   && conda clean -ay
 
 #install ms fonts
