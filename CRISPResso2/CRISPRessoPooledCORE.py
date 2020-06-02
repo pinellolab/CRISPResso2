@@ -852,7 +852,7 @@ def main():
                     {\
                     if (fastq_filename!="NA") {if (num_records < __MIN_READS__){\
                         record_log_str = record_log_str chr_id"\t"bpstart"\t"bpend"\t"num_records"\tNA\n"} \
-                else{print(fastq_records)>fastq_filename;close(fastq_filename); system("gzip -f "fastq_filename); record_log_str = record_log_str chr_id"\t"bpstart"\t"bpend"\t"num_records"\t"fastq_filename"\n"} \
+                else{print(fastq_records)>fastq_filename;close(fastq_filename); system("gzip -f "fastq_filename); record_log_str = record_log_str chr_id"\t"bpstart"\t"bpend"\t"num_records"\t"fastq_filename".gz\n"} \
                     }\
                     chr_id=$1; bpstart=$2; bpend=$3;\
                     fastq_filename=sprintf("__OUTPUTPATH__REGION_%s_%s_%s.fastq",$1,$2,$3);\
@@ -867,7 +867,7 @@ def main():
                 END{ \
                     if (fastq_filename!="NA") {if (num_records < __MIN_READS__){\
                         record_log_str = record_log_str chr_id"\t"bpstart"\t"bpend"\t"num_records"\tNA\n"} \
-                else{printf("%shi",fastq_records)>fastq_filename;close(fastq_filename); system("gzip -f "fastq_filename); record_log_str = record_log_str chr_id"\t"bpstart"\t"bpend"\t"num_records"\t"fastq_filename"\n"} \
+                else{printf("%shi",fastq_records)>fastq_filename;close(fastq_filename); system("gzip -f "fastq_filename); record_log_str = record_log_str chr_id"\t"bpstart"\t"bpend"\t"num_records"\t"fastq_filename".gz\n"} \
                     }\
                     print(record_log_str) \
                 }\
@@ -976,7 +976,7 @@ def main():
                         demux_row = df_all_demux.loc[demux_key]
                         N_READS = demux_row['number of reads']
                         n_reads_aligned_genome.append(N_READS)
-                        fastq_filename_region = str(demux_row['output filename']) + ".gz"
+                        fastq_filename_region = str(demux_row['output filename'])
                         if fastq_filename_region == "nan":
                             fastq_filename_region = ""
                         else:
@@ -1075,7 +1075,7 @@ def main():
                 df_regions = pd.read_csv(filename_reads_aligned_to_genome_only,sep="\t")
             else:
                 info('Parsing the demultiplexed files and extracting locations and reference sequences...')
-                files_to_match = glob.glob(os.path.join(MAPPED_REGIONS,'REGION*.fastq.gz'))
+                files_to_match = list(df_all_demux['output filename'].dropna())
                 summarize_region_fastq_input = [f+" "+uncompressed_reference for f in files_to_match] #pass both params to parallel function
                 coordinates = CRISPRessoMultiProcessing.run_function_on_array_chunk_parallel(summarize_region_fastq_input,summarize_region_fastq_chunk,n_processes=n_processes)
                 df_regions=pd.DataFrame(coordinates,columns=['chr_id','bpstart','bpend','fastq_file','n_reads','sequence'])

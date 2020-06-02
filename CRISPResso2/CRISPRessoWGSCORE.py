@@ -134,9 +134,20 @@ def find_overlapping_genes(row,df_genes):
                                      (df_genes.txStart<=row.bpend) &
                                      (row.bpstart<=df_genes.txEnd)]
     genes_overlapping=[]
+    print('df_genes is : ' + str(df_genes))
+    print('genes overlapping: ' +str(genes_overlapping))
 
     for idx_g,row_g in df_genes_overlapping.iterrows():
-        genes_overlapping.append( '%s (%s)' % (row_g.name2,row_g['name']))
+        if 'name' in row_g.keys() and 'name2' in row_g.keys():
+            genes_overlapping.append( '%s (%s)' % (row_g.name2,row_g['name']))
+        elif '#name' in row_g.keys() and 'name2' in row_g.keys():
+            genes_overlapping.append( '%s (%s)' % (row_g.name2,row_g['#name']))
+        elif '#name' in row_g.keys():
+            genes_overlapping.append( '%s' % (row_g['#name']))
+        elif 'name' in row_g.keys():
+            genes_overlapping.append( '%s' % (row_g['name']))
+        else:
+            genes_overlapping.append( '%s' % (row_g[0]))
 
     row['gene_overlapping']=','.join(genes_overlapping)
 
@@ -341,7 +352,7 @@ def main():
                  info('Done!')
         except:
                  warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
-                 
+
         log_filename=_jp('CRISPRessoWGS_RUNNING_LOG.txt')
         logging.getLogger().addHandler(logging.FileHandler(log_filename))
 
@@ -424,7 +435,7 @@ def main():
         if args.gene_annotations:
             info('Loading gene coordinates from annotation file: %s...' % args.gene_annotations)
             try:
-                df_genes=pd.read_table(args.gene_annotations,compression='gzip')
+                df_genes=pd.read_csv(args.gene_annotations,compression='gzip',sep="\t")
                 df_genes.txEnd=df_genes.txEnd.astype(int)
                 df_genes.txStart=df_genes.txStart.astype(int)
                 df_genes.head()
@@ -541,6 +552,8 @@ def main():
             df_regions = CRISPRessoMultiProcessing.run_pandas_apply_parallel(df_regions,extract_reads_chunk,n_processes)
             df_regions.sort_values('region_number',inplace=True)
             cols_to_print = ["chr_id","bpstart","bpend","sgRNA","Expected_HDR","Coding_sequence","sequence","n_reads","bam_file_with_reads_in_region","fastq_file_trimmed_reads_in_region"]
+            if args.gene_annotations:
+                cols_to_print.append('gene_overlapping')
             df_regions.fillna('NA').to_csv(report_reads_aligned_filename,sep='\t',columns = cols_to_print,index_label="Name")
 
             #save progress
