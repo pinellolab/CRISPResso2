@@ -134,8 +134,6 @@ def find_overlapping_genes(row,df_genes):
                                      (df_genes.txStart<=row.bpend) &
                                      (row.bpstart<=df_genes.txEnd)]
     genes_overlapping=[]
-    print('df_genes is : ' + str(df_genes))
-    print('genes overlapping: ' +str(genes_overlapping))
 
     for idx_g,row_g in df_genes_overlapping.iterrows():
         if 'name' in row_g.keys() and 'name2' in row_g.keys():
