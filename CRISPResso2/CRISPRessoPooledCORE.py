@@ -701,7 +701,7 @@ def main():
         if RUNNING_MODE=='AMPLICONS_AND_GENOME':
             info('Mapping amplicons to the reference genome...')
 
-            filename_amplicon_aligned_locations = _jp('CRISPResso_amplicon_aligned_locations.csv')
+            filename_amplicon_aligned_locations = _jp('CRISPResso_amplicon_aligned_locations.txt')
             filename_aligned_amplicons_sam = _jp('CRISPResso_amplicons_aligned.sam')
             filename_aligned_amplicons_sam_log = _jp('CRISPResso_amplicons_aligned.sam.log')
             filename_amplicon_seqs_fasta = _jp('CRISPResso_amplicons_to_align.fa')
