@@ -7,8 +7,6 @@ Software pipeline for the analysis of genome editing outcomes from deep sequenci
 (c) 2020 The General Hospital Corporation. All Rights Reserved.
 '''
 
-
-
 import sys
 running_python3 = False
 if sys.version_info > (3, 0):
@@ -24,7 +22,6 @@ import os
 import re
 import subprocess as sb
 import traceback
-import unicodedata
 
 if running_python3:
     import pickle as cp #python 3
@@ -102,8 +99,12 @@ def get_avg_read_length_fastq(fastq_filename):
      return int(p.communicate()[0].strip())
 
 def get_n_reads_fastq(fastq_filename):
-     p = sb.Popen(('z' if fastq_filename.endswith('.gz') else '' ) +"cat < \"%s\" | wc -l" % fastq_filename , shell=True,stdout=sb.PIPE)
-     return int(float(p.communicate()[0])/4.0)
+    p = sb.Popen(('z' if fastq_filename.endswith('.gz') else '' ) +"cat < \"%s\" | wc -l" % fastq_filename , shell=True,stdout=sb.PIPE)
+    return int(float(p.communicate()[0])/4.0)
+
+def get_n_reads_bam(bam_filename,bam_chr_loc=""):
+    p = sb.Popen("samtools view -c " + bam_filename + " " + bam_chr_loc, shell=True,stdout=sb.PIPE)
+    return int(float(p.communicate()[0]))
 
 #import time
 #start = time.time()
@@ -134,6 +135,176 @@ sns.set_style('white')
 
 #########################################
 
+def get_pe_scaffold_search(prime_edited_ref_sequence, prime_editing_pegRNA_extension_seq, prime_editing_pegRNA_scaffold_sequence,prime_editing_pegRNA_scaffold_min_match_length):
+    """
+    For prime editing, determines the scaffold string to search for (the shortest substring of args.prime_editing_pegRNA_scaffold_sequence not in the prime-edited reference sequence)
+    params:
+     prime_edited_ref_sequence: reference sequence of the prime-edited sequence
+     prime_editing_extension_seq: RNA sequence of extension sequence
+     prime_editing_pegRNA_scaffold_sequence: sequence of the scaffold sequence
+     prime_editing_pegRNA_scaffold_min_match_length: minimum number of bases required to match between scaffold and read to count as scaffold-incorporated
+    returns:
+     tuple of(
+         index of location in ref to find scaffold seq if it exists
+         shortest dna sequence to identify scaffold sequence
+     )
+    """
+    info('Processing pegRNA scaffold sequence...')
+    #first, define the sequence we are looking for (extension plus the first base(s) of the scaffold)
+    scaffold_dna = CRISPRessoShared.reverse_complement(prime_editing_pegRNA_scaffold_sequence)
+
+    extension_seq_dna_top_strand = prime_editing_pegRNA_extension_seq.upper().replace('U','T')
+    prime_editing_extension_seq_dna = CRISPRessoShared.reverse_complement(extension_seq_dna_top_strand)
+
+    scaffold_start_loc = prime_edited_ref_sequence.index(prime_editing_extension_seq_dna)+len(prime_editing_extension_seq_dna)
+
+    #next find min length scaffold that when combined with min extension sequence is not in edited sequence
+    len_scaffold_to_use = prime_editing_pegRNA_scaffold_min_match_length # length of the scaffold sequence to be added to the extension sequence, start at 1bp
+    scaffold_dna_search = prime_editing_extension_seq_dna + scaffold_dna[0:len_scaffold_to_use]
+    while scaffold_dna_search in prime_edited_ref_sequence:
+        if len_scaffold_to_use > len(scaffold_dna):
+            raise CRISPRessoShared.BadParameterException('The DNA scaffold provided is found in the unedited reference sequence. Please provide a longer scaffold sequence.')
+        len_scaffold_to_use += 1
+        scaffold_dna_search = prime_editing_extension_seq_dna + scaffold_dna[0:len_scaffold_to_use]
+
+    info('Searching for scaffold-templated reads with the sequence: ' + str(scaffold_dna[0:len_scaffold_to_use]) +' starting at position '+ str(scaffold_start_loc) + ' in reads that align to the prime-edited sequence')
+    return (scaffold_start_loc, scaffold_dna[0:len_scaffold_to_use])
+
+def get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaffold_dna_info):
+    """
+    Gets the payload object for a read that hasn't been seen in the cache yet
+    params:
+     args: CRISPResso2 args
+     fastq_seq: read sequence to align
+     refs: dict with info for all refs
+     ref_names: list of ref names
+     aln_matrix: alignment matrix for needleman wunsch
+     pe_scaffold_dna_info: for prime-editing tuple of(
+         index of location in ref to find scaffold seq if it exists
+         shortest dna sequence to identify scaffold sequence
+         )
+
+    returns:
+     variant payload
+    """
+
+    aln_scores = []
+    best_match_score = -1
+    best_match_s1s = []
+    best_match_s2s = []
+    best_match_names = []
+    ref_aln_details = []
+    for idx,ref_name in enumerate(ref_names):
+        #get alignment and score from cython
+        #score = 100 * #matchedBases / length(including gaps)
+        seed_i = 0
+        found_forward_count = 0
+        found_reverse_count = 0
+        while seed_i < args.aln_seed_count and seed_i < len(refs[ref_name]['fw_seeds']):
+            if refs[ref_name]['fw_seeds'][seed_i] in fastq_seq: #is forward
+                found_forward_count += 1
+            if refs[ref_name]['rc_seeds'][seed_i] in fastq_seq: #is rc
+                found_reverse_count += 1
+            seed_i += 1
+        if found_forward_count > args.aln_seed_min and found_reverse_count == 0:
+            fws1,fws2,fwscore=CRISPResso2Align.global_align(fastq_seq, refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
+            s1 = fws1
+            s2 = fws2
+            score = fwscore
+        elif found_forward_count == 0 and found_reverse_count > args.aln_seed_min:
+            rvs1,rvs2,rvscore=CRISPResso2Align.global_align(CRISPRessoShared.reverse_complement(fastq_seq), refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
+            s1 = rvs1
+            s2 = rvs2
+            score = rvscore
+        else:
+            fws1,fws2,fwscore=CRISPResso2Align.global_align(fastq_seq, refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
+            rvs1,rvs2,rvscore=CRISPResso2Align.global_align(CRISPRessoShared.reverse_complement(fastq_seq), refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
+            s1 = fws1
+            s2 = fws2
+            score = fwscore
+            if (rvscore > fwscore):
+                s1 = rvs1
+                s2 = rvs2
+                score = rvscore
+
+#                print "for " + ref_name + " got fws1: " + str(fws1) + " and fws2: " + str(fws2) + " score: " +str(fwscore)
+        aln_scores.append(score)
+        ref_aln_details.append((s1,s2,score))
+
+        #reads are matched to the reference to which they best align. The 'min_aln_score' is calculated using only the changes in 'include_idxs'
+        if score > best_match_score and score > refs[ref_name]['min_aln_score']:
+            best_match_score = score
+            best_match_s1s = [s1]
+            best_match_s2s = [s2]
+            best_match_names = [ref_name]
+        elif score == best_match_score:
+            best_match_s1s.append(s1)
+            best_match_s2s.append(s2)
+            best_match_names.append(ref_name)
+
+    if best_match_score > 0:
+        new_variant = {}
+        new_variant['count'] = 1
+        new_variant['aln_ref_names'] = best_match_names
+        new_variant['aln_scores'] = aln_scores
+        new_variant['ref_aln_details'] = ref_aln_details
+        new_variant['best_match_score'] = best_match_score
+        class_names = []
+
+        for idx in range(len(best_match_names)):
+            best_match_name = best_match_names[idx]
+            payload=CRISPRessoCOREResources.find_indels_substitutions(best_match_s1s[idx],best_match_s2s[idx],refs[best_match_name]['include_idxs'])
+            payload['ref_name'] = best_match_name
+            payload['aln_scores'] = aln_scores
+
+            # If there is an insertion/deletion/substitution in the quantification window, the read is modified.
+            is_modified = False
+            if not args.ignore_deletions and payload['deletion_n'] > 0:
+                is_modified = True
+            elif not args.ignore_insertions and payload['insertion_n'] > 0:
+                is_modified = True
+            elif not args.ignore_substitutions and payload['substitution_n'] > 0:
+                is_modified = True
+
+            if is_modified:
+                class_names.append(best_match_name+"_MODIFIED")
+                payload['classification'] = 'MODIFIED'
+            else:
+                class_names.append(best_match_name+"_UNMODIFIED")
+                payload['classification'] = 'UNMODIFIED'
+
+            payload['aln_seq'] = best_match_s1s[idx]
+            payload['aln_ref'] = best_match_s2s[idx]
+
+            new_variant['variant_'+best_match_name] = payload
+
+        new_variant['class_name'] = "&".join(class_names)
+
+    else:
+        new_variant = {}
+        new_variant['count'] = 1
+        new_variant['aln_scores'] = aln_scores
+        new_variant['ref_aln_details'] = ref_aln_details
+        new_variant['best_match_score'] = best_match_score
+        return new_variant #return new variant with best match score of 0, but include the scores of insufficient alignments
+
+    #handle ambiguous alignments
+    if len(best_match_names) > 1 and not args.expand_ambiguous_alignments: #got 'Ambiguous' -- don't count toward total (e.g. indels at each position for the ref)
+            new_variant['class_name'] = 'AMBIGUOUS'
+
+    #search for prime editing scaffold
+    #if it's there, assign this to be assigned to the reference '"Scaffold-incorporated"'
+    if 'Prime-edited' in best_match_names: #any scaffold extensions must be closer to the prime-edited sequence
+        pe_read_possible_scaffold_loc = new_variant['variant_Prime-edited']['ref_positions'].index(pe_scaffold_dna_info[0]-1) + 1
+        if new_variant['variant_Prime-edited']['aln_seq'][pe_read_possible_scaffold_loc:(pe_read_possible_scaffold_loc+len(pe_scaffold_dna_info[1]))] == pe_scaffold_dna_info[1]:
+#            print('comparingHERE ' + new_variant['variant_Prime-edited']['aln_seq'][pe_read_possible_scaffold_loc:(pe_read_possible_scaffold_loc+len(pe_scaffold_dna_info[1])+5)] + ' from ' + new_variant['variant_Prime-edited']['aln_seq'] + ' and ' + new_variant['variant_Prime-edited']['aln_ref'])
+            new_variant['aln_ref_names'] = ["Scaffold-incorporated"]
+            new_variant['class_name'] = "Scaffold-incorporated"
+            old_payload = deepcopy(new_variant['variant_Prime-edited']) #keep prime-edited allele and alignment
+            old_payload['ref_name'] = "Scaffold-incorporated"
+            new_variant['variant_'+"Scaffold-incorporated"] = old_payload
+
+    return new_variant
 
 def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
     """process_fastq processes each of the reads contained in a fastq file, given a cache of pre-computed variants
@@ -147,6 +318,7 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
                 'aln_scores' : score of alignment to each reference
                 'aln_details' # details (seq1, seq2, score) of alignment to each other reference sequence
                 'class_name' : string with class names it was aligned to
+                'best_match_score' : score of best match (0 if no alignments matched above amplicon threshold)
                 for each reference, there is a key: variant_ref_name with a payload object
             # payload object:
             The payload is a dict with keys:
@@ -198,6 +370,7 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
                 # 'include_idxs' # sorted numpy array
                 # 'exclude_idxs'
                 # 'plot_idxs' #sorted numpy array
+                # 'plot_name' #unique plotting name
                 # 'idx_cloned_from' #if this reference didn't contain a guide (or exon sequence), it was aligned to 'idx_cloned_from' reference, and cut_points, plot_cut_points, gap_incentive, sgRNA_intervals, inculde_idx, ane exon information were cloned from it (at the appropriate indices)
            Examples of these seqences can include:
            -the amplicon sequence
@@ -216,11 +389,9 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
     CRISPRessoShared.check_file(aln_matrix_loc)
     aln_matrix = CRISPResso2Align.read_matrix(aln_matrix_loc)
 
-    if (args.needleman_wunsch_gap_open > 0):
-        raise CRISPRessoShared.BadParameterException("Needleman Wunsch gap open penalty must be <= 0")
-    if (args.needleman_wunsch_gap_extend > 0):
-        raise CRISPRessoShared.BadParameterException("Needleman Wunsch gap extend penalty must be <= 0")
-
+    pe_scaffold_dna_info = (0,None) #scaffold start loc, scaffold seq to search
+    if args.prime_editing_pegRNA_scaffold_sequence != "":
+        pe_scaffold_dna_info = get_pe_scaffold_search(refs['Prime-edited']['sequence'],args.prime_editing_pegRNA_extension_seq,args.prime_editing_pegRNA_scaffold_sequence,args.prime_editing_pegRNA_scaffold_min_match_length)
 
     not_aln = {} #cache for reads that don't align
 
@@ -229,11 +400,7 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
     else:
         fastq_handle=open(fastq_filename)
 
-    count_seed_fw = 0
-    count_seed_rv = 0
-    count_seed_both = 0
     while(fastq_handle.readline()):
-
         #read through fastq in sets of 4
         fastq_seq = fastq_handle.readline().strip()
         fastq_strand = fastq_handle.readline()
@@ -243,8 +410,6 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
             info("Processing reads; N_TOT_READS: %d N_COMPUTED_ALN: %d N_CACHED_ALN: %d N_COMPUTED_NOTALN: %d N_CACHED_NOTALN: %d"%(N_TOT_READS,N_COMPUTED_ALN,N_CACHED_ALN,N_COMPUTED_NOTALN,N_CACHED_NOTALN))
 
         N_TOT_READS+=1
-
-        payload = []
 
         #if the sequence has been seen and can't be aligned, skip it
         if (fastq_seq in not_aln):
@@ -257,108 +422,164 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
 
         #otherwise, create a new variant object, and put it in the cache
         else:
-            aln_scores = []
-            best_match_score = -1
-            best_match_s1s = []
-            best_match_s2s = []
-            best_match_names = []
-            ref_aln_details = []
-            for idx,ref_name in enumerate(ref_names):
-                #get alignment and score from cython
-                #score = 100 * #matchedBases / length(including gaps)
-                seed_i = 0
-                found_forward_count = 0
-                found_reverse_count = 0
-                while seed_i < args.aln_seed_count and seed_i < len(refs[ref_name]['fw_seeds']):
-                    if refs[ref_name]['fw_seeds'][seed_i] in fastq_seq: #is forward
-                        found_forward_count += 1
-                    if refs[ref_name]['rc_seeds'][seed_i] in fastq_seq: #is rc
-                        found_reverse_count += 1
-                    seed_i += 1
-                if found_forward_count > args.aln_seed_min and found_reverse_count == 0:
-                    fws1,fws2,fwscore=CRISPResso2Align.global_align(fastq_seq, refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
-                    s1 = fws1
-                    s2 = fws2
-                    score = fwscore
-                    count_seed_fw += 1
-                elif found_forward_count == 0 and found_reverse_count > args.aln_seed_min:
-                    rvs1,rvs2,rvscore=CRISPResso2Align.global_align(CRISPRessoShared.reverse_complement(fastq_seq), refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
-                    s1 = rvs1
-                    s2 = rvs2
-                    score = rvscore
-                    count_seed_rv += 1
-                else:
-                    count_seed_both += 1
-                    fws1,fws2,fwscore=CRISPResso2Align.global_align(fastq_seq, refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
-                    rvs1,rvs2,rvscore=CRISPResso2Align.global_align(CRISPRessoShared.reverse_complement(fastq_seq), refs[ref_name]['sequence'],matrix=aln_matrix,gap_incentive=refs[ref_name]['gap_incentive'],gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
-                    s1 = fws1
-                    s2 = fws2
-                    score = fwscore
-                    if (rvscore > fwscore):
-                        s1 = rvs1
-                        s2 = rvs2
-                        score = rvscore
-
-#                print "for " + ref_name + " got fws1: " + str(fws1) + " and fws2: " + str(fws2) + " score: " +str(fwscore)
-                aln_scores.append(score)
-                ref_aln_details.append((s1,s2,score))
-
-                #reads are matched to the reference to which they best align. The 'min_aln_score' is calculated using only the changes in 'include_idxs'
-                if score > best_match_score and score > refs[ref_name]['min_aln_score']:
-                    best_match_score = score
-                    best_match_s1s = [s1]
-                    best_match_s2s = [s2]
-                    best_match_names = [ref_name]
-                elif score == best_match_score:
-                    best_match_s1s.append(s1)
-                    best_match_s2s.append(s2)
-                    best_match_names.append(ref_name)
-
-#            print "bestMatchscore: " + str(best_match_score) + " to " + str(best_match_names)
-
-            if best_match_score > 0:
-                N_COMPUTED_ALN+=1
-                variantCache[fastq_seq] = {}
-                variantCache[fastq_seq]['count'] = 1
-                variantCache[fastq_seq]['aln_ref_names'] = best_match_names
-                variantCache[fastq_seq]['aln_scores'] = aln_scores
-                variantCache[fastq_seq]['ref_aln_details'] = ref_aln_details
-                class_names = []
-
-#                for idx, best_match_name in enumerate(best_match_names):
-                for idx in range(len(best_match_names)):
-                    best_match_name = best_match_names[idx]
-                    payload=CRISPRessoCOREResources.find_indels_substitutions(best_match_s1s[idx],best_match_s2s[idx],refs[best_match_name]['include_idxs'])
-                    payload['ref_name'] = best_match_name
-                    payload['aln_scores'] = aln_scores
-
-                    # If there is an insertion/deletion/substitution in the quantification window, the read is modified.
-                    is_modified = False
-                    if not args.ignore_deletions and payload['deletion_n'] > 0:
-                        is_modified = True
-                    elif not args.ignore_insertions and payload['insertion_n'] > 0:
-                        is_modified = True
-                    elif not args.ignore_substitutions and payload['substitution_n'] > 0:
-                        is_modified = True
-
-                    if is_modified:
-                        class_names.append(best_match_name+"_MODIFIED")
-                        payload['classification'] = 'MODIFIED'
-                    else:
-                        class_names.append(best_match_name+"_UNMODIFIED")
-                        payload['classification'] = 'UNMODIFIED'
-
-                    payload['aln_seq'] = best_match_s1s[idx]
-                    payload['aln_ref'] = best_match_s2s[idx]
-
-                    variantCache[fastq_seq]['variant_'+best_match_name] = payload
-
-                variantCache[fastq_seq]['class_name'] = "&".join(class_names)
-
-            else:
+            new_variant = get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaffold_dna_info)
+            if new_variant['best_match_score'] <= 0:
                 N_COMPUTED_NOTALN+=1
                 not_aln[fastq_seq] = 1
+            else:
+                N_COMPUTED_ALN+=1
+                variantCache[fastq_seq] = new_variant
 
+    info("Finished reads; N_TOT_READS: %d N_COMPUTED_ALN: %d N_CACHED_ALN: %d N_COMPUTED_NOTALN: %d N_CACHED_NOTALN: %d"%(N_TOT_READS,N_COMPUTED_ALN,N_CACHED_ALN,N_COMPUTED_NOTALN,N_CACHED_NOTALN))
+    aln_stats = {"N_TOT_READS" : N_TOT_READS,
+               "N_CACHED_ALN" : N_CACHED_ALN,
+               "N_CACHED_NOTALN" : N_CACHED_NOTALN,
+               "N_COMPUTED_ALN" : N_COMPUTED_ALN,
+               "N_COMPUTED_NOTALN" : N_COMPUTED_NOTALN
+               }
+    return(aln_stats)
+
+def process_bam(bam_filename,bam_chr_loc,output_bam,variantCache,ref_names,refs,args):
+    """
+    process_bam processes each of the reads contained in a bam file, given a cache of pre-computed variants
+        bam_filename: name of bam (e.g. output of bowtie2)
+        bam_chr_loc: positions in the input bam to read from
+        output_bam: name out bam to write to (includes crispresso alignment info)
+
+        variantCache: dict with keys: sequence dict with keys (described in process_fastq)
+        ref_names: list of reference names
+        refs: dictionary of sequences name>ref object
+        args: crispresso2 args
+    """
+
+    N_TOT_READS = 0
+    N_CACHED_ALN = 0 # read was found in cache
+    N_CACHED_NOTALN = 0 #read was found in 'not aligned' cache
+    N_COMPUTED_ALN = 0 # not in cache, aligned to at least 1 sequence with min cutoff
+    N_COMPUTED_NOTALN = 0 #not in cache, not aligned to any sequence with min cutoff
+
+    aln_matrix_loc = os.path.join(_ROOT,args.needleman_wunsch_aln_matrix_loc)
+    CRISPRessoShared.check_file(aln_matrix_loc)
+    aln_matrix = CRISPResso2Align.read_matrix(aln_matrix_loc)
+
+    pe_scaffold_dna_info = (0,None) #scaffold start loc, scaffold sequence
+    if args.prime_editing_pegRNA_scaffold_sequence != "":
+        pe_scaffold_dna_info = get_pe_scaffold_search(refs['Prime-edited']['sequence'],args.prime_editing_pegRNA_extension_seq,args.prime_editing_pegRNA_scaffold_sequence,args.prime_editing_pegRNA_scaffold_min_match_length)
+
+    not_aln = {} #cache for reads that don't align
+
+    #zip(read,ref)
+    cigar_lookup = {
+        ('A','A'):'M', ('A','C'):'M', ('A','T'):'M', ('A','G'):'M',
+        ('C','A'):'M', ('C','C'):'M', ('C','T'):'M', ('C','G'):'M',
+        ('T','A'):'M', ('T','C'):'M', ('T','T'):'M', ('T','G'):'M',
+        ('G','A'):'M', ('G','C'):'M', ('G','T'):'M', ('G','G'):'M',
+        ('A','-'):'I', ('T','-'):'I', ('C','-'):'I', ('G','-'):'I',
+        ('-','A'):'D', ('-','T'):'D', ('-','C'):'D', ('-','G'):'D',
+        }
+
+    cigarUnexplodePattern = re.compile(r'((\w)\2{0,})')
+    def unexplodeCigar(explodedCigarString):
+        cigar = ""
+        for (cigarStr,cigarChar) in re.findall(cigarUnexplodePattern,explodedCigarString):
+            cigar += str(len(cigarStr)) + cigarChar
+        return cigar
+
+
+    output_sam = output_bam+".sam"
+    with open(output_sam,"w") as sam_out:
+        #first, write header to sam
+        proc = sb.Popen(['samtools','view','-H',bam_filename],stdout=sb.PIPE,stderr=sb.PIPE,bufsize=1)
+        for line in proc.stdout:
+            sam_out.write(line)
+
+        crispresso_cmd_to_write = ' '.join(sys.argv)
+        sam_out.write('@PG\tID:crispresso2\tPN:crispresso2\tVN:'+CRISPRessoShared.__version__+'\tCL:"'+crispresso_cmd_to_write+'"\n')
+
+        if bam_chr_loc != "":
+            proc = sb.Popen(['samtools','view',bam_filename,bam_chr_loc],stdout=sb.PIPE,bufsize=1)
+        else:
+            proc = sb.Popen(['samtools','view',bam_filename],stdout=sb.PIPE,bufsize=1)
+        for sam_line in proc.stdout:
+            sam_line_els = sam_line.rstrip().split("\t")
+            fastq_seq = sam_line_els[9]
+
+            if (N_TOT_READS % 10000 == 0):
+                info("Processing reads; N_TOT_READS: %d N_COMPUTED_ALN: %d N_CACHED_ALN: %d N_COMPUTED_NOTALN: %d N_CACHED_NOTALN: %d"%(N_TOT_READS,N_COMPUTED_ALN,N_CACHED_ALN,N_COMPUTED_NOTALN,N_CACHED_NOTALN))
+
+            N_TOT_READS+=1
+
+            #if the sequence has been seen and can't be aligned, skip it
+            if (fastq_seq in not_aln):
+                N_CACHED_NOTALN += 1
+                sam_line_els.append(variantCache[fastq_seq]['sam_optional_fields']) #Crispresso2 alignment: NA
+                sam_out.write("\t".join(sam_line_els)+"\n")
+                continue
+            #if the sequence is already associated with a variant in the variant cache, pull it out
+            if (fastq_seq in variantCache):
+                N_CACHED_ALN+=1
+                variantCache[fastq_seq]['count'] += 1
+                #sam_line_els[5] = variantCache[fastq_seq]['sam_cigar']
+                sam_line_els.append(variantCache[fastq_seq]['sam_optional_fields'])
+                sam_out.write("\t".join(sam_line_els)+"\n")
+
+            #otherwise, create a new variant object, and put it in the cache
+            else:
+                new_variant = get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaffold_dna_info)
+                if new_variant['best_match_score'] <= 0:
+                    N_COMPUTED_NOTALN+=1
+                    crispresso_sam_optional_fields = "c2:Z:ALN=NA" +\
+                            " ALN_SCORES=" + ('&'.join([str(x) for x in new_variant['aln_scores']]))
+                            #we could also output the ref_aln_details for each amplicon, but that may just take up space in the file..
+#                            " ALN_SEQ=" + ('&'.join([new_variant['variant_'+name]['aln_seq'] for name in new_variant['aln_ref_names']]))
+                    sam_line_els.append(crispresso_sam_optional_fields)
+                    not_aln[fastq_seq] = crispresso_sam_optional_fields
+                    sam_out.write("\t".join(sam_line_els)+"\n")
+                else:
+                    N_COMPUTED_ALN+=1
+
+                    class_names = []
+                    ins_inds = []
+                    del_inds = []
+                    sub_inds = []
+                    edit_strings = []
+
+    #                for idx, best_match_name in enumerate(best_match_names):
+                    for idx,best_match_name in enumerate(new_variant['aln_ref_names']):
+                        payload=new_variant['variant_'+best_match_name]
+
+                        del_inds.append([str(x[0][0])+"("+str(x[1])+")" for x in zip(payload['deletion_coordinates'],payload['deletion_sizes'])])
+                        ins_inds.append([str(x[0][0])+"("+str(x[1])+")" for x in zip(payload['insertion_coordinates'],payload['insertion_sizes'])])
+                        sub_inds.append(payload['substitution_positions'])
+                        edit_strings.append('D'+str(int(payload['deletion_n']))+';I'+str(int(payload['insertion_n']))+';S'+str(int(payload['substitution_n'])))
+
+
+                    crispresso_sam_optional_fields = "c2:Z:ALN="+("&".join(new_variant['aln_ref_names'])) +\
+                            " CLASS="+new_variant['class_name']+\
+                            " MODS="+("&".join(edit_strings))+\
+                            " DEL="+("&".join([';'.join(x) for x in del_inds])) +\
+                            " INS="+("&".join([';'.join(x) for x in ins_inds])) +\
+                            " SUB=" + ("&".join([';'.join([str(y) for y in x]) for x in sub_inds])) +\
+                            " ALN_REF=" + ('&'.join([new_variant['variant_'+name]['aln_ref'] for name in new_variant['aln_ref_names']])) +\
+                            " ALN_SEQ=" + ('&'.join([new_variant['variant_'+name]['aln_seq'] for name in new_variant['aln_ref_names']]))
+                    sam_line_els.append(crispresso_sam_optional_fields)
+
+                    #cigar strings are in reference to the given amplicon, not to the genomic sequence to which this read is aligned..
+                    #first_variant = new_variant['variant_'+new_variant['aln_ref_names'][0]]
+                    #sam_cigar = unexplodeCigar(''.join([cigar_lookup[x] for x in zip(first_variant['aln_seq'],first_variant['aln_ref'])]))
+                    #sam_line_els[5] = sam_cigar
+                    #new_variant['sam_cigar'] = sam_cigar
+                    new_variant['sam_optional_fields'] = crispresso_sam_optional_fields
+
+                    sam_out.write("\t".join(sam_line_els)+"\n")
+
+                    variantCache[fastq_seq] = new_variant
+
+    output_sam = output_bam+".sam"
+    cmd = 'samtools view -Sb '+output_sam + '>'+output_bam + ' && samtools index ' + output_bam
+    bam_status=sb.call(cmd,shell=True)
+    if bam_status:
+            raise Exception('Bam creation failed. Command used: '+cmd)
 
     info("Finished reads; N_TOT_READS: %d N_COMPUTED_ALN: %d N_CACHED_ALN: %d N_COMPUTED_NOTALN: %d N_CACHED_NOTALN: %d"%(N_TOT_READS,N_COMPUTED_ALN,N_CACHED_ALN,N_COMPUTED_NOTALN,N_CACHED_NOTALN))
     aln_stats = {"N_TOT_READS" : N_TOT_READS,
@@ -366,22 +587,10 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
                "N_CACHED_NOTALN" : N_CACHED_NOTALN,
                "N_COMPUTED_ALN" : N_COMPUTED_ALN,
                "N_COMPUTED_NOTALN" : N_COMPUTED_NOTALN,
-               'count_seed_fw' : count_seed_fw,
-               'count_seed_rv' : count_seed_rv,
-               'count_seed_both' : count_seed_both
                }
     return(aln_stats)
 
-
-def add_hist(hist_to_add,hist_global):
-    for key,value in hist_to_add.iteritems():
-        hist_global[key]+=value
-    return hist_global
-
-
-
-def split_paired_end_reads_single_file(fastq_filename,output_filename_r1,output_filename_r2):
-
+def split_interleaved_fastq(fastq_filename,output_filename_r1,output_filename_r2):
     if fastq_filename.endswith('.gz'):
         fastq_handle=gzip.open(fastq_filename)
     else:
@@ -417,37 +626,49 @@ def main():
         header = CRISPRessoShared.get_crispresso_header(description=description,header_str=None)
         print(header)
 
-        args = CRISPRessoShared.getCRISPRessoArgParser(requiredParams={'fastq_r1':True}).parse_args()
+        args = CRISPRessoShared.getCRISPRessoArgParser().parse_args()
 
         aln_matrix_loc = os.path.join(_ROOT,"EDNAFULL")
         CRISPRessoShared.check_file(aln_matrix_loc)
         aln_matrix = CRISPResso2Align.read_matrix(aln_matrix_loc)
 
-        #check files
-        CRISPRessoShared.check_file(args.fastq_r1)
-        if args.fastq_r2:
-            CRISPRessoShared.check_file(args.fastq_r2)
+        #check files and get output name
+        if args.fastq_r1:
+            CRISPRessoShared.check_file(args.fastq_r1)
+            if args.fastq_r2:
+                CRISPRessoShared.check_file(args.fastq_r2)
+        elif args.bam_input:
+            CRISPRessoShared.check_file(args.bam_input)
+        else:
+            raise CRISPRessoShared.BadParameterException('Please provide input data for analysis e.g. using the --fastq_r1 parameter.')
 
 
         if args.amplicon_seq is None and args.auto is False:
-            raise CRISPRessoShared.BadParameterException('Please provide an amplicon sequence for analysis.')
+            raise CRISPRessoShared.BadParameterException('Please provide an amplicon sequence for analysis using the --amplicon_seq parameter.')
+
+        if (args.needleman_wunsch_gap_open > 0):
+            raise CRISPRessoShared.BadParameterException("Needleman Wunsch gap open penalty must be <= 0")
+        if (args.needleman_wunsch_gap_extend > 0):
+            raise CRISPRessoShared.BadParameterException("Needleman Wunsch gap extend penalty must be <= 0")
+
 
         #create output directory
         get_name_from_fasta=lambda  x: os.path.basename(x).replace('.fastq','').replace('.gz','')
+        get_name_from_bam=lambda  x: os.path.basename(x).replace('.bam','')
 
         #normalize name and remove not allowed characters
         if not args.name:
             if args.fastq_r2!='':
                 database_id='%s_%s' % (get_name_from_fasta(args.fastq_r1),get_name_from_fasta(args.fastq_r2))
-            else:
+            elif args.fastq_r1 != '':
                 database_id='%s' % get_name_from_fasta(args.fastq_r1)
-
+            elif args.bam_input != '':
+                database_id='%s' % get_name_from_bam(args.bam_input)
         else:
             clean_name=CRISPRessoShared.slugify(args.name)
             if args.name!= clean_name:
                 warn('The specified name %s contained invalid characters and was changed to: %s' % (args.name,clean_name))
             database_id=clean_name
-
 
         clean_file_prefix = ""
         if args.file_prefix != "":
@@ -496,6 +717,8 @@ def main():
             with open(log_filename,'w+') as outfile:
                 outfile.write('CRISPResso version %s\n[Command used]:\n%s\n\n[Execution log]:\n' %(CRISPRessoShared.__version__,crispresso_cmd_to_write))
 
+        files_to_remove = [] #these files will be deleted at the end of the run
+
         if args.no_rerun:
             if os.path.exists(crispresso2_info_file):
                 previous_run_data = cp.load(open(crispresso2_info_file,'rb'))
@@ -516,6 +739,31 @@ def main():
                         sys.exit(0)
                 else:
                     info('The no_rerun flag is set, but this analysis will be rerun because the existing run was performed using an old version of CRISPResso (' + str(previous_run_data['version']) + ').')
+
+
+        def rreplace(s, old, new):
+            li = s.rsplit(old)
+            return new.join(li)
+        #if bam input, make sure bam is sorted and indexed
+        if args.bam_input:
+            if args.bam_chr_loc != "": #we only need an index if we're accessing specific positions later
+                if os.path.exists(rreplace(args.bam_input,".bam",".bai")):
+                    info('Index file for input .bam file exists, skipping generation.')
+                elif os.path.exists(args.bam_input+'.bai'):
+                    info('Index file for input .bam file exists, skipping generation.')
+                else:
+                    info('Creating index file for input .bam file...')
+                    bam_input_file = _jp(os.path.basename(bam_input_file))+".sorted.bam"
+                    sb.call('samtools sort -o '+bam_input_file+' ' + args.bam_input,shell=True)
+                    sb.call('samtools index %s ' % (bam_input_file), shell=True)
+                    files_to_remove.append(bam_input_file)
+                    files_to_remove.append(bam_input_file+".bai")
+                    args.bam_input = bam_input_file
+            crispresso2_info['bam_input'] = args.bam_input
+            bam_output = _jp('CRISPResso_output.bam')
+            crispresso2_info['bam_output'] = bam_output
+            output_sam = bam_output+".sam"
+            files_to_remove.append(output_sam)
 
         #### ASSERT GUIDE(S)
         guides = []
@@ -562,16 +810,34 @@ def main():
 
 #        #if we should automatically infer amplicon sequence, pull out the most frequent read and assign it to be the amplicon
         if args.auto:
-            number_of_reads_to_consider = 1000 * 4 #1000 fastq sequences (4 lines each)
+            number_of_reads_to_consider = 5000
 
-            amplicon_seq_arr = CRISPRessoShared.guess_amplicons(args.fastq_r1,args.fastq_r2,number_of_reads_to_consider,args.flash_command,args.max_paired_end_reads_overlap,args.min_paired_end_reads_overlap,
+            auto_fastq_r1 = args.fastq_r1 #paths to fastq files for performing auto functions
+            auto_fastq_r2 = args.fastq_r2
+            if args.bam_input != "": #if input is a bam, create temp files with reads for processing here
+                p = sb.Popen("samtools view -c -f 1 " + args.bam_input + " " + args.bam_chr_loc, shell=True,stdout=sb.PIPE)
+                n_reads_paired = int(float(p.communicate()[0]))
+                if n_reads_paired > 0:
+                    auto_fastq_r1 = _jp(os.path.basename(args.bam_input)+".r1.fastq")
+                    auto_fastq_r2 = _jp(os.path.basename(args.bam_input)+".r2.fastq")
+                    files_to_remove.append(auto_fastq_r1)
+                    files_to_remove.append(auto_fastq_r2)
+                    sb.call('samtools view -h ' + args.bam_input + ' ' + args.bam_chr_loc + ' | head -n ' + str(number_of_reads_to_consider+100) + ' | ' + \
+                        'samtools bam2fq -1 ' + auto_fastq_r1 + ' -2 ' + auto_fastq_r2 + ' -0 /dev/null -s /dev/null -n 2> /dev/null > ' ,shell=True) #-0 READ_OTHER, -s singleton, -n don't append /1 and /2 to read name
+                else:
+                    auto_fastq_r1 = _jp(os.path.basename(args.bam_input)+".r1.fastq")
+                    auto_fastq_r2 = ""
+                    files_to_remove.append(auto_fastq_r1)
+                    sb.call('samtools view -h ' + args.bam_input + ' ' + args.bam_chr_loc + ' | head -n ' + str(number_of_reads_to_consider+100) + ' | samtools bam2fq -  2> /dev/null > ' + auto_fastq_r1,shell=True)
+
+            amplicon_seq_arr = CRISPRessoShared.guess_amplicons(auto_fastq_r1,auto_fastq_r2,number_of_reads_to_consider,args.flash_command,args.max_paired_end_reads_overlap,args.min_paired_end_reads_overlap,
                 aln_matrix,args.needleman_wunsch_gap_open,args.needleman_wunsch_gap_extend)
             amp_dummy = ['']
             amp_dummy.extend(list(range(2,len(amplicon_seq_arr)+1)))
-            amplicon_name_arr = ['Amplicon'+str(x) for x in amp_dummy]
+            amplicon_name_arr = ['Inferred'+str(x) for x in amp_dummy]
 
-            if args.amplicon_seq is not None: #if user provides and amplicon sequence, add it to the guessed amplicons
-                amp_names = args.amplicon_seq.aplit(",")
+            if args.amplicon_seq is not None: #if user provides an amplicon sequence, add it to the guessed amplicons
+                amp_names = args.amplicon_name.split(",")
                 for idx,amp_seq in enumerate(args.amplicon_seq.split(",")):
                     if amp_seq not in amplicon_seq_arr:
                         amplicon_seq_arr.append(amp_seq)
@@ -582,7 +848,7 @@ def main():
 
             if len(guides) == 0:
                 for amplicon_seq in amplicon_seq_arr:
-                    (potential_guide,is_base_editor) = CRISPRessoShared.guess_guides(amplicon_seq,args.fastq_r1,args.fastq_r2,number_of_reads_to_consider,args.flash_command,
+                    (potential_guide,is_base_editor) = CRISPRessoShared.guess_guides(amplicon_seq,auto_fastq_r1,auto_fastq_r2,number_of_reads_to_consider,args.flash_command,
                         args.max_paired_end_reads_overlap,args.min_paired_end_reads_overlap,aln_matrix,args.needleman_wunsch_gap_open,args.needleman_wunsch_gap_extend)
                     if potential_guide is not None and potential_guide not in guides:
                         guides.append(potential_guide)
@@ -616,19 +882,21 @@ def main():
             #split on commas, only accept empty values
             amplicon_min_alignment_score_arr = [float(x) for x in args.amplicon_min_alignment_score.split(",") if x]
 
+            for idx, amp_seq in enumerate(amplicon_seq_arr):
+                if len(amp_seq) == 0:
+                    raise BadParameterException("Amplicon " + str(idx + 1) + " has length 0. Please check the --amplicon_seq parameter.")
+
+        if args.expected_hdr_amplicon_seq != "":
+            amplicon_seq_arr.append(args.expected_hdr_amplicon_seq)
+            amplicon_name_arr.append('HDR')
 
         amplicon_quant_window_coordinates_arr = ['']*len(amplicon_seq_arr)
         if args.quantification_window_coordinates is not None:
              tmp_arr = args.quantification_window_coordinates.split(",")
              #fill in quant window coordinates if they are given for each amplicon, because we're about to add some amplicons
-             for i in range(len(amplicon_quant_window_coordinates_arr)):
-                 if tmp_arr[i] != "":
-                     amplicon_quant_window_coordinates_arr[i] = tmp_arr[i]
-
-        if args.expected_hdr_amplicon_seq != "":
-            amplicon_seq_arr.append(args.expected_hdr_amplicon_seq)
-            amplicon_name_arr.append('HDR')
-            amplicon_quant_window_coordinates_arr.append('')
+             for idx,coords in enumerate(args.quantification_window_coordinates.split(",")):
+                 if coords != "":
+                     amplicon_quant_window_coordinates_arr[idx] = coords
 
         def get_alignment_coordinates(to_sequence,from_sequence):
             """
@@ -1274,10 +1542,41 @@ def main():
                 refs[ref_name]['idx_cloned_from'] = clone_ref_name
 
 
+        #set unique plot name to appear as prefix to files for each reference
+        seen_ref_names = {}
+        for ref_name in ref_names:
+            #only show reference name in filenames if more than one reference
+            ref_plot_name = ref_name
+            if len(ref_names) == 1 and ref_names[0] == "Reference":
+                ref_plot_name = ""
+                seen_ref_names[ref_plot_name] = 1
+                refs[ref_name]['ref_plot_name'] = ref_plot_name
+                continue
+            if len(ref_plot_name) > 20:
+                ref_plot_name = ref_plot_name[0:20]
+            #make sure it is unique
+            orig_ref_plot_name = ref_plot_name
+            ind = 2
+            while(ref_plot_name in seen_ref_names):
+                ref_plot_name = orig_ref_plot_name+"_"+ind
+                ind+=1
+            ref_plot_name += "."
+            seen_ref_names[ref_plot_name] = 1
+            refs[ref_name]['ref_plot_name'] = ref_plot_name
 
-        N_READS_INPUT=get_n_reads_fastq(args.fastq_r1)
 
-        files_to_remove = [] #these files will be deleted at the end of the run
+
+
+        N_READS_INPUT=0
+        if args.fastq_r1:
+            N_READS_INPUT = get_n_reads_fastq(args.fastq_r1)
+            if args.split_interleaved_input:
+                N_READS_INPUT /= 2 #if interleaved (contains both r1 and r2), divide by 2 to get total count
+        elif args.bam_input:
+            N_READS_INPUT = get_n_reads_bam(args.bam_input,args.bam_chr_loc)
+
+        if N_READS_INPUT == 0:
+            raise CRISPRessoShared.BadParameterException('The input contains 0 reads.')
 
         args_string_arr = []
         clean_args_string_arr = []
@@ -1296,12 +1595,12 @@ def main():
         crispresso2_info['start_time'] = start_time
         crispresso2_info['start_time_string'] = start_time_string
 
-        if args.split_paired_end:
-            if args.fastq_r2!='':
-                raise CRISPRessoShared.BadParameterException('The option --split_paired_end is available only when a single fastq file is specified!')
+        if args.split_interleaved_input:
+            if args.fastq_r2!='' or args.bam_input != '':
+                raise CRISPRessoShared.BadParameterException('The option --split_interleaved_input is available only when a single fastq file is specified!')
             else:
                 info('Splitting paired end single fastq file into two files...')
-                args.fastq_r1,args.fastq_r2=split_paired_end_reads_single_file(args.fastq_r1,
+                args.fastq_r1,args.fastq_r2=split_interleaved_fastq(args.fastq_r1,
                     output_filename_r1=_jp(os.path.basename(args.fastq_r1.replace('.fastq','')).replace('.gz','')+'_splitted_r1.fastq.gz'),
                     output_filename_r2=_jp(os.path.basename(args.fastq_r1.replace('.fastq','')).replace('.gz','')+'_splitted_r2.fastq.gz'),)
                 files_to_remove+=[args.fastq_r1,args.fastq_r2]
@@ -1310,6 +1609,8 @@ def main():
                 info('Done!')
 
         if args.min_average_read_quality>0 or args.min_single_bp_quality>0 or args.min_bp_quality_or_N>0:
+            if args.bam_input != '':
+                raise CRISPRessoShared.BadParameterException('The read filtering options are not available with bam input')
             info('Filtering reads with average bp quality < %d and single bp quality < %d and replacing bases with quality < %d with N ...' % (args.min_average_read_quality,args.min_single_bp_quality,args.min_bp_quality_or_N))
             min_av_quality = None
             if args.min_average_read_quality > 0:
@@ -1345,10 +1646,11 @@ def main():
                 files_to_remove += [output_filename_r1]
 
 
-        if args.fastq_r2=='': #single end reads
-            #check if we need to trim
-            if not args.trim_sequences:
-                #create a symbolic link
+        #Trim and merge reads
+        if args.bam_input != '' and args.trim_sequences:
+            raise CRISPRessoShared.BadParameterException('Read trimming options are not available with bam input')
+        elif args.fastq_r1 != '' and args.fastq_r2 == '': #single end reads
+            if not args.trim_sequences: #no trimming or merging required
                 symlink_filename=_jp(os.path.basename(args.fastq_r1))
                 CRISPRessoShared.force_symlink(os.path.abspath(args.fastq_r1),symlink_filename)
                 output_forward_filename=symlink_filename
@@ -1369,11 +1671,9 @@ def main():
 
                 files_to_remove += [output_forward_filename]
 
-
             processed_output_filename=output_forward_filename
 
-        else:#paired end reads case
-
+        elif args.fastq_r1 != '' and args.fastq_r2 != '':#paired end reads
             if not args.trim_sequences:
                 output_forward_paired_filename=args.fastq_r1
                 output_reverse_paired_filename=args.fastq_r2
@@ -1401,7 +1701,7 @@ def main():
 
                 info('Done!')
 
-
+            #for paired-end reads, merge them
             info('Estimating average read length...')
             if args.debug:
                 info('Checking average read length from ' + output_forward_paired_filename)
@@ -1483,8 +1783,13 @@ def main():
 
             info('Done!')
 
+
         #count reads
-        N_READS_AFTER_PREPROCESSING=get_n_reads_fastq(processed_output_filename)
+        N_READS_AFTER_PREPROCESSING = 0
+        if args.bam_input:
+            N_READS_AFTER_PREPROCESSING = N_READS_INPUT
+        else:
+            N_READS_AFTER_PREPROCESSING=get_n_reads_fastq(processed_output_filename)
         if N_READS_AFTER_PREPROCESSING == 0:
             raise CRISPRessoShared.NoReadsAfterQualityFilteringException('No reads in input or no reads survived the average or single bp quality filtering.')
 
@@ -1498,46 +1803,19 @@ def main():
         variantCache[cache_fastq_seq]['count'] = 0
 
         #operates on variantCache
-        aln_stats = process_fastq(processed_output_filename,variantCache,ref_names,refs,args)
+        if args.bam_input:
+            aln_stats = process_bam(args.bam_input,args.bam_chr_loc,crispresso2_info['bam_output'],variantCache,ref_names,refs,args)
+        else:
+            aln_stats = process_fastq(processed_output_filename,variantCache,ref_names,refs,args)
 
         info('Done!')
 
         if args.prime_editing_pegRNA_scaffold_sequence != "":
-            info('Processing pegRNA scaffold sequence...')
-            if prime_editing_extension_seq_dna == "":
-                raise CRISPRessoShared.BadParameterException('The option --prime_editing_pegRNA_spacer_seq is available only when the --prime_editing_extension_seq parameter is specified')
-
             #introduce a new ref (that we didn't align to) called 'Scaffold Incorporated' -- copy it from the ref called 'prime-edited'
             new_ref = deepcopy(refs['Prime-edited'])
-            scaffold_ref_name = "Scaffold-incorporated"
-            new_ref['name'] = scaffold_ref_name
-            ref_names.append(scaffold_ref_name)
-            refs[scaffold_ref_name] = new_ref
-
-            #now run through all the reads and reassign anything that looks like it contains the scaffold
-            #first, define the sequence we are looking for (extension plus the first base(s) of the scaffold)
-            scaffold_dna = CRISPRessoShared.reverse_complement(args.prime_editing_pegRNA_scaffold_sequence)
-            len_scaffold_to_use = 1
-            scaffold_dna_search = prime_editing_extension_seq_dna + scaffold_dna[0:len_scaffold_to_use]
-            pe_seq = refs['Prime-edited']['sequence']
-            while scaffold_dna_search in pe_seq:
-                if len_scaffold_to_use > len(scaffold_dna):
-                    raise CRISPRessoShared.BadParameterException('The DNA scaffold provided is found in the unedited reference sequence. Please provide a longer scaffold sequence.')
-                len_scaffold_to_use += 1
-                scaffold_dna_search = prime_editing_extension_seq_dna + scaffold_dna[0:len_scaffold_to_use]
-
-            info('Searching for scaffold-templated reads with the sequence: ' + str(scaffold_dna_search))
-            for variant_seq in variantCache:
-                if variantCache[variant_seq]['count'] == 0:
-                    continue
-                if 'Prime-edited' not in variantCache[variant_seq]['aln_ref_names']: #any scaffold extensions must be closer to the prime-edited sequence
-                    continue
-                if scaffold_dna_search in variant_seq:
-                    variantCache[variant_seq]['aln_ref_names'] = [scaffold_ref_name]
-                    variantCache[variant_seq]['class_name'] = scaffold_ref_name
-                    old_payload = deepcopy(variantCache[variant_seq]['variant_Prime-edited'])
-                    old_payload['ref_name'] = scaffold_ref_name
-                    variantCache[variant_seq]['variant_'+scaffold_ref_name] = old_payload
+            new_ref['name'] = "Scaffold-incorporated"
+            ref_names.append("Scaffold-incorporated")
+            refs["Scaffold-incorporated"] = new_ref
 
         info('Quantifying indels/substitutions...')
 
@@ -1683,6 +1961,61 @@ def main():
             hists_inframe                       [ref_name] = defaultdict(lambda :0)
             hists_frameshift                    [ref_name] = defaultdict(lambda :0)
         #end initialize data structures for each ref
+        def get_allele_row(reference_name, variant_count, aln_ref_names_str, aln_ref_scores_str, variant_payload, write_detailed_allele_table):
+            """
+            gets a row for storing allele information in the allele table
+            parameters:
+                reference_name: string Reference name to write
+                variant_count: number of times this allele appears
+                aln_ref_names_str: '&'-joined string of references this allele aligned to
+                aln_ref_scores_str: '&'-joined string of references this allele aligned to
+                variant_payload: payload object (dict) with keys containing information about the allele
+                write_detailed_allele_table: bool for whether to write detailed row
+            returns:
+                row to put into allele table
+            """
+            if args.write_detailed_allele_table:
+                allele_row = {'#Reads':variant_count,
+                    'Aligned_Sequence':variant_payload['aln_seq'],
+                    'Reference_Sequence':variant_payload['aln_ref'],
+                    'n_inserted':variant_payload['insertion_n'],
+                    'n_deleted':variant_payload['deletion_n'],
+                    'n_mutated':variant_payload['substitution_n'],
+                    'Reference_Name':variant_payload['ref_name'],
+                    'Read_Status':variant_payload['classification'],
+                    'Aligned_Reference_Names':aln_ref_names_str,
+                    'Aligned_Reference_Scores':aln_ref_scores_str,
+                    'ref_positions':variant_payload['ref_positions'],
+                    'all_insertion_positions': variant_payload['all_insertion_positions'], #arr with 1's where there are insertions (including those outside of include_idxs quantification window)
+                    'all_insertion_left_positions': variant_payload['all_insertion_left_positions'], #arr with 1's to the left of where the insertion occurs
+                    'insertion_positions': variant_payload['insertion_positions'], # arr with 1's where there are insertions (1bp before and 1bp after insertion) that overlap with include_idxs quantification window
+                    'insertion_coordinates': variant_payload['insertion_coordinates'], # one entry per insertion, tuple of (start,end)
+                    'insertion_sizes': variant_payload['insertion_sizes'],
+                    'all_deletion_positions': variant_payload['all_deletion_positions'], #arr with 1's where there are insertions
+                    'deletion_positions': variant_payload['deletion_positions'], #arr with 1's where there are insertions that overlap the include_idxs quantification window
+                    'deletion_coordinates': variant_payload['deletion_coordinates'], # one entry per deletion
+                    'deletion_sizes': variant_payload['deletion_sizes'], # correspond to entries in 'deletion_coordinates'
+                    'all_substitution_positions': variant_payload['all_substitution_positions'],
+                    'substitution_positions': variant_payload['substitution_positions'],
+                    'substitution_values': variant_payload['substitution_values']
+    			}
+            else:
+            #    'Reference_Name':'AMBIGUOUS_'+aln_ref_names[0],
+                allele_row = {'#Reads':variant_count,
+                       'Aligned_Sequence':variant_payload['aln_seq'],
+                       'Reference_Sequence':variant_payload['aln_ref'],
+                       'n_inserted':variant_payload['insertion_n'],
+                       'n_deleted':variant_payload['deletion_n'],
+                       'n_mutated':variant_payload['substitution_n'],
+                       'Reference_Name':variant_payload['ref_name'],
+                       'Read_Status':variant_payload['classification'],
+                       'Aligned_Reference_Names':aln_ref_names_str,
+                       'Aligned_Reference_Scores':aln_ref_scores_str,
+                       'ref_positions':variant_payload['ref_positions']
+    			}
+            return allele_row
+
+        #end get_allele_row() definition
 
         #take care of empty seqs
         cache_fastq_seq = ''
@@ -1691,300 +2024,224 @@ def main():
         ###iterate through variants
         for variant in variantCache:
             #skip variant if there were none observed
-            variantCount = variantCache[variant]['count']
-            if (variantCount == 0):
+            variant_count = variantCache[variant]['count']
+            if (variant_count == 0):
                 continue
-            N_TOTAL += variantCount
+            N_TOTAL += variant_count
 
             aln_ref_names = variantCache[variant]['aln_ref_names'] #list of references this seq aligned to
+            aln_ref_names_str = '&'.join(aln_ref_names)
             aln_ref_scores = variantCache[variant]['aln_scores']
+            aln_ref_scores_str = '&'.join([str(x) for x in aln_ref_scores])
             class_name = variantCache[variant]['class_name'] #for classifying read e.g. 'HDR_MODIFIED' for pie chart
 
-            if not args.expand_ambiguous_alignments and len(aln_ref_names) > 1: #got 'Ambiguous' -- don't count toward totals
-                variantPayload = variantCache[variant]["variant_"+aln_ref_names[0]]
-                if args.write_detailed_allele_table:
-                    alleleRow = {'#Reads':variantCount,
-                        'Aligned_Sequence':variantPayload['aln_seq'],
-                        'Reference_Sequence':variantPayload['aln_ref'],
-                        'n_inserted':variantPayload['insertion_n'],
-                        'n_deleted':variantPayload['deletion_n'],
-                        'n_mutated':variantPayload['substitution_n'],
-                        'Reference_Name':'AMBIGUOUS_'+aln_ref_names[0],
-                        'Read_Status':variantPayload['classification'],
-                        'Aligned_Reference_Names':"&".join(aln_ref_names),
-                        'Aligned_Reference_Scores':"&".join([str(x) for x in aln_ref_scores]),
-                        'ref_positions':variantPayload['ref_positions'],
-                        'all_insertion_positions': variantPayload['all_insertion_positions'], #arr with 1's where there are insertions (including those outside of include_idxs quantification window)
-                        'all_insertion_left_positions': variantPayload['all_insertion_left_positions'], #arr with 1's to the left of where the insertion occurs
-                        'insertion_positions': variantPayload['insertion_positions'], # arr with 1's where there are insertions (1bp before and 1bp after insertion) that overlap with include_idxs quantification window
-                        'insertion_coordinates': variantPayload['insertion_coordinates'], # one entry per insertion, tuple of (start,end)
-                        'insertion_sizes': variantPayload['insertion_sizes'],
-                        'all_deletion_positions': variantPayload['all_deletion_positions'], #arr with 1's where there are insertions
-                        'deletion_positions': variantPayload['deletion_positions'], #arr with 1's where there are insertions that overlap the include_idxs quantification window
-                        'deletion_coordinates': variantPayload['deletion_coordinates'], # one entry per deletion
-                        'deletion_sizes': variantPayload['deletion_sizes'], # correspond to entries in 'deletion_coordinates'
-                        'all_substitution_positions': variantPayload['all_substitution_positions'],
-                        'substitution_positions': variantPayload['substitution_positions'],
-                        'substitution_values': variantPayload['substitution_values']
-        			}
+            if class_name not in class_counts:
+                    class_counts[class_name] = 0
+            class_counts[class_name]+=variant_count
+
+            #if class is AMBIGUOUS (set above if the args.expand_ambiguous_alignments param is false) don't add the modifications in this allele to the allele summaries
+            if class_name == "AMBIGUOUS":
+                variant_payload = variantCache[variant]["variant_"+aln_ref_names[0]]
+                allele_row = get_allele_row('AMBIGUOUS_'+aln_ref_names[0],variant_count,aln_ref_names_str,aln_ref_scores_str,variant_payload,args.write_detailed_allele_table)
+                alleles_list.append(allele_row)
+                continue #for ambiguous reads, don't add indels to reference totals
+
+            #iterate through payloads -- if a read aligned equally-well to two references, it could have more than one payload
+            for ref_name in aln_ref_names:
+                variant_payload = variantCache[variant]["variant_"+ref_name]
+                if args.discard_indel_reads and (variant_payload['deletion_n'] > 0 or variant_payload['insertion_n'] > 0):
+                    counts_discarded[ref_name] += variant_count
+                    continue
+
+                counts_total[ref_name] += variant_count
+                if variant_payload['classification'] == 'MODIFIED':
+                    counts_modified[ref_name] += variant_count
                 else:
-                    alleleRow = {'#Reads':variantCount,
-                           'Aligned_Sequence':variantPayload['aln_seq'],
-                           'Reference_Sequence':variantPayload['aln_ref'],
-                           'n_inserted':variantPayload['insertion_n'],
-                           'n_deleted':variantPayload['deletion_n'],
-                           'n_mutated':variantPayload['substitution_n'],
-                           'Reference_Name':'AMBIGUOUS_'+aln_ref_names[0],
-                           'Read_Status':variantPayload['classification'],
-                           'Aligned_Reference_Names':"&".join(aln_ref_names),
-                           'Aligned_Reference_Scores':"&".join([str(x) for x in aln_ref_scores]),
-                           'ref_positions':variantPayload['ref_positions']
-        			}
-                alleles_list.append(alleleRow)
+                    counts_unmodified[ref_name] += variant_count
 
-                class_name = 'AMBIGUOUS'
-                if class_name not in class_counts:
-                        class_counts[class_name] = 0
-                class_counts[class_name]+=variantCount
+                allele_row = get_allele_row(ref_name,variant_count,aln_ref_names_str,aln_ref_scores_str,variant_payload,args.write_detailed_allele_table)
+                alleles_list.append(allele_row)
 
-            else:
-                if class_name not in class_counts:
-                        class_counts[class_name] = 0
-                class_counts[class_name]+=variantCount
+                this_effective_len= refs[ref_name]['sequence_length'] #how long is this alignment (insertions increase length, deletions decrease length)
 
-                #iterate through payloads -- if a read aligned equally-well to two references, it could have more than one payload
-                for ref_name in aln_ref_names:
-                    variantPayload = variantCache[variant]["variant_"+ref_name]
-                    if args.discard_indel_reads and (variantPayload['deletion_n'] > 0 or variantPayload['insertion_n'] > 0):
-                        counts_discarded[ref_name] += variantCount
+                this_has_insertions = False
+                all_insertion_count_vectors[ref_name][variant_payload['all_insertion_positions']]+=variant_count
+                all_insertion_left_count_vectors[ref_name][variant_payload['all_insertion_left_positions']]+=variant_count
+                all_indelsub_count_vectors[ref_name][variant_payload['all_insertion_positions']]+=variant_count
+
+                if not args.ignore_insertions:
+                    inserted_n_lists[ref_name].extend([variant_payload['insertion_n']]*variant_count)
+                    insertion_count_vectors[ref_name][variant_payload['insertion_positions']]+=variant_count
+                    indelsub_count_vectors[ref_name][variant_payload['insertion_positions']]+=variant_count
+                    this_effective_len = this_effective_len + variant_payload['insertion_n']
+                    if variant_payload['insertion_n'] > 0:
+                         counts_insertion[ref_name] += variant_count
+                         this_has_insertions = True
+
+
+                this_has_deletions = False
+                all_deletion_count_vectors[ref_name][variant_payload['all_deletion_positions']]+=variant_count
+                all_indelsub_count_vectors[ref_name][variant_payload['all_deletion_positions']]+=variant_count
+                if not args.ignore_deletions:
+                    deleted_n_lists[ref_name].extend([variant_payload['deletion_n']]*variant_count)
+                    deletion_count_vectors[ref_name][variant_payload['deletion_positions']]+=variant_count
+                    indelsub_count_vectors[ref_name][variant_payload['deletion_positions']]+=variant_count
+                    this_effective_len = this_effective_len - variant_payload['deletion_n']
+                    if variant_payload['deletion_n'] > 0:
+                         counts_deletion[ref_name] += variant_count
+                         this_has_deletions = True
+
+                effective_len_lists[ref_name].extend([this_effective_len]*variant_count)
+
+                this_has_substitutions = False
+                all_substitution_count_vectors[ref_name][variant_payload['all_substitution_positions']] += variant_count
+                all_indelsub_count_vectors[ref_name][variant_payload['all_substitution_positions']] += variant_count
+
+                if not args.ignore_substitutions:
+                    substituted_n_lists[ref_name].extend([variant_payload['substitution_n']] * variant_count)
+                    substitution_count_vectors[ref_name][variant_payload['substitution_positions']] += variant_count
+                    indelsub_count_vectors[ref_name][variant_payload['substitution_positions']] += variant_count
+                    if variant_payload['substitution_n'] > 0:
+                         counts_substitution[ref_name] += variant_count
+                         this_has_substitutions = True
+
+                    nucs = ['A','T','C','G','N']
+                    for nuc in nucs:
+                        isNuc = variant_payload['all_substitution_values'] == ord(nuc)
+                        if(np.sum(isNuc) > 0):
+                            locs = np.array(variant_payload['all_substitution_positions'])[isNuc]
+                            all_substitution_base_vectors[ref_name + "_" + nuc ][locs] += variant_count
+
+
+                if this_has_deletions:
+                    if this_has_insertions:
+                        if this_has_substitutions:
+                            counts_insertion_and_deletion_and_substitution[ref_name] += variant_count
+                        else:
+                            counts_insertion_and_deletion[ref_name] += variant_count
+                    else:
+                        if this_has_substitutions:
+                            counts_deletion_and_substitution[ref_name] += variant_count
+                        else:
+                            counts_only_deletion[ref_name] += variant_count
+                else: #no deletions
+                    if this_has_insertions:
+                        if this_has_substitutions:
+                            counts_insertion_and_substitution[ref_name] += variant_count
+                        else:
+                            counts_only_insertion[ref_name] += variant_count
+                    else:
+                        if this_has_substitutions:
+                            counts_only_substitution[ref_name] += variant_count
+
+                #set all_base_count_vectors
+                aln_seq = variant_payload['aln_seq']
+                ref_pos = variant_payload['ref_positions']
+                for i in range(len(aln_seq)):
+                    if ref_pos[i] < 0:
                         continue
+                    nuc = aln_seq[i]
+                    all_base_count_vectors[ref_name + "_" + nuc][ref_pos[i]] += variant_count
 
-                    counts_total[ref_name] += variantCount
-                    if variantPayload['classification'] == 'MODIFIED':
-                        counts_modified[ref_name] += variantCount
-                    else:
-                        counts_unmodified[ref_name] += variantCount
-
-                    if args.write_detailed_allele_table:
-                        alleleRow = {'#Reads':variantCount,
-                            'Aligned_Sequence':variantPayload['aln_seq'],
-                            'Reference_Sequence':variantPayload['aln_ref'],
-                            'n_inserted':variantPayload['insertion_n'],
-                            'n_deleted':variantPayload['deletion_n'],
-                            'n_mutated':variantPayload['substitution_n'],
-                            'Reference_Name':variantPayload['ref_name'],
-                            'Read_Status':variantPayload['classification'],
-                            'Aligned_Reference_Names':"&".join(aln_ref_names),
-                            'Aligned_Reference_Scores':"&".join([str(x) for x in aln_ref_scores]),
-                            'ref_positions':variantPayload['ref_positions'],
-                            'all_insertion_positions': variantPayload['all_insertion_positions'], #arr with 1's where there are insertions (including those outside of include_idxs quantification window)
-                            'all_insertion_left_positions': variantPayload['all_insertion_left_positions'], #arr with 1's to the left of where the insertion occurs
-                            'insertion_positions': variantPayload['insertion_positions'], # arr with 1's where there are insertions (1bp before and 1bp after insertion) that overlap with include_idxs quantification window
-                            'insertion_coordinates': variantPayload['insertion_coordinates'], # one entry per insertion, tuple of (start,end)
-                            'insertion_sizes': variantPayload['insertion_sizes'],
-                            'all_deletion_positions': variantPayload['all_deletion_positions'], #arr with 1's where there are insertions
-                            'deletion_positions': variantPayload['deletion_positions'], #arr with 1's where there are insertions that overlap the include_idxs quantification window
-                            'deletion_coordinates': variantPayload['deletion_coordinates'], # one entry per deletion
-                            'deletion_sizes': variantPayload['deletion_sizes'], # correspond to entries in 'deletion_coordinates'
-                            'all_substitution_positions': variantPayload['all_substitution_positions'],
-                            'substitution_positions': variantPayload['substitution_positions'],
-                            'substitution_values': variantPayload['substitution_values']
-            			}
-                    else:
-                        alleleRow = {'#Reads':variantCount,
-                               'Aligned_Sequence':variantPayload['aln_seq'],
-                               'Reference_Sequence':variantPayload['aln_ref'],
-                               'n_inserted':variantPayload['insertion_n'],
-                               'n_deleted':variantPayload['deletion_n'],
-                               'n_mutated':variantPayload['substitution_n'],
-                               'Reference_Name':variantPayload['ref_name'],
-                               'Read_Status':variantPayload['classification'],
-                               'Aligned_Reference_Names':"&".join(aln_ref_names),
-                               'Aligned_Reference_Scores':"&".join([str(x) for x in aln_ref_scores]),
-                               'ref_positions':variantPayload['ref_positions']
-            			}
-                    alleles_list.append(alleleRow)
-
-                    this_effective_len= refs[ref_name]['sequence_length'] #how long is this alignment (insertions increase length, deletions decrease length)
-
-                    this_has_insertions = False
-                    all_insertion_count_vectors[ref_name][variantPayload['all_insertion_positions']]+=variantCount
-                    all_insertion_left_count_vectors[ref_name][variantPayload['all_insertion_left_positions']]+=variantCount
-                    all_indelsub_count_vectors[ref_name][variantPayload['all_insertion_positions']]+=variantCount
-
-                    if not args.ignore_insertions:
-                        inserted_n_lists[ref_name].extend([variantPayload['insertion_n']]*variantCount)
-                        insertion_count_vectors[ref_name][variantPayload['insertion_positions']]+=variantCount
-                        indelsub_count_vectors[ref_name][variantPayload['insertion_positions']]+=variantCount
-                        this_effective_len = this_effective_len + variantPayload['insertion_n']
-                        if variantPayload['insertion_n'] > 0:
-                             counts_insertion[ref_name] += variantCount
-                             this_has_insertions = True
+                exon_positions = refs[ref_name]['exon_positions']
+                exon_len_mods = refs[ref_name]['exon_len_mods'] #for each exon, how much length did this reference modify it?
+                tot_exon_len_mod = sum(exon_len_mods) #for all exons, how much length was modified?
+                splicing_positions = refs[ref_name]['splicing_positions']
+                insertion_coordinates = variant_payload['insertion_coordinates']
+                insertion_sizes = variant_payload['insertion_sizes']
+                all_insertion_positions = variant_payload['all_insertion_positions']
+                all_insertion_left_positions = variant_payload['all_insertion_left_positions']
+                insertion_positions = variant_payload['insertion_positions']
+                deletion_coordinates = variant_payload['deletion_coordinates']
+                deletion_sizes = variant_payload['deletion_sizes']
+                all_deletion_positions = variant_payload['all_deletion_positions']
+                deletion_positions = variant_payload['deletion_positions']
+                all_substitution_positions = variant_payload['all_substitution_positions']
+                substitution_positions = variant_payload['substitution_positions']
 
 
-                    this_has_deletions = False
-                    all_deletion_count_vectors[ref_name][variantPayload['all_deletion_positions']]+=variantCount
-                    all_indelsub_count_vectors[ref_name][variantPayload['all_deletion_positions']]+=variantCount
-                    if not args.ignore_deletions:
-                        deleted_n_lists[ref_name].extend([variantPayload['deletion_n']]*variantCount)
-                        deletion_count_vectors[ref_name][variantPayload['deletion_positions']]+=variantCount
-                        indelsub_count_vectors[ref_name][variantPayload['deletion_positions']]+=variantCount
-                        this_effective_len = this_effective_len - variantPayload['deletion_n']
-                        if variantPayload['deletion_n'] > 0:
-                             counts_deletion[ref_name] += variantCount
-                             this_has_deletions = True
+                if this_has_insertions or this_has_deletions or this_has_substitutions or tot_exon_len_mod != 0: #only count modified reads
+                    length_modified_positions_exons=[]
+                    current_read_exons_modified = False
+                    current_read_spliced_modified = False
 
-                    effective_len_lists[ref_name].extend([this_effective_len]*variantCount)
-
-                    this_has_substitutions = False
-                    all_substitution_count_vectors[ref_name][variantPayload['all_substitution_positions']] += variantCount
-                    all_indelsub_count_vectors[ref_name][variantPayload['all_substitution_positions']] += variantCount
-
-                    if not args.ignore_substitutions:
-                        substituted_n_lists[ref_name].extend([variantPayload['substitution_n']] * variantCount)
-                        substitution_count_vectors[ref_name][variantPayload['substitution_positions']] += variantCount
-                        indelsub_count_vectors[ref_name][variantPayload['substitution_positions']] += variantCount
-                        if variantPayload['substitution_n'] > 0:
-                             counts_substitution[ref_name] += variantCount
-                             this_has_substitutions = True
-
-                        nucs = ['A','T','C','G','N']
-                        for nuc in nucs:
-                            isNuc = variantPayload['all_substitution_values'] == ord(nuc)
-                            if(np.sum(isNuc) > 0):
-                                locs = np.array(variantPayload['all_substitution_positions'])[isNuc]
-                                all_substitution_base_vectors[ref_name + "_" + nuc ][locs] += variantCount
-
-
-                    if this_has_deletions:
-                        if this_has_insertions:
-                            if this_has_substitutions:
-                                counts_insertion_and_deletion_and_substitution[ref_name] += variantCount
-                            else:
-                                counts_insertion_and_deletion[ref_name] += variantCount
-                        else:
-                            if this_has_substitutions:
-                                counts_deletion_and_substitution[ref_name] += variantCount
-                            else:
-                                counts_only_deletion[ref_name] += variantCount
-                    else: #no deletions
-                        if this_has_insertions:
-                            if this_has_substitutions:
-                                counts_insertion_and_substitution[ref_name] += variantCount
-                            else:
-                                counts_only_insertion[ref_name] += variantCount
-                        else:
-                            if this_has_substitutions:
-                                counts_only_substitution[ref_name] += variantCount
-
-                    #set all_base_count_vectors
-                    aln_seq = variantPayload['aln_seq']
-                    ref_pos = variantPayload['ref_positions']
-                    for i in range(len(aln_seq)):
-                        if ref_pos[i] < 0:
-                            continue
-                        nuc = aln_seq[i]
-                        all_base_count_vectors[ref_name + "_" + nuc][ref_pos[i]] += variantCount
-
-                    exon_positions = refs[ref_name]['exon_positions']
-                    exon_len_mods = refs[ref_name]['exon_len_mods'] #for each exon, how much length did this reference modify it?
-                    tot_exon_len_mod = sum(exon_len_mods) #for all exons, how much length was modified?
-                    splicing_positions = refs[ref_name]['splicing_positions']
-                    insertion_coordinates = variantPayload['insertion_coordinates']
-                    insertion_sizes = variantPayload['insertion_sizes']
-                    all_insertion_positions = variantPayload['all_insertion_positions']
-                    all_insertion_left_positions = variantPayload['all_insertion_left_positions']
-                    insertion_positions = variantPayload['insertion_positions']
-                    deletion_coordinates = variantPayload['deletion_coordinates']
-                    deletion_sizes = variantPayload['deletion_sizes']
-                    all_deletion_positions = variantPayload['all_deletion_positions']
-                    deletion_positions = variantPayload['deletion_positions']
-                    all_substitution_positions = variantPayload['all_substitution_positions']
-                    substitution_positions = variantPayload['substitution_positions']
-
-
-                    if this_has_insertions or this_has_deletions or this_has_substitutions or tot_exon_len_mod != 0: #only count modified reads
-                        length_modified_positions_exons=[]
-                        current_read_exons_modified = False
-                        current_read_spliced_modified = False
-
-                        for idx_ins,(ins_start,ins_end) in enumerate(insertion_coordinates):
-                            insertion_length_vectors[ref_name][ins_start]+=(insertion_sizes[idx_ins]*variantCount)
-                            insertion_length_vectors[ref_name][ins_end]+=(insertion_sizes[idx_ins]*variantCount)
-
-                            if refs[ref_name]['contains_coding_seq']:
-                                if set(exon_positions).intersection((ins_start, ins_end)): # check that we are inserting in one exon
-                                    current_read_exons_modified = True
-                                    set1 = set(exon_positions).intersection((ins_start, ins_end))
-                                    length_modified_positions_exons.append((insertion_sizes[idx_ins]))
-
-                        for idx_del, (del_start,del_end) in enumerate(deletion_coordinates):
-                            deletion_length_vectors[ref_name][list(range(del_start,del_end))] += (deletion_sizes[idx_del]*variantCount)
+                    for idx_ins,(ins_start,ins_end) in enumerate(insertion_coordinates):
+                        insertion_length_vectors[ref_name][ins_start]+=(insertion_sizes[idx_ins]*variant_count)
+                        insertion_length_vectors[ref_name][ins_end]+=(insertion_sizes[idx_ins]*variant_count)
 
                         if refs[ref_name]['contains_coding_seq']:
-                            del_positions_to_append = sorted(set(exon_positions).intersection(set(deletion_positions)))
-                            if del_positions_to_append:
+                            if set(exon_positions).intersection((ins_start, ins_end)): # check that we are inserting in one exon
                                 current_read_exons_modified = True
-                                length_modified_positions_exons.append(-len(del_positions_to_append))
+                                set1 = set(exon_positions).intersection((ins_start, ins_end))
+                                length_modified_positions_exons.append((insertion_sizes[idx_ins]))
 
-                            if set(exon_positions).intersection(substitution_positions):
-                                current_read_exons_modified = True
+                    for idx_del, (del_start,del_end) in enumerate(deletion_coordinates):
+                        deletion_length_vectors[ref_name][list(range(del_start,del_end))] += (deletion_sizes[idx_del]*variant_count)
 
-                            #splicing modifications
-                            if set(splicing_positions).intersection(deletion_positions):
-                                current_read_spliced_modified = True
+                    if refs[ref_name]['contains_coding_seq']:
+                        del_positions_to_append = sorted(set(exon_positions).intersection(set(deletion_positions)))
+                        if del_positions_to_append:
+                            current_read_exons_modified = True
+                            length_modified_positions_exons.append(-len(del_positions_to_append))
 
-                            if set(splicing_positions).intersection(insertion_positions):
-                                current_read_spliced_modified = True
+                        if set(exon_positions).intersection(substitution_positions):
+                            current_read_exons_modified = True
 
-                            if set(splicing_positions).intersection(substitution_positions):
-                                current_read_spliced_modified = True
+                        #splicing modifications
+                        if set(splicing_positions).intersection(deletion_positions):
+                            current_read_spliced_modified = True
 
-                            if current_read_spliced_modified:
-                                counts_splicing_sites_modified[ref_name] += variantCount
+                        if set(splicing_positions).intersection(insertion_positions):
+                            current_read_spliced_modified = True
 
-                            if tot_exon_len_mod != 0:
-                                effective_length = sum(length_modified_positions_exons) + tot_exon_len_mod
-                                if (effective_length % 3) == 0:
-                                    # indels have restored exon frame
-                                    counts_modified_non_frameshift[ref_name] += variantCount
-                                    hists_inframe[ref_name][effective_length] += variantCount
-                                else:
-                                    counts_modified_frameshift[ref_name] += variantCount
-                                    hists_frameshift[ref_name][effective_length] += variantCount
-                            # if modified check if frameshift
-                            elif current_read_exons_modified:
+                        if set(splicing_positions).intersection(substitution_positions):
+                            current_read_spliced_modified = True
 
-                                if not length_modified_positions_exons:
-                                    # there are no indels
-                                    counts_modified_non_frameshift[ref_name] += variantCount
-                                    hists_inframe[ref_name][0] += variantCount
-                                else:
-                                    effective_length = sum(length_modified_positions_exons)
+                        if current_read_spliced_modified:
+                            counts_splicing_sites_modified[ref_name] += variant_count
 
-                                    if (effective_length % 3) == 0:
-                                        counts_modified_non_frameshift[ref_name] += variantCount
-                                        hists_inframe[ref_name][effective_length] += variantCount
-                                    else:
-                                        counts_modified_frameshift[ref_name] += variantCount
-                                        hists_frameshift[ref_name][effective_length] += variantCount
-
-                            # the indels and subtitutions are outside the exon/s  so we don't care!
+                        if tot_exon_len_mod != 0:
+                            effective_length = sum(length_modified_positions_exons) + tot_exon_len_mod
+                            if (effective_length % 3) == 0:
+                                # indels have restored exon frame
+                                counts_modified_non_frameshift[ref_name] += variant_count
+                                hists_inframe[ref_name][effective_length] += variant_count
                             else:
-                                counts_non_modified_non_frameshift[ref_name] += variantCount
-                                insertion_count_vectors_noncoding[ref_name][insertion_positions] += variantCount
-                                deletion_count_vectors_noncoding[ref_name][deletion_positions] += variantCount
-                                substitution_count_vectors_noncoding[ref_name][substitution_positions] += variantCount
-                                hists_inframe[ref_name][0] += variantCount
-                    #if unmodified but the tot_exon_len_mod is != 0
-                    elif tot_exon_len_mod != 0:
-                        if (tot_exon_len_mod % 3) == 0:
-                            # indels have restored exon frame
-                            counts_modified_non_frameshift[ref_name] += variantCount
-                            hists_inframe[ref_name][effective_length] += variantCount
+                                counts_modified_frameshift[ref_name] += variant_count
+                                hists_frameshift[ref_name][effective_length] += variant_count
+                        # if modified check if frameshift
+                        elif current_read_exons_modified:
+
+                            if not length_modified_positions_exons:
+                                # there are no indels
+                                counts_modified_non_frameshift[ref_name] += variant_count
+                                hists_inframe[ref_name][0] += variant_count
+                            else:
+                                effective_length = sum(length_modified_positions_exons)
+
+                                if (effective_length % 3) == 0:
+                                    counts_modified_non_frameshift[ref_name] += variant_count
+                                    hists_inframe[ref_name][effective_length] += variant_count
+                                else:
+                                    counts_modified_frameshift[ref_name] += variant_count
+                                    hists_frameshift[ref_name][effective_length] += variant_count
+
+                        # the indels and subtitutions are outside the exon/s  so we don't care!
                         else:
-                            counts_modified_frameshift[ref_name] += variantCount
-                            hists_frameshift[ref_name][effective_length] += variantCount
+                            counts_non_modified_non_frameshift[ref_name] += variant_count
+                            insertion_count_vectors_noncoding[ref_name][insertion_positions] += variant_count
+                            deletion_count_vectors_noncoding[ref_name][deletion_positions] += variant_count
+                            substitution_count_vectors_noncoding[ref_name][substitution_positions] += variant_count
+                            hists_inframe[ref_name][0] += variant_count
+                #if unmodified but the tot_exon_len_mod is != 0
+                elif tot_exon_len_mod != 0:
+                    if (tot_exon_len_mod % 3) == 0:
+                        # indels have restored exon frame
+                        counts_modified_non_frameshift[ref_name] += variant_count
+                        hists_inframe[ref_name][effective_length] += variant_count
+                    else:
+                        counts_modified_frameshift[ref_name] += variant_count
+                        hists_frameshift[ref_name][effective_length] += variant_count
 
 
 
@@ -2038,15 +2295,13 @@ def main():
             #then go through and align and add other reads
             for variant in variantCache:
                 #skip variant if there were none observed
-                variantCount = variantCache[variant]['count']
-                if (variantCount == 0):
+                variant_count = variantCache[variant]['count']
+                if (variant_count == 0):
                     continue
 
                 aln_ref_names = variantCache[variant]['aln_ref_names'] #list of references this seq aligned to
                 if len(aln_ref_names) == 1 and ref_names[0] == aln_ref_names[0]: #if this read was only aligned to ref1, skip it because we already included the indels when we initialized the ref1_all_deletion_count_vectors array
                     continue
-
-
 
                 #align this variant to ref1 sequence
                 s1,s2,score = variantCache[variant]['ref_aln_details'][0]
@@ -2059,15 +2314,15 @@ def main():
                 for ref_name in aln_ref_names:
                     if ref_name == ref_names[0]:
                         continue
-                    ref1_all_insertion_count_vectors[ref_name][payload['all_insertion_positions']]+=variantCount
-                    ref1_all_insertion_left_count_vectors[ref_name][payload['all_insertion_left_positions']]+=variantCount
-                    ref1_all_indelsub_count_vectors[ref_name][payload['all_insertion_positions']]+=variantCount
+                    ref1_all_insertion_count_vectors[ref_name][payload['all_insertion_positions']]+=variant_count
+                    ref1_all_insertion_left_count_vectors[ref_name][payload['all_insertion_left_positions']]+=variant_count
+                    ref1_all_indelsub_count_vectors[ref_name][payload['all_insertion_positions']]+=variant_count
 
-                    ref1_all_deletion_count_vectors[ref_name][payload['all_deletion_positions']]+=variantCount
-                    ref1_all_indelsub_count_vectors[ref_name][payload['all_deletion_positions']]+=variantCount
+                    ref1_all_deletion_count_vectors[ref_name][payload['all_deletion_positions']]+=variant_count
+                    ref1_all_indelsub_count_vectors[ref_name][payload['all_deletion_positions']]+=variant_count
 
-                    ref1_all_substitution_count_vectors[ref_name][payload['all_substitution_positions']]+=variantCount
-                    ref1_all_indelsub_count_vectors[ref_name][payload['all_substitution_positions']]+=variantCount
+                    ref1_all_substitution_count_vectors[ref_name][payload['all_substitution_positions']]+=variant_count
+                    ref1_all_indelsub_count_vectors[ref_name][payload['all_substitution_positions']]+=variant_count
 
                     aln_seq = s1
                     ref_pos = payload['ref_positions']
@@ -2075,7 +2330,7 @@ def main():
                         if ref_pos[i] < 0:
                             continue
                         nuc = aln_seq[i]
-                        ref1_all_base_count_vectors[ref_name + "_" + nuc][ref_pos[i]] += variantCount
+                        ref1_all_base_count_vectors[ref_name + "_" + nuc][ref_pos[i]] += variant_count
 
         info('Done!')
 
@@ -2409,10 +2664,7 @@ def main():
         crispresso2_info['indelsub_pct_vectors'] = insertion_pct_vectors
 
         for ref_name in ref_names:
-            #only show reference name in filenames if more than one reference
-            ref_plot_name = ref_name+"."
-            if len(ref_names) == 1 and ref_names[0] == "Reference":
-                ref_plot_name = ""
+            ref_plot_name = refs[ref_name]['ref_plot_name']
 
             #n_this_category = counts_total[ref_name]
             #if n_this_category < 1:
@@ -2786,9 +3038,7 @@ def main():
             n_this_category = counts_total[ref_name]
 
             #only show reference name in filenames if more than one reference
-            ref_plot_name = ref_name+"."
-            if len(ref_names) == 1 and ref_names[0] == "Reference":
-                ref_plot_name = ""
+            ref_plot_name = refs[ref_name]['ref_plot_name']
 
             if n_this_category < 1:
                 continue
@@ -2937,7 +3187,7 @@ def main():
                 ax.set_yticklabels(['%.1f%% (%.0f)' % (pct,pct/100*n_this_category) for pct in y_label_values])
                 ax.set_xlabel('Indel size (bp)')
                 #lgd=plt.legend(['No indel','Indel'])
-                lgd=ax.legend(['No indel','Indel'],loc='center', bbox_to_anchor=(0.5, -0.18),ncol=1, fancybox=True, shadow=True)
+                lgd=ax.legend(['No indel','Indel'],loc='center', bbox_to_anchor=(0.5, -0.20),ncol=1, fancybox=True, shadow=True)
                 lgd.legendHandles[0].set_height(3)
                 lgd.legendHandles[1].set_height(3)
 
@@ -2972,7 +3222,7 @@ def main():
                 plt.title(get_plot_title_with_ref_name('Insertions',ref_name))
                 plt.xlabel('Size (bp)')
                 plt.ylabel('Sequences % (no.)')
-                lgd=plt.legend(['Non-insertion','Insertion'][::-1], bbox_to_anchor=(.82, -0.22),ncol=1, fancybox=True, shadow=True)
+                lgd=plt.legend(['Non-insertion','Insertion'][::-1], bbox_to_anchor=(.82, -0.27),ncol=1, fancybox=True, shadow=True)
                 lgd.legendHandles[0].set_height(6)
                 lgd.legendHandles[1].set_height(6)
                 plt.xlim(xmin=-1)
@@ -2986,7 +3236,7 @@ def main():
                 plt.title(get_plot_title_with_ref_name('Deletions',ref_name))
                 plt.xlabel('Size (bp)')
                 plt.ylabel('Sequences % (no.)')
-                lgd=plt.legend(['Non-deletion','Deletion'][::-1], bbox_to_anchor=(.82, -0.22),ncol=1, fancybox=True, shadow=True)
+                lgd=plt.legend(['Non-deletion','Deletion'][::-1], bbox_to_anchor=(.82, -0.27),ncol=1, fancybox=True, shadow=True)
                 lgd.legendHandles[0].set_height(6)
                 lgd.legendHandles[1].set_height(6)
                 plt.xlim(xmax=1)
@@ -3002,7 +3252,7 @@ def main():
                 plt.title(get_plot_title_with_ref_name('Substitutions',ref_name))
                 plt.xlabel('Positions substituted (number)')
                 plt.ylabel('Sequences % (no.)')
-                lgd=plt.legend(['Non-substitution','Substitution'][::-1] ,bbox_to_anchor=(.82, -0.22),ncol=1, fancybox=True, shadow=True)
+                lgd=plt.legend(['Non-substitution','Substitution'][::-1] ,bbox_to_anchor=(.82, -0.27),ncol=1, fancybox=True, shadow=True)
                 lgd.legendHandles[0].set_height(6)
                 lgd.legendHandles[1].set_height(6)
                 plt.xlim(xmin=-1)
@@ -3138,7 +3388,7 @@ def main():
                         else:
                             plt.plot([sgRNA_int[0],sgRNA_int[1]],[0,0],lw=10,c=(0,0,0,0.15),label='_nolegend_',solid_capstyle='butt')
 
-                lgd=plt.legend(loc='center', bbox_to_anchor=(0.5, -0.31),ncol=1, fancybox=True, shadow=True)
+                lgd=plt.legend(loc='center', bbox_to_anchor=(0.5, -0.33),ncol=1, fancybox=True, shadow=True)
                 y_label_values = np.arange(0,1,1.0/6.0)
                 if y_max > 0:
                     y_label_values=np.arange(0,y_max,y_max/6.0)
@@ -3210,7 +3460,7 @@ def main():
                             plt.plot([sgRNA_int[0],sgRNA_int[1]],[0,0],linewidth=10,c=(0,0,0,0.15),label='_nolegend_',solid_capstyle='butt')
 
 
-                lgd=plt.legend(loc='center', bbox_to_anchor=(0.5, -0.31),ncol=1, fancybox=True, shadow=True)
+                lgd=plt.legend(loc='center', bbox_to_anchor=(0.5, -0.33),ncol=1, fancybox=True, shadow=True)
                 y_label_values = np.arange(0,1,1.0/6.0)
                 if y_max > 0:
                     y_label_values=np.arange(0,y_max,y_max/6.0).astype(int)
@@ -3436,6 +3686,7 @@ def main():
 #                        ax2.plot(cut_points+1,np.zeros(len(cut_points)),'vr', ms=25,label='Predicted cleavage position')
 
                         added_legend = False
+                        added_sgRNA_legend = False
                         for idx,cut_point in enumerate(cut_points):
                             if not added_legend and plot_cut_points[idx]:
                                 ax2.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
@@ -3444,8 +3695,9 @@ def main():
                                 ax2.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='_nolegend_')
 
                             for idx,sgRNA_int in enumerate(sgRNA_intervals):
-                                if idx==0:
+                                if not added_sgRNA_legend and idx==0:
                                    ax2.plot([sgRNA_int[0],sgRNA_int[1]],[0,0],linewidth=10,c=(0,0,0,0.15),label='sgRNA',solid_capstyle='butt')
+                                   added_sgRNA_legend = True
                                 else:
                                    ax2.plot([sgRNA_int[0],sgRNA_int[1]],[0,0],linewidth=10,c=(0,0,0,0.15),label='_nolegend_',solid_capstyle='butt')
 
@@ -3583,6 +3835,7 @@ def main():
 
                     if cut_points:
                         added_legend = False
+                        added_sgRNA_legend = False
                         for idx,cut_point in enumerate(cut_points):
                             if not added_legend and plot_cut_points[idx]:
                                 plt.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='Predicted cleavage position')
@@ -3591,8 +3844,9 @@ def main():
                                 plt.plot([cut_point+0.5,cut_point+0.5],[0,y_max],'--k',linewidth=2,label='_nolegend_')
 
                             for idx,sgRNA_int in enumerate(sgRNA_intervals):
-                                if idx==0:
+                                if not added_sgRNA_legend and idx==0:
                                    plt.plot([sgRNA_int[0],sgRNA_int[1]],[0,0],linewidth=10,c=(0,0,0,0.15),label='sgRNA',solid_capstyle='butt')
+                                   added_sgRNA_legend = True
                                 else:
                                    plt.plot([sgRNA_int[0],sgRNA_int[1]],[0,0],linewidth=10,c=(0,0,0,0.15),label='_nolegend_',solid_capstyle='butt')
 
@@ -3733,7 +3987,7 @@ def main():
                     for (int_start,int_end) in refs[ref_name]['sgRNA_intervals']:
                         new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1,int_end - new_sel_cols_start - 1)]
                     CRISPRessoPlot.plot_alleles_table(ref_seq_around_cut,df_alleles=df_to_plot,fig_filename_root=fig_filename_root,
-                        MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot,MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot,SAVE_ALSO_PNG=save_png,plot_cut_point=plot_cut_point,sgRNA_intervals=new_sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches)
+                        MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot,MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot,SAVE_ALSO_PNG=save_png,plot_cut_point=plot_cut_point,sgRNA_intervals=new_sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,annotate_wildtype_allele=args.annotate_wildtype_allele)
                     crispresso2_info['refs'][ref_name]['plot_9_roots'].append(os.path.basename(fig_filename_root))
                     crispresso2_info['refs'][ref_name]['plot_9_captions'].append("Figure 9: Visualization of the distribution of identified alleles around the cleavage site for the " + sgRNA_legend + ". Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site.")
                     crispresso2_info['refs'][ref_name]['plot_9_datas'].append([('Allele frequency table',os.path.basename(allele_filename))])
@@ -3999,10 +4253,51 @@ def main():
                 crispresso2_info['plot_8a_data'] = []
 
             #end global coding seq plots
+
+        #prime editing plots
         if args.prime_editing_pegRNA_extension_seq != "":
-#            if not args.suppress_plots:
+            # count length of scaffold insertions
+            scaffold_insertion_sizes_filename = ""
+            if args.prime_editing_pegRNA_scaffold_sequence != "":
+                #first, define the sequence we are looking for (extension plus the first base(s) of the scaffold)
+                scaffold_dna_seq = CRISPRessoShared.reverse_complement(args.prime_editing_pegRNA_scaffold_sequence)
+                pe_seq = refs['Prime-edited']['sequence']
+                pe_scaffold_dna_info = get_pe_scaffold_search(pe_seq,args.prime_editing_pegRNA_extension_seq,args.prime_editing_pegRNA_scaffold_sequence,args.prime_editing_pegRNA_scaffold_min_match_length)
+
+                df_alleles_scaffold = df_alleles.loc[df_alleles['Reference_Name'] == 'Scaffold-incorporated']
+
+                def get_scaffold_len(row,scaffold_start_loc,scaffold_seq):
+                    pe_read_possible_scaffold_loc = row['ref_positions'].index(scaffold_start_loc - 1)+1
+                    i = 0
+                    num_match_scaffold = 0
+                    num_gaps = 0
+                    matches_scaffold_to_this_point = True
+                    has_gaps_to_this_point = True
+                    while i < len(scaffold_seq) and (matches_scaffold_to_this_point or has_gaps_to_this_point):
+                        if matches_scaffold_to_this_point and row['Aligned_Sequence'][pe_read_possible_scaffold_loc + i] == scaffold_seq[i] :
+                            num_match_scaffold += 1
+                        else:
+                            matches_scaffold_to_this_point = False
+
+                        if has_gaps_to_this_point and row['Reference_Sequence'][pe_read_possible_scaffold_loc + i] == '-':
+                            num_gaps += 1
+                        else:
+                            has_gaps_to_this_point = False
+                        i += 1
+                    return row['Aligned_Sequence'],row['Reference_Sequence'],num_match_scaffold,num_gaps,row['#Reads'],row['%Reads']
+
+                df_scaffold_insertion_sizes = pd.DataFrame(list(df_alleles_scaffold.apply(lambda row: get_scaffold_len(row,pe_scaffold_dna_info[0],scaffold_dna_seq),axis=1).values),
+                    columns=['Aligned_Sequence','Reference_Sequence','Num_match_scaffold','Num_gaps','#Reads','%Reads'])
+
+                scaffold_insertion_sizes_filename = _jp('Scaffold_insertion_sizes.txt')
+                df_scaffold_insertion_sizes.to_csv(scaffold_insertion_sizes_filename,sep='\t',header=True,index=False)
+                crispresso2_info['Scaffold_insertion_sizes_filename'] = scaffold_insertion_sizes_filename
+
+            #if pegRNA extension seq and plotting, plot summary plots
+            if not args.suppress_plots:
                 nuc_pcts = []
-                for ref_name in ref_names:
+                ref_names_for_pe = [r for r in ref_names if counts_total[r] > 0]
+                for ref_name in ref_names_for_pe:
                     tot = float(counts_total[ref_name])
                     for nuc in ['A','C','G','T','N','-']:
                         nuc_pcts.append(np.concatenate(([ref_name,nuc], np.array(ref1_all_base_count_vectors[ref_name+"_"+nuc]).astype(np.float)/tot)))
@@ -4010,30 +4305,30 @@ def main():
                 pe_nucleotide_percentage_summary_df = pd.DataFrame(nuc_pcts,columns=colnames)
 
                 mod_pcts = []
-                for ref_name in ref_names:
+                for ref_name in ref_names_for_pe:
                     tot = float(counts_total[ref_name])
                     mod_pcts.append(np.concatenate(([ref_name,'Insertions'], np.array(ref1_all_insertion_count_vectors[ref_name]).astype(np.float)/tot)))
                     mod_pcts.append(np.concatenate(([ref_name,'Insertions_Left'], np.array(ref1_all_insertion_left_count_vectors[ref_name]).astype(np.float)/tot)))
                     mod_pcts.append(np.concatenate(([ref_name,'Deletions'], np.array(ref1_all_deletion_count_vectors[ref_name]).astype(np.float)/tot)))
                     mod_pcts.append(np.concatenate(([ref_name,'Substitutions'], np.array(ref1_all_substitution_count_vectors[ref_name]).astype(np.float)/tot)))
                     mod_pcts.append(np.concatenate(([ref_name,'All_modifications'], np.array(ref1_all_indelsub_count_vectors[ref_name]).astype(np.float)/tot)))
-                    mod_pcts.append(np.concatenate(([ref_name,'Total'],[counts_total[ref_name]]*refs[ref_names[0]]['sequence_length'])))
-                colnames = ['Batch','Modification']+list(refs[ref_names[0]]['sequence'])
+                    mod_pcts.append(np.concatenate(([ref_name,'Total'],[counts_total[ref_name]]*refs[ref_names_for_pe[0]]['sequence_length'])))
+                colnames = ['Batch','Modification']+list(refs[ref_names_for_pe[0]]['sequence'])
                 pe_modification_percentage_summary_df = pd.DataFrame(mod_pcts,columns=colnames)
-                sgRNA_intervals = refs[ref_names[0]]['sgRNA_intervals']
-                sgRNA_names = refs[ref_names[0]]['sgRNA_names']
-                sgRNA_mismatches = refs[ref_names[0]]['sgRNA_mismatches']
-                include_idxs_list = refs[ref_names[0]]['include_idxs']
+                sgRNA_intervals = refs[ref_names_for_pe[0]]['sgRNA_intervals']
+                sgRNA_names = refs[ref_names_for_pe[0]]['sgRNA_names']
+                sgRNA_mismatches = refs[ref_names_for_pe[0]]['sgRNA_mismatches']
+                include_idxs_list = refs[ref_names_for_pe[0]]['include_idxs']
 
-                plot_root = _jp('11a.Prime_Editing_Nucleotide_percentage_quilt')
+                plot_root = _jp('11a.Prime_editing_nucleotide_percentage_quilt')
                 CRISPRessoPlot.plot_nucleotide_quilt(pe_nucleotide_percentage_summary_df,pe_modification_percentage_summary_df,plot_root,save_png,sgRNA_intervals=sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,quantification_window_idxs=include_idxs_list)
-                crispresso2_info['refs'][ref_names[0]]['plot_11a_root'] = os.path.basename(plot_root)
-                crispresso2_info['refs'][ref_names[0]]['plot_11a_caption'] = "Figure 11a: Nucleotide distribution across all amplicons. At each base in the reference amplicon, the percentage of each base as observed in sequencing reads is shown (A = green; C = orange; G = yellow; T = purple). Black bars show the percentage of reads for which that base was deleted. Brown bars between bases show the percentage of reads having an insertion at that position."
-                crispresso2_info['refs'][ref_names[0]]['plot_11a_data'] = [('Nucleotide frequency table for ' + ref_name,os.path.basename(crispresso2_info['refs'][ref_name]['nuc_freq_filename'])) for ref_name in ref_names]
+                crispresso2_info['refs'][ref_names_for_pe[0]]['plot_11a_root'] = os.path.basename(plot_root)
+                crispresso2_info['refs'][ref_names_for_pe[0]]['plot_11a_caption'] = "Figure 11a: Nucleotide distribution across all amplicons. At each base in the reference amplicon, the percentage of each base as observed in sequencing reads is shown (A = green; C = orange; G = yellow; T = purple). Black bars show the percentage of reads for which that base was deleted. Brown bars between bases show the percentage of reads having an insertion at that position."
+                crispresso2_info['refs'][ref_names_for_pe[0]]['plot_11a_data'] = [('Nucleotide frequency table for ' + ref_name,os.path.basename(crispresso2_info['refs'][ref_name]['nuc_freq_filename'])) for ref_name in ref_names_for_pe]
 
-                crispresso2_info['refs'][ref_names[0]]['plot_11b_roots'] = []
-                crispresso2_info['refs'][ref_names[0]]['plot_11b_captions'] = []
-                crispresso2_info['refs'][ref_names[0]]['plot_11b_datas'] = []
+                crispresso2_info['refs'][ref_names_for_pe[0]]['plot_11b_roots'] = []
+                crispresso2_info['refs'][ref_names_for_pe[0]]['plot_11b_captions'] = []
+                crispresso2_info['refs'][ref_names_for_pe[0]]['plot_11b_datas'] = []
                 for i in range(len(cut_points)):
                     cut_point = cut_points[i]
                     sgRNA = sgRNA_sequences[i]
@@ -4054,7 +4349,7 @@ def main():
                     #get new intervals
                     new_sgRNA_intervals = []
                     #add annotations for each sgRNA (to be plotted on this sgRNA's plot)
-                    for (int_start,int_end) in refs[ref_names[0]]['sgRNA_intervals']:
+                    for (int_start,int_end) in refs[ref_names_for_pe[0]]['sgRNA_intervals']:
                         new_sgRNA_intervals += [(int_start - new_sel_cols_start,int_end - new_sel_cols_start)]
                     new_include_idx = []
                     for x in include_idxs_list:
@@ -4065,10 +4360,27 @@ def main():
                             pe_modification_percentage_summary_df.iloc[:,sel_cols],
                             plot_root,
                             save_png,sgRNA_intervals=new_sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,quantification_window_idxs=new_include_idx)
-                    crispresso2_info['refs'][ref_names[0]]['plot_11b_roots'].append(os.path.basename(plot_root))
-                    crispresso2_info['refs'][ref_names[0]]['plot_11b_captions'].append('Figure 11b: Nucleotide distribution around the ' + sgRNA_legend + '.')
-                    crispresso2_info['refs'][ref_names[0]]['plot_11b_datas'].append([('Nucleotide frequency in quantification window for ' + ref_name,os.path.basename(crispresso2_info['refs'][ref_name]['quant_window_nuc_freq_filename'])) for ref_name in ref_names])
+                    crispresso2_info['refs'][ref_names_for_pe[0]]['plot_11b_roots'].append(os.path.basename(plot_root))
+                    crispresso2_info['refs'][ref_names_for_pe[0]]['plot_11b_captions'].append('Figure 11b: Nucleotide distribution around the ' + sgRNA_legend + '.')
+                    crispresso2_info['refs'][ref_names_for_pe[0]]['plot_11b_datas'].append([('Nucleotide frequency in quantification window for ' + ref_name,os.path.basename(crispresso2_info['refs'][ref_name]['quant_window_nuc_freq_filename'])) for ref_name in ref_names_for_pe])
 
+                if args.prime_editing_pegRNA_scaffold_sequence != "" and df_scaffold_insertion_sizes.shape[0] > 0:
+                    colors = 'b','g'
+                    fig=plt.figure(figsize=(12,6))
+                    ax1 = plt.subplot(111)
+                    ax1.hist([df_scaffold_insertion_sizes['Num_match_scaffold'],df_scaffold_insertion_sizes['Num_gaps']],color=colors,bins=range(0,max(df_scaffold_insertion_sizes['Num_match_scaffold'].max(),df_scaffold_insertion_sizes['Num_gaps'].max())))
+                    ax1.set_ylabel('Count')
+                    ax1.set_xlabel('Length (basepairs)')
+                    plt.tight_layout()
+                    plt.legend(['Length matching scaffold','Insertion length'],loc='center', bbox_to_anchor=(0.5, -0.35),ncol=1, fancybox=True, shadow=True)
+                    plot_root = _jp('11c.Prime_editing_scaffold_insertion_sizes')
+                    plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
+                    if save_png:
+                        plt.savefig(plot_root+'.png',bbox_inches='tight')
+                    plt.close()
+                    crispresso2_info['plot_11c_root'] = os.path.basename(plot_root)
+                    crispresso2_info['plot_11c_caption'] = "Figure 11a: Scaffold insertion lengths and deletion lengths in reads that contain a scaffold insertion. 'Length matching scaffold' shows the number of basepairs immediately after the pegRNA extension sequence that exactly match the scaffold RNA sequence. 'Insertion length' shows the length of the insertion immediately after the pegRNA extension sequence (including bases that do not match the scaffold sequence)."
+                    crispresso2_info['plot_11c_data'] = [('Scaffold insertion alleles with insertion sizes',os.path.basename(scaffold_insertion_sizes_filename))]
 
 
         info('Done!')

@@ -2,3 +2,5 @@
 tests
 dist
 CRISPResso2/*.c
+build
+.git

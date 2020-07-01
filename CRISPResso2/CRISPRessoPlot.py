@@ -613,13 +613,13 @@ def plot_subs_across_ref(ref_len, ref_seq, ref_name, ref_count, all_substitution
             if include_idxs_list[idx] == lastIdx + 1:
                 lastIdx = include_idxs_list[idx]
             else:
-                p = matplotlib.patches.Rectangle((lastStart, 0), 1+(lastIdx-lastStart), y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
+                p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart), y_max,facecolor=(0,0,0,0.05),edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2)
                 plt.gca().add_patch(p) #gca = get current axis
                 lastStart = include_idxs_list[idx]
                 lastIdx = include_idxs_list[idx]
-        p = matplotlib.patches.Rectangle((lastStart, 0), 1+(lastIdx-lastStart), y_max,fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
+        p = matplotlib.patches.Rectangle((lastStart-0.5, 0), 1+(lastIdx-lastStart), y_max,facecolor=(0,0,0,0.05),edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
         plt.gca().add_patch(p)
-        q_win_patch = patches.Patch(fill=None,edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
+        q_win_patch = patches.Patch(fill=None,facecolor=(0,0,0,0.05),edgecolor=(0,0,0,0.25),linestyle=(0,(5,2)),linewidth=2,label='Quantification window')
         legend_patches.append(q_win_patch)
         legend_labels.append('Quantification window')
 
@@ -1015,11 +1015,12 @@ def custom_heatmap(data, vmin=None, vmax=None, cmap=None, center=None, robust=Fa
     plotter.plot(ax, cbar_ax, kwargs)
     return ax
 
-def prep_alleles_table(df_alleles,MAX_N_ROWS,MIN_FREQUENCY):
+def prep_alleles_table(df_alleles,reference_seq,MAX_N_ROWS,MIN_FREQUENCY):
     """
     Prepares a df of alleles for Plotting
     input:
     -df_alleles: pandas dataframe of alleles to plot
+    -reference_seq: sequence of unmodified reference
     -MAX_N_ROWS: max number of rows to plot
     -MIN_FREQUENCY: min frequency for a row to be plotted
     returns:
@@ -1028,6 +1029,7 @@ def prep_alleles_table(df_alleles,MAX_N_ROWS,MIN_FREQUENCY):
     -y_labels: list of labels for each row/allele
     -insertion_dict: locations of insertions -- red squares will be drawn around these
     -per_element_annot_kws: annotations for each cell (e.g. bold for substitutions, etc.)
+    -is_reference: list of booleans for whether the read is equal to the reference
     """
     dna_to_numbers={'-':0,'A':1,'T':2,'C':3,'G':4,'N':5}
     seq_to_numbers= lambda seq: [dna_to_numbers[x] for x in seq]
@@ -1037,17 +1039,24 @@ def prep_alleles_table(df_alleles,MAX_N_ROWS,MIN_FREQUENCY):
     y_labels=[]
     insertion_dict=defaultdict(list)
     per_element_annot_kws=[]
+    is_reference=[]
 
     re_find_indels=re.compile("(-*-)")
     idx_row=0
     for idx,row in df_alleles.ix[df_alleles['%Reads']>=MIN_FREQUENCY][:MAX_N_ROWS].iterrows():
         X.append(seq_to_numbers(str.upper(idx)))
         annot.append(list(idx))
-        y_labels.append('%.2f%% (%d reads)' % (row['%Reads'],row['#Reads']))
 
-
+        has_indels = False
         for p in re_find_indels.finditer(row['Reference_Sequence']):
+            has_indels = True
             insertion_dict[idx_row].append((p.start(),p.end()))
+
+        y_labels.append('%.2f%% (%d reads)' % (row['%Reads'],row['#Reads']))
+        if idx == reference_seq and not has_indels:
+            is_reference.append(True)
+        else:
+            is_reference.append(False)
 
         idx_row+=1
 
@@ -1060,7 +1069,7 @@ def prep_alleles_table(df_alleles,MAX_N_ROWS,MIN_FREQUENCY):
         to_append[ idxs_sub]={'weight':'bold', 'color':'black','size':16}
         per_element_annot_kws.append(to_append)
 
-    return X,annot,y_labels,insertion_dict,per_element_annot_kws
+    return X,annot,y_labels,insertion_dict,per_element_annot_kws,is_reference
 
 def prep_alleles_table_compare(df_alleles,sample_name_1,sample_name_2,MAX_N_ROWS,MIN_FREQUENCY):
     """
@@ -1424,7 +1433,7 @@ def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,i
         plt.savefig(fig_filename_root+'.png',bbox_inches='tight',bbox_extra_artists=(lgd,),pad=1)
     plt.close()
 
-def plot_alleles_table(reference_seq,df_alleles,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,plot_cut_point=True,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,custom_colors=None):
+def plot_alleles_table(reference_seq,df_alleles,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,plot_cut_point=True,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,custom_colors=None,annotate_wildtype_allele='****'):
     """
     plots an allele table for a dataframe with allele frequencies
     input:
@@ -1439,11 +1448,16 @@ def plot_alleles_table(reference_seq,df_alleles,fig_filename_root,MIN_FREQUENCY=
     sgRNA_mismatches: array (for each sgRNA_interval) of locations in sgRNA where there are mismatches
     sgRNA_names: array (for each sgRNA_interval) of names of sgRNAs (otherwise empty)
     custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
+    annotate_wildtype_allele: string to add to the end of the wildtype allele (e.g. ** or '')
     """
-    X,annot,y_labels,insertion_dict,per_element_annot_kws = prep_alleles_table(df_alleles,MAX_N_ROWS,MIN_FREQUENCY)
+    X,annot,y_labels,insertion_dict,per_element_annot_kws,is_reference = prep_alleles_table(df_alleles,reference_seq,MAX_N_ROWS,MIN_FREQUENCY)
+    if annotate_wildtype_allele != '':
+        for ix, is_ref in enumerate(is_reference):
+            if is_ref:
+                y_labels[ix] += annotate_wildtype_allele
     plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,plot_cut_point,sgRNA_intervals,sgRNA_names,sgRNA_mismatches,custom_colors)
 
-def plot_alleles_table_from_file(alleles_file_name,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,plot_cut_point=True,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,custom_colors=None):
+def plot_alleles_table_from_file(alleles_file_name,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,plot_cut_point=True,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,custom_colors=None,annotate_wildtype_allele=''):
     """
     plots an allele table for a dataframe with allele frequencies
     infers the reference sequence by finding reference sequences without gaps (-)
@@ -1460,6 +1474,7 @@ def plot_alleles_table_from_file(alleles_file_name,fig_filename_root,MIN_FREQUEN
     sgRNA_mismatches: array (for each sgRNA_interval) of locations in sgRNA where there are mismatches
     sgRNA_names: array (for each sgRNA_interval) of names of sgRNAs (otherwise empty)
     custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
+    annotate_wildtype_allele: string to add to the end of the wildtype allele (e.g. ** or ''(for no anno))
     """
 
     df_alleles = pd.read_table(alleles_file_name)
@@ -1471,7 +1486,11 @@ def plot_alleles_table_from_file(alleles_file_name,fig_filename_root,MIN_FREQUEN
     else:
         raise Exception('Could not infer reference sequence from allele table')
 
-    X,annot,y_labels,insertion_dict,per_element_annot_kws = prep_alleles_table(df_alleles,MAX_N_ROWS,MIN_FREQUENCY)
+    X,annot,y_labels,insertion_dict,per_element_annot_kws,is_reference = prep_alleles_table(df_alleles,reference_seq,MAX_N_ROWS,MIN_FREQUENCY)
+    if annotate_wildtype_allele != '':
+        for ix, is_ref in enumerate(is_reference):
+            if is_ref:
+                y_labels[ix] += annotate_wildtype_allele
     plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,plot_cut_point,sgRNA_intervals,sgRNA_names,sgRNA_mismatches,custom_colors)
 
 def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,MIN_FREQUENCY=None,MAX_N_ROWS=None,SAVE_ALSO_PNG=False,custom_colors=None,plot_cut_point=True,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None):
@@ -1540,7 +1559,7 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,M
             for (int_start,int_end) in refs[ref_name]['sgRNA_intervals']:
                 new_sgRNA_intervals += [(int_start - new_sel_cols_start,int_end - new_sel_cols_start)]
 
-            X,annot,y_labels,insertion_dict,per_element_annot_kws = prep_alleles_table(df_alleles,MAX_N_ROWS,MIN_FREQUENCY)
+            X,annot,y_labels,insertion_dict,per_element_annot_kws,is_reference = prep_alleles_table(df_alleles,ref_seq_around_cut,MAX_N_ROWS,MIN_FREQUENCY)
             plot_alleles_heatmap(ref_seq_around_cut,fig_filename_root+"_"+ref_name+"_"+sgRNA_label,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,plot_cut_point,new_sgRNA_intervals,sgRNA_names,sgRNA_mismatches,custom_colors)
             plot_count += 1
     print('Plotted ' + str(plot_count) + ' plots')

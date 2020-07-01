@@ -438,7 +438,7 @@ def main():
                 df_genes.txStart=df_genes.txStart.astype(int)
                 df_genes.head()
             except:
-                info('Failed to load the gene annotations file.')
+                raise Exception('Failed to load the gene annotations file.')
 
 
         #Load and validate the REGION FILE

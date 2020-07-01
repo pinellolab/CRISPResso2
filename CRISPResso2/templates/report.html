@@ -226,6 +226,23 @@
 					</div>
 					{% endif %} {# end plot 11b for prime editing #}
 
+						{% if report_data['fig_locs']['plot_11c'] %}
+							<div class='card text-center mb-2'>
+								<div class='card-header'>
+  						<h5>Scaffold insertions</h5>
+								</div>
+  					<div class='card-body'>
+						<a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs']['plot_11c']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs']['plot_11c']}}.png" width='40%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions']['plot_11c']}}</label>
+							  {% for (data_label,data_path) in report_data['fig_datas']['plot_11c'] %}
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
+                {% endfor %}
+							</div>
+						</div>
+						{% endif %}
+
+            {# end prime editing section #}
+
 
 					{% if report_data.amplicons|length == 1 %}
           <div> {# if only one amplicon, just a normal div #}

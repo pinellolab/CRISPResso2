@@ -31,7 +31,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.0.37"
+__version__ = "2.0.38"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -78,7 +78,7 @@ class OutputFolderIncompleteException(Exception):
 def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams={}):
     parser = argparse.ArgumentParser(description=parserTitle,formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--version', action='version', version='%(prog)s '+__version__)
-    parser.add_argument('-r1','--fastq_r1', type=str,  help='First fastq file',default='Fastq filename',required='fastq_r1' in requiredParams)
+    parser.add_argument('-r1','--fastq_r1', type=str,  help='First fastq file',default='',required='fastq_r1' in requiredParams)
     parser.add_argument('-r2','--fastq_r2', type=str,  help='Second fastq file for paired end reads',default='')
 
     parser.add_argument('-a','--amplicon_seq', type=str,  help='Amplicon Sequence (can be comma-separated list of multiple sequences)', required='amplicon_seq' in requiredParams)
@@ -95,7 +95,6 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('-e','--expected_hdr_amplicon_seq', help='Amplicon sequence expected after HDR', default='')
     parser.add_argument('-c','--coding_seq',  help='Subsequence/s of the amplicon sequence covering one or more coding sequences for frameshift analysis. If more than one (for example, split by intron/s), please separate by commas.', default='')
 
-
     #quality filtering options
     parser.add_argument('-q','--min_average_read_quality', type=int, help='Minimum average quality score (phred33) to keep a read', default=0)
     parser.add_argument('-s','--min_single_bp_quality', type=int, help='Minimum single bp score (phred33) to keep a read', default=0)
@@ -107,7 +106,7 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('-o','--output_folder',  help='Output folder to use for the analysis (default: current folder)', default='')
 
     ## read preprocessing params
-    parser.add_argument('--split_paired_end',help='Splits a single fastq file containing paired end reads in two files before running CRISPResso',action='store_true')
+    parser.add_argument('--split_interleaved_input','--split_paired_end',help='Splits a single fastq file containing paired end reads into two files before running CRISPResso',action='store_true')
     parser.add_argument('--trim_sequences',help='Enable the trimming of Illumina adapters with Trimmomatic',action='store_true')
     parser.add_argument('--trimmomatic_command', type=str, help='Command to run trimmomatic',default='trimmomatic')
     parser.add_argument('--trimmomatic_options_string', type=str, help='Override options for Trimmomatic, e.g. "ILLUMINACLIP:/data/NexteraPE-PE.fa:0:90:10:0:true"',default='')
@@ -145,6 +144,7 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('--allele_plot_pcts_only_for_assigned_reference',help='If set, in the allele plots, the percentages will show the percentage as a percent of reads aligned to the assigned reference. Default behavior is to show percentage as a percent of all reads.',action='store_true')
     parser.add_argument('-qwc','--quantification_window_coordinates', type=str, help='Bp positions in the amplicon sequence specifying the quantification window. This parameter overrides values of the "--quantification_window_center", "--cleavage_offset", "--window_around_sgrna" or "--window_around_sgrna" values. Any indels/substitutions outside this window are excluded. Indexes are 0-based, meaning that the first nucleotide is position 0. Ranges are separted by the dash sign (e.g. "start-stop"), and multiple ranges can be separated by the underscore (_). ' +
         'A value of 0 disables this filter. (can be comma-separated list of values, corresponding to amplicon sequences given in --amplicon_seq e.g. 5-10,5-10_20-30 would specify the 5th-10th bp in the first reference and the 5th-10th and 20th-30th bp in the second reference)', default=None)
+    parser.add_argument('--annotate_wildtype_allele', type=str, help='Wildtype alleles in the allele table will be marked with this string (e.g. **).', default='')
 
     #verbosity parameters
     parser.add_argument('--keep_intermediate',help='Keep all the  intermediate files',action='store_true')
@@ -152,7 +152,7 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('--write_detailed_allele_table',help='If set, a detailed allele table will be written including alignment scores for each read sequence.',action='store_true')
 
     #report style parameters
-    parser.add_argument('--max_rows_alleles_around_cut_to_plot',  type=int, help='Maximum number of rows to report in the alleles table plot. ', default=50)
+    parser.add_argument('--max_rows_alleles_around_cut_to_plot',  type=int, help='Maximum number of rows to report in the alleles table plot.', default=50)
     parser.add_argument('--suppress_report',  help='Suppress output report', action='store_true')
     parser.add_argument('--place_report_in_output_folder',  help='If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output.', action='store_true')
     parser.add_argument('--suppress_plots',  help='Suppress output plots', action='store_true')
@@ -167,7 +167,8 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('--prime_editing_pegRNA_spacer_seq',type=str,help="pegRNA spacer sgRNA sequence used in prime editing. The spacer should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the given sequence.",default='')
     parser.add_argument('--prime_editing_pegRNA_extension_seq',type=str,help="Extension sequence used in prime editing. The sequence should be given in the RNA 5'->3' order, such that the sequence starts with the RT template including the edit, followed by the Primer-binding site (PBS).",default='')
     parser.add_argument('--prime_editing_pegRNA_extension_quantification_window_size',type=int,help="Quantification window size (in bp) at flap site for measuring modifications anchored at the right side of the extension sequence. Similar to the --quantification_window parameter, the total length of the quantification window will be 2x this parameter. Default: 5bp (10bp total window size)",default=5)
-    parser.add_argument('--prime_editing_pegRNA_scaffold_sequence',type=str,help="If given, reads containing any of this scaffold sequence before extension sequence (provided by --prime_editing_extension_seq) will be classified as 'Scaffold Incorporated'. The sequence should be given in the 5'->3' order such that the RT template directly follows this sequence. A common value is 'GGCACCGAGUCGGUGC'.",default='')
+    parser.add_argument('--prime_editing_pegRNA_scaffold_sequence',type=str,help="If given, reads containing any of this scaffold sequence before extension sequence (provided by --prime_editing_extension_seq) will be classified as 'Scaffold-incorporated'. The sequence should be given in the 5'->3' order such that the RT template directly follows this sequence. A common value is 'GGCACCGAGUCGGUGC'.",default='')
+    parser.add_argument('--prime_editing_pegRNA_scaffold_min_match_length',type=int,help="Minimum number of bases matching scaffold sequence for the read to be counted as 'Scaffold-incorporated'. If the scaffold sequence matches the reference sequence at the incorporation site, the minimum number of bases to match will be minimally increased (beyond this parameter) to disambiguate between prime-edited and scaffold-incorporated sequences.",default=1)
     parser.add_argument('--prime_editing_nicking_guide_seq',type=str,help="Nicking sgRNA sequence used in prime editing. The sgRNA should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the sequence",default='')
 
     #special running modes
@@ -177,6 +178,9 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('--debug', help='Show debug messages', action='store_true')
     parser.add_argument('--no_rerun', help="Don't rerun CRISPResso2 if a run using the same parameters has already been finished.", action='store_true')
 
+    #processing of aligned bam files
+    parser.add_argument('--bam_input', type=str,  help='Aligned reads for processing in bam format', default='')
+    parser.add_argument('--bam_chr_loc', type=str,  help='Chromosome location in bam for reads to process. For example: "chr1:50-100" or "chrX".' ,default='')
 
     #deprecated params
     parser.add_argument('--save_also_png',default=False,help=argparse.SUPPRESS) #help='Save also .png images in addition to .pdf files') #depreciated -- now pngs are automatically created. Pngs can be suppressed by '--suppress_report'
@@ -288,8 +292,24 @@ def check_file(filename):
     try:
         with open(filename): pass
     except IOError:
-        files_in_dir = os.listdir('.')
-        raise BadParameterException("The specified file '"+filename + "' cannot be opened.\nAvailable files in current directory: " + str(files_in_dir))
+        files_in_curr_dir = os.listdir('.')
+        if len(files_in_curr_dir) > 15:
+            files_in_curr_dir = files_in_curr_dir[0:15]
+            files_in_curr_dir.append("(Complete listing truncated)")
+        dir_string = ""
+        file_dir = os.path.dirname(filename)
+        if file_dir == "":
+            dir_string = ""
+        elif os.path.isdir(file_dir):
+            files_in_file_dir = os.listdir(file_dir)
+            if len(files_in_file_dir) > 15:
+                files_in_file_dir = files_in_file_dir[0:15]
+                files_in_file_dir.append("(Complete listing truncated)")
+            dir_string = "\nAvailable files in " + file_dir + ":\n\t" + "\n\t".join(files_in_file_dir)
+        else:
+            dir_string = "\nAdditionally, the folder '" + os.path.dirname(filename) + "' does not exist"
+
+        raise BadParameterException("The specified file '"+filename + "' cannot be opened.\nAvailable files in current directory:\n\t" + "\n\t".join(files_in_curr_dir) + dir_string)
 
 def force_symlink(src, dst):
 
@@ -420,7 +440,7 @@ def get_most_frequent_reads(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_
     view_cmd_1 = 'cat'
     if fastq_r1.endswith('.gz'):
         view_cmd_1 = 'zcat'
-    file_generation_command = "%s %s | head -n %d "%(view_cmd_1,fastq_r1,number_of_reads_to_consider)
+    file_generation_command = "%s %s | head -n %d "%(view_cmd_1,fastq_r1,number_of_reads_to_consider*4)
 
     if fastq_r2:
         view_cmd_2 = 'cat'
@@ -432,7 +452,7 @@ def get_most_frequent_reads(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_
             max_overlap_param = "--max-overlap="+str(max_paired_end_reads_overlap)
         if min_paired_end_reads_overlap:
             min_overlap_param = "--min-overlap="+str(min_paired_end_reads_overlap)
-        file_generation_command = "bash -c 'paste <(%s \"%s\") <(%s \"%s\")' | head -n %d | paste - - - - | awk -v OFS=\"\\n\" -v FS=\"\\t\" '{print($1,$3,$5,$7,$2,$4,$6,$8)}' | %s - --interleaved-input --allow-outies %s %s --to-stdout 2>/dev/null " %(view_cmd_1,fastq_r1,view_cmd_2,fastq_r2,number_of_reads_to_consider,flash_command,max_overlap_param,min_overlap_param)
+        file_generation_command = "bash -c 'paste <(%s \"%s\") <(%s \"%s\")' | head -n %d | paste - - - - | awk -v OFS=\"\\n\" -v FS=\"\\t\" '{print($1,$3,$5,$7,$2,$4,$6,$8)}' | %s - --interleaved-input --allow-outies %s %s --to-stdout 2>/dev/null " %(view_cmd_1,fastq_r1,view_cmd_2,fastq_r2,number_of_reads_to_consider*4,flash_command,max_overlap_param,min_overlap_param)
     count_frequent_cmd = file_generation_command + " | awk '((NR-2)%4==0){print $1}' | sort | uniq -c | sort -nr "
     def default_sigpipe():
         signal.signal(signal.SIGPIPE, signal.SIG_DFL)
@@ -488,6 +508,7 @@ def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,
         count,seq = seq_lines[i].strip().split()
         last_count,last_seq = seq_lines[i-1].strip().split()
         #if this allele is present in at least XX% of the samples
+#        print('debug 509 testing ' + str(seq_lines[i]) + ' with ' + str(count) + ' out of consididered ' + str(number_of_reads_to_consider) + ' min freq: ' + str(min_freq_to_consider))
         if float(last_count)/float(number_of_reads_to_consider) > min_freq_to_consider:
             this_amplicon_seq_arr = amplicon_seq_arr[:]
             this_amplicon_max_pct = 0 #keep track of similarity to most-similar already-found amplicons
