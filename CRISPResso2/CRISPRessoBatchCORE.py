@@ -128,7 +128,7 @@ def main():
         batch_count = batch_params.shape[0]
         batch_params.index = range(batch_count)
 
-        if 'fastq_r1' not in batch_params:
+        if 'fastq_r1' not in batch_params and 'bam_input' not in batch_params:
             raise CRISPRessoShared.BadParameterException("fastq_r1 must be specified in the batch settings file. Current headings are: "
                     + str(batch_params.columns.values))
 
@@ -157,12 +157,20 @@ def main():
         batch_params["cut_point_include_idx"] = '' #create empty array for cut point intervals for each batch based on sgRNA
         batch_params["cut_point_include_idx"] = batch_params["cut_point_include_idx"].apply(list)
         for idx,row in batch_params.iterrows():
-            if row.fastq_r1 is None:
-                raise CRISPRessoShared.BadParameterException("At least one fastq file must be given as a command line parameter or be specified in the batch settings file with the heading 'fastq_r1' (fastq_r1 on row %s '%s' is invalid)"%(int(idx)+1,row.fastq_r1))
-            CRISPRessoShared.check_file(row.fastq_r1)
+            if 'fastq_r1' in row:
+                if row.fastq_r1 is None:
+                    raise CRISPRessoShared.BadParameterException("At least one fastq file must be given as a command line parameter or be specified in the batch settings file with the heading 'fastq_r1' (fastq_r1 on row %s '%s' is invalid)"%(int(idx)+1,row.fastq_r1))
+                else:
+                    CRISPRessoShared.check_file(row.fastq_r1)
 
-            if row.fastq_r2 != "":
+            if 'fastq_r2' in row and row.fastq_r2 != "":
                 CRISPRessoShared.check_file(row.fastq_r2)
+
+            if 'input_bam' in row:
+                if row.input_bam is None:
+                    raise CRISPRessoShared.BadParameterException("At least one input file must be given as a command line parameter or be specified in the batch settings file with the heading 'fastq_r1' or 'input_bam' (input_bam on row %s '%s' is invalid)"%(int(idx)+1,row.input_bam))
+                else:
+                    CRISPRessoShared.check_file(row.input_bam)
 
             if args.auto:
                 continue
