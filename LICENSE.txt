@@ -1,6 +1,6 @@
 CRISPResso2 is made available for free to academic researchers under this limited license for non-commercial use.
 
-IMPORTANT: If you plan to use the CRISPResso2 for-profit, you will need to purchase a license. Please contact licensing@edilytics.com for more information. 
+IMPORTANT: If you plan to use the CRISPResso2 for-profit, you will need to purchase a license. Please contact licensing@edilytics.com for more information.
 
 CRISPResso2
 END USER LICENSE AGREEMENT
@@ -48,4 +48,4 @@ The construction and performance of this EULA will be governed by the laws of th
 9. Entire Agreement.
 This EULA sets forth all of the covenants, provisions, agreements, conditions, and understandings between the parties regarding the subject matter herein, and there are no covenants, promises, agreements, conditions, or understandings, either oral or written, between them other than those set forth herein.
 
-Should you have any concerns regarding this EULA contact us at crispresso2licensing@pinellolab.org.
+Should you have any concerns regarding this EULA contact us at licensing@edilytics.com.

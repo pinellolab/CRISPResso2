@@ -31,7 +31,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.0.38"
+__version__ = "2.0.39"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -917,7 +917,7 @@ def set_guide_array(vals, guides, property_name):
     returns: list of int vals
     """
     #if only one is given, set it for all guides
-    vals_array = vals.split(",")
+    vals_array = str(vals).split(",")
     ret_array = [int(vals_array[0])]*len(guides)
     #len(vals_array) is always one -- don't freak out if it's longer than 0 guides
     if len(vals_array) > 1 and len(vals_array) > len(guides):
@@ -978,7 +978,7 @@ def get_crispresso_header(description,header_str):
         for i in range(len(logo_lines))[::-1]:
             output_line = (pad_string + logo_lines[i].ljust(max_logo_width) + pad_string).center(term_width) + "\n" + output_line
 
-    output_line += '\n'+('[CRISPResso version ' + __version__ + ']').center(term_width) + '\n' + ('[Kendell Clement and Luca Pinello 2019]').center(term_width) + "\n" + ('[For support contact kclement@mgh.harvard.edu]').center(term_width) + "\n"
+    output_line += '\n'+('[CRISPResso version ' + __version__ + ']').center(term_width) + '\n' + ('[Kendell Clement and Luca Pinello 2020]').center(term_width) + "\n" + ('[For support contact kclement@mgh.harvard.edu]').center(term_width) + "\n"
 
     description_str = ""
     for str in description:
