@@ -31,7 +31,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.0.39"
+__version__ = "2.0.40"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -167,7 +167,7 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('--prime_editing_pegRNA_spacer_seq',type=str,help="pegRNA spacer sgRNA sequence used in prime editing. The spacer should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the given sequence.",default='')
     parser.add_argument('--prime_editing_pegRNA_extension_seq',type=str,help="Extension sequence used in prime editing. The sequence should be given in the RNA 5'->3' order, such that the sequence starts with the RT template including the edit, followed by the Primer-binding site (PBS).",default='')
     parser.add_argument('--prime_editing_pegRNA_extension_quantification_window_size',type=int,help="Quantification window size (in bp) at flap site for measuring modifications anchored at the right side of the extension sequence. Similar to the --quantification_window parameter, the total length of the quantification window will be 2x this parameter. Default: 5bp (10bp total window size)",default=5)
-    parser.add_argument('--prime_editing_pegRNA_scaffold_sequence',type=str,help="If given, reads containing any of this scaffold sequence before extension sequence (provided by --prime_editing_extension_seq) will be classified as 'Scaffold-incorporated'. The sequence should be given in the 5'->3' order such that the RT template directly follows this sequence. A common value is 'GGCACCGAGUCGGUGC'.",default='')
+    parser.add_argument('--prime_editing_pegRNA_scaffold_seq',type=str,help="If given, reads containing any of this scaffold sequence before extension sequence (provided by --prime_editing_extension_seq) will be classified as 'Scaffold-incorporated'. The sequence should be given in the 5'->3' order such that the RT template directly follows this sequence. A common value is 'GGCACCGAGUCGGUGC'.",default='')
     parser.add_argument('--prime_editing_pegRNA_scaffold_min_match_length',type=int,help="Minimum number of bases matching scaffold sequence for the read to be counted as 'Scaffold-incorporated'. If the scaffold sequence matches the reference sequence at the incorporation site, the minimum number of bases to match will be minimally increased (beyond this parameter) to disambiguate between prime-edited and scaffold-incorporated sequences.",default=1)
     parser.add_argument('--prime_editing_nicking_guide_seq',type=str,help="Nicking sgRNA sequence used in prime editing. The sgRNA should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the sequence",default='')
 
@@ -822,7 +822,7 @@ def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,qua
             this_sgRNA_cut_points.append(cut_p)
             this_sgRNA_plot_cut_points.append(guide_plot_cut_points[guide_idx])
             this_sgRNA_intervals.append((m.start(),m.start() + len(current_guide_seq)-1))
-            this_sgRNA_mismatches.append([len(current_guide_seq)-x for x in guide_mismatches[guide_idx]])
+            this_sgRNA_mismatches.append([len(current_guide_seq)-(x+1) for x in guide_mismatches[guide_idx]])
 
             if quantification_window_sizes[guide_idx] > 0:
                 st=max(0,cut_p-quantification_window_sizes[guide_idx]+1)

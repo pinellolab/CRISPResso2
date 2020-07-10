@@ -135,13 +135,13 @@ sns.set_style('white')
 
 #########################################
 
-def get_pe_scaffold_search(prime_edited_ref_sequence, prime_editing_pegRNA_extension_seq, prime_editing_pegRNA_scaffold_sequence,prime_editing_pegRNA_scaffold_min_match_length):
+def get_pe_scaffold_search(prime_edited_ref_sequence, prime_editing_pegRNA_extension_seq, prime_editing_pegRNA_scaffold_seq,prime_editing_pegRNA_scaffold_min_match_length):
     """
-    For prime editing, determines the scaffold string to search for (the shortest substring of args.prime_editing_pegRNA_scaffold_sequence not in the prime-edited reference sequence)
+    For prime editing, determines the scaffold string to search for (the shortest substring of args.prime_editing_pegRNA_scaffold_seq not in the prime-edited reference sequence)
     params:
      prime_edited_ref_sequence: reference sequence of the prime-edited sequence
      prime_editing_extension_seq: RNA sequence of extension sequence
-     prime_editing_pegRNA_scaffold_sequence: sequence of the scaffold sequence
+     prime_editing_pegRNA_scaffold_seq: sequence of the scaffold sequence
      prime_editing_pegRNA_scaffold_min_match_length: minimum number of bases required to match between scaffold and read to count as scaffold-incorporated
     returns:
      tuple of(
@@ -151,7 +151,7 @@ def get_pe_scaffold_search(prime_edited_ref_sequence, prime_editing_pegRNA_exten
     """
     info('Processing pegRNA scaffold sequence...')
     #first, define the sequence we are looking for (extension plus the first base(s) of the scaffold)
-    scaffold_dna = CRISPRessoShared.reverse_complement(prime_editing_pegRNA_scaffold_sequence)
+    scaffold_dna = CRISPRessoShared.reverse_complement(prime_editing_pegRNA_scaffold_seq)
 
     extension_seq_dna_top_strand = prime_editing_pegRNA_extension_seq.upper().replace('U','T')
     prime_editing_extension_seq_dna = CRISPRessoShared.reverse_complement(extension_seq_dna_top_strand)
@@ -294,7 +294,7 @@ def get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaf
 
     #search for prime editing scaffold
     #if it's there, assign this to be assigned to the reference '"Scaffold-incorporated"'
-    if 'Prime-edited' in best_match_names: #any scaffold extensions must be closer to the prime-edited sequence
+    if args.prime_editing_pegRNA_scaffold_seq and 'Prime-edited' in best_match_names: #any scaffold extensions must be closer to the prime-edited sequence
         pe_read_possible_scaffold_loc = new_variant['variant_Prime-edited']['ref_positions'].index(pe_scaffold_dna_info[0]-1) + 1
         if new_variant['variant_Prime-edited']['aln_seq'][pe_read_possible_scaffold_loc:(pe_read_possible_scaffold_loc+len(pe_scaffold_dna_info[1]))] == pe_scaffold_dna_info[1]:
 #            print('comparingHERE ' + new_variant['variant_Prime-edited']['aln_seq'][pe_read_possible_scaffold_loc:(pe_read_possible_scaffold_loc+len(pe_scaffold_dna_info[1])+5)] + ' from ' + new_variant['variant_Prime-edited']['aln_seq'] + ' and ' + new_variant['variant_Prime-edited']['aln_ref'])
@@ -362,6 +362,7 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
                 # 'sgRNA_plot_idxs' #indices along reference sequence for which to plot the allele plot (allele frequency plot around sgRNA)
                 # 'sgRNA_names' #names of sgRNAs (in case there are multiple matches for a single sgRNA)
                 # 'sgRNA_mismatches' #indices along guide that are mismatched against a 'flexiguide_seq'
+                # 'sgRNA_orig_sequences' #original sgRNA sequences as passed in as parameters (e.g. not including flexiguide changes or case changes)
                 # 'contains_coding_seq'
                 # 'exon_positions'
                 # 'exon_intervals'
@@ -390,8 +391,8 @@ def process_fastq(fastq_filename,variantCache,ref_names,refs,args):
     aln_matrix = CRISPResso2Align.read_matrix(aln_matrix_loc)
 
     pe_scaffold_dna_info = (0,None) #scaffold start loc, scaffold seq to search
-    if args.prime_editing_pegRNA_scaffold_sequence != "":
-        pe_scaffold_dna_info = get_pe_scaffold_search(refs['Prime-edited']['sequence'],args.prime_editing_pegRNA_extension_seq,args.prime_editing_pegRNA_scaffold_sequence,args.prime_editing_pegRNA_scaffold_min_match_length)
+    if args.prime_editing_pegRNA_scaffold_seq != "":
+        pe_scaffold_dna_info = get_pe_scaffold_search(refs['Prime-edited']['sequence'],args.prime_editing_pegRNA_extension_seq,args.prime_editing_pegRNA_scaffold_seq,args.prime_editing_pegRNA_scaffold_min_match_length)
 
     not_aln = {} #cache for reads that don't align
 
@@ -463,8 +464,8 @@ def process_bam(bam_filename,bam_chr_loc,output_bam,variantCache,ref_names,refs,
     aln_matrix = CRISPResso2Align.read_matrix(aln_matrix_loc)
 
     pe_scaffold_dna_info = (0,None) #scaffold start loc, scaffold sequence
-    if args.prime_editing_pegRNA_scaffold_sequence != "":
-        pe_scaffold_dna_info = get_pe_scaffold_search(refs['Prime-edited']['sequence'],args.prime_editing_pegRNA_extension_seq,args.prime_editing_pegRNA_scaffold_sequence,args.prime_editing_pegRNA_scaffold_min_match_length)
+    if args.prime_editing_pegRNA_scaffold_seq != "":
+        pe_scaffold_dna_info = get_pe_scaffold_search(refs['Prime-edited']['sequence'],args.prime_editing_pegRNA_extension_seq,args.prime_editing_pegRNA_scaffold_seq,args.prime_editing_pegRNA_scaffold_min_match_length)
 
     not_aln = {} #cache for reads that don't align
 
@@ -626,7 +627,8 @@ def main():
         header = CRISPRessoShared.get_crispresso_header(description=description,header_str=None)
         print(header)
 
-        args = CRISPRessoShared.getCRISPRessoArgParser().parse_args()
+        arg_parser = CRISPRessoShared.getCRISPRessoArgParser()
+        args = arg_parser.parse_args()
 
         aln_matrix_loc = os.path.join(_ROOT,"EDNAFULL")
         CRISPRessoShared.check_file(aln_matrix_loc)
@@ -640,10 +642,12 @@ def main():
         elif args.bam_input:
             CRISPRessoShared.check_file(args.bam_input)
         else:
+            arg_parser.print_help()
             raise CRISPRessoShared.BadParameterException('Please provide input data for analysis e.g. using the --fastq_r1 parameter.')
 
 
         if args.amplicon_seq is None and args.auto is False:
+            arg_parser.print_help()
             raise CRISPRessoShared.BadParameterException('Please provide an amplicon sequence for analysis using the --amplicon_seq parameter.')
 
         if (args.needleman_wunsch_gap_open > 0):
@@ -1053,6 +1057,7 @@ def main():
             nicking_qw_size: for the nicking guides, what is the quantification size (usually int(args.quantification_window_size.split(",")[0]))
             """
             pe_guides = []
+            pe_orig_guide_seqs = []
             pe_guide_mismatches = []
             pe_guide_names = []
             pe_guide_qw_centers = []
@@ -1064,6 +1069,7 @@ def main():
             if this_seq == prime_editing_edited_amp_seq:
                 best_aln_seq,best_aln_mismatches,best_aln_start,best_aln_end,s1,s2 = get_best_aln_pos_and_mismatches(prime_editing_extension_seq_dna,prime_editing_edited_amp_seq)
                 pe_guides.append(best_aln_seq)
+                pe_orig_guide_seqs.append(args.prime_editing_pegRNA_extension_seq)
                 pe_guide_mismatches.append(best_aln_mismatches)
                 pe_guide_names.append('PE Extension')
                 pe_guide_qw_centers.append(0)
@@ -1078,6 +1084,7 @@ def main():
                 coords_l,coords_r = get_alignment_coordinates(to_sequence=this_seq,from_sequence=prime_editing_edited_amp_seq)
                 new_seq = this_seq[coords_l[pe_start_loc]:coords_r[pe_end_loc]]
                 pe_guides.append(new_seq)
+                pe_orig_guide_seqs.append(args.prime_editing_pegRNA_extension_seq)
                 rev_coords_l,rev_coords_r = get_alignment_coordinates(to_sequence=prime_editing_edited_amp_seq,from_sequence=this_seq)
 
                 #this_mismatches = [i-coords_l[pe_start_loc] for i in range(coords_l[pe_start_loc],coords_r[pe_end_loc]) if this_seq[i] != prime_editing_edited_amp_seq[rev_coords_l[i]] or this_seq[i] == "-"]
@@ -1106,6 +1113,7 @@ def main():
             if this_seq == ref0_seq:
                 best_aln_seq,best_aln_mismatches,best_aln_start,best_aln_end,s1,s2 = get_best_aln_pos_and_mismatches(pegRNA_spacer_seq,ref0_seq)
                 pe_guides.append(best_aln_seq)
+                pe_orig_guide_seqs.append(args.prime_editing_pegRNA_spacer_seq)
                 pe_guide_mismatches.append(best_aln_mismatches)
                 pe_guide_names.append('PE spacer sgRNA')
                 pe_guide_qw_centers.append(nicking_qw_center)
@@ -1120,6 +1128,7 @@ def main():
                 coords_l,coords_r = get_alignment_coordinates(to_sequence=this_seq,from_sequence=ref0_seq)
                 new_seq = this_seq[coords_l[r0_start_loc]:coords_r[r0_end_loc]]
                 pe_guides.append(new_seq)
+                pe_orig_guide_seqs.append(args.prime_editing_pegRNA_spacer_seq)
                 rev_coords_l,rev_coords_r = get_alignment_coordinates(to_sequence=ref0_seq,from_sequence=this_seq)
                 #this_mismatches = [i-coords_l[r0_start_loc] for i in range(coords_l[r0_start_loc],coords_r[r0_end_loc]) if this_seq[i] != ref0_seq[rev_coords_l[i]] or this_seq[i] == "-"]
                 this_mismatches = get_sgRNA_mismatch_vals(this_seq,ref0_seq,r0_start_loc,r0_end_loc,coords_l,coords_r,rev_coords_l,rev_coords_r)
@@ -1147,6 +1156,7 @@ def main():
                     if nicking_guide_seq not in rc_ref0_seq:
                         warn('The given prime editing nicking guide is not found in the reference sequence. Using the best match: ' + str(best_aln_seq))
                     pe_guides.append(best_aln_seq)
+                    pe_orig_guide_seqs.append(args.prime_editing_nicking_guide_seq)
                     pe_guide_mismatches.append(best_aln_mismatches)
                     pe_guide_names.append('PE nicking sgRNA')
                     pe_guide_qw_centers.append(nicking_qw_center)
@@ -1163,6 +1173,7 @@ def main():
                     coords_l,coords_r = get_alignment_coordinates(to_sequence=rc_this_seq,from_sequence=rc_ref0_seq)
                     new_seq = rc_this_seq[coords_l[r0_start_loc]:coords_r[r0_end_loc]]
                     pe_guides.append(new_seq)
+                    pe_orig_guide_seqs.append(args.prime_editing_nicking_guide_seq)
                     rev_coords_l,rev_coords_r = get_alignment_coordinates(to_sequence=rc_ref0_seq,from_sequence=rc_this_seq)
                     #this_mismatches = [i-coords_l[r0_start_loc] for i in range(coords_l[r0_start_loc],coords_r[r0_end_loc]) if rc_this_seq[i] != rc_ref0_seq[rev_coords_l[i]] or rc_this_seq[i] == "-"]
                     this_mismatches = get_sgRNA_mismatch_vals(rc_this_seq,rc_ref0_seq,r0_start_loc,r0_end_loc,coords_l,coords_r,rev_coords_l,rev_coords_r)
@@ -1176,7 +1187,7 @@ def main():
                     pe_guide_qw_sizes.append(nicking_qw_size)
                     pe_guide_plot_cut_points.append(True)
 
-            return(pe_guides, pe_guide_mismatches,pe_guide_names,pe_guide_qw_centers,pe_guide_qw_sizes,pe_guide_plot_cut_points)
+            return(pe_guides, pe_orig_guide_seqs, pe_guide_mismatches,pe_guide_names,pe_guide_qw_centers,pe_guide_qw_sizes,pe_guide_plot_cut_points)
         #end prime editing guide function
 
         #now that we're done with adding possible guides and amplicons, go through each amplicon and compute quantification windows
@@ -1207,6 +1218,7 @@ def main():
                 this_quant_window_coordinates = amplicon_quant_window_coordinates_arr[idx]
 
             this_guides = guides[:]
+            this_orig_guide_seqs = guides[:]
             this_guide_mismatches = [[]]*len(guides) #all guides have no mismatches up to this point
             this_guide_names = guide_names[:]
             this_guide_qw_centers = guide_qw_centers[:]
@@ -1216,6 +1228,7 @@ def main():
             #for this amplicon, add flexi guides (that can contain mismatches)
             if args.flexiguide_seq:
                 flexi_guides = []
+                flexi_guide_orig_seqs = []
                 flexi_guide_mismatches = []
                 all_flexiguide_names = args.flexiguide_name.split(",")
                 flexi_guide_names = []
@@ -1238,6 +1251,7 @@ def main():
 
                             if sub_score > args.flexiguide_homology:
                                 flexi_guides.append(potential_ref)
+                                flexi_guide_orig_seqs.append(guide)
                                 flexi_guide_mismatches.append(mismatches)
                                 this_flexiguide_name = ''
                                 if idx < len (all_flexiguide_names) and all_flexiguide_names[idx] != '':
@@ -1250,6 +1264,7 @@ def main():
                     if flexi_guide not in guides:
                         flexi_guide_count += 1
                         this_guides.append(flexi_guide)
+                        this_orig_guide_seqs.append(flexi_guide_orig_seqs[i])
                         this_guide_mismatches.append(flexi_guide_mismatches[i])
                         this_guide_names.append(flexi_guide_names[i])
                         this_guide_qw_centers.append(int(args.quantification_window_center.split(",")[0]))
@@ -1263,9 +1278,10 @@ def main():
             if args.prime_editing_pegRNA_extension_seq:
                 nicking_qw_center = int(args.quantification_window_center.split(",")[0])
                 nicking_qw_size = int(args.quantification_window_size.split(",")[0])
-                pe_guides, pe_guide_mismatches,pe_guide_names,pe_guide_qw_centers,pe_guide_qw_sizes,pe_guide_plot_cut_points = get_prime_editing_guides(this_seq,this_name,amplicon_seq_arr[0],prime_editing_edited_amp_seq,prime_editing_extension_seq_dna,args.prime_editing_pegRNA_extension_quantification_window_size,
-                            nicking_qw_center,nicking_qw_size)
+                pe_guides, pe_orig_guide_seqs, pe_guide_mismatches,pe_guide_names,pe_guide_qw_centers,pe_guide_qw_sizes,pe_guide_plot_cut_points = get_prime_editing_guides(this_seq,this_name,amplicon_seq_arr[0],
+                        prime_editing_edited_amp_seq,prime_editing_extension_seq_dna,args.prime_editing_pegRNA_extension_quantification_window_size, nicking_qw_center,nicking_qw_size)
                 this_guides.extend(pe_guides)
+                this_orig_guide_seqs.extend(pe_orig_guide_seqs)
                 this_guide_mismatches.extend(pe_guide_mismatches)
                 this_guide_names.extend(pe_guide_names)
                 this_guide_qw_centers.extend(pe_guide_qw_centers)
@@ -1278,12 +1294,20 @@ def main():
                 this_exclude_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(this_seq,this_guides,this_guide_mismatches,this_guide_names,this_guide_qw_centers,
                 this_guide_qw_sizes,this_quant_window_coordinates,args.exclude_bp_from_left,args.exclude_bp_from_right,args.plot_window_size,this_guide_plot_cut_points)
 
+            this_orig_guide_lookup = {} #dict of new seq to original (input) sequence
+            for idx, guide in enumerate(this_guides):
+                this_orig_guide_lookup[guide.upper()] = this_orig_guide_seqs[idx]
+            this_sgRNA_orig_seqs = []
+            for seq in this_sgRNA_sequences:
+                this_sgRNA_orig_seqs.append(this_orig_guide_lookup[seq])
+
             this_contains_guide = False
             if len(this_sgRNA_sequences) > 0:
                 this_contains_guide = True
 
             for guide_idx, guide_seq in enumerate(guides):
                 #this_sgRNA_sequences contains all good guides contained in this amplicon
+                #don't consider flexiguides or other guides in this_sgRNA_sequences which may be specific to this amplicon
                 if guide_seq.upper() in this_sgRNA_sequences:
                     found_guide_seq[guide_idx] = True
 
@@ -1354,6 +1378,7 @@ def main():
                    'sgRNA_plot_idxs':this_sgRNA_plot_idxs,
                    'sgRNA_names':this_sgRNA_names,
                    'sgRNA_mismatches':this_sgRNA_mismatches,
+                   'sgRNA_orig_sequences':this_sgRNA_orig_seqs,
                    'contains_guide':this_contains_guide,
                    'contains_coding_seq':this_contains_coding_seq,
                    'exon_positions':this_exon_positions,
@@ -1500,6 +1525,7 @@ def main():
                     refs[ref_name]['sgRNA_plot_cut_points'] = refs[clone_ref_name]['sgRNA_plot_cut_points']
                     refs[ref_name]['sgRNA_plot_idxs'] = this_sgRNA_plot_idxs
                     refs[ref_name]['sgRNA_mismatches'] = this_sgRNA_mismatches
+                    refs[ref_name]['sgRNA_orig_sequences'] = refs[clone_ref_name]['sgRNA_orig_sequences']
                     refs[ref_name]['sgRNA_names'] = refs[clone_ref_name]['sgRNA_names']
                     refs[ref_name]['include_idxs'] = this_include_idxs
                     refs[ref_name]['contains_guide'] = True
@@ -1651,9 +1677,7 @@ def main():
             raise CRISPRessoShared.BadParameterException('Read trimming options are not available with bam input')
         elif args.fastq_r1 != '' and args.fastq_r2 == '': #single end reads
             if not args.trim_sequences: #no trimming or merging required
-                symlink_filename=_jp(os.path.basename(args.fastq_r1))
-                CRISPRessoShared.force_symlink(os.path.abspath(args.fastq_r1),symlink_filename)
-                output_forward_filename=symlink_filename
+                output_forward_filename=args.fastq_r1
             else:
                 output_forward_filename=_jp('reads.trimmed.fq.gz')
                 #Trimming with trimmomatic
@@ -1810,7 +1834,7 @@ def main():
 
         info('Done!')
 
-        if args.prime_editing_pegRNA_scaffold_sequence != "":
+        if args.prime_editing_pegRNA_scaffold_seq != "":
             #introduce a new ref (that we didn't align to) called 'Scaffold Incorporated' -- copy it from the ref called 'prime-edited'
             new_ref = deepcopy(refs['Prime-edited'])
             new_ref['name'] = "Scaffold-incorporated"
@@ -2502,6 +2526,7 @@ def main():
                 'sgRNA_plot_idxs' + "\t" +
                 'sgRNA_mismatches' + "\t" +
                 'sgRNA_sequences' + "\t" +
+                'sgRNA_orig_sequences' + "\t" +
                 'contains_guide' + "\t" +
                 'contains_coding_seq' + "\t" +
                 'exon_positions' + "\t" +
@@ -2523,6 +2548,7 @@ def main():
                     str(refs[ref_name]['sgRNA_plot_cut_points']) + "\t" +
                     str(refs[ref_name]['sgRNA_intervals']) + "\t" +
                     str(refs[ref_name]['sgRNA_sequences']) + "\t" +
+                    str(refs[ref_name]['sgRNA_orig_sequences']) + "\t" +
                     str(refs[ref_name]['sgRNA_plot_idxs']) + "\t" +
                     str(refs[ref_name]['sgRNA_mismatches']) + "\t" +
                     str(refs[ref_name]['contains_guide']) + "\t" +
@@ -3028,7 +3054,7 @@ def main():
             include_idxs_list = refs[ref_name]['include_idxs']
             quantification_window_ref_seq = [list(ref_seq)[x] for x in include_idxs_list]
             sgRNA_sequences = refs[ref_name]['sgRNA_sequences']
-#            print('debug 2120 here: '+str(sgRNA_sequences))
+            sgRNA_orig_sequences = refs[ref_name]['sgRNA_orig_sequences']
             cut_points = refs[ref_name]['sgRNA_cut_points']
             plot_cut_points = refs[ref_name]['sgRNA_plot_cut_points']
             sgRNA_intervals = refs[ref_name]['sgRNA_intervals']
@@ -3125,7 +3151,7 @@ def main():
                     crispresso2_info['refs'][ref_name]['plot_2b_datas'] = []
                     for i in range(len(cut_points)):
                         cut_point = cut_points[i]
-                        sgRNA = sgRNA_sequences[i]
+                        sgRNA = sgRNA_orig_sequences[i]
                         sgRNA_name = sgRNA_names[i]
 
                         sgRNA_label = "sgRNA_"+sgRNA # for file names
@@ -3133,6 +3159,7 @@ def main():
                         if sgRNA_name != "":
                             sgRNA_label = sgRNA_name
                             sgRNA_legend = sgRNA_name + " (" + sgRNA +")"
+                        sgRNA_label = CRISPRessoShared.slugify(sgRNA_label)
 
                         #get nucleotide columns to print for this sgRNA
                         sel_cols = [0,1]
@@ -3947,17 +3974,19 @@ def main():
             crispresso2_info['refs'][ref_name]['plot_10g_captions'] = []
             crispresso2_info['refs'][ref_name]['plot_10g_datas'] = []
 
-            for ind,sgRNA in enumerate(sgRNA_sequences):
+            for ind,sgRNA_seq in enumerate(sgRNA_sequences):
                 cut_point = sgRNA_cut_points[ind]
                 plot_cut_point = sgRNA_plot_cut_points[ind]
                 sgRNA_name = sgRNA_names[ind]
                 plot_idxs = sgRNA_plot_idxs[ind]
+                sgRNA = sgRNA_orig_sequences[ind]
 
                 sgRNA_label = "sgRNA_"+sgRNA # for file names
                 sgRNA_legend = "sgRNA " + sgRNA # for legends
                 if sgRNA_name != "":
                     sgRNA_label = sgRNA_name
                     sgRNA_legend = sgRNA_name + " (" + sgRNA +")"
+                sgRNA_label = CRISPRessoShared.slugify(sgRNA_label)
 
                 plot_half_window = max(1,args.plot_window_size)
                 df_alleles_around_cut=CRISPRessoShared.get_dataframe_around_cut(df_alleles.loc[df_alleles['Reference_Name'] == ref_name],cut_point,plot_half_window)
@@ -4039,7 +4068,6 @@ def main():
         #                    )
 
                     if not args.suppress_plots:
-
                         fig_filename_root = _jp('10d.'+ref_plot_name+'Log2_nucleotide_frequency_around_'+sgRNA_label)
                         CRISPRessoPlot.plot_log_nuc_freqs(
                             df_nuc_freq = plot_nuc_freqs,
@@ -4258,11 +4286,11 @@ def main():
         if args.prime_editing_pegRNA_extension_seq != "":
             # count length of scaffold insertions
             scaffold_insertion_sizes_filename = ""
-            if args.prime_editing_pegRNA_scaffold_sequence != "":
+            if args.prime_editing_pegRNA_scaffold_seq != "":
                 #first, define the sequence we are looking for (extension plus the first base(s) of the scaffold)
-                scaffold_dna_seq = CRISPRessoShared.reverse_complement(args.prime_editing_pegRNA_scaffold_sequence)
+                scaffold_dna_seq = CRISPRessoShared.reverse_complement(args.prime_editing_pegRNA_scaffold_seq)
                 pe_seq = refs['Prime-edited']['sequence']
-                pe_scaffold_dna_info = get_pe_scaffold_search(pe_seq,args.prime_editing_pegRNA_extension_seq,args.prime_editing_pegRNA_scaffold_sequence,args.prime_editing_pegRNA_scaffold_min_match_length)
+                pe_scaffold_dna_info = get_pe_scaffold_search(pe_seq,args.prime_editing_pegRNA_extension_seq,args.prime_editing_pegRNA_scaffold_seq,args.prime_editing_pegRNA_scaffold_min_match_length)
 
                 df_alleles_scaffold = df_alleles.loc[df_alleles['Reference_Name'] == 'Scaffold-incorporated']
 
@@ -4331,7 +4359,7 @@ def main():
                 crispresso2_info['refs'][ref_names_for_pe[0]]['plot_11b_datas'] = []
                 for i in range(len(cut_points)):
                     cut_point = cut_points[i]
-                    sgRNA = sgRNA_sequences[i]
+                    sgRNA = sgRNA_orig_sequences[i]
                     sgRNA_name = sgRNA_names[i]
 
                     sgRNA_label = "sgRNA_"+sgRNA # for file names
@@ -4339,6 +4367,7 @@ def main():
                     if sgRNA_name != "":
                         sgRNA_label = sgRNA_name
                         sgRNA_legend = sgRNA_name + " (" + sgRNA +")"
+                    sgRNA_label = CRISPRessoShared.slugify(sgRNA_label)
 
                     #get nucleotide columns to print for this sgRNA
                     sel_cols = [0,1]
@@ -4364,7 +4393,7 @@ def main():
                     crispresso2_info['refs'][ref_names_for_pe[0]]['plot_11b_captions'].append('Figure 11b: Nucleotide distribution around the ' + sgRNA_legend + '.')
                     crispresso2_info['refs'][ref_names_for_pe[0]]['plot_11b_datas'].append([('Nucleotide frequency in quantification window for ' + ref_name,os.path.basename(crispresso2_info['refs'][ref_name]['quant_window_nuc_freq_filename'])) for ref_name in ref_names_for_pe])
 
-                if args.prime_editing_pegRNA_scaffold_sequence != "" and df_scaffold_insertion_sizes.shape[0] > 0:
+                if args.prime_editing_pegRNA_scaffold_seq != "" and df_scaffold_insertion_sizes.shape[0] > 0:
                     colors = 'b','g'
                     fig=plt.figure(figsize=(12,6))
                     ax1 = plt.subplot(111)
