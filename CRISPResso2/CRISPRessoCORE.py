@@ -1567,32 +1567,6 @@ def main():
 
                 refs[ref_name]['idx_cloned_from'] = clone_ref_name
 
-
-        #set unique plot name to appear as prefix to files for each reference
-        seen_ref_names = {}
-        for ref_name in ref_names:
-            #only show reference name in filenames if more than one reference
-            ref_plot_name = ref_name
-            if len(ref_names) == 1 and ref_names[0] == "Reference":
-                ref_plot_name = ""
-                seen_ref_names[ref_plot_name] = 1
-                refs[ref_name]['ref_plot_name'] = ref_plot_name
-                continue
-            if len(ref_plot_name) > 20:
-                ref_plot_name = ref_plot_name[0:20]
-            #make sure it is unique
-            orig_ref_plot_name = ref_plot_name
-            ind = 2
-            while(ref_plot_name in seen_ref_names):
-                ref_plot_name = orig_ref_plot_name+"_"+ind
-                ind+=1
-            ref_plot_name += "."
-            seen_ref_names[ref_plot_name] = 1
-            refs[ref_name]['ref_plot_name'] = ref_plot_name
-
-
-
-
         N_READS_INPUT=0
         if args.fastq_r1:
             N_READS_INPUT = get_n_reads_fastq(args.fastq_r1)
@@ -2688,6 +2662,29 @@ def main():
         crispresso2_info['deletion_pct_vectors'] = insertion_pct_vectors
         crispresso2_info['substitution_pct_vectors'] = insertion_pct_vectors
         crispresso2_info['indelsub_pct_vectors'] = insertion_pct_vectors
+
+
+        #set unique plot name to appear as prefix to files for each reference
+        seen_ref_names = {}
+        for ref_name in ref_names:
+            #only show reference name in filenames if more than one reference
+            ref_plot_name = ref_name
+            if len(ref_names) == 1 and ref_names[0] == "Reference":
+                ref_plot_name = ""
+                seen_ref_names[ref_plot_name] = 1
+                refs[ref_name]['ref_plot_name'] = ref_plot_name
+                continue
+            if len(ref_plot_name) > 21:
+                ref_plot_name = ref_plot_name[0:21]
+            #make sure it is unique
+            orig_ref_plot_name = ref_plot_name
+            ind = 2
+            while(ref_plot_name in seen_ref_names):
+                ref_plot_name = orig_ref_plot_name+"_"+ind
+                ind+=1
+            ref_plot_name += "."
+            seen_ref_names[ref_plot_name] = 1
+            refs[ref_name]['ref_plot_name'] = ref_plot_name
 
         for ref_name in ref_names:
             ref_plot_name = refs[ref_name]['ref_plot_name']
