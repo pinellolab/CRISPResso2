@@ -513,7 +513,7 @@ def process_bam(bam_filename,bam_chr_loc,output_bam,variantCache,ref_names,refs,
             #if the sequence has been seen and can't be aligned, skip it
             if (fastq_seq in not_aln):
                 N_CACHED_NOTALN += 1
-                sam_line_els.append(variantCache[fastq_seq]['sam_optional_fields']) #Crispresso2 alignment: NA
+                sam_line_els.append(not_aln[fastq_seq]) #Crispresso2 alignment: NA
                 sam_out.write("\t".join(sam_line_els)+"\n")
                 continue
             #if the sequence is already associated with a variant in the variant cache, pull it out
