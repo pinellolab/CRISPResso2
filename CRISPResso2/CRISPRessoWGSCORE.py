@@ -500,7 +500,7 @@ def main():
 
                 if not cut_points:
                     df_regions.ix[idx,'sgRNA']=''
-                    info('Cannot find guide ' + row.sgRNA + ' in amplicon ' + idx + ' (' + row.sequence + ')')
+                    info('Cannot find guide ' + str(row.sgRNA) + ' in amplicon ' + str(idx) + ' (' + str(row) + ')')
 
         df_regions['bpstart'] = pd.to_numeric(df_regions['bpstart'])
         df_regions['bpend'] = pd.to_numeric(df_regions['bpend'])
@@ -578,6 +578,10 @@ def main():
 
                     if row['Coding_sequence'] and not pd.isnull(row['Coding_sequence']):
                         crispresso_cmd+=' -c %s' % row['Coding_sequence']
+
+                    log_name = _jp("CRISPResso_on_"+idx) +".log"
+                    print('log name is ' + log_name)
+                    crispresso_cmd += " &> %s"%log_name
 
                     crispresso_cmd=CRISPRessoShared.propagate_crispresso_options(crispresso_cmd,crispresso_options_for_wgs,args)
                     crispresso_cmds.append(crispresso_cmd)
