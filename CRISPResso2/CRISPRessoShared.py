@@ -92,6 +92,7 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('-fg','--flexiguide_seq', help="sgRNA sequence (flexible) (can be comma-separated list of multiple flexiguides). The flexiguide sequence will be aligned to the amplicon sequence(s), as long as the guide sequence has homology as set by --flexiguide_homology.")
     parser.add_argument('-fh','--flexiguide_homology', help="flexiguides will yield guides in amplicons with at least this homology to the flexiguide sequence.",default=80)
     parser.add_argument('-fgn','--flexiguide_name', help="flexiguide name",default='')
+    parser.add_argument('--discard_guide_positions_overhanging_amplicon_edge', help="If set, for guides that align to multiple positions, guide positions will be discarded if plotting around those regions would included bp that extend beyond the end of the amplicon. ",action='store_true')
     parser.add_argument('-e','--expected_hdr_amplicon_seq', help='Amplicon sequence expected after HDR', default='')
     parser.add_argument('-c','--coding_seq',  help='Subsequence/s of the amplicon sequence covering one or more coding sequences for frameshift analysis. If more than one (for example, split by intron/s), please separate by commas.', default='')
 
@@ -734,7 +735,7 @@ def get_dataframe_around_cut_debug(df_alleles, cut_point,offset):
     df_alleles_around_cut['Unedited']=df_alleles_around_cut['Unedited']>0
     return df_alleles_around_cut
 
-def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,quantification_window_centers,quantification_window_sizes,quantification_window_coordinates,exclude_bp_from_left,exclude_bp_from_right,plot_window_size,guide_plot_cut_points):
+def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,quantification_window_centers,quantification_window_sizes,quantification_window_coordinates,exclude_bp_from_left,exclude_bp_from_right,plot_window_size,guide_plot_cut_points,discard_guide_positions_overhanging_amplicon_edge=False):
     """
     gets cut site and other info for a reference sequence and a given list of guides
 
@@ -750,6 +751,7 @@ def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,qua
     exclude_bp_from_right : these bp are excluded from the quantification window
     plot_window_size : length of window extending from quantification_window_center to plot
     guide_plot_cut_points : whether or not to add cut point to plot (prime editing flaps don't have cut points)
+    discard_guide_positions_overhanging_amplicon_edge : if True, for guides that align to multiple positions, guide positions will be discarded if plotting around those regions would included bp that extend beyond the end of the amplicon.
 
     returns:
     this_sgRNA_sequences : list of sgRNAs that are in this amplicon
@@ -774,6 +776,14 @@ def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,qua
     this_include_idxs=[]
     this_exclude_idxs=[]
 
+    if exclude_bp_from_left:
+       this_exclude_idxs+=range(exclude_bp_from_left)
+
+    if exclude_bp_from_right:
+       this_exclude_idxs+=range(ref_seq_length)[-exclude_bp_from_right:]
+
+    window_around_cut=max(1,plot_window_size)
+
     seen_cut_points = {} #keep track of cut points in case 2 gudes cut at same position (so they can get different names)
     seen_guide_names = {} #keep track of guide names (so we don't assign a guide the same name as another guide)
     for guide_idx, current_guide_seq in enumerate(guides):
@@ -793,6 +803,8 @@ def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,qua
         # this_sgRNA_cut_points, this_sgRNA_intervals,this_sgRNA_mismatches,this_sgRNA_names,this_sgRNA_sequences,include_idxs
         for m in fw_matches:
             cut_p = m.start() + offset_fw
+            if discard_guide_positions_overhanging_amplicon_edge and ((cut_p - window_around_cut + 1 < 0) or (cut_p + window_around_cut > ref_seq_length-1)):
+                continue
             this_sgRNA_cut_points.append(cut_p)
             this_sgRNA_plot_cut_points.append(guide_plot_cut_points[guide_idx])
             this_sgRNA_intervals.append((m.start(),m.start() + len(current_guide_seq)-1))
@@ -819,6 +831,8 @@ def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,qua
 
         for m in rv_matches:
             cut_p = m.start() + offset_rc #cut position
+            if discard_guide_positions_overhanging_amplicon_edge and ((cut_p - window_around_cut + 1 < 0) or (cut_p + window_around_cut > ref_seq_length-1)):
+                continue
             this_sgRNA_cut_points.append(cut_p)
             this_sgRNA_plot_cut_points.append(guide_plot_cut_points[guide_idx])
             this_sgRNA_intervals.append((m.start(),m.start() + len(current_guide_seq)-1))
@@ -868,12 +882,6 @@ def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,qua
     else:
         this_include_idxs=range(ref_seq_length)
 
-    if exclude_bp_from_left:
-       this_exclude_idxs+=range(exclude_bp_from_left)
-
-    if exclude_bp_from_right:
-       this_exclude_idxs+=range(ref_seq_length)[-exclude_bp_from_right:]
-
     #flatten the arrays to avoid errors with old numpy library
     this_include_idxs=np.ravel(this_include_idxs)
     this_exclude_idxs=np.ravel(this_exclude_idxs)
@@ -890,7 +898,6 @@ def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,qua
             raise BadParameterException('The entire sequence has been excluded. Please enter a longer amplicon, or decrease the exclude_bp_from_right and exclude_bp_from_left parameters')
 
     if this_sgRNA_cut_points and plot_window_size>0:
-        window_around_cut=max(1,plot_window_size)
         for cut_p in this_sgRNA_cut_points:
             if cut_p - window_around_cut + 1 < 0:
                 raise BadParameterException('Offset around cut would extend to the left of the amplicon. Please decrease plot_window_size parameter. Cut point: ' + str(cut_p) + ' window: ' + str(window_around_cut) + ' reference: ' + str(ref_seq_length))
