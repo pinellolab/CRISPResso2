@@ -578,12 +578,12 @@ def main():
 
                     if row['Coding_sequence'] and not pd.isnull(row['Coding_sequence']):
                         crispresso_cmd+=' -c %s' % row['Coding_sequence']
-                        
+
                     crispresso_cmd=CRISPRessoShared.propagate_crispresso_options(crispresso_cmd,crispresso_options_for_wgs,args)
 
-                    log_name = _jp("CRISPResso_on_"+idx) +".log"
-                    print('log name is ' + log_name)
-                    crispresso_cmd += " &> %s"%log_name
+                    #logging like this causes the multiprocessing step to not block for some reason #mysteriesOfThPythonUniverse
+                    #log_name = _jp("CRISPResso_on_"+idx) +".log"
+                    #crispresso_cmd += " &> %s"%log_name
 
                     crispresso_cmds.append(crispresso_cmd)
 #                    info('Running CRISPResso:%s' % crispresso_cmd)
