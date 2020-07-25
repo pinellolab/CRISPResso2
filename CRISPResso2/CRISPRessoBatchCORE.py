@@ -181,7 +181,7 @@ def main():
 
             guides_are_in_amplicon = {} #dict of whether a guide is in at least one amplicon sequence
             #iterate through amplicons
-            for curr_amplicon_seq in curr_amplicon_seq_str.split(','):
+            for curr_amplicon_seq in str(curr_amplicon_seq_str).split(','):
                 this_include_idxs=[] #mask for bp to include for this amplicon seq, as specified by sgRNA cut points
                 this_sgRNA_intervals = []
                 wrong_nt=CRISPRessoShared.find_wrong_nt(curr_amplicon_seq)
@@ -191,7 +191,7 @@ def main():
                 #iterate through guides
                 curr_guide_seq_string = row.guide_seq
                 if curr_guide_seq_string is not None and curr_guide_seq_string != "":
-                    guides = curr_guide_seq_string.strip().upper().split(',')
+                    guides = str(curr_guide_seq_string).strip().upper().split(',')
                     for curr_guide_seq in guides:
                         wrong_nt=CRISPRessoShared.find_wrong_nt(curr_guide_seq)
                         if wrong_nt:
@@ -259,6 +259,8 @@ def main():
 
             crispresso_cmd= args.crispresso_command + ' -o %s --name %s' % (OUTPUT_DIRECTORY,batchName)
             crispresso_cmd=propagate_options(crispresso_cmd,crispresso_options_for_batch,batch_params,idx)
+            if row.amplicon_seq == "":
+                crispresso_cmd += ' --auto '
             crispresso_cmds.append(crispresso_cmd)
 
         crispresso2_info['batch_names_arr'] = batch_names_arr
@@ -302,8 +304,8 @@ def main():
 
         #make sure amplicon names aren't super long
         for amplicon in all_amplicons:
-            if len(amplicon_names[amplicon]) > 20:
-                amplicon_names[amplicon] = amplicon_names[amplicon][0:20]
+            if len(amplicon_names[amplicon]) > 21:
+                amplicon_names[amplicon] = amplicon_names[amplicon][0:21]
 
         #make sure no duplicate names (same name for the different amplicons)
         seen_names = {}
