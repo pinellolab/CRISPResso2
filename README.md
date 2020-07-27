@@ -158,45 +158,40 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 ### Parameter list
 -h or --help: show a help message and exit.
 
--a or --amplicon_seq: The amplicon sequence used for the experiment.
-
 -r1 or --fastq_r1: The first fastq file.
 
 -r2 or --fastq_r2 FASTQ_R2: The second fastq file for paired end reads.
 
+-a or --amplicon_seq: The amplicon sequence used for the experiment.
+
 -an or --amplicon_name: A name for the reference amplicon can be given. If multiple amplicons are given, multiple names can be specified here. (default: Reference)
 
--amas or --amplicon_min_alignment_score: Amplicon Minimum Alignment Score; score between 0 and 100; sequences must have at least this homology score with the amplicon to be aligned (can be comma-separated list of multiple scores, corresponding to amplicon sequences given in --amplicon_seq) After reads are aligned to a reference sequence, the homology is calculated as the number of bp they have in common. If the aligned read has a homology less than this parameter, it is discarded. This is useful for filtering erroneous reads that do not align to the target amplicon, for example arising from alternate primer locations. (default: 60)
-
---default_min_aln_score or --min_identity_score: Default minimum homology score for a read to align to a reference amplicon (default: 60)
-
---expand_ambiguous_alignments: If more than one reference amplicon is given, reads that align to multiple reference amplicons will count equally toward each amplicon. Default behavior is to exclude ambiguous alignments. (default: False)
-
 -g or --guide_seq: sgRNA sequence, if more than one, please separate by commas. Note that the sgRNA needs to be input as the guide RNA sequence (usually 20 nt) immediately adjacent to but not including the PAM sequence (5' of NGG for SpCas9). If the PAM is found on the opposite strand with respect to the Amplicon Sequence, ensure the sgRNA sequence is also found on the opposite strand. The CRISPResso convention is to depict the expected cleavage position using the value of the parameter '--quantification_window_center' nucleotides from the 3' end of the guide. In addition, the use of alternate nucleases besides SpCas9 is supported. For example, if using the Cpf1 system, enter the sequence (usually 20 nt) immediately 3' of the PAM sequence and explicitly set the '--cleavage_offset' parameter to 1, since the default setting of -3 is suitable only for SpCas9. (default: )
-
--gn or --guide_name: sgRNA names, if more than one, please separate by commas. (default: sgRNA)
-
--fg or --flexiguide: sgRNA sequence (flexible). The flexiguide sequence will be aligned to the amplicon sequence(s), as long as the guide sequence has homology as set by --flexiguide_homology.
-
--fh or --flexiguide_homology flexiguides will yield guides in amplicons with at least this homology to the flexiguide sequence (default:80 meaning 80% homology is required)
 
 -e or --expected_hdr_amplicon_seq: Amplicon sequence expected after HDR. The expected HDR amplicon sequence can be provided to quantify the number of reads showing a successful HDR repair. Note that the entire amplicon sequence must be provided, not just the donor template. CRISPResso2 will quantify identified instances of NHEJ, HDR, or mixed editing events. (default: )
 
 -c or --coding_seq: Subsequence/s of the amplicon sequence covering one or more coding sequences for frameshift analysis. Sequences of exons within the amplicon sequence can be provided to enable frameshift analysis and splice site analysis by CRISPResso2. If more than one (for example, split by intron/s), please separate by commas. Users should provide the subsequences of the reference amplicon sequence that correspond to coding sequences (not the whole exon sequence(s)!). (default: )
+
+#### sgRNA parameters
+
+-gn or --guide_name: sgRNA names, if more than one, please separate by commas. (default: sgRNA)
+
+-fg or --flexiguide: sgRNA sequence (flexible). The flexiguide sequence will be aligned to the amplicon sequence(s), as long as the guide sequence has homology as set by --flexiguide_homology. (default: '')
+
+-fh or --flexiguide_homology flexiguides will yield guides in amplicons with at least this homology to the flexiguide sequence (default:80 meaning 80% homology is required)
+
+-fgn or --flexiguide_name. Names for the flexiguides, similar to --guide_name. (default: '')
+
+
+#### Read filtering, trimming, and merging parameters
+
+--split_interleaved_input: Splits a single fastq file containing paired end reads in two files before running CRISPResso (default: False)
 
 -q or --min_average_read_quality: Minimum average quality score (phred33) to keep a read (default: 0)
 
 -s or --min_single_bp_quality: Minimum single bp score (phred33) to keep a read (default: 0)
 
 --min_bp_quality_or_N: Bases with a quality score (phred33) less than this value will be set to "N" (default: 0)
-
---file_prefix: File prefix for output plots and tables (default: )
-
--n or --name: Output name of the report (default: the names is obtained from the filename of the fastq file/s used in input) (default: )
-
--o or --output_folder: Output folder to use for the analysis (default: current folder)
-
---split_paired_end: Splits a single fastq file containing paired end reads in two files before running CRISPResso (default: False)
 
 --trim_sequences: Enable the trimming of Illumina adapters with [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) (default: False)
 
@@ -210,9 +205,13 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --stringent_flash_merging: Use stringent parameters for flash merging. In the case where flash could merge R1 and R2 reads ambiguously, the expected overlap is calculated as 2\*average_read_length - amplicon_length. The flash parameters for --min-overlap and --max-overlap will be set to prefer merged reads with length within 10bp of the expected overlap. These values override the --min_paired_end_reads_overlap or --max_paired_end_reads_overlap CRISPResso parameters. (default: False)
 
+#### Quantification window parameters
+
 -w or --quantification_window_size or --window_around_sgrna: Defines the size (in bp) of the quantification window extending from the position specified by the "--cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence(s) (--sgRNA). Mutations within this number of bp from the quantification window center are used in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 1, 1bp on each side of the cleavage position for a total length of 2bp. (default: 1)
 
 -wc or --quantification_window_center or --cleavage_offset: Center of quantification window to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17. (default: -3)
+
+-qwc or --quantification_window_coordinates: Bp positions in the amplicon sequence specifying the quantification window. This parameter overrides values of the "--quantification_window_center", "-- cleavage_offset", "--window_around_sgrna" or "-- window_around_sgrna" values. Any indels/substitutions outside this window are excluded. Indexes are 0-based, meaning that the first nucleotide is position 0. Ranges are separated by the dash sign like "start-stop", and multiple ranges can be separated by the underscore (\_). A value of 0 disables this filter. (can be comma-separated list of values, corresponding to amplicon sequences given in --amplicon_seq e.g. 5-10,5-10_20-30 would specify the 5th-10th bp in the first reference and the 5th-10th and 20th-30th bp in the second reference) (default: None)
 
 --exclude_bp_from_left: Exclude bp from the left side of the amplicon sequence for the quantification of the indels (default: 15)
 
@@ -226,6 +225,14 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --discard_indel_reads: Discard reads with indels in the quantification window from analysis (default: False)
 
+#### Read alignment parameters
+
+-amas or --amplicon_min_alignment_score: Amplicon Minimum Alignment Score; score between 0 and 100; sequences must have at least this homology score with the amplicon to be aligned (can be comma-separated list of multiple scores, corresponding to amplicon sequences given in --amplicon_seq) After reads are aligned to a reference sequence, the homology is calculated as the number of bp they have in common. If the aligned read has a homology less than this parameter, it is discarded. This is useful for filtering erroneous reads that do not align to the target amplicon, for example arising from alternate primer locations. (default: 60)
+
+--default_min_aln_score or --min_identity_score: Default minimum homology score for a read to align to a reference amplicon (default: 60)
+
+--expand_ambiguous_alignments: If more than one reference amplicon is given, reads that align to multiple reference amplicons will count equally toward each amplicon. Default behavior is to exclude ambiguous alignments. (default: False)
+
 --needleman_wunsch_gap_open: Gap open option for Needleman-Wunsch alignment (default: -20)
 
 --needleman_wunsch_gap_extend: Gap extend option for Needleman-Wunsch alignment (default: -2)
@@ -234,9 +241,28 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --needleman_wunsch_aln_matrix_loc: Location of the matrix specifying substitution scores in the NCBI format (see ftp://ftp.ncbi.nih.gov/blast/matrices/) (default: EDNAFULL)
 
---keep_intermediate: Keep all the intermediate files (default: False)
+#### Base editing parameters
+--base_editor_output: Outputs plots and tables to aid in analysis of base editor studies. If base editor output is selected, plots showing the frequency of substitutions in the quantification window are generated. The target and result bases can also be set to measure the rate of on-target conversion at bases in the quantification window. (default: False)
 
---dump: Dump numpy arrays and pandas dataframes to file for debugging purposes (default: False)
+--conversion_nuc_from: For base editor plots, this is the nucleotide targeted by the base editor (default: C)
+
+--conversion_nuc_to: For base editor plots, this is the nucleotide produced by the base editor (default: T)
+
+#### Prime editing parameters
+
+--prime_editing_pegRNA_spacer_seq: pegRNA spacer sgRNA sequence used in prime editing. The spacer should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the given sequence. (default: )
+
+--prime_editing_pegRNA_extension_seq: Extension sequence used in prime editing. The sequence should be given in the RNA 5'->3' order, such that the sequence starts with the RT template including the edit, followed by the Primer-binding site (PBS). (default: )
+
+--prime_editing_pegRNA_extension_quantification_window_size: Quantification window size (in bp) at flap site for measuring modifications anchored at the right side of the extension sequence. Similar to the --quantification_window parameter, the total length of  the quantification window will be 2x this parameter. Default: 5bp (10bp total window size) (default: 5)
+
+--prime_editing_pegRNA_scaffold_seq: If given, reads containing any of this scaffold sequence before extension sequence (provided by --prime_editing_extension_seq) will be classified as 'Scaffold-incorporated'. The sequence should be given in the 5'->3' order such that the RT template directly follows this sequence. A common value ends with 'GGCACCGAGUCGGUGC'. (default: )
+
+--prime_editing_pegRNA_scaffold_min_match_length: Minimum number of bases matching scaffold sequence for the read to be counted as 'Scaffold-incorporated'. If the scaffold sequence matches the reference sequence at the incorporation site, the minimum number of bases to match will be minimally increased (beyond this parameter) to disambiguate between prime-edited and scaffold-incorporated sequences. (default: 1)
+
+--prime_editing_nicking_guide_seq: Nicking sgRNA sequence used in prime editing. The sgRNA should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the sequence (default: )
+
+#### Allele plot parameters
 
 --plot_window_size or --offset_around_cut_to_plot: Defines the size of the window extending from the quantification window center to plot. Nucleotides within plot_window_size of the quantification_window_center for each guide are plotted. (default: 20)
 
@@ -246,29 +272,43 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --expand_allele_plots_by_quantification: If set, alleles with different modifications in the quantification window (but not necessarily in the plotting window (e.g. for another sgRNA)) are plotted on separate lines, even though they may have the same apparent sequence. To force the allele plot and the allele table to be the same, set this parameter. If unset, all alleles with the same sequence will be collapsed into one row. (default: False)
 
---conversion_nuc_from: For base editor plots, this is the nucleotide targeted by the base editor (default: C)
+--annotate_wildtype_allele: Wildtype alleles in the allele table plot will be marked with this string (e.g. \*\*). (default: )
 
---conversion_nuc_to: For base editor plots, this is the nucleotide produced by the base editor (default: T)
+#### Output parameters
 
---base_editor_output: Outputs plots and tables to aid in analysis of base editor studies. If base editor output is selected, plots showing the frequency of substitutions in the quantification window are generated. The target and result bases can also be set to measure the rate of on-target conversion at bases in the quantification window. (default: False)
+--file_prefix: File prefix for output plots and tables (default: )
 
---dsODN: dsODN sequence -- Reads containing the dsODN are labeled and quantified. (default: '')
+-n or --name: Output name of the report (default: the names is obtained from the filename of the fastq file/s used in input) (default: )
 
--qwc or --quantification_window_coordinates: Bp positions in the amplicon sequence specifying the quantification window. This parameter overrides values of the "--quantification_window_center", "-- cleavage_offset", "--window_around_sgrna" or "-- window_around_sgrna" values. Any indels/substitutions outside this window are excluded. Indexes are 0-based, meaning that the first nucleotide is position 0. Ranges are separated by the dash sign like "start-stop", and multiple ranges can be separated by the underscore (\_). A value of 0 disables this filter. (can be comma-separated list of values, corresponding to amplicon sequences given in --amplicon_seq e.g. 5-10,5-10_20-30 would specify the 5th-10th bp in the first reference and the 5th-10th and 20th-30th bp in the second reference) (default: None)
+-o or --output_folder: Output folder to use for the analysis (default: current folder)
+
+--write_detailed_allele_table: If set, a detailed allele table will be written including alignment scores for each read sequence. (default: False)
+
+--keep_intermediate: Keep all the intermediate files (default: False)
+
+--dump: Dump numpy arrays and pandas dataframes to file for debugging purposes (default: False)
 
 --crispresso1_mode: Output as in CRISPResso1. In particular, if this flag is set, the old output files 'Mapping_statistics.txt', and 'Quantification_of_editing_frequency.txt' are created, and the new files 'nucleotide_frequency_table.txt' and 'substitution_frequency_table.txt' and figure 2a and 2b are suppressed, and the files 'selected_nucleotide_percentage_table.txt' are not produced when the flag `--base_editor_output` is set (default: False)
 
+--suppress_report: Suppress output report, plots output as .pdf only (not .png) (default: False)
+
+--suppress_plots: Suppress output plots (default: False)
+
+--place_report_in_output_folder: If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output. (default: False)
+
+#### Miscellaneous parameters
+
 --auto: Infer amplicon sequence from most common reads (default: False)
+
+--dsODN: dsODN sequence -- Reads containing the dsODN are labeled and quantified. (default: '')
 
 --debug: Show debug messages (default: False)
 
 --no_rerun: Don't rerun CRISPResso2 if a run using the same parameters has already been finished. (default: False)
 
---suppress_report: Suppress output report, plots ouput as .pdf only (not .png) (default: False)
+--bam_input BAM_INPUT: Aligned reads for processing in bam format. This parameter can be given instead of fastq_r1 to specify that reads are to be taken from this bam file. An output bam is produced that contains an additional field with CRISPResso2 information. (default: )
 
---suppress_plots: Suppress output plots (default: False)
-
---place_report_in_output_folder: If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output. (default: False)
+--bam_chr_loc BAM_CHR_LOC: Chromosome location in bam for reads to process. For example: "chr1:50-100" or "chrX". (default: )
 
 ## CRISPResso2 output
 The output of CRISPResso2 consists of a set of informative graphs that allow for the quantification and visualization of the position and type of outcomes within an amplicon sequence.
