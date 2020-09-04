@@ -145,7 +145,7 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('--allele_plot_pcts_only_for_assigned_reference',help='If set, in the allele plots, the percentages will show the percentage as a percent of reads aligned to the assigned reference. Default behavior is to show percentage as a percent of all reads.',action='store_true')
     parser.add_argument('-qwc','--quantification_window_coordinates', type=str, help='Bp positions in the amplicon sequence specifying the quantification window. This parameter overrides values of the "--quantification_window_center", "--cleavage_offset", "--window_around_sgrna" or "--window_around_sgrna" values. Any indels/substitutions outside this window are excluded. Indexes are 0-based, meaning that the first nucleotide is position 0. Ranges are separted by the dash sign (e.g. "start-stop"), and multiple ranges can be separated by the underscore (_). ' +
         'A value of 0 disables this filter. (can be comma-separated list of values, corresponding to amplicon sequences given in --amplicon_seq e.g. 5-10,5-10_20-30 would specify the 5th-10th bp in the first reference and the 5th-10th and 20th-30th bp in the second reference)', default=None)
-    parser.add_argument('--annotate_wildtype_allele', type=str, help='Wildtype alleles in the allele table will be marked with this string (e.g. **).', default='')
+    parser.add_argument('--annotate_wildtype_allele', type=str, help='Wildtype alleles in the allele table plots will be marked with this string (e.g. **).', default='')
 
     #verbosity parameters
     parser.add_argument('--keep_intermediate',help='Keep all the  intermediate files',action='store_true')
