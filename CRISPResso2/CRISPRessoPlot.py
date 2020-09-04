@@ -219,7 +219,7 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=
 #    sampleReadCounts = list(nuc_pct_df.iloc[[((nSamples-1)-x)*nNucs for x in range(0,nSamples)],0]))
     ax.set_yticklabels(['Reference'] + list(nuc_pct_df.iloc[[((nSamples-1)-x)*nNucs for x in range(0,nSamples)],0]),va='center')
 
-    plot_y_start = ref_y_start
+    plot_y_start = ref_y_start - 0.1
 
     if sgRNA_intervals and len(sgRNA_intervals) > 0:
         sgRNA_rows = get_rows_for_sgRNA_annotation(sgRNA_intervals,amp_len)
@@ -229,7 +229,7 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=
         add_sgRNA_to_ax(ax,sgRNA_intervals,sgRNA_y_start=plot_y_start + 0.1,sgRNA_y_height=sgRNA_y_height-0.1,amp_len=amp_len,x_offset=2,sgRNA_mismatches=sgRNA_mismatches,sgRNA_names=sgRNA_names,sgRNA_rows=sgRNA_rows)
 
     if quantification_window_idxs is not None and len(quantification_window_idxs) > 0:
-        q_win_y_start = plot_y_start + 0.05
+        q_win_y_start = plot_y_start
         q_win_y_height = nSamples+1 - q_win_y_start
 
         q_list = sorted(list(quantification_window_idxs))
@@ -1676,7 +1676,8 @@ def plot_unmod_mod_pcts(fig_filename_root,df_summary_quantification,save_png,cut
     if df.shape[0] > max_samples_to_include_unprocessed:
         df = df[df.Reads_aligned > 0]
 
-    fig=plt.figure(figsize=(12,12))
+    fig_len = int(5+df.shape[0]*.5)
+    fig=plt.figure(figsize=(12,fig_len))
     ax = plt.subplot(111)
     xs = range(df.shape[0])
     p0 = plt.barh(xs,df['Reads_total'],color='0.8')
@@ -1686,6 +1687,8 @@ def plot_unmod_mod_pcts(fig_filename_root,df_summary_quantification,save_png,cut
     plt.xlabel('Number of reads')
     names = [((name[:20] + "..") if len(name) > 18 else name) for name in df['Name'].values]
     plt.yticks(xs,names)
+    if max(df['Reads_total'] > 100000):
+        plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
 
     if cutoff is not None:
         plt.axvline(cutoff,ls='dashed')
@@ -1704,7 +1707,8 @@ def plot_unmod_mod_pcts(fig_filename_root,df_summary_quantification,save_png,cut
         for rect, label in zip(p2.patches,pct_labels):
             ax.text(rect.get_x()+rect.get_width()+space_val,rect.get_y()+rect.get_height()/2.0, label,ha='left',va='center')
 
-        plt.legend((p0[0], p1[0], p2[0]), ('Total Reads', 'Unmodified', 'Modified'),loc='center', bbox_to_anchor=(0.5, -0.22),ncol=1, fancybox=True, shadow=True)
+        #plt.legend((p0[0], p1[0], p2[0]), ('Total Reads', 'Unmodified', 'Modified'),loc='center', bbox_to_anchor=(0.5, -0.22),ncol=1, fancybox=True, shadow=True)
+        plt.legend((p0[0], p1[0], p2[0]), ('Total Reads', 'Unmodified', 'Modified'),loc='upper center', bbox_to_anchor=(0.5,0),borderaxespad=3, ncol=1, fancybox=True, shadow=True)
         plt.tight_layout()
 
     plt.savefig(fig_filename_root+'.pdf',pad_inches=1,bbox_inches='tight')
@@ -1717,7 +1721,8 @@ def plot_reads_total(fig_filename_root,df_summary_quantification,save_png,cutoff
     plots a horizontal barplot for summarizing number of reads aligned to each sample
     """
     df = df_summary_quantification.fillna(0)[::-1]
-    fig=plt.figure(figsize=(12,12))
+    fig_len = int(3+df.shape[0]*.5)
+    fig=plt.figure(figsize=(12,fig_len))
     ax = plt.subplot(111)
     xs = range(df.shape[0])
     p1 = plt.barh(xs,df['Reads_total'])
@@ -1725,6 +1730,8 @@ def plot_reads_total(fig_filename_root,df_summary_quantification,save_png,cutoff
     plt.xlabel('Number of reads')
     names = [((name[:20] + "..") if len(name) > 18 else name) for name in df['Name'].values]
     plt.yticks(xs,names)
+    if max(df['Reads_total'] > 100000):
+        plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
     if cutoff is not None:
         plt.axvline(cutoff,ls='dashed')
     plt.tight_layout()
