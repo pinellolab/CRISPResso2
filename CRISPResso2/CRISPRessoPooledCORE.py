@@ -364,7 +364,7 @@ def main():
 
 
         ####TRIMMING AND MERGING
-        get_name_from_fasta=lambda  x: os.path.basename(x).replace('.fastq','').replace('.gz','')
+        get_name_from_fasta=lambda  x: os.path.basename(x).replace('.fastq','').replace('.gz','').replace('.fq','')
 
         if not args.name:
                  if args.fastq_r2!='':
@@ -1070,7 +1070,7 @@ def main():
         if RUNNING_MODE=='ONLY_GENOME' :
             #Load regions and build REFERENCE TABLES
             filename_reads_aligned_to_genome_only = _jp('REPORT_READS_ALIGNED_TO_GENOME_ONLY.txt')
-            if can_finish_incomplete_run and 'demultiplexing_genome_only_regions' in crispresso2_info['finished_steps']:
+            if can_finish_incomplete_run and 'demultiplexing_genome_only_regions' in crispresso2_info['finished_steps'] and os.path.exists(filename_reads_aligned_to_genome_only):
                 info('Using previously-computed extraction of aligned regions')
                 df_regions = pd.read_csv(filename_reads_aligned_to_genome_only,sep="\t")
             else:
@@ -1107,8 +1107,7 @@ def main():
                     cp.dump(crispresso2_info, info_file)
 
 
-            #run CRISPResso
-            #demultiplex reads in the amplicons and call crispresso!
+            #run CRISPResso (last step of genome-only mode)
             if can_finish_incomplete_run and 'crispresso_genome_only' in crispresso2_info['finished_steps']:
                 info('Using previously-computed crispresso runs')
             else:
@@ -1118,6 +1117,8 @@ def main():
 
                     if row.n_reads > args.min_reads_to_use_region:
                         info('\nRunning CRISPResso on: %s-%d-%d...'%(row.chr_id,row.bpstart,row.bpend ))
+                        if pd.isna(row.sequence):
+                            raise Exception('Cannot extract sequence from input reference ' + uncompressed_reference)
                         crispresso_cmd= args.crispresso_command + ' -r1 %s -a %s -o %s' %(row.fastq_file,row.sequence,OUTPUT_DIRECTORY)
                         crispresso_cmd=CRISPRessoShared.propagate_crispresso_options(crispresso_cmd,crispresso_options_for_pooled,args)
                         crispresso_cmds.append(crispresso_cmd)
