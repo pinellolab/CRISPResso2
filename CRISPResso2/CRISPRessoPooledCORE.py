@@ -1413,7 +1413,7 @@ def main():
                                 this_names.append(this_ref_name)
                     postrun_references.append([name,",".join(this_alleles),",".join(this_names),",".join([str(x) for x in this_freqs])])
 
-            postrun_reference_file = _jp("CRISPResso2Pooled_postrun_references.txt")
+            postrun_reference_file = _jp("CRISPRessoPooled_postrun_references.txt")
             pd.DataFrame(postrun_references,columns=['region_name','reference_seqs','reference_names','reference_frequencies']).to_csv(postrun_reference_file,sep="\t",index=False)
             crispresso2_info['postrun_reference_file'] = os.path.basename(postrun_reference_file)
             info('Produced postrun reference file: ' + postrun_reference_file)
