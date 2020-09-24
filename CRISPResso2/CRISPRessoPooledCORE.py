@@ -17,6 +17,7 @@ import argparse
 import unicodedata
 import string
 import re
+import zipfile
 from CRISPResso2 import CRISPRessoShared
 from CRISPResso2 import CRISPRessoMultiProcessing
 from CRISPResso2 import CRISPRessoReport
@@ -113,25 +114,6 @@ def print_full(x):
     pd.reset_option('display.width')
     pd.reset_option('display.float_format')
     pd.reset_option('display.max_colwidth')
-
-#this is overkilling to run for many sequences,
-#but for few is fine and effective.
-def get_align_sequence(seq,bowtie2_index):
-
-    cmd='''bowtie2 -x  %s -c -U %s''' %(bowtie2_index,seq) + ''' |\
-    grep -v '@' | awk '{OFS="\t"; bpstart=$4; split ($6,a,"[MIDNSHP]"); n=0;  bpend=bpstart;\
-    for (i=1; i in a; i++){\
-      n+=1+length(a[i]); \
-      if (substr($6,n,1)=="S"){\
-          bpstart-=a[i];\
-          if (bpend==$4)\
-            bpend=bpstart;\
-      } else if( (substr($6,n,1)!="I")  && (substr($6,n,1)!="H") )\
-          bpend+=a[i];\
-    }if ( ($2 % 32)>=16) print $3,bpstart,bpend,"-",$1,$10,$11;else print $3,bpstart,bpend,"+",$1,$10,$11;}' '''
-    p = sb.Popen(cmd, shell=True,stdout=sb.PIPE)
-    return p.communicate()[0]
-
 
 #get n_reads and region data from region fastq file (location is pulled from filename)
 def summarize_region_fastq_chunk(input_arr):
@@ -307,6 +289,9 @@ def main():
         parser.add_argument('--skip_failed',  help='Continue with pooled analysis even if one sample fails',action='store_true')
         parser.add_argument('--skip_reporting_problematic_regions',help='Skip reporting of problematic regions. By default, when both amplicons (-f) and genome (-x) are provided, problematic reads that align to the genome but to positions other than where the amplicons align are reported as problematic',action='store_true')
         parser.add_argument('--crispresso_command', help='CRISPResso command to call',default='CRISPResso')
+        parser.add_argument('--compile_postrun_references', help='If set, a file will be produced which compiles the reference sequences of frequent amplicons.',action='store_true')
+        parser.add_argument('--compile_postrun_reference_allele_cutoff',type=float,help='Only alleles with at least this percentage frequency in the population will be reported in the postrun analysis. This parameter is given as a percent, so 30 is 30%.',default=30)
+        parser.add_argument('--alternate_alleles',type=str,help='Path to tab-separated file with alternate allele seqences for pooled experiments. This file has the columns "region_name","reference_seqs", and "reference_names" and gives the reference sequences of alternate alleles that will be passed to CRISPResso for each individual region for allelic analysis. Multiple reference alleles and reference names for a given region name are separated by commas (no spaces).',default='')
 
         args = parser.parse_args()
 
@@ -355,6 +340,9 @@ def main():
         else:
             error('Please provide the amplicons description file (-f or --amplicons_file option) or the bowtie2 reference genome index file (-x or --bowtie2_index option) or both.')
             sys.exit(1)
+
+        if args.alternate_alleles:
+            CRISPRessoShared.check_file(args.alternate_alleles)
 
         n_processes = 1
         if args.n_processes == "max":
@@ -666,13 +654,39 @@ def main():
             cmd=s1+s2.replace('OUTPUTPATH',_jp(''))
             sb.call(cmd,shell=True)
 
+            alternate_alleles = {}
+            if args.alternate_alleles:
+                with open(args.alternate_alleles,'r') as alt_in:
+                    alt_head_els = alt_in.readline().lower().rstrip().split("\t")
+                    region_name_ind = 0
+                    allele_seq_ind = 1
+                    allele_name_ind = 2
+                    if 'region_name' in alt_head_els:
+                        region_name_ind = alt_head_els.index('region_name')
+                    else:
+                        alt_in.seek(0,0) #start at beginning of file -- no header
+                    if 'reference_seqs' in alt_head_els:
+                        allele_seq_ind = alt_head_els.index('reference_seqs')
+                    if 'reference_names' in alt_head_els:
+                        allele_name_ind = alt_head_els.index('reference_names')
+                    for line in alt_in:
+                        line_els = line.rstrip().split("\t")
+                        alternate_alleles[line_els[region_name_ind]] = (line_els[allele_seq_ind],line_els[allele_name_ind])
+
             info('Demultiplex reads and run CRISPResso on each amplicon...')
             n_reads_aligned_amplicons=[]
             crispresso_cmds = []
             for idx,row in df_template.iterrows():
                 info('\n Processing:%s' %idx)
                 n_reads_aligned_amplicons.append(get_n_reads_fastq(row['Demultiplexed_fastq.gz_filename']))
-                crispresso_cmd= args.crispresso_command + ' -r1 %s -a %s -o %s --name %s' % (row['Demultiplexed_fastq.gz_filename'],row['Amplicon_Sequence'],OUTPUT_DIRECTORY,idx)
+                this_amp_seq = row['Amplicon_Sequence']
+                this_amp_name_string = ""
+                if idx in alternate_alleles:
+                    new_refs,new_names = alternate_alleles[idx]
+                    this_amp_seq = new_refs
+                    this_amp_name_string = "-an " + new_names
+
+                crispresso_cmd= args.crispresso_command + ' -r1 %s -a %s %s -o %s --name %s' % (row['Demultiplexed_fastq.gz_filename'],this_amp_seq,this_amp_name_string,OUTPUT_DIRECTORY,idx)
 
                 if n_reads_aligned_amplicons[-1]>args.min_reads_to_use_region:
                     if row['sgRNA'] and not pd.isnull(row['sgRNA']):
@@ -1170,24 +1184,40 @@ def main():
                     to_add.extend(this_els)
                     quantification_summary.append(to_add)
                 else:
-                    run_data = cp.load(open(run_file,'rb'))
-                    ref_name = run_data['ref_names'][0] #only expect one amplicon sequence
                     n_tot = row.n_reads
-                    n_aligned = run_data['counts_total'][ref_name]
-                    n_unmod = run_data['counts_unmodified'][ref_name]
-                    n_mod = run_data['counts_modified'][ref_name]
-                    n_discarded = run_data['counts_discarded'][ref_name]
+                    run_data = cp.load(open(run_file,'rb'))
+                    n_aligned = 0
+                    n_unmod = 0
+                    n_mod = 0
+                    n_discarded = 0
 
-                    n_insertion = run_data['counts_insertion'][ref_name]
-                    n_deletion = run_data['counts_deletion'][ref_name]
-                    n_substitution = run_data['counts_substitution'][ref_name]
-                    n_only_insertion = run_data['counts_only_insertion'][ref_name]
-                    n_only_deletion = run_data['counts_only_deletion'][ref_name]
-                    n_only_substitution = run_data['counts_only_substitution'][ref_name]
-                    n_insertion_and_deletion = run_data['counts_insertion_and_deletion'][ref_name]
-                    n_insertion_and_substitution = run_data['counts_insertion_and_substitution'][ref_name]
-                    n_deletion_and_substitution = run_data['counts_deletion_and_substitution'][ref_name]
-                    n_insertion_and_deletion_and_substitution = run_data['counts_insertion_and_deletion_and_substitution'][ref_name]
+                    n_insertion = 0
+                    n_deletion = 0
+                    n_substitution = 0
+                    n_only_insertion = 0
+                    n_only_deletion = 0
+                    n_only_substitution = 0
+                    n_insertion_and_deletion = 0
+                    n_insertion_and_substitution = 0
+                    n_deletion_and_substitution = 0
+                    n_insertion_and_deletion_and_substitution = 0
+
+                    for ref_name in run_data['ref_names']: #multiple alleles could be provided
+                        n_aligned += run_data['counts_total'][ref_name]
+                        n_unmod += run_data['counts_unmodified'][ref_name]
+                        n_mod += run_data['counts_modified'][ref_name]
+                        n_discarded += run_data['counts_discarded'][ref_name]
+
+                        n_insertion += run_data['counts_insertion'][ref_name]
+                        n_deletion += run_data['counts_deletion'][ref_name]
+                        n_substitution += run_data['counts_substitution'][ref_name]
+                        n_only_insertion += run_data['counts_only_insertion'][ref_name]
+                        n_only_deletion += run_data['counts_only_deletion'][ref_name]
+                        n_only_substitution += run_data['counts_only_substitution'][ref_name]
+                        n_insertion_and_deletion += run_data['counts_insertion_and_deletion'][ref_name]
+                        n_insertion_and_substitution += run_data['counts_insertion_and_substitution'][ref_name]
+                        n_deletion_and_substitution += run_data['counts_deletion_and_substitution'][ref_name]
+                        n_insertion_and_deletion_and_substitution += run_data['counts_insertion_and_deletion_and_substitution'][ref_name]
 
                     unmod_pct = np.nan
                     mod_pct = np.nan
@@ -1337,6 +1367,56 @@ def main():
             CRISPRessoReport.make_pooled_report_from_folder(report_name,crispresso2_info,OUTPUT_DIRECTORY,_ROOT)
             crispresso2_info['report_location'] = report_name
             crispresso2_info['report_filename'] = os.path.basename(report_name)
+
+        if args.compile_postrun_references:
+            postrun_references = []
+            names_arr = crispresso2_info['good_region_names']
+            for name in names_arr:
+                folder_name = 'CRISPResso_on_%s' % name
+                sub_folder = os.path.join(OUTPUT_DIRECTORY,folder_name)
+                info_file = os.path.join(sub_folder,'CRISPResso2_info.pickle')
+                if not os.path.exists(info_file):
+                    raise Exception('CRISPResso run %s is not complete. Cannot read CRISPResso2_info.pickle file.'% sub_folder)
+                run_data = cp.load(open(info_file,'rb'))
+                ref_sequences = [run_data['refs'][ref_name]['sequence'] for ref_name in run_data['ref_names']]
+                allele_frequency_table_zip_filename = os.path.join(sub_folder,run_data['allele_frequency_table_zip_filename'])
+                if not os.path.exists(allele_frequency_table_zip_filename):
+                    raise Exception('CRISPResso run %s is not complete. Cannot read allele frequency table.'% sub_folder)
+                this_alleles = []
+                this_freqs = []
+                this_names = []
+                with zipfile.ZipFile(allele_frequency_table_zip_filename,'r') as archive:
+                    with archive.open(run_data['allele_frequency_table_filename'],'r') as f:
+                        head = f.readline()
+                        head_els = head.rstrip().split("\t")
+                        allele_ind = head_els.index('Aligned_Sequence')
+                        freq_ind = head_els.index('%Reads')
+
+                        new_allele_idx = 1
+                        for line in f:
+                            line_els = line.split('\t')
+                            allele_seq = line_els[allele_ind].replace('-','')
+                            allele_freq = float(line_els[freq_ind])
+                            #add first allele -- then add other alleles if they are more frequent than the cutoff
+                            if len(this_alleles) > 0 and allele_freq < args.compile_postrun_reference_allele_cutoff:
+                                break
+                            if allele_seq not in this_alleles:
+                                this_alleles.append(allele_seq)
+                                this_freqs.append(allele_freq)
+                                this_ref_name = ""
+                                for ref_name in run_data['ref_names']:
+                                    if allele_seq == run_data['refs'][ref_name]['sequence']:
+                                        this_ref_name = ref_name
+                                if this_ref_name == "":
+                                    this_ref_name = "Alt_" + str(new_allele_idx)
+                                    new_allele_idx += 1
+                                this_names.append(this_ref_name)
+                    postrun_references.append([name,",".join(this_alleles),",".join(this_names),",".join([str(x) for x in this_freqs])])
+
+            postrun_reference_file = _jp("CRISPResso2Pooled_postrun_references.txt")
+            pd.DataFrame(postrun_references,columns=['region_name','reference_seqs','reference_names','reference_frequencies']).to_csv(postrun_reference_file,sep="\t",index=False)
+            crispresso2_info['postrun_reference_file'] = os.path.basename(postrun_reference_file)
+            info('Produced postrun reference file: ' + postrun_reference_file)
 
         end_time =  datetime.now()
         end_time_string =  end_time.strftime('%Y-%m-%d %H:%M:%S')
