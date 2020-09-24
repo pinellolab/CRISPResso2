@@ -31,7 +31,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.0.40"
+__version__ = "2.0.41"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -151,6 +151,7 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('--keep_intermediate',help='Keep all the  intermediate files',action='store_true')
     parser.add_argument('--dump',help='Dump numpy arrays and pandas dataframes to file for debugging purposes',action='store_true')
     parser.add_argument('--write_detailed_allele_table',help='If set, a detailed allele table will be written including alignment scores for each read sequence.',action='store_true')
+    parser.add_argument('--fastq_output',help='If set, a fastq file with annotations for each read will be produced.',action='store_true')
 
     #report style parameters
     parser.add_argument('--max_rows_alleles_around_cut_to_plot',  type=int, help='Maximum number of rows to report in the alleles table plot.', default=50)
@@ -171,6 +172,7 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('--prime_editing_pegRNA_scaffold_seq',type=str,help="If given, reads containing any of this scaffold sequence before extension sequence (provided by --prime_editing_extension_seq) will be classified as 'Scaffold-incorporated'. The sequence should be given in the 5'->3' order such that the RT template directly follows this sequence. A common value is 'GGCACCGAGUCGGUGC'.",default='')
     parser.add_argument('--prime_editing_pegRNA_scaffold_min_match_length',type=int,help="Minimum number of bases matching scaffold sequence for the read to be counted as 'Scaffold-incorporated'. If the scaffold sequence matches the reference sequence at the incorporation site, the minimum number of bases to match will be minimally increased (beyond this parameter) to disambiguate between prime-edited and scaffold-incorporated sequences.",default=1)
     parser.add_argument('--prime_editing_nicking_guide_seq',type=str,help="Nicking sgRNA sequence used in prime editing. The sgRNA should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the sequence",default='')
+    parser.add_argument('--prime_editing_override_prime_edited_ref_seq',type=str,help="If given, this sequence will be used as the prime-edited reference sequence. This may be useful if the prime-edited reference sequence has large indels or the algorithm cannot otherwise infer the correct reference sequence.",default='')
 
     #special running modes
     parser.add_argument('--crispresso1_mode', help='Parameter usage as in CRISPResso 1',action='store_true')
