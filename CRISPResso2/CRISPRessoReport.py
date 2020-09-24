@@ -278,10 +278,11 @@ def make_multi_report_from_folder(crispresso2_info,names_arr,report_name,crispre
         this_sub_2a_labels = []
         this_sub_2a_pdfs = []
         for ref_name in run_data['ref_names']:
-            pdf_file = run_data['refs'][ref_name]['plot_2a_root']+".pdf"
-            if os.path.exists(pdf_file):
-                this_sub_2a_pdfs.append(run_data['refs'][ref_name]['plot_2a_root']+".pdf")
-                this_sub_2a_labels.append("Nucleotide distribution across " + ref_name)
+            if 'plot_2a_root' in run_data['refs'][ref_name]:
+                pdf_file = run_data['refs'][ref_name]['plot_2a_root']+".pdf"
+                if os.path.exists(pdf_file):
+                    this_sub_2a_pdfs.append(run_data['refs'][ref_name]['plot_2a_root']+".pdf")
+                    this_sub_2a_labels.append("Nucleotide distribution across " + ref_name)
 
         sub_2a_labels[display_name] = this_sub_2a_labels
         sub_2a_pdfs[display_name] = this_sub_2a_pdfs
