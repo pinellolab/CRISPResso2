@@ -640,12 +640,10 @@ def process_fastq_write_out(fastq_input,fastq_output,variantCache,ref_names,refs
         N_TOT_READS+=1
 
         #if the sequence has been seen and can't be aligned, skip it
-        if (fastq_seq in not_aln):
+        if fastq_seq in not_aln:
             N_CACHED_NOTALN += 1
             fastq_out_handle.write(fastq_id+fastq_seq+"\n"+fastq_plus+not_aln[fastq_seq]+"\n"+fastq_qual) #not_aln[fastq_seq] is alignment: NA
-            continue
-        #if the sequence is already associated with a variant in the variant cache, pull it out
-        if (fastq_seq in variantCache):
+        elif fastq_seq in variantCache: #if the sequence is already associated with a variant in the variant cache, pull it out
             N_CACHED_ALN+=1
             variantCache[fastq_seq]['count'] += 1
             fastq_out_handle.write(fastq_id+fastq_seq+"\n"+fastq_plus+variantCache[fastq_seq]['crispresso2_annotation']+"\n"+fastq_qual)
