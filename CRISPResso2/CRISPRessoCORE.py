@@ -1703,8 +1703,6 @@ def main():
         N_READS_INPUT=0
         if args.fastq_r1:
             N_READS_INPUT = get_n_reads_fastq(args.fastq_r1)
-            if args.split_interleaved_input:
-                N_READS_INPUT /= 2 #if interleaved (contains both r1 and r2), divide by 2 to get total count
         elif args.bam_input:
             N_READS_INPUT = get_n_reads_bam(args.bam_input,args.bam_chr_loc)
 
