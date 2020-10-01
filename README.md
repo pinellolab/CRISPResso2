@@ -178,10 +178,11 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 -fg or --flexiguide: sgRNA sequence (flexible). The flexiguide sequence will be aligned to the amplicon sequence(s), as long as the guide sequence has homology as set by --flexiguide_homology. (default: '')
 
--fh or --flexiguide_homology flexiguides will yield guides in amplicons with at least this homology to the flexiguide sequence (default:80 meaning 80% homology is required)
+-fh or --flexiguide_homology: flexiguides will yield guides in amplicons with at least this homology to the flexiguide sequence (default:80 meaning 80% homology is required)
 
--fgn or --flexiguide_name. Names for the flexiguides, similar to --guide_name. (default: '')
+-fgn or --flexiguide_name: Names for the flexiguides, similar to --guide_name. (default: '')
 
+--discard_guide_positions_overhanging_amplicon_edge: If set, for guides that align to multiple positions, guide positions will be discarded if plotting around those regions would included bp that extend beyond the end of the amplicon. (default: False)
 
 #### Read filtering, trimming, and merging parameters
 
@@ -262,6 +263,8 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --prime_editing_nicking_guide_seq: Nicking sgRNA sequence used in prime editing. The sgRNA should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the sequence (default: )
 
+--prime_editing_override_prime_edited_ref_seq: If given, this sequence will be used as the prime-edited reference sequence. This may be useful if the prime-edited reference sequence has large indels or the algorithm cannot otherwise infer the correct reference sequence. (default='')
+
 #### Allele plot parameters
 
 --plot_window_size or --offset_around_cut_to_plot: Defines the size of the window extending from the quantification window center to plot. Nucleotides within plot_window_size of the quantification_window_center for each guide are plotted. (default: 20)
@@ -272,7 +275,9 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --expand_allele_plots_by_quantification: If set, alleles with different modifications in the quantification window (but not necessarily in the plotting window (e.g. for another sgRNA)) are plotted on separate lines, even though they may have the same apparent sequence. To force the allele plot and the allele table to be the same, set this parameter. If unset, all alleles with the same sequence will be collapsed into one row. (default: False)
 
---annotate_wildtype_allele: Wildtype alleles in the allele table plot will be marked with this string (e.g. \*\*). (default: )
+--allele_plot_pcts_only_for_assigned_reference: If set, in the allele plots, the percentages will show the percentage as a percent of reads aligned to the assigned reference. Default behavior is to show percentage as a percent of all reads. (default: False)
+
+--annotate_wildtype_allele: Wildtype alleles in the allele table plots will be marked with this string (e.g. \*\*). (default: )
 
 #### Output parameters
 
@@ -283,6 +288,8 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 -o or --output_folder: Output folder to use for the analysis (default: current folder)
 
 --write_detailed_allele_table: If set, a detailed allele table will be written including alignment scores for each read sequence. (default: False)
+
+--fastq_output: If set, a fastq file with annotations for each read will be produced. (default: False)
 
 --keep_intermediate: Keep all the intermediate files (default: False)
 
