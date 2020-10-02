@@ -1895,7 +1895,7 @@ def main():
                 raise CRISPRessoShared.FlashException('Flash failed to produce merged reads file, please check the log file.')
 
             files_to_remove+=[processed_output_filename,flash_hist_filename,flash_histogram_filename,\
-                    flash_not_combined_1_filename,flash_not_combined_2_filename]
+                    flash_not_combined_1_filename,flash_not_combined_2_filename,_jp('out.hist.innie'),_jp('out.histogram.innie'),_jp('out.histogram.outie'),_jp('out.hist.outie')]
 
             if (args.force_merge_pairs):
                  old_flashed_filename = processed_output_filename
@@ -1909,6 +1909,9 @@ def main():
                  processed_output_filename = new_output_filename
 
                  files_to_remove+=[new_merged_filename]
+                 files_to_remove+=[new_output_filename]
+                 if args.debug:
+                     info('Wrote force-merged reads to ' + new_merged_filename)
 
             info('Done!')
 
