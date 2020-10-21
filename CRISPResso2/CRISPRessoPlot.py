@@ -1191,7 +1191,7 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
         fig=plt.figure()
         ax = fig.add_subplot(111)
         plt.text(0.5, 0.5,'No Alleles',horizontalalignment='center',verticalalignment='center',transform = ax.transAxes)
-        txt.set_clip_on(False)
+        ax.set_clip_on(False)
 
         plt.savefig(fig_filename_root+'.pdf',bbox_inches='tight',bbox_extra_artists=(lgd,))
         if SAVE_ALSO_PNG:
