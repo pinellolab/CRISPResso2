@@ -2553,9 +2553,9 @@ def main():
             refs[ref_name]['min_cut'] = min_cut
             refs[ref_name]['max_cut'] = max_cut
 
-            max_mut=max(15,max(substituted_n_dicts[ref_name].keys()))
-            max_ins=max(15,max(inserted_n_dicts[ref_name].keys()))
-            max_del=max(15,max(deleted_n_dicts[ref_name].keys()))
+            max_mut=max(15,max(substituted_n_dicts[ref_name].keys() or [0])) # the or bit is for when there are no keys
+            max_ins=max(15,max(inserted_n_dicts[ref_name].keys() or [0]))
+            max_del=max(15,max(deleted_n_dicts[ref_name].keys() or [0]))
 
             x_bins_mut = np.arange(max_mut+1)
             y_values_mut = np.array([substituted_n_dicts[ref_name][x] for x in x_bins_mut])
@@ -2571,8 +2571,8 @@ def main():
             refs[ref_name]['y_values_del'] = y_values_del
             refs[ref_name]['x_bins_del'] = x_bins_del
 
-            min_eff_len = min(ref_len-15,min(effective_len_dicts[ref_name].keys()))
-            max_eff_len = max(ref_len+15,max(effective_len_dicts[ref_name].keys()))
+            min_eff_len = min(ref_len-15,min(effective_len_dicts[ref_name].keys() or [0]))
+            max_eff_len = max(ref_len+15,max(effective_len_dicts[ref_name].keys() or [0]))
             hlengths = np.arange(min_eff_len,max_eff_len+1)
 
             hdensity = np.array([effective_len_dicts[ref_name][x] for x in hlengths])
