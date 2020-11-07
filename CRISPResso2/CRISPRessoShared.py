@@ -403,7 +403,10 @@ def check_output_folder(output_folder):
                     raise OutputFolderIncompleteException('The folder %s  is not a valid CRISPResso2 output folder. Cannot find modification count vector file %s for amplicon %s.' % (output_folder,amplicon_mod_count_file,amplicon_name))
                 amplicon_info[amplicon_name]['modification_count_file'] = amplicon_mod_count_file
 
-                amplicon_info[amplicon_name]['allele_files'] = [os.path.join(output_folder,x) for x in run_data['refs'][amplicon_name]['allele_frequency_files']]
+                if 'allele_frequency_files' in run_data['refs'][amplicon_name]:
+                    amplicon_info[amplicon_name]['allele_files'] = [os.path.join(output_folder,x) for x in run_data['refs'][amplicon_name]['allele_frequency_files']]
+                else:
+                    amplicon_info[amplicon_name]['allele_files'] = []
 
                 for idx,el in enumerate(head_line_els):
                     amplicon_info[amplicon_name][el] = line_els[idx]
