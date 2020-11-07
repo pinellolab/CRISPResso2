@@ -3101,11 +3101,6 @@ def main():
                             autopct='%1.2f%%')
 
             plt.axis('off')
-
-            proptease = fm.FontProperties()
-            proptease.set_size('x-large')
-            plt.setp(autotexts, fontproperties=proptease)
-            plt.setp(texts, fontproperties=proptease)
             plt.axis("equal")
 
             plot_root = _jp("1b.Alignment_pie_chart")
@@ -4096,10 +4091,8 @@ def main():
                                                       explode=(0.0,0),\
                                                       colors=[(0.89019608,  0.29019608,  0.2, 0.8),(0.99607843,  0.90980392,  0.78431373,0.8)],\
                                                       autopct='%1.1f%%')
-                    proptease = fm.FontProperties()
-                    proptease.set_size('x-large')
-                    plt.setp(autotexts, fontproperties=proptease)
-                    plt.setp(texts, fontproperties=proptease)
+                    plt.axis('off')
+                    plt.axis("equal")
                     plot_root = _jp('8.'+ref_plot_name+'Potential_splice_sites_pie_chart')
                     plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
                     if save_png:
@@ -4443,8 +4436,8 @@ def main():
                     global_count_unmodified += counts_unmodified[ref_name]
 
             if not args.suppress_plots:
-                fig=plt.figure(figsize=(12*1.5,14.5*1.5))
-                ax1 = plt.subplot2grid((6,3), (0, 0), colspan=3, rowspan=5)
+                fig=plt.figure(figsize=(12,12))
+                ax1 = plt.subplot(111)
 
                 patches, texts, autotexts =ax1.pie([global_MODIFIED_FRAMESHIFT,\
                                                     global_MODIFIED_NON_FRAMESHIFT,\
@@ -4456,10 +4449,8 @@ def main():
                                                    colors=[(0.89019608,  0.29019608,  0.2, 0.8),(0.99215686,  0.73333333,  0.51764706,0.8),(0.99607843,  0.90980392,  0.78431373,0.8)],\
                                                    autopct='%1.1f%%')
 
-                proptease = fm.FontProperties()
-                proptease.set_size('xx-large')
-                plt.setp(autotexts, fontproperties=proptease)
-                plt.setp(texts, fontproperties=proptease)
+                plt.axis('off')
+                plt.axis("equal")
                 plot_root = _jp('5a.Global_frameshift_in-frame_mutations_pie_chart')
                 plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
                 if save_png:
@@ -4536,7 +4527,7 @@ def main():
 
 
                  #-----------------------------------------------------------------------------------------------------------
-                fig=plt.figure(figsize=(12*1.5,12*1.5))
+                fig=plt.figure(figsize=(12,12))
                 ax=fig.add_subplot(1,1,1)
                 patches, texts, autotexts =ax.pie([global_SPLICING_SITES_MODIFIED,\
                                                   (global_count_total - global_SPLICING_SITES_MODIFIED)],\
@@ -4545,10 +4536,8 @@ def main():
                                                   explode=(0.0,0),\
                                                   colors=[(0.89019608,  0.29019608,  0.2, 0.8),(0.99607843,  0.90980392,  0.78431373,0.8)],\
                                                   autopct='%1.1f%%')
-                proptease = fm.FontProperties()
-                proptease.set_size('xx-large')
-                plt.setp(autotexts, fontproperties=proptease)
-                plt.setp(texts, fontproperties=proptease)
+                plt.axis('off')
+                plt.axis("equal")
                 plot_root = _jp('8a.Global_potential_splice_sites_pie_chart')
                 plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
                 if save_png:
