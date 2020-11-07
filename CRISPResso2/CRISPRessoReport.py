@@ -92,7 +92,7 @@ def make_report(run_data,crispresso_report_file,crispresso_folder,_ROOT):
 
 
 
-        for fig in ['2a','3a','3b','4a','4b','4c','4d','4e','4f','5','6','7','8','10a','10b','10c','11a']:
+        for fig in ['2a','3a','3b','4a','4b','4c','4d','4e','4f','4g','5','6','7','8','10a','10b','10c','11a']:
             fig_name = 'plot_'+ fig
             if fig_name + '_root' in run_data['refs'][amplicon_name]:
                 add_fig_if_exists(fig_name,run_data['refs'][amplicon_name][fig_name + '_root'],'Figure ' + fig_name,run_data['refs'][amplicon_name][fig_name + '_caption'],run_data['refs'][amplicon_name][fig_name + '_data'],
