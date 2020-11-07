@@ -633,6 +633,7 @@ def plot_subs_across_ref(ref_len, ref_seq, ref_name, ref_count, all_substitution
 
     y_label_values= np.round(np.linspace(0, max(y_max,min(max(tots),max(ax.get_yticks()))),6))# np.arange(0,y_max,y_max/6.0)
     plt.yticks(y_label_values,['%.1f%% (%d)' % (n_reads/ref_count*100,n_reads) for n_reads in y_label_values])
+    plt.tick_params(left=True,bottom=True)
 
     plt.savefig(fig_filename_root + '.pdf',bbox_extra_artists=(lgd,),bbox_inches='tight')
     if save_also_png:
@@ -659,6 +660,7 @@ def plot_sub_freqs(alt_nuc_counts,plot_title,fig_filename_root,save_also_png):
     plt.title(plot_title)
     plt.ylabel('Number of substitutions')
     plt.xticks([1,2,3,5,6,7,9,10,11,13,14,15],['A>C','A>G','A>T','C>A','C>G','C>T','G>A','G>C','G>T','T>A','T>C','T>G'],rotation='vertical')
+    plt.tick_params(left=True)
 
     plt.savefig(fig_filename_root + '.pdf',bbox_inches='tight')
     if save_also_png:

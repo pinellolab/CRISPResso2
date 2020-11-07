@@ -265,6 +265,10 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --prime_editing_override_prime_edited_ref_seq: If given, this sequence will be used as the prime-edited reference sequence. This may be useful if the prime-edited reference sequence has large indels or the algorithm cannot otherwise infer the correct reference sequence. (default='')
 
+#### Plotting parameters
+
+--plot_histogram_outliers: If set, all values will be shown on histograms. By default (if unset), histogram ranges are limited to plotting data within the 99 percentile. (default: False)
+
 #### Allele plot parameters
 
 --plot_window_size or --offset_around_cut_to_plot: Defines the size of the window extending from the quantification window center to plot. Nucleotides within plot_window_size of the quantification_window_center for each guide are plotted. (default: 20)

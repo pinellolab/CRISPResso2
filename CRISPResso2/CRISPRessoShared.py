@@ -31,7 +31,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.0.42"
+__version__ = "2.0.43"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -138,7 +138,10 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('--aln_seed_len',type=int,default=10,help=argparse.SUPPRESS)#help='Length of seeds to test whether read is forward or reverse',default=10)
     parser.add_argument('--aln_seed_min',type=int,default=2,help=argparse.SUPPRESS)#help='number of seeds that must match to call the read forward/reverse',default=2)
 
-    #plotting/quantification window parameters
+    #plotting parameters
+    parser.add_argument('--plot_histogram_outliers',help="If set, all values will be shown on histograms. By default (if unset), histogram ranges are limited to plotting data within the 99 percentile.",action='store_true')
+
+    #allele plot parameters
     parser.add_argument('--plot_window_size','--offset_around_cut_to_plot',  type=int, help='Defines the size of the window extending from the quantification window center to plot. Nucleotides within plot_window_size of the quantification_window_center for each guide are plotted.', default=20)
     parser.add_argument('--min_frequency_alleles_around_cut_to_plot', type=float, help='Minimum %% reads required to report an allele in the alleles table plot.', default=0.2)
     parser.add_argument('--expand_allele_plots_by_quantification', help='If set, alleles with different modifications in the quantification window (but not necessarily in the plotting window (e.g. for another sgRNA)) are plotted on separate lines, even though they may have the same apparent sequence. To force the allele plot and the allele table to be the same, set this parameter. If unset, all alleles with the same sequence will be collapsed into one row.', action='store_true')
@@ -909,7 +912,7 @@ def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,qua
             en=min(ref_seq_length-1,cut_p+window_around_cut+1)
             this_sgRNA_plot_idxs.append(sorted(list(range(st,en))))
     else:
-       this_sgRNA_plot_idxs=range(ref_seq_length)
+       this_sgRNA_plot_idxs.append(range(ref_seq_length))
 
     this_include_idxs = np.sort(list(this_include_idxs))
     this_exclude_idxs = np.sort(list(this_exclude_idxs))

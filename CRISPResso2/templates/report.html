@@ -183,6 +183,27 @@
 					{% endif %}
           {# end of global coding sequence analysis #}
 
+            {# start hdr summary #}
+						{% if report_data['fig_locs'][report_data.amplicons[0]]['plot_4g'] %}
+							<div class='card text-center mb-2'>
+								<div class='card-header'>
+							{% if report_data.amplicons|length == 1 %} {# if only one amplicon #}
+									<h5>HDR summary plot</h5>
+							{% else %}
+  						<h5>HDR summary report (all reads aligned to {{report_data.amplicons[0]}})</h5>
+							{% endif %}
+								</div>
+  					<div class='card-body'>
+						<a href="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][report_data.amplicons[0]]['plot_4g']}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['fig_locs'][report_data.amplicons[0]]['plot_4g']}}.png" width='80%' ></a>
+								<label class="labelpadding">{{report_data['fig_captions'][report_data.amplicons[0]]['plot_4g']}}</label>
+							  {% for (data_label,data_path) in report_data['fig_datas'][report_data.amplicons[0]]['plot_4g'] %}
+							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
+                {% endfor %}
+							</div>
+						</div>
+						{% endif %}
+            {# end HDR summary #}
+
             {# start prime editing report #}
 						{% if report_data['fig_locs'][report_data.amplicons[0]]['plot_11a'] %}
 							<div class='card text-center mb-2'>
