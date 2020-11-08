@@ -3374,8 +3374,10 @@ def main():
                         if sum_so_far > sum_cutoff:
                             xmin = val
                             break
+                xmin=min(xmin,-15)
+                xmax=max(xmax,15)
 
-                ax.set_xlim([min(-10,xmin),max(xmax,10)])
+                ax.set_xlim([xmin,xmax])
                 ax.set_title(get_plot_title_with_ref_name('Indel size distribution',ref_name))
                 ax.set_ylabel('Sequences % (no.)')
                 y_label_values= np.round(np.linspace(0, min(100,max(ax.get_yticks())),6))# np.arange(0,y_max,y_max/6.0)
@@ -3396,11 +3398,11 @@ def main():
 
                 clipped_string = ""
                 if xmax < max(hlengths):
-                    clipped_string += " (Maximum " + str(max(hlengths)) + " not shown)"
+                    clipped_string += " (Maximum " + str(int(max(hlengths))) + " not shown)"
                 if xmin > min(hlengths):
-                    clipped_string += " (Minimum " + str(min(hlengths)) + " not shown)"
+                    clipped_string += " (Minimum " + str(int(min(hlengths))) + " not shown)"
                 if clipped_string != "":
-                    clipped_string = "Note that histograms are clipped to show 99% of the data. To show all data, run using the parameter '--plot_histogram_outliers'. " + clipped_string
+                    clipped_string = " Note that histograms are clipped to show 99% of the data. To show all data, run using the parameter '--plot_histogram_outliers'. " + clipped_string
 
                 crispresso2_info['refs'][ref_name]['plot_3a_root'] = os.path.basename(plot_root)
                 crispresso2_info['refs'][ref_name]['plot_3a_caption'] = "Figure 3a: Frequency distribution of alleles with indels (blue) and without indels (red)." + clipped_string
@@ -3431,6 +3433,7 @@ def main():
                 lgd.legendHandles[0].set_height(6)
                 lgd.legendHandles[1].set_height(6)
 
+                xmax=max(x_bins_ins)
                 if not args.plot_histogram_outliers:
                     sum_cutoff = .99*hdensity.sum()
                     sum_so_far = 0
@@ -3439,15 +3442,16 @@ def main():
                         if sum_so_far > sum_cutoff:
                             xmax = val
                             break
+                xmax=max(15,xmax)
 
-                plt.xlim([-1,max(10,xmax)])
+                plt.xlim([-1,xmax])
                 y_label_values= np.round(np.linspace(0, min(counts_total[ref_name],max(ax.get_yticks())),6))# np.arange(0,y_max,y_max/6.0)
                 plt.yticks(y_label_values,['%.1f%% (%d)' % (n_reads/counts_total[ref_name]*100,n_reads) for n_reads in y_label_values])
                 plt.tick_params(left=True,bottom=True)
 
                 clipped_string = ""
                 if xmax < max(x_bins_ins):
-                    clipped_string += " (Insertion maximum " + str(max(x_bins_ins)) + " not shown)"
+                    clipped_string += " (Insertion maximum " + str(int(max(x_bins_ins))) + " not shown)"
 
                 ax=fig.add_subplot(1,3,2)
                 ax.bar(-x_bins_del,y_values_del,align='center',linewidth=0,color=(0,0,1))
@@ -3460,6 +3464,7 @@ def main():
                 lgd.legendHandles[0].set_height(6)
                 lgd.legendHandles[1].set_height(6)
 
+                xmax=max(x_bins_del)
                 if not args.plot_histogram_outliers:
                     sum_cutoff = .99*hdensity.sum()
                     sum_so_far = 0
@@ -3468,14 +3473,15 @@ def main():
                         if sum_so_far > sum_cutoff:
                             xmax = val
                             break
+                xmax=max(15,xmax)
 
-                plt.xlim([-1*max(10,xmax),1])
+                plt.xlim([-1*xmax,1])
                 y_label_values= np.round(np.linspace(0, min(counts_total[ref_name],max(ax.get_yticks())),6))# np.arange(0,y_max,y_max/6.0)
                 plt.yticks(y_label_values,['%.1f%% (%d)' % (n_reads/counts_total[ref_name]*100,n_reads) for n_reads in y_label_values])
                 plt.tick_params(left=True,bottom=True)
 
                 if xmax < max(x_bins_del):
-                    clipped_string += " (Deletion minimum -" + str(max(x_bins_del)) + " not shown)"
+                    clipped_string += " (Deletion minimum -" + str(int(max(x_bins_del))) + " not shown)"
 
                 ax=fig.add_subplot(1,3,3)
                 ax.bar(x_bins_mut,y_values_mut,align='center',linewidth=0,color=(0,0,1))
@@ -3487,6 +3493,7 @@ def main():
                 lgd=plt.legend(['Non-substitution','Substitution'][::-1] ,bbox_to_anchor=(.82, -0.27),ncol=1, fancybox=True, shadow=True)
                 lgd.legendHandles[0].set_height(6)
                 lgd.legendHandles[1].set_height(6)
+                xmax=max(x_bins_mut)
                 if not args.plot_histogram_outliers:
                     sum_cutoff = .99*hdensity.sum()
                     sum_so_far = 0
@@ -3495,12 +3502,13 @@ def main():
                         if sum_so_far > sum_cutoff:
                             xmax = val
                             break
-                plt.xlim([-1,max(10,xmax)])
+                xmax = max(15,xmax)
+                plt.xlim([-1,xmax])
                 y_label_values= np.round(np.linspace(0, min(counts_total[ref_name],max(ax.get_yticks())),6))# np.arange(0,y_max,y_max/6.0)
                 plt.yticks(y_label_values,['%.1f%% (%d)' % (n_reads/counts_total[ref_name]*100,n_reads) for n_reads in y_label_values])
 
                 if xmax < max(x_bins_mut):
-                    clipped_string += " (Mutation maximum " + str(max(x_bins_mut)) + " not shown)"
+                    clipped_string += " (Mutation maximum " + str(int(max(x_bins_mut))) + " not shown)"
 
                 plt.tick_params(left=True,bottom=True)
                 plt.tight_layout()
@@ -3512,11 +3520,11 @@ def main():
                 plt.close()
 
                 if clipped_string != "":
-                    clipped_string = "Note that histograms are clipped to show 99% of the data. To show all data, run using the parameter '--plot_histogram_outliers'. " + clipped_string
+                    clipped_string = " Note that histograms are clipped to show 99% of the data. To show all data, run using the parameter '--plot_histogram_outliers'. " + clipped_string
 
                 crispresso2_info['refs'][ref_name]['plot_3b_root'] = os.path.basename(plot_root)
-                crispresso2_info['refs'][ref_name]['plot_3b_caption'] = "Figure 3b: Left panel, frequency distribution of sequence modifications that increase read length with respect to the reference amplicon, classified as insertions (positive indel size). Middle panel, frequency distribution of sequence modifications that reduce read length with respect to the reference amplicon, classified as deletions (negative indel size). Right panel, frequency distribution of sequence modifications that do not alter read length with respect to the reference amplicon, which are classified as substitutions (number of substituted positions shown). " + clipped_string
-                crispresso2_info['refs'][ref_name]['plot_3b_data'] = []
+                crispresso2_info['refs'][ref_name]['plot_3b_caption'] = "Figure 3b: Left panel, frequency distribution of sequence modifications that increase read length with respect to the reference amplicon, classified as insertions (positive indel size). Middle panel, frequency distribution of sequence modifications that reduce read length with respect to the reference amplicon, classified as deletions (negative indel size). Right panel, frequency distribution of sequence modifications that do not alter read length with respect to the reference amplicon, which are classified as substitutions (number of substituted positions shown)." + clipped_string
+                crispresso2_info['refs'][ref_name]['plot_3b_data'] = [('Insertions frequency',crispresso2_info['refs'][ref_name]['insertion_histogram_filename']),('Deletions Frequency',crispresso2_info['refs'][ref_name]['deletion_histogram_filename']),('Substitutions Frequency',crispresso2_info['refs'][ref_name]['deletion_histogram_filename'])]
 
 
                 #(4) another graph with the frequency that each nucleotide within the amplicon was modified in any way (perhaps would consider insertion as modification of the flanking nucleotides);
