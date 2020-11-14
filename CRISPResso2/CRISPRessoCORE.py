@@ -1027,7 +1027,7 @@ def main():
                  if coords != "":
                      amplicon_quant_window_coordinates_arr[idx] = coords
 
-        def get_alignment_coordinates(to_sequence,from_sequence):
+        def get_alignment_coordinates(to_sequence,from_sequence,gap_open_penalty=args.needleman_wunsch_gap_open,gap_extend_penalty=args.needleman_wunsch_gap_extend):
             """
             gets the coordinates to align from from_sequence to to_sequence
             such that from_sequence[i] matches to to_sequence[inds[i]]
@@ -1036,7 +1036,7 @@ def main():
             inds_r : if there's a gap in to_sequence, these values are filled with the right value (after the gap)
             """
             this_gap_incentive = np.zeros(len(from_sequence)+1,dtype=np.int)
-            fws1,fws2,fwscore=CRISPResso2Align.global_align(to_sequence,from_sequence,matrix=aln_matrix,gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,gap_incentive=this_gap_incentive)
+            fws1,fws2,fwscore=CRISPResso2Align.global_align(to_sequence,from_sequence,matrix=aln_matrix,gap_open=gap_open_penalty,gap_extend=gap_extend_penalty,gap_incentive=this_gap_incentive)
             s1inds_l = []
             s1inds_r = []
             s1ix_l = -1
@@ -1053,6 +1053,24 @@ def main():
                     s1ix_r += 1
             return s1inds_l,s1inds_r
 
+        def get_mismatches(seq_1,seq_2):
+            """
+            for a specific sequence seq_1, gets the location of mismatches as an array of length(seq_1) with reference to seq_2
+            Only searches in the positive direction
+            params:
+            seq_1: sequence to compare
+            seq_2: sequence to compare against
+            returns:
+            mismatches_arr: positions in seq_1 that mismatch seq_2
+            """
+            #when we set up the gap_flanking score, this should be set to the gap open penalty -- we'd like a good end-to-end alignment here
+            coords_l,coords_r = get_alignment_coordinates(seq_2,seq_1)
+            mismatch_coords = []
+            for i in range(len(seq_1)):
+                if coords_l[i] < 0 or seq_1[i] != seq_2[coords_l[i]] or coords_r[i] >= len(seq_2) or seq_1[i] != seq_2[coords_r[i]]:
+                    mismatch_coords.append(i)
+            return mismatch_coords
+
         def get_best_aln_pos_and_mismatches(guide_seq,within_amp_seq):
             """
             for a specific guide, gets the location, sequence, and mismatches for that guide at that location
@@ -1062,6 +1080,7 @@ def main():
             within_amp_seq: longer amplicon to search within
             returns:
             best_aln_seq: sequence in within_amp_seq of best hit
+            best_aln_score: score of best alignment
             best_aln_mismatches: mismatches between best_aln_seq and guide_seq
             best_aln_start: start location of best match
             best_aln_end: end location of best match (1pb after last base)
@@ -1080,18 +1099,11 @@ def main():
                 range_end_dashes = m.span()[0]
             guide_seq_in_amp = s2[range_start_dashes:range_end_dashes].replace("-","")
 
-            coords_l,coords_r = get_alignment_coordinates(guide_seq_in_amp,guide_seq)
-            mismatch_coords = []
-            for i in range(len(guide_seq)):
-                if guide_seq[i] != guide_seq_in_amp[coords_l[i]] or guide_seq[i] != guide_seq_in_amp[coords_r[i]]:
-                    mismatch_coords.append(i)
-
             best_aln_seq = guide_seq_in_amp
-            best_aln_mismatches = mismatch_coords
+            best_aln_mismatches = get_mismatches(guide_seq,guide_seq_in_amp)
             best_aln_start = range_start_dashes
             best_aln_end = range_end_dashes
-            return(best_aln_seq,best_aln_mismatches,best_aln_start,best_aln_end,s1,s2)
-
+            return(best_aln_seq,fw_score,best_aln_mismatches,best_aln_start,best_aln_end,s1,s2)
 
         def get_sgRNA_mismatch_vals(seq1, seq2, start_loc, end_loc, coords_l,coords_r,rev_coords_l,rev_coords_r):
             """
@@ -1200,7 +1212,7 @@ def main():
             #editing extension aligns to the prime-edited sequence only
             #if this is the prime edited sequence, add it directly
             if this_seq == prime_editing_edited_amp_seq:
-                best_aln_seq,best_aln_mismatches,best_aln_start,best_aln_end,s1,s2 = get_best_aln_pos_and_mismatches(prime_editing_extension_seq_dna,prime_editing_edited_amp_seq)
+                best_aln_seq,best_aln_score,best_aln_mismatches,best_aln_start,best_aln_end,s1,s2 = get_best_aln_pos_and_mismatches(prime_editing_extension_seq_dna,prime_editing_edited_amp_seq)
                 pe_guides.append(best_aln_seq)
                 pe_orig_guide_seqs.append(args.prime_editing_pegRNA_extension_seq)
                 pe_guide_mismatches.append(best_aln_mismatches)
@@ -1210,7 +1222,7 @@ def main():
                 pe_guide_plot_cut_points.append(False)
             #otherwise, clone the coordinates from the prime_editing_edited_amp_seq
             else:
-                best_aln_seq,best_aln_mismatches,best_aln_start,best_aln_end,s1,s2 = get_best_aln_pos_and_mismatches(prime_editing_extension_seq_dna,prime_editing_edited_amp_seq)
+                best_aln_seq,best_aln_score,best_aln_mismatches,best_aln_start,best_aln_end,s1,s2 = get_best_aln_pos_and_mismatches(prime_editing_extension_seq_dna,prime_editing_edited_amp_seq)
                 match = re.search(best_aln_seq,prime_editing_edited_amp_seq)
                 pe_start_loc = match.start()
                 pe_end_loc = match.end()
@@ -1244,7 +1256,7 @@ def main():
             #spacer is found in the first amplicon (unmodified ref), may be modified in the other amplicons
             #if this is the first sequence, add it directly
             if this_seq == ref0_seq:
-                best_aln_seq,best_aln_mismatches,best_aln_start,best_aln_end,s1,s2 = get_best_aln_pos_and_mismatches(pegRNA_spacer_seq,ref0_seq)
+                best_aln_seq,best_aln_score,best_aln_mismatches,best_aln_start,best_aln_end,s1,s2 = get_best_aln_pos_and_mismatches(pegRNA_spacer_seq,ref0_seq)
                 pe_guides.append(best_aln_seq)
                 pe_orig_guide_seqs.append(args.prime_editing_pegRNA_spacer_seq)
                 pe_guide_mismatches.append(best_aln_mismatches)
@@ -1254,7 +1266,7 @@ def main():
                 pe_guide_plot_cut_points.append(True)
             #otherwise, clone the coordinates from the ref0 amplicon
             else:
-                best_aln_seq,best_aln_mismatches,best_aln_start,best_aln_end,s1,s2 = get_best_aln_pos_and_mismatches(pegRNA_spacer_seq,ref0_seq)
+                best_aln_seq,best_aln_score,best_aln_mismatches,best_aln_start,best_aln_end,s1,s2 = get_best_aln_pos_and_mismatches(pegRNA_spacer_seq,ref0_seq)
                 match = re.search(best_aln_seq,ref0_seq)
                 r0_start_loc = match.start()
                 r0_end_loc = match.end()
@@ -1285,7 +1297,7 @@ def main():
                 #nicking guide is found in the reverse_complement of the first amplicon, may be modified in the other amplicons
                 if this_seq == ref0_seq:
                     rc_ref0_seq = CRISPRessoShared.reverse_complement(ref0_seq)
-                    best_aln_seq,best_aln_mismatches,best_aln_start,best_aln_end,s1,s2 = get_best_aln_pos_and_mismatches(nicking_guide_seq,rc_ref0_seq)
+                    best_aln_seq,best_aln_score,best_aln_mismatches,best_aln_start,best_aln_end,s1,s2 = get_best_aln_pos_and_mismatches(nicking_guide_seq,rc_ref0_seq)
                     if nicking_guide_seq not in rc_ref0_seq:
                         warn('The given prime editing nicking guide is not found in the reference sequence. Using the best match: ' + str(best_aln_seq))
                     pe_guides.append(best_aln_seq)
@@ -1299,7 +1311,7 @@ def main():
                 else:
                     rc_ref0_seq = CRISPRessoShared.reverse_complement(ref0_seq)
                     rc_this_seq = CRISPRessoShared.reverse_complement(this_seq)
-                    best_aln_seq,best_aln_mismatches,best_aln_start,best_aln_end,s1,s2 = get_best_aln_pos_and_mismatches(nicking_guide_seq,rc_ref0_seq)
+                    best_aln_seq,best_aln_score,best_aln_mismatches,best_aln_start,best_aln_end,s1,s2 = get_best_aln_pos_and_mismatches(nicking_guide_seq,rc_ref0_seq)
                     match = re.search(best_aln_seq,rc_ref0_seq)
                     r0_start_loc = match.start()
                     r0_end_loc = match.end()
@@ -1577,23 +1589,30 @@ def main():
                 needs_sgRNA_intervals = False
                 needs_exon_positions = False
 
-                if cut_points:
-                    if len(ref_names) > 1 and args.debug:
-                        info("Reference '%s' has cut points defined: %s. Not inferring."%(ref_name,cut_points))
-                else:
+                #if HDR, copy everything from ref 1 so the quantification window will be accurate
+                if ref_name == "HDR" and args.expected_hdr_amplicon_seq != "":
                     needs_cut_points = True
-
-                if sgRNA_intervals:
-                    if len(ref_names) > 1 and args.debug:
-                        info("Reference '%s' has sgRNA_intervals defined: %s. Not inferring."%(ref_name,sgRNA_intervals))
-                else:
                     needs_sgRNA_intervals = True
-
-                if exon_positions:
-                    if len(exon_positions) > 1 and args.debug:
-                        info("Reference '%s' has exon_positions defined: %s. Not inferring."%(ref_name,exon_positions))
-                else:
                     needs_exon_positions = True
+                else:
+                    if cut_points:
+                        if len(ref_names) > 1 and args.debug:
+                            info("Reference '%s' has cut points defined: %s. Not inferring."%(ref_name,cut_points))
+                    else:
+                        needs_cut_points = True
+
+                    if sgRNA_intervals:
+                        if len(ref_names) > 1 and args.debug:
+                            info("Reference '%s' has sgRNA_intervals defined: %s. Not inferring."%(ref_name,sgRNA_intervals))
+                    else:
+                        needs_sgRNA_intervals = True
+
+                    if exon_positions:
+                        if len(exon_positions) > 1 and args.debug:
+                            info("Reference '%s' has exon_positions defined: %s. Not inferring."%(ref_name,exon_positions))
+                    else:
+                        needs_exon_positions = True
+
 
                 if not needs_cut_points and not needs_sgRNA_intervals and not needs_exon_positions and args.quantification_window_coordinates is None:
                     continue
@@ -1630,25 +1649,44 @@ def main():
                     for idx,(sgRNA_interval_start,sgRNA_interval_end) in enumerate(refs[clone_ref_name]['sgRNA_intervals']):
                         this_sgRNA_intervals.append((s1inds[sgRNA_interval_start],s1inds[sgRNA_interval_end]))
 
-                        sgRNA_seq_clone = refs[clone_ref_name]['sequence'][sgRNA_interval_start:sgRNA_interval_end]
-                        sgRNA_seq_this = refs[ref_name]['sequence'][s1inds[sgRNA_interval_start]:s1inds[sgRNA_interval_end]]
-                        ref_incentive = np.zeros(len(sgRNA_seq_clone)+1,dtype=np.int)
-                        sub_s1,sub_s2,sub_score=CRISPResso2Align.global_align(sgRNA_seq_this,sgRNA_seq_clone,matrix=aln_matrix,gap_incentive=ref_incentive,gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
-                        mismatches = {} #dict of mismatch locations
-                        for i in refs[clone_ref_name]['sgRNA_mismatches'][idx]: #first, add all existing mismatches (e.g. from flexiguide)
-                            mismatches[i] = 1
-                        for i in range(len(sub_s1)): #then add mismatches between the ref and alternate sequence
-                            if sub_s1[i] != sub_s2[i]:
-                                mismatches[i] = 1
-                        this_sgRNA_mismatches.append(sorted(list(mismatches.keys())))
+                        sgRNA_seq_clone = refs[clone_ref_name]['sequence'][sgRNA_interval_start:sgRNA_interval_end+1]
+                        sgRNA_seq_this = refs[ref_name]['sequence'][s1inds[sgRNA_interval_start]:s1inds[sgRNA_interval_end]+1]
+                        sgRNA_seq_orig_seq = refs[clone_ref_name]['sgRNA_orig_sequences'][idx]
+                        fw_mismatches = get_mismatches(sgRNA_seq_this,sgRNA_seq_orig_seq)
+                        rv_mismatches = get_mismatches(sgRNA_seq_this,CRISPRessoShared.reverse_complement(sgRNA_seq_orig_seq))
+                        best_aln_mismatches = fw_mismatches
+                        if len(rv_mismatches) < len(fw_mismatches):
+                            best_aln_mismatches = rv_mismatches
+                        this_sgRNA_mismatches.append(sorted(best_aln_mismatches))
 
 
                     this_sgRNA_plot_idxs = []
                     for plot_idx_list in refs[clone_ref_name]['sgRNA_plot_idxs']:
-                        this_sgRNA_plot_idxs.append([s1inds[x] for x in plot_idx_list])
+                        if len(plot_idx_list) > 0:
+                            st = s1inds[plot_idx_list[0]]
+                            en = s1inds[plot_idx_list[-1]]
+                            this_sgRNA_plot_idxs.append(sorted(list(range(st,en+1))))
+                        else:
+                            this_sgRNA_plot_idxs.append([])
 
+                    old_this_sgRNA_plot_idxs = []
+                    for plot_idx_list in refs[clone_ref_name]['sgRNA_plot_idxs']:
+                        old_this_sgRNA_plot_idxs.append([s1inds[x] for x in plot_idx_list])
 
-                    this_include_idxs = [s1inds[x] for x in refs[clone_ref_name]['include_idxs']]
+                    this_include_idxs = []
+                    start_val = -1
+                    last_val = -1
+                    for idx,val in enumerate(refs[clone_ref_name]['include_idxs']):
+                        if start_val == -1:
+                            start_val = val
+                        elif val != last_val + 1:
+                            this_include_idxs.extend(list(range(s1inds[start_val],s1inds[last_val]+1)))
+                            start_val = val
+                        last_val = val
+
+                    if start_val != -1:
+                        this_include_idxs.extend(list(range(s1inds[start_val],s1inds[last_val]+1)))
+
                     #subtract any indices in 'exclude_idxs' -- e.g. in case some of the cloned include_idxs were near the read ends (excluded)
                     this_exclude_idxs = sorted(list(set(refs[ref_name]['exclude_idxs'])))
                     this_include_idxs = sorted(list(set(np.setdiff1d(this_include_idxs,this_exclude_idxs))))
@@ -3907,38 +3945,38 @@ def main():
                 if args.expected_hdr_amplicon_seq != "" and ref_name == ref_names[0]:
                     nuc_pcts = []
                     ref_names_for_hdr = [r for r in ref_names if counts_total[r] > 0]
-                    for ref_name in ref_names_for_hdr:
-                        tot = float(counts_total[ref_name])
+                    for ref_name_for_hdr in ref_names_for_hdr:
+                        tot = float(counts_total[ref_name_for_hdr])
                         for nuc in ['A','C','G','T','N','-']:
-                            nuc_pcts.append(np.concatenate(([ref_name,nuc], np.array(ref1_all_base_count_vectors[ref_name+"_"+nuc]).astype(np.float)/tot)))
+                            nuc_pcts.append(np.concatenate(([ref_name_for_hdr,nuc], np.array(ref1_all_base_count_vectors[ref_name_for_hdr+"_"+nuc]).astype(np.float)/tot)))
                     colnames = ['Batch','Nucleotide']+list(refs[ref_names[0]]['sequence'])
                     hdr_nucleotide_percentage_summary_df = pd.DataFrame(nuc_pcts,columns=colnames)
 
                     mod_pcts = []
-                    for ref_name in ref_names_for_hdr:
-                        tot = float(counts_total[ref_name])
-                        mod_pcts.append(np.concatenate(([ref_name,'Insertions'], np.array(ref1_all_insertion_count_vectors[ref_name]).astype(np.float)/tot)))
-                        mod_pcts.append(np.concatenate(([ref_name,'Insertions_Left'], np.array(ref1_all_insertion_left_count_vectors[ref_name]).astype(np.float)/tot)))
-                        mod_pcts.append(np.concatenate(([ref_name,'Deletions'], np.array(ref1_all_deletion_count_vectors[ref_name]).astype(np.float)/tot)))
-                        mod_pcts.append(np.concatenate(([ref_name,'Substitutions'], np.array(ref1_all_substitution_count_vectors[ref_name]).astype(np.float)/tot)))
-                        mod_pcts.append(np.concatenate(([ref_name,'All_modifications'], np.array(ref1_all_indelsub_count_vectors[ref_name]).astype(np.float)/tot)))
-                        mod_pcts.append(np.concatenate(([ref_name,'Total'],[counts_total[ref_name]]*refs[ref_names_for_hdr[0]]['sequence_length'])))
+                    for ref_name_for_hdr in ref_names_for_hdr:
+                        tot = float(counts_total[ref_name_for_hdr])
+                        mod_pcts.append(np.concatenate(([ref_name_for_hdr,'Insertions'], np.array(ref1_all_insertion_count_vectors[ref_name_for_hdr]).astype(np.float)/tot)))
+                        mod_pcts.append(np.concatenate(([ref_name_for_hdr,'Insertions_Left'], np.array(ref1_all_insertion_left_count_vectors[ref_name_for_hdr]).astype(np.float)/tot)))
+                        mod_pcts.append(np.concatenate(([ref_name_for_hdr,'Deletions'], np.array(ref1_all_deletion_count_vectors[ref_name_for_hdr]).astype(np.float)/tot)))
+                        mod_pcts.append(np.concatenate(([ref_name_for_hdr,'Substitutions'], np.array(ref1_all_substitution_count_vectors[ref_name_for_hdr]).astype(np.float)/tot)))
+                        mod_pcts.append(np.concatenate(([ref_name_for_hdr,'All_modifications'], np.array(ref1_all_indelsub_count_vectors[ref_name_for_hdr]).astype(np.float)/tot)))
+                        mod_pcts.append(np.concatenate(([ref_name_for_hdr,'Total'],[counts_total[ref_name_for_hdr]]*refs[ref_names_for_hdr[0]]['sequence_length'])))
                     colnames = ['Batch','Modification']+list(refs[ref_names_for_hdr[0]]['sequence'])
                     hdr_modification_percentage_summary_df = pd.DataFrame(mod_pcts,columns=colnames)
                     sgRNA_intervals = refs[ref_names_for_hdr[0]]['sgRNA_intervals']
                     sgRNA_names = refs[ref_names_for_hdr[0]]['sgRNA_names']
                     sgRNA_mismatches = refs[ref_names_for_hdr[0]]['sgRNA_mismatches']
-                    include_idxs_list = refs[ref_names_for_hdr[0]]['include_idxs']
+#                    include_idxs_list = refs[ref_names_for_hdr[0]]['include_idxs']
+                    include_idxs_list = [] # the quantification windows may be different between different amplicons
 
                     plot_root = _jp('4g.HDR_nucleotide_percentage_quilt')
                     CRISPRessoPlot.plot_nucleotide_quilt(hdr_nucleotide_percentage_summary_df,hdr_modification_percentage_summary_df,plot_root,save_png,sgRNA_intervals=sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,quantification_window_idxs=include_idxs_list)
                     crispresso2_info['refs'][ref_names_for_hdr[0]]['plot_4g_root'] = os.path.basename(plot_root)
                     crispresso2_info['refs'][ref_names_for_hdr[0]]['plot_4g_caption'] = "Figure 4g: Nucleotide distribution across all amplicons. At each base in the reference amplicon, the percentage of each base as observed in sequencing reads is shown (A = green; C = orange; G = yellow; T = purple). Black bars show the percentage of reads for which that base was deleted. Brown bars between bases show the percentage of reads having an insertion at that position."
-                    print('debug 3854 refs: ' + str(ref_names_for_hdr))
                     crispresso2_info['refs'][ref_names_for_hdr[0]]['plot_4g_data'] = []
-                    for ref_name_hdr in ref_names_for_hdr:
-                        if 'nuc_freq_filename' in crispresso2_info['refs'][ref_name_hdr]:
-                            crispresso2_info['refs'][ref_names_for_hdr[0]]['plot_4g_data'].append(('Nucleotide frequency table for ' + ref_name,os.path.basename(crispresso2_info['refs'][ref_name_hdr]['nuc_freq_filename'])))
+                    for ref_name_for_hdr in ref_names_for_hdr:
+                        if 'nuc_freq_filename' in crispresso2_info['refs'][ref_name_for_hdr]:
+                            crispresso2_info['refs'][ref_names_for_hdr[0]]['plot_4g_data'].append(('Nucleotide frequency table for ' + ref_name_for_hdr,os.path.basename(crispresso2_info['refs'][ref_name_for_hdr]['nuc_freq_filename'])))
 
 
             ###############################################################################################################################################
@@ -4007,12 +4045,6 @@ def main():
                     plt.xlim(0,ref_len)
                     plt.axis('off')
 
-                    proptease = fm.FontProperties()
-                    proptease.set_size('xx-large')
-                    plt.setp(autotexts, fontproperties=proptease)
-                    plt.setp(texts, fontproperties=proptease)
-
-                    plt.tick_params(left=True,bottom=True)
                     plot_root = _jp('5.'+ref_plot_name+'Frameshift_in-frame_mutations_pie_chart')
                     plt.savefig(plot_root+'.pdf',pad_inches=1,bbox_inches='tight')
                     if save_png:
@@ -4051,10 +4083,12 @@ def main():
                     ax1.set_yticks(y_label_values)
                     ax1.set_yticklabels(['%.1f%% (%.0f)' % (pct,pct/100*sum(hists_frameshift[ref_name].values())) for pct in y_label_values])
 
+                    hist_inframe_0 = deepcopy(hists_inframe[ref_name])
+                    hist_inframe_0[0] = 0
                     ax2=fig.add_subplot(2,1,2)
-                    x,y=map(np.array,zip(*[a for a in hists_inframe[ref_name].iteritems()]))
-                    if sum(hists_inframe[ref_name].values()) > 0:
-                        y=y/float(sum(hists_inframe[ref_name].values()))*100
+                    x,y=map(np.array,zip(*[a for a in hist_inframe_0.iteritems()]))
+                    if sum(hist_inframe_0.values()) > 0:
+                        y=y/float(sum(hist_inframe_0.values()))*100
                     #ax2.bar(x-0.5,y,color=(0,1,1,0.2))
                     ax2.bar(x-0.1,y,color=(0,1,1,0.2))
                     ax2.set_xlim(-30.5,30.5)
@@ -4072,7 +4106,7 @@ def main():
                     ax2.set_ylabel('Sequences % (no.)')
                     y_label_values= np.round(np.linspace(0, min(100,max(ax2.get_yticks())),6))# np.arange(0,y_max,y_max/6.0)
                     ax2.set_yticks(y_label_values)
-                    ax2.set_yticklabels(['%.1f%% (%.0f)' % (pct,pct/100*sum(hists_inframe[ref_name].values())) for pct in y_label_values])
+                    ax2.set_yticklabels(['%.1f%% (%.0f)' % (pct,pct/100*sum(hist_inframe_0.values())) for pct in y_label_values])
 
                     ax2.tick_params(axis='both', which='major', labelsize=24)
                     ax2.tick_params(axis='both', which='minor', labelsize=24)
@@ -4085,8 +4119,10 @@ def main():
                         plt.savefig(plot_root+'.png',bbox_inches='tight')
                     plt.close()
                     crispresso2_info['refs'][ref_name]['plot_6_root'] = os.path.basename(plot_root)
-                    crispresso2_info['refs'][ref_name]['plot_6_caption'] = "Figure 6: Frameshift and in-frame mutagenesis profiles indicating position affected by modification."
+                    crispresso2_info['refs'][ref_name]['plot_6_caption'] = "Figure 6: Frameshift and in-frame mutagenesis profiles indicating position affected by modification. The y axis shows the number of reads and percentage of all reads in that category (frameshifted (top) or in-frame (bottom)). %d reads with no length modifications are not shown."%hists_inframe[ref_name][0]
                     crispresso2_info['refs'][ref_name]['plot_6_data'] = []
+                    if 'indel_histogram_filename' in crispresso2_info['refs'][ref_name]:
+                        crispresso2_info['refs'][ref_name]['plot_6_data'] = [('Indel histogram for ' + ref_name,os.path.basename(crispresso2_info['refs'][ref_name]['indel_histogram_filename']))]
 
 
                      #-----------------------------------------------------------------------------------------------------------
@@ -4171,7 +4207,6 @@ def main():
                     crispresso2_info['refs'][ref_name]['plot_7_caption'] = "Figure 7: Reads with insertions (red), deletions (purple), and substitutions (green) mapped to reference amplicon position exclusively in noncoding region/s (that is, without mutations affecting coding sequences). The predicted cleavage site is indicated by a vertical dashed line. Only sequence positions directly adjacent to insertions or directly affected by deletions or substitutions are plotted."
                     crispresso2_info['refs'][ref_name]['plot_7_data'] = []
             #end contains coding seq
-
 
             ######PLOT
             if not args.crispresso1_mode and args.base_editor_output:
@@ -4496,11 +4531,12 @@ def main():
                 ax1.set_yticks(y_label_values)
                 ax1.set_yticklabels(['%.1f%% (%.0f)' % (pct,pct/100*sum(global_hists_frameshift.values())) for pct in y_label_values])
 
+                global_hists_inframe_no_0 = deepcopy(global_hists_inframe)
+                global_hists_inframe_no_0[0] = 0
                 ax2=fig.add_subplot(2,1,2)
-                x,y=map(np.array,zip(*[a for a in global_hists_inframe.iteritems()]))
-                if sum(global_hists_inframe.values()) > 0:
-                    y=y/float(sum(global_hists_inframe.values()))*100
-                #ax2.bar(x-0.5,y,color=(0,1,1,0.2))
+                x,y=map(np.array,zip(*[a for a in global_hists_inframe_no_0.iteritems()]))
+                if sum(global_hists_inframe_no_0.values()) > 0:
+                    y=y/float(sum(global_hists_inframe_no_0.values()))*100
                 ax2.bar(x-0.1,y,color=(0,1,1,0.2))
                 ax2.set_xlim(-30.5,30.5)
                 ax2.set_frame_on(False)
@@ -4518,7 +4554,7 @@ def main():
                 ax2.set_ylabel('Sequences % (no.)')
                 y_label_values= np.round(np.linspace(0, min(100,max(ax2.get_yticks())),6))# np.arange(0,y_max,y_max/6.0)
                 ax2.set_yticks(y_label_values)
-                ax2.set_yticklabels(['%.1f%% (%.0f)' % (pct,pct/100*sum(global_hists_inframe.values())) for pct in y_label_values])
+                ax2.set_yticklabels(['%.1f%% (%.0f)' % (pct,pct/100*sum(global_hists_inframe_no_0.values())) for pct in y_label_values])
 
                 ax2.tick_params(axis='both', which='major', labelsize=24)
                 ax2.tick_params(axis='both', which='minor', labelsize=24)
@@ -4530,8 +4566,11 @@ def main():
                     plt.savefig(plot_root+'.png',bbox_inches='tight')
                 plt.close()
                 crispresso2_info['plot_6a_root'] = os.path.basename(plot_root)
-                crispresso2_info['plot_6a_caption'] = "Figure 6a: Frameshift and in-frame mutagenesis profiles for all reads indicating position affected by modification."
+                crispresso2_info['plot_6a_caption'] = "Figure 6a: Frameshift and in-frame mutagenesis profiles for all reads indicating position affected by modification. The y axis shows the number of reads and percentage of all reads in that category (frameshifted (top) or in-frame (bottom)). %d reads with no length modifications are not shown."%global_hists_inframe[0]
                 crispresso2_info['plot_6a_data'] = []
+                for ref_name in ref_names:
+                    if 'indel_histogram_filename' in crispresso2_info['refs'][ref_name]:
+                        crispresso2_info['plot_6a_data'].append(('Indel histogram for ' + ref_name,os.path.basename(crispresso2_info['refs'][ref_name]['indel_histogram_filename'])))
 
 
                  #-----------------------------------------------------------------------------------------------------------
