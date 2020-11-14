@@ -1646,9 +1646,11 @@ def main():
 
                     this_sgRNA_intervals = []
                     this_sgRNA_mismatches = []
+                    this_sgRNA_plot_idxs = []
                     for idx,(sgRNA_interval_start,sgRNA_interval_end) in enumerate(refs[clone_ref_name]['sgRNA_intervals']):
                         this_sgRNA_intervals.append((s1inds[sgRNA_interval_start],s1inds[sgRNA_interval_end]))
 
+                        sgRNA_cut_point_this = s1inds[refs[clone_ref_name]['sgRNA_cut_points'][idx]]
                         sgRNA_seq_clone = refs[clone_ref_name]['sequence'][sgRNA_interval_start:sgRNA_interval_end+1]
                         sgRNA_seq_this = refs[ref_name]['sequence'][s1inds[sgRNA_interval_start]:s1inds[sgRNA_interval_end]+1]
                         sgRNA_seq_orig_seq = refs[clone_ref_name]['sgRNA_orig_sequences'][idx]
@@ -1659,15 +1661,11 @@ def main():
                             best_aln_mismatches = rv_mismatches
                         this_sgRNA_mismatches.append(sorted(best_aln_mismatches))
 
-
-                    this_sgRNA_plot_idxs = []
-                    for plot_idx_list in refs[clone_ref_name]['sgRNA_plot_idxs']:
-                        if len(plot_idx_list) > 0:
-                            st = s1inds[plot_idx_list[0]]
-                            en = s1inds[plot_idx_list[-1]]
-                            this_sgRNA_plot_idxs.append(sorted(list(range(st,en+1))))
-                        else:
-                            this_sgRNA_plot_idxs.append([])
+                        ref_seq_length = len(refs[ref_name]['sequence'])
+                        window_around_cut=max(1,args.plot_window_size)
+                        st=max(0,sgRNA_cut_point_this-window_around_cut+1)
+                        en=min(ref_seq_length-1,sgRNA_cut_point_this+window_around_cut+1)
+                        this_sgRNA_plot_idxs.append(sorted(list(range(st,en))))
 
                     old_this_sgRNA_plot_idxs = []
                     for plot_idx_list in refs[clone_ref_name]['sgRNA_plot_idxs']:
@@ -4392,7 +4390,6 @@ def main():
                         crispresso2_info['refs'][ref_name]['plot_10d_roots'].append(os.path.basename(fig_filename_root))
                         crispresso2_info['refs'][ref_name]['plot_10d_captions'].append("Figure 10d: Log2 nucleotide frequencies for each position in the plotting window around the " + sgRNA_legend + ". The quantification window is outlined by the dotted box.")
                         crispresso2_info['refs'][ref_name]['plot_10d_datas'].append([])
-
 
                         fig_filename_root = _jp('10e.'+ref_plot_name+'Selected_conversion_at_'+args.conversion_nuc_from+'s_around_'+sgRNA_label)
                         CRISPRessoPlot.plot_conversion_at_sel_nucs(
