@@ -1195,9 +1195,9 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
         plt.text(0.5, 0.5,'No Alleles',horizontalalignment='center',verticalalignment='center',transform = ax.transAxes)
         ax.set_clip_on(False)
 
-        plt.savefig(fig_filename_root+'.pdf',bbox_inches='tight',bbox_extra_artists=(lgd,))
+        plt.savefig(fig_filename_root+'.pdf',bbox_inches='tight')
         if SAVE_ALSO_PNG:
-            plt.savefig(fig_filename_root+'.png',bbox_inches='tight',bbox_extra_artists=(lgd,))
+            plt.savefig(fig_filename_root+'.png',bbox_inches='tight')
         plt.close()
         return
 
@@ -1559,7 +1559,7 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,M
             #adjust coordinates of sgRNAs
             new_sel_cols_start = cut_point - plot_half_window
             for (int_start,int_end) in refs[ref_name]['sgRNA_intervals']:
-                new_sgRNA_intervals += [(int_start - new_sel_cols_start,int_end - new_sel_cols_start)]
+                new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1,int_end - new_sel_cols_start - 1)]
 
             X,annot,y_labels,insertion_dict,per_element_annot_kws,is_reference = prep_alleles_table(df_alleles,ref_seq_around_cut,MAX_N_ROWS,MIN_FREQUENCY)
             plot_alleles_heatmap(ref_seq_around_cut,fig_filename_root+"_"+ref_name+"_"+sgRNA_label,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,plot_cut_point,new_sgRNA_intervals,sgRNA_names,sgRNA_mismatches,custom_colors)
@@ -1640,8 +1640,6 @@ def plot_nucleotide_quilt_from_folder(crispresso_output_folder,fig_filename_root
             modification_percentage_summary.append(pct_row)
 
         modification_frequency_summary_df = pd.DataFrame(modification_frequency_summary,columns=colnames)
-        print('mod frq sum: ' + str(modification_frequency_summary_df))
-
 
         for ind,sgRNA in enumerate(sgRNA_sequences):
             sgRNA_label = sgRNA # for file names
@@ -1658,9 +1656,9 @@ def plot_nucleotide_quilt_from_folder(crispresso_output_folder,fig_filename_root
             #adjust coordinates of sgRNAs
             new_sel_cols_start = cut_point - plot_half_window
             for (int_start,int_end) in refs[ref_name]['sgRNA_intervals']:
-                new_sgRNA_intervals += [(int_start - new_sel_cols_start,int_end - new_sel_cols_start)]
+                new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1,int_end - new_sel_cols_start - 1)]
 
-            plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=False,sgRNA_intervals=None,min_text_pct=0.5,max_text_pct=0.95,quantification_window_idxs=None,sgRNA_names=None,sgRNA_mismatches=None,shade_unchanged=True)
+            plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=False,sgRNA_intervals=new_sgRNA_intervals,min_text_pct=0.5,max_text_pct=0.95,quantification_window_idxs=None,sgRNA_names=None,sgRNA_mismatches=None,shade_unchanged=True)
             plot_count += 1
     print('Plotted ' + str(plot_count) + ' plots')
 
