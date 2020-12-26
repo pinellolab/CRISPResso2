@@ -229,7 +229,7 @@ def get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaf
 
 #                print "for " + ref_name + " got fws1: " + str(fws1) + " and fws2: " + str(fws2) + " score: " +str(fwscore)
         aln_scores.append(score)
-        ref_aln_details.append((s1,s2,score))
+        ref_aln_details.append((ref_name,s1,s2,score))
 
         #reads are matched to the reference to which they best align. The 'min_aln_score' is calculated using only the changes in 'include_idxs'
         if score > best_match_score and score > refs[ref_name]['min_aln_score']:
@@ -532,9 +532,8 @@ def process_bam(bam_filename,bam_chr_loc,output_bam,variantCache,ref_names,refs,
                 if new_variant['best_match_score'] <= 0:
                     N_COMPUTED_NOTALN+=1
                     crispresso_sam_optional_fields = "c2:Z:ALN=NA" +\
-                            " ALN_SCORES=" + ('&'.join([str(x) for x in new_variant['aln_scores']]))
-                            #we could also output the ref_aln_details for each amplicon, but that may just take up space in the file..
-#                            " ALN_SEQ=" + ('&'.join([new_variant['variant_'+name]['aln_seq'] for name in new_variant['aln_ref_names']]))
+                            " ALN_SCORES=" + ('&'.join([str(x) for x in new_variant['aln_scores']])) +\
+                            " ALN_DETAILS=" + ('&'.join([','.join([str(y) for y in x]) for x in new_variant['ref_aln_details']]))
                     sam_line_els.append(crispresso_sam_optional_fields)
                     not_aln[fastq_seq] = crispresso_sam_optional_fields
                     sam_out.write("\t".join(sam_line_els)+"\n")
@@ -599,6 +598,7 @@ def process_fastq_write_out(fastq_input,fastq_output,variantCache,ref_names,refs
         fastq_input: input fastq
         fastq_output: fastq to write out
         variantCache: dict with keys: sequence dict with keys (described in process_fastq)
+
         ref_names: list of reference names
         refs: dictionary of sequences name>ref object
         args: crispresso2 args
@@ -617,8 +617,8 @@ def process_fastq_write_out(fastq_input,fastq_output,variantCache,ref_names,refs
     pe_scaffold_dna_info = (0,None) #scaffold start loc, scaffold sequence
     if args.prime_editing_pegRNA_scaffold_seq != "":
         pe_scaffold_dna_info = get_pe_scaffold_search(refs['Prime-edited']['sequence'],args.prime_editing_pegRNA_extension_seq,args.prime_editing_pegRNA_scaffold_seq,args.prime_editing_pegRNA_scaffold_min_match_length)
-
     not_aln = {} #cache for reads that don't align
+    not_aln[''] = "" #add empty sequence to the not_aln in case the fastq has an extra newline at the end
 
     if fastq_input.endswith('.gz'):
         fastq_input_handle=gzip.open(fastq_input)
@@ -654,9 +654,8 @@ def process_fastq_write_out(fastq_input,fastq_output,variantCache,ref_names,refs
             if new_variant['best_match_score'] <= 0:
                 N_COMPUTED_NOTALN+=1
                 crispresso2_annotation = " ALN=NA" +\
-                        " ALN_SCORES=" + ('&'.join([str(x) for x in new_variant['aln_scores']]))
-                        #we could also output the ref_aln_details for each amplicon, but that may just take up space in the file..
-#                            " ALN_SEQ=" + ('&'.join([new_variant['variant_'+name]['aln_seq'] for name in new_variant['aln_ref_names']]))
+                        " ALN_SCORES=" + ('&'.join([str(x) for x in new_variant['aln_scores']])) +\
+                        " ALN_DETAILS=" + ('&'.join([','.join([str(y) for y in x]) for x in new_variant['ref_aln_details']]))
                 not_aln[fastq_seq] = crispresso2_annotation
                 fastq_out_handle.write(fastq_id+fastq_seq+"\n"+fastq_plus+crispresso2_annotation+"\n"+fastq_qual)
             else:
@@ -1160,7 +1159,7 @@ def main():
             #setting refs['Prime-edited']['sequence']
             #first, align the extension seq to the reference amplicon
             #we're going to consider the first reference only (so if multiple alleles exist at the editing position, this may get messy)
-            best_aln_seq,best_aln_mismatches,best_aln_start,best_aln_end,s1,s2 = get_best_aln_pos_and_mismatches(prime_editing_extension_seq_dna,amplicon_seq_arr[0])
+            best_aln_seq,best_aln_score,best_aln_mismatches,best_aln_start,best_aln_end,s1,s2 = get_best_aln_pos_and_mismatches(prime_editing_extension_seq_dna,amplicon_seq_arr[0])
             new_ref = s2[0:best_aln_start] + prime_editing_extension_seq_dna + s2[best_aln_end:]
 
             if args.prime_editing_override_prime_edited_ref_seq != "":
@@ -2482,7 +2481,7 @@ def main():
                     continue
 
                 #align this variant to ref1 sequence
-                s1,s2,score = variantCache[variant]['ref_aln_details'][0]
+                ref_aln_name,s1,s2,score = variantCache[variant]['ref_aln_details'][0]
                 payload=CRISPRessoCOREResources.find_indels_substitutions(s1,s2,refs[ref1_name]['include_idxs'])
 
                 #indels in this alignment against ref1 should be recorded for each ref it was originally assigned to, as well as for ref1
