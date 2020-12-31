@@ -10,6 +10,7 @@ from jinja2 import Environment, FileSystemLoader
 import shutil
 import pandas as pd
 import re
+from CRISPResso2 import CRISPRessoShared
 
 running_python3 = False
 if sys.version_info > (3, 0):
@@ -32,12 +33,7 @@ def make_report_from_folder(crispresso_report_file,crispresso_folder,_ROOT):
     Returns:
     Nothin
     """
-
-    info_file = os.path.join(crispresso_folder,'CRISPResso2_info.pickle')
-    if not os.path.exists(info_file):
-        raise Exception('CRISPResso run is not complete. Cannot create report for run at ' + crispresso_folder)
-
-    run_data = cp.load(open(info_file,'rb'))
+    run_data = CRISPRessoShared.load_crispresso_info(crispresso_folder)
     make_report(run_data,crispresso_report_file,crispresso_folder,_ROOT)
 
 def make_report(run_data,crispresso_report_file,crispresso_folder,_ROOT):
@@ -180,10 +176,8 @@ def make_batch_report_from_folder(crispressoBatch_report_file,crispresso2_info,b
     for name in batch_names:
         display_name = display_names[name]
         sub_folder = 'CRISPResso_on_' + name
-        info_file = os.path.join(batch_folder,sub_folder,'CRISPResso2_info.pickle')
-        if not os.path.exists(info_file):
-            raise Exception('CRISPResso run %s is not complete. Cannot add to batch report.'% sub_folder)
-        run_data = cp.load(open(info_file,'rb'))
+        crispresso_folder = os.path.join(batch_folder,sub_folder)
+        run_data = CRISPRessoShared.load_crispresso_info(crispresso_folder)
         if not 'report_filename' in run_data:
             raise Exception('CRISPResso run %s has no report. Cannot add to batch report.'% sub_folder)
 
@@ -261,10 +255,7 @@ def make_multi_report_from_folder(crispresso2_info,names_arr,report_name,crispre
 
         folder_name = 'CRISPResso_on_%s' % name
         sub_folder = os.path.join(folder,folder_name)
-        info_file = os.path.join(sub_folder,'CRISPResso2_info.pickle')
-        if not os.path.exists(info_file):
-            raise Exception('CRISPResso run %s is not complete. Cannot add to report.'% sub_folder)
-        run_data = cp.load(open(info_file,'rb'))
+        run_data = CRISPRessoShared.load_crispresso_info(sub_folder)
         if not 'report_filename' in run_data:
             raise Exception('CRISPResso run %s has no report. Cannot add to report.'% sub_folder)
 
@@ -337,3 +328,57 @@ def make_multi_report(run_names,sub_html_files,crispresso_multi_report_file,cris
             summary_plot_names=summary_plot_names,summary_plot_titles=summary_plot_titles,summary_plot_labels=summary_plot_labels,summary_plot_datas=summary_plot_datas,
             run_names=run_names,sub_html_files=sub_html_files,report_name=report_name))
         outfile.close()
+
+def make_aggregate_report(crispresso2_info,report_name,crispresso_report_file,crispresso_report_folder,_ROOT,folder_arr,crispresso_html_reports,display_names=None):
+    """
+    Prepares information to make a report of a CRISPRessoAggregate run
+
+    Parameters:
+    crispresso2_info (dict): information from the crispresso aggregate run
+    report_name (string): text to be shown at top of report
+    crispresso_report_file (string): path to write report to
+    crispresso_report_folder (string): path containing aggregated plots, etc.
+    _ROOT (string): location of crispresso assets (images, templates, etc)
+    folder_arr (arr of strings): paths to the aggregated crispresso folders
+    crispresso_html_reports (dict): folder->html_path; Paths to the aggregated crispresso run html reports
+    display_names (dict): folder->display_name; Titles to be shown for crispresso runs (if different from names_arr, e.g. if display_names have spaces or bad chars, they won't be the same as names_arr)
+
+    Returns:
+    Nothin
+    """
+    summary_plot_names = []
+    if 'summary_plot_names' in crispresso2_info:
+        summary_plot_names = crispresso2_info['summary_plot_names']
+    summary_plot_titles = {}
+    if 'summary_plot_titles' in crispresso2_info:
+        summary_plot_titles = crispresso2_info['summary_plot_titles']
+    summary_plot_labels = {}
+    if 'summary_plot_labels' in crispresso2_info:
+        summary_plot_labels = crispresso2_info['summary_plot_labels']
+    summary_plot_datas = {}
+    if 'summary_plot_datas' in crispresso2_info:
+        summary_plot_datas = crispresso2_info['summary_plot_datas']
+
+    window_nuc_pct_quilts = []
+    if 'window_nuc_pct_quilt_plot_names' in crispresso2_info:
+        window_nuc_pct_quilts = crispresso2_info['window_nuc_pct_quilt_plot_names']
+    nuc_pct_quilts = []
+    if 'nuc_pct_quilt_plot_names' in crispresso2_info:
+        nuc_pct_quilts = crispresso2_info['nuc_pct_quilt_plot_names']
+
+    run_names = []
+    sub_html_files = {}
+
+    for idx,folder in enumerate(folder_arr):
+        display_name = folder
+        if display_names is not None:
+            display_name = display_names[folder]
+
+        run_names.append(display_name)
+        sub_html_file = os.path.relpath(crispresso_html_reports[folder],crispresso_report_folder)
+        sub_html_files[display_name] = sub_html_file
+
+    make_multi_report(run_names,sub_html_files,crispresso_report_file,crispresso_report_folder,_ROOT,report_name,
+            window_nuc_pct_quilts=window_nuc_pct_quilts,
+            nuc_pct_quilts=nuc_pct_quilts,
+            summary_plot_names=summary_plot_names,summary_plot_titles=summary_plot_titles,summary_plot_labels=summary_plot_labels,summary_plot_datas=summary_plot_datas)

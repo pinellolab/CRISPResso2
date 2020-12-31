@@ -11,6 +11,7 @@ import sys
 import argparse
 import re
 import traceback
+from datetime import datetime
 from CRISPResso2 import CRISPRessoShared
 from CRISPResso2 import CRISPRessoPlot
 from CRISPResso2 import CRISPRessoMultiProcessing
@@ -86,6 +87,9 @@ np=check_library('numpy')
 
 def main():
     try:
+        start_time =  datetime.now()
+        start_time_string =  start_time.strftime('%Y-%m-%d %H:%M:%S')
+
         description = ['~~~CRISPRessoBatch~~~','-Analysis of CRISPR/Cas9 outcomes from batch deep sequencing data-']
         batch_string = r'''
  _________________
@@ -101,7 +105,7 @@ def main():
         #batch specific params
         parser.add_argument('-bs','--batch_settings', type=str, help='Settings file for batch. Must be tab-separated text file. The header row contains CRISPResso parameters (e.g., fastq_r1, fastq_r2, amplicon_seq, and other optional parameters). Each following row sets parameters for an additional batch.',required=True)
         parser.add_argument('--skip_failed',  help='Continue with batch analysis even if one sample fails',action='store_true')
-        parser.add_argument('--min_reads_for_inclusion',  help='Minimum number of reads for a batch to be included in the batch summary', type=int)
+        parser.add_argument('--min_reads_for_inclusion',  help='Minimum number of reads for a batch to be included in the batch summary', type=int, default=0)
         parser.add_argument('-p','--n_processes',type=int, help='Specify the number of processes to use for quantification.\
         Please use with caution since increasing this parameter will increase the memory required to run CRISPResso.',default=1)
         parser.add_argument('-bo','--batch_output_folder',  help='Directory where batch analysis output will be stored')
@@ -248,16 +252,27 @@ def main():
 
         crispresso2_info['log_filename'] = os.path.basename(log_filename)
 
+        crispresso_cmd_to_write = ' '.join(sys.argv)
+        if args.write_cleaned_report:
+            cmd_copy = sys.argv[:]
+            cmd_copy[0] = 'CRISPRessoBatch'
+            for i in range(len(cmd_copy)):
+                if os.sep in cmd_copy[i]:
+                    cmd_copy[i] = os.path.basename(cmd_copy[i])
+
+            crispresso_cmd_to_write = ' '.join(cmd_copy) #clean command doesn't show the absolute path to the executable or other files
+        crispresso2_info['command_used'] = crispresso_cmd_to_write
+
         crispresso_cmds = []
         batch_names_arr = []
         batch_input_names = {}
         for idx,row in batch_params.iterrows():
 
-            batchName = CRISPRessoShared.slugify(row["name"])
-            batch_names_arr.append(batchName)
-            batch_input_names[batchName] = row["name"]
+            batch_name = CRISPRessoShared.slugify(row["name"])
+            batch_names_arr.append(batch_name)
+            batch_input_names[batch_name] = row["name"]
 
-            crispresso_cmd= args.crispresso_command + ' -o %s --name %s' % (OUTPUT_DIRECTORY,batchName)
+            crispresso_cmd= args.crispresso_command + ' -o %s --name %s' % (OUTPUT_DIRECTORY,batch_name)
             crispresso_cmd=propagate_options(crispresso_cmd,crispresso_options_for_batch,batch_params,idx)
             if row.amplicon_seq == "":
                 crispresso_cmd += ' --auto '
@@ -275,9 +290,9 @@ def main():
         amplicon_counts = {}
         completed_batch_arr = []
         for idx,row in batch_params.iterrows():
-            batchName = CRISPRessoShared.slugify(row["name"])
+            batch_name = CRISPRessoShared.slugify(row["name"])
             file_prefix = row['file_prefix']
-            folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
+            folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batch_name)
             run_data_file = os.path.join(folder_name,'CRISPResso2_info.pickle')
             if os.path.isfile(run_data_file) is False:
                 info("Skipping folder '%s'. Cannot find run data at '%s'."%(folder_name,run_data_file))
@@ -298,7 +313,7 @@ def main():
                     amplicon_counts[ref_seq] = 0
                 amplicon_counts[ref_seq]+= 1
 
-            completed_batch_arr.append(batchName)
+            completed_batch_arr.append(batch_name)
 
         crispresso2_info['completed_batch_arr'] = completed_batch_arr
 
@@ -350,9 +365,9 @@ def main():
             guides_all_same = True
             batches_with_this_amplicon = []
             for idx,row in batch_params.iterrows():
-                batchName = CRISPRessoShared.slugify(row["name"])
+                batch_name = CRISPRessoShared.slugify(row["name"])
                 file_prefix = row['file_prefix']
-                folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
+                folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batch_name)
                 run_data = run_datas[idx]
                 if run_data is None:
                     continue
@@ -408,8 +423,9 @@ def main():
                 if mod_freqs['Total'][0] == 0 or mod_freqs['Total'][0] == "0":
                     info("Skipping the amplicon '%s' in folder '%s'. Got no reads for amplicon."%(batch_amplicon_name,folder_name))
                     continue
-                if (args.min_reads_for_inclusion is not None) and (int(mod_freqs['Total'][0]) < args.min_reads_for_inclusion):
-                    info("Skipping the amplicon '%s' in folder '%s'. Got %s reads (min_reads_for_inclusion is %d)."%(batch_amplicon_name,folder_name,str(mod_freqs['Total'][0]),args.min_reads_for_inclusion))
+                this_amp_total_reads = run_data['counts_total'][batch_amplicon_name]
+                if this_amp_total_reads < args.min_reads_for_inclusion:
+                    info("Skipping the amplicon '%s' in folder '%s'. Got %s reads (min_reads_for_inclusion is %d)."%(batch_amplicon_name,folder_name,str(this_amp_total_reads),args.min_reads_for_inclusion))
                     continue
 
                 mod_pcts = {}
@@ -419,20 +435,20 @@ def main():
                 amp_found_count += 1
 
                 for nuc in ['A','T','C','G','N','-']:
-                    row = [batchName,nuc]
+                    row = [batch_name,nuc]
                     row.extend(nuc_freqs[nuc])
                     nucleotide_frequency_summary.append(row)
 
-                    pct_row = [batchName,nuc]
+                    pct_row = [batch_name,nuc]
                     pct_row.extend(nuc_pcts[nuc])
                     nucleotide_percentage_summary.append(pct_row)
 
                 for mod in ['Insertions','Insertions_Left','Deletions','Substitutions','All_modifications']:
-                    row = [batchName,mod]
+                    row = [batch_name,mod]
                     row.extend(mod_freqs[mod])
                     modification_frequency_summary.append(row)
 
-                    pct_row = [batchName,mod]
+                    pct_row = [batch_name,mod]
                     pct_row.extend(mod_pcts[mod])
                     modification_percentage_summary.append(pct_row)
 
@@ -602,9 +618,9 @@ def main():
         with open(_jp('CRISPRessoBatch_quantification_of_editing_frequency.txt'),'w') as outfile:
             wrote_header = False
             for idx,row in batch_params.iterrows():
-                batchName = CRISPRessoShared.slugify(row["name"])
+                batch_name = CRISPRessoShared.slugify(row["name"])
                 file_prefix = row['file_prefix']
-                folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
+                folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batch_name)
                 run_data = run_datas[idx]
                 if run_data is None:
                     continue
@@ -616,14 +632,14 @@ def main():
                         outfile.write('Batch\t' + file_head)
                         wrote_header = True
                     for line in infile:
-                        outfile.write(batchName + "\t" + line)
+                        outfile.write(batch_name + "\t" + line)
 
         #summarize alignment
         with open(_jp('CRISPRessoBatch_mapping_statistics.txt'),'w') as outfile:
             wrote_header = False
             for idx,row in batch_params.iterrows():
-                batchName = CRISPRessoShared.slugify(row["name"])
-                folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batchName)
+                batch_name = CRISPRessoShared.slugify(row["name"])
+                folder_name = os.path.join(OUTPUT_DIRECTORY,'CRISPResso_on_%s' % batch_name)
 
                 run_data = run_datas[idx]
                 if run_data is None:
@@ -635,7 +651,7 @@ def main():
                         outfile.write('Batch\t' + file_head)
                         wrote_header = True
                     for line in infile:
-                        outfile.write(batchName + "\t" + line)
+                        outfile.write(batch_name + "\t" + line)
 
         if not args.suppress_report:
             if (args.place_report_in_output_folder):
@@ -645,6 +661,16 @@ def main():
             CRISPRessoReport.make_batch_report_from_folder(report_name,crispresso2_info,OUTPUT_DIRECTORY,_ROOT)
             crispresso2_info['report_location'] = report_name
             crispresso2_info['report_filename'] = os.path.basename(report_name)
+
+        end_time =  datetime.now()
+        end_time_string =  end_time.strftime('%Y-%m-%d %H:%M:%S')
+        running_time = end_time - start_time
+        running_time_string =  str(running_time)
+
+        crispresso2_info['end_time'] = end_time
+        crispresso2_info['end_time_string'] = end_time_string
+        crispresso2_info['running_time'] = running_time
+        crispresso2_info['running_time_string'] = running_time_string
 
         cp.dump(crispresso2_info, open(crispresso2Batch_info_file, 'wb' ) )
         info('Analysis Complete!')

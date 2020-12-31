@@ -103,7 +103,7 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
 
     #output options
     parser.add_argument('--file_prefix',  help='File prefix for output plots and tables', default='')
-    parser.add_argument('-n','--name',  help='Output name of the report (default: the names is obtained from the filename of the fastq file/s used in input)', default='')
+    parser.add_argument('-n','--name',  help='Output name of the report (default: the name is obtained from the filename of the fastq file/s used in input)', default='')
     parser.add_argument('-o','--output_folder',  help='Output folder to use for the analysis (default: current folder)', default='')
 
     ## read preprocessing params
@@ -425,8 +425,16 @@ def load_crispresso_info(crispresso_output_folder=""):
     crispresso_info_file = os.path.join(crispresso_output_folder,'CRISPResso2_info.pickle')
     if os.path.isfile(crispresso_info_file) is False:
         raise Exception('Cannot open CRISPResso info file at ' + crispresso_info_file)
-    crispresso2_info = cp.load(open(crispresso_info_file,'rb'))
-    return crispresso2_info
+    try:
+        crispresso2_info = cp.load(open(crispresso_info_file,'rb'))
+        return crispresso2_info
+    except pickle.UnpicklingError as e:
+        raise Exception('Cannot open CRISPResso info file at ' + crispresso_info_file + "\n" + str(e))
+    except (AttributeError,  EOFError, ImportError, IndexError) as e:
+        # secondary errors
+        raise Exception('Cannot open CRISPResso info file at ' + crispresso_info_file + "\n" + str(e))
+    except Exception as e:
+        raise Exception('Cannot open CRISPResso info file at ' + crispresso_info_file + "\n" + str(e))
 
 
 def get_most_frequent_reads(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,min_paired_end_reads_overlap,debug=False):

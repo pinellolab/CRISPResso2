@@ -1175,8 +1175,10 @@ def main():
                 all_region_names.append(run_name)
                 all_region_read_counts[run_name] = row.n_reads
 
-                run_file = os.path.join(_jp(folder_name),'CRISPResso2_info.pickle')
-                if not os.path.exists(run_file):
+                run_data = None
+                try:
+                    run_data = CRISPRessoShared.load_crispresso_info(_jp(folder_name))
+                except:
                     warn('Skipping the folder %s: not enough reads, incomplete, or empty folder.'% folder_name)
                     this_els = empty_line_els[:]
                     this_els[n_reads_index] = row.n_reads
@@ -1185,7 +1187,6 @@ def main():
                     quantification_summary.append(to_add)
                 else:
                     n_tot = row.n_reads
-                    run_data = cp.load(open(run_file,'rb'))
                     n_aligned = 0
                     n_unmod = 0
                     n_mod = 0
@@ -1231,7 +1232,7 @@ def main():
                     quantification_summary.append(vals)
 
                     good_region_names.append(run_name)
-                    good_region_folders[idx] = folder_name
+                    good_region_folders[run_name] = folder_name
 
 
         samples_quantification_summary_filename = _jp('SAMPLES_QUANTIFICATION_SUMMARY.txt')
@@ -1241,7 +1242,6 @@ def main():
             crispresso1_columns=['Name','Unmodified%','Modified%','Reads_aligned','Reads_total']
             df_summary_quantification.fillna('NA').to_csv(samples_quantification_summary_filename,sep='\t',index=None,columns=crispresso1_columns)
         else:
-
             df_summary_quantification.fillna('NA').to_csv(samples_quantification_summary_filename,sep='\t',index=None)
 
         crispresso2_info['samples_quantification_summary_filename'] = os.path.basename(samples_quantification_summary_filename)
@@ -1374,10 +1374,11 @@ def main():
             for name in names_arr:
                 folder_name = 'CRISPResso_on_%s' % name
                 sub_folder = os.path.join(OUTPUT_DIRECTORY,folder_name)
-                info_file = os.path.join(sub_folder,'CRISPResso2_info.pickle')
-                if not os.path.exists(info_file):
+                run_data = None
+                try:
+                    run_data = CRISPRessoShared.load_crispresso_info(sub_folder)
+                except Exception as e:
                     raise Exception('CRISPResso run %s is not complete. Cannot read CRISPResso2_info.pickle file.'% sub_folder)
-                run_data = cp.load(open(info_file,'rb'))
                 ref_sequences = [run_data['refs'][ref_name]['sequence'] for ref_name in run_data['ref_names']]
                 allele_frequency_table_zip_filename = os.path.join(sub_folder,run_data['allele_frequency_table_zip_filename'])
                 if not os.path.exists(allele_frequency_table_zip_filename):
