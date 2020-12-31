@@ -77,7 +77,7 @@ def get_color_lookup(nucs,alpha):
         colorLookup[nuc] = get_nuc_color(nuc,alpha)
     return colorLookup
 
-def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=False,sgRNA_intervals=None,min_text_pct=0.5,max_text_pct=0.95,quantification_window_idxs=None,sgRNA_names=None,sgRNA_mismatches=None,shade_unchanged=True):
+def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=False,sgRNA_intervals=None,min_text_pct=0.5,max_text_pct=0.95,quantification_window_idxs=None,sgRNA_names=None,sgRNA_mismatches=None,shade_unchanged=True,group_column='Batch'):
     """
     Plots a nucleotide quilt with each square showing the percentage of each base at that position in the reference
     nuc_pct_df: dataframe with percents of each base (ACTGN-) at each position
@@ -91,6 +91,7 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=
     min_text_pct: add text annotation if the percent is greater than this number
     max_text_pct: add text annotation if the percent is less than this number
     shade_unchanged: if true, unchanged/reference nucleotides will be shaded (only changes with regard to reference will be dark)
+    group_column: If multiple samples are given, they are grouped by this column
     """
     plotPct = 0.9 #percent of vertical space to plot in (the rest will be white)
     min_plot_pct = 0.01 #if value is less than this, it won't plot the rectangle (with white boundary)
@@ -184,7 +185,7 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=
             y_start = nSamples - i
 
 
-            ins_pct = float(mod_pct_df.loc[(mod_pct_df['Batch'] == sampleName) &
+            ins_pct = float(mod_pct_df.loc[(mod_pct_df[group_column] == sampleName) &
                     (mod_pct_df['Modification'] == "Insertions_Left")].iloc[:,pos_ind])
             if ins_pct > min_plot_pct:
                 obs_pct = ins_pct * plotPct

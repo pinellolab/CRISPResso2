@@ -456,8 +456,7 @@ This should produce a folder called 'CRISPRessoBatch_on_batch'. Open the file ca
 
 ### CRISPRessoPooled
 CRISPRessoPooled is a utility to analyze and quantify targeted sequencing CRISPR/Cas9 experiments involving sequencing libraries with pooled amplicons. One common experimental strategy is to pool multiple amplicons (e.g. a single on-target site plus a set of potential off-target sites) into a single deep sequencing reaction (briefly, genomic DNA samples for pooled applications can be prepared by first amplifying the target regions for each gene/target of interest with
-regions of 150-400bp depending on the desired coverage. In a second round of PCR, with minimized cycle numbers, barcode and adaptors are added. With optimization, these two rounds of PCR can be merged into a
-single reaction. These reactions are then quantified, normalized, pooled, and undergo quality control before being sequenced).
+regions of 150-400bp depending on the desired coverage. In a second round of PCR, with minimized cycle numbers, barcode and adaptors are added. With optimization, these two rounds of PCR can be merged into a single reaction. These reactions are then quantified, normalized, pooled, and undergo quality control before being sequenced).
 CRISPRessoPooled demultiplexes reads from multiple amplicons and runs the CRISPResso utility with appropriate reads for each amplicon separately.
 
 #### Usage
@@ -886,3 +885,40 @@ The output from these files will consist of:
 1.	COMPARISON_SAMPLES_QUANTIFICATION_SUMMARIES.txt: this file contains a summary of the quantification for each of the two conditions for each region and their difference (read counts and percentages for the various classes: Unmodified, NHEJ, MIXED NHEJ-HDR  and HDR).
 2.	A set of folders with CRISPRessoCompare reports on the common regions with enough reads in both conditions.
 3.	CRISPRessoPooledWGSCompare_RUNNING_LOG.txt: detailed execution log.
+
+### CRISPRessoAggregate
+
+CRISPRessoAggregate is a utility to combine the analysis of several CRISPResso runs. The are summarized and editing rates are optionally visualized in a summary report.
+
+#### Usage
+
+CRISPRessoAggregate has the following parameters:
+--name: Output name of the report (required)
+--prefix: Prefix for CRISPResso folders to aggregate (may be specified multiple times)
+--suffix: Suffix for CRISPResso folders to aggregate
+--min_reads_for_inclusion: Minimum number of reads for a run to be included in the run summary (default: 0)
+--place_report_in_output_folder: If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output (default: False)
+--suppress_report: Suppress output report (default: False)
+--suppress_plots: Suppress output plots (default: False)
+
+To run CRISPRessoCompare you must provide the --name parameter, and CRISPResso folders in the current directory will be summarized. To summarize folders in other locations, provide these locations using the '--prefix' parameter.
+
+Example:
+
+*Using Bioconda:*
+```
+CRISPRessoAggregate --name "VEGFA" --prefix CRISPRessoRuns/VEGFA/
+```
+
+*Using Docker:*
+```
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoAggregate --name "VEGFA" --prefix CRISPRessoRuns/VEGFA/
+```
+
+The output will consist of:
+
+1.  CRISPResso2Aggregate_report.html: a html file containing links to all aggregated runs.
+2.  CRISPRessoAggregate_amplicon_information.txt: A tab-separated file with a line for each amplicon that was found in any run. The 'Amplicon Name' column shows the unique name for this amplicon sequence. 'Number of sources' shows how many runs the amplicon was found in, and 'Amplicon sources' show which run folders the amplicon was found in, as well as the name of the amplicon in that run.
+3.  CRISPRessoAggregate_mapping_statistics.txt: A tab-separated file showing the number of reads sequenced and mapped for each run.
+4.  CRISPRessoAggregate_quantification_of_editing_frequency.txt: A tab-separated with the number of reads and edits for each run folder. Data from run folders with multiple amplicons show the sum totals for all amplicons.
+5.  CRISPRessoAggregate_quantification_of_editing_frequency_by_amplicon.txt: A tab-separated file showing the number of reads and edits for each amplicon for each run folder. Data from run folders with multiple amplicons will appear on multiple lines, with one line per amplicon.

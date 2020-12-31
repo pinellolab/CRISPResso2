@@ -63,6 +63,7 @@ def main():
               call_root+'WGS = CRISPResso2.CRISPRessoWGSCORE:main',
               call_root+'Compare = CRISPResso2.CRISPRessoCompareCORE:main',
               call_root+'PooledWGSCompare = CRISPResso2.CRISPRessoPooledWGSCompareCORE:main',
+              call_root+'Aggregate = CRISPResso2.CRISPRessoAggregateCORE:main',
               ]
           }
 

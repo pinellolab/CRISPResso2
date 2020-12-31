@@ -1,3 +1,9 @@
+'''
+CRISPResso2 - Kendell Clement and Luca Pinello 2020
+Software pipeline for the analysis of genome editing outcomes from deep sequencing data
+(c) 2020 The General Hospital Corporation. All Rights Reserved.
+'''
+
 import argparse
 import os
 import numpy as np
@@ -18,7 +24,7 @@ def main():
     args = parser.parse_args()
 
     plot_ambiguous_alleles_tables_from_folder(args.CRISPResso2_folder,args.output_root,MIN_FREQUENCY=args.min_freq,MAX_N_ROWS=args.max_rows,SAVE_ALSO_PNG=args.save_png,plot_cut_point=args.plot_cut_point)
-	
+
 def arrStr_to_arr(val):
     return [int(x) for x in val[1:-1].split(",")]
 
@@ -55,7 +61,7 @@ def plot_ambiguous_alleles_tables_from_folder(crispresso_output_folder,fig_filen
     df_alleles = pd.read_csv(zf,sep="\t")
     full_len = df_alleles['#Reads'].sum()
     df_alleles['ref_positions'] = df_alleles['ref_positions'].apply(arrStr_to_arr)
-    
+
     #pd.set_option('display.max_columns', None)
     #print(df_alleles.head())
     df_ambiguous = df_alleles[df_alleles['Reference_Name'].str.contains('AMBIGUOUS')]
@@ -88,7 +94,7 @@ def plot_ambiguous_alleles_tables_from_folder(crispresso_output_folder,fig_filen
             plot_half_window = max(1,crispresso2_info['args'].plot_window_size)
             ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_half_window+1:cut_point+plot_half_window+1]
 
-            ambiguous_ref_name = "AMBIGUOUS_"+ref_name 
+            ambiguous_ref_name = "AMBIGUOUS_"+ref_name
             df_alleles_around_cut=CRISPRessoShared.get_dataframe_around_cut(df_alleles.loc[df_alleles['Reference_Name'] == ambiguous_ref_name],cut_point,plot_half_window)
             this_ambig_allele_count = len(df_alleles_around_cut.index)
             if this_ambig_allele_count < 1:
