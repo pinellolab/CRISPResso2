@@ -93,7 +93,7 @@ def main():
               'matplotlib>=1.3.1,<=2.2.3',
               'argparse>=1.3,<=1.4',
     	      'seaborn>0.7.1,<0.10',
-              'jinja2==2.10',
+              'jinja2==2.10.1',
     	      'scipy==1.1.0',
               'numpy>=1.9,<=1.16.6',
               'kiwisolver<1.2',
