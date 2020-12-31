@@ -893,12 +893,19 @@ CRISPRessoAggregate is a utility to combine the analysis of several CRISPResso r
 #### Usage
 
 CRISPRessoAggregate has the following parameters:
+
 --name: Output name of the report (required)
+
 --prefix: Prefix for CRISPResso folders to aggregate (may be specified multiple times)
+
 --suffix: Suffix for CRISPResso folders to aggregate
+
 --min_reads_for_inclusion: Minimum number of reads for a run to be included in the run summary (default: 0)
+
 --place_report_in_output_folder: If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output (default: False)
+
 --suppress_report: Suppress output report (default: False)
+
 --suppress_plots: Suppress output plots (default: False)
 
 To run CRISPRessoCompare you must provide the --name parameter, and CRISPResso folders in the current directory will be summarized. To summarize folders in other locations, provide these locations using the '--prefix' parameter.
