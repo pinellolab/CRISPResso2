@@ -444,7 +444,7 @@ def main():
         #Load and validate the REGION FILE
         df_regions=pd.read_csv(args.region_file,names=[
                 'chr_id','bpstart','bpend','Name','sgRNA',
-                'Expected_HDR','Coding_sequence'],comment='#',sep='\t',dtype={'Name':str})
+                'Expected_HDR','Coding_sequence'],comment='#',sep='\t',dtype={'Name':str,'chr_id':str})
 
 
         #remove empty amplicons/lines
@@ -542,7 +542,7 @@ def main():
 
         if can_finish_incomplete_run and num_rows_without_fastq == 0 and os.path.isfile(report_reads_aligned_filename) and 'generation_of_fastq_files_for_each_amplicon' in crispresso2_info['finished_steps']:
             info('Skipping generation of fastq files for each amplicon.')
-            df_regions = pd.read_csv(report_reads_aligned_filename,sep="\t")
+            df_regions = pd.read_csv(report_reads_aligned_filename,comment='#',sep='\t',dtype={'Name':str,'chr_id':str})
             df_regions.set_index('Name',inplace=True)
 
         else:
