@@ -31,7 +31,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.0.45"
+__version__ = "2.1.0"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -123,6 +123,7 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     #    parser.add_argument('--cleavage_offset', type=str, help="Predicted cleavage position for cleaving nucleases with respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. The default value of -3 is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. To suppress the cleavage offset, enter 'N'.", default=-3)
     parser.add_argument('--exclude_bp_from_left', type=int, help='Exclude bp from the left side of the amplicon sequence for the quantification of the indels', default=15)
     parser.add_argument('--exclude_bp_from_right', type=int, help='Exclude bp from the right side of the amplicon sequence for the quantification of the indels', default=15)
+    parser.add_argument('--use_legacy_insertion_quantification', help='If set, the legacy insertion quantification method will be used (i.e. with a 1bp quantification window, indels at the cut site and 1bp away from the cut site would be quantified). By default (if this parameter is not set) with a 1bp quantification window, only insertions at the cut site will be quantified.', action='store_true')
 
     parser.add_argument('--ignore_substitutions',help='Ignore substitutions events for the quantification and visualization',action='store_true')
     parser.add_argument('--ignore_insertions',help='Ignore insertions events for the quantification and visualization',action='store_true')
@@ -1001,7 +1002,7 @@ def get_crispresso_header(description,header_str):
         for i in range(len(logo_lines))[::-1]:
             output_line = (pad_string + logo_lines[i].ljust(max_logo_width) + pad_string).center(term_width) + "\n" + output_line
 
-    output_line += '\n'+('[CRISPResso version ' + __version__ + ']').center(term_width) + '\n' + ('[Kendell Clement and Luca Pinello 2020]').center(term_width) + "\n" + ('[For support contact kclement@mgh.harvard.edu]').center(term_width) + "\n"
+    output_line += '\n'+('[CRISPResso version ' + __version__ + ']').center(term_width) + '\n' + ('[Note that starting in version 2.1.0 insertion quantification has been changed\nto only include insertions completely contained by the quantification window.\nTo use the legacy quantification method (i.e. include insertions directly adjacent\nto the quantification window) please use the parameter --use_legacy_insertion_quantification]').center(term_width) + "\n" + ('[For support contact kclement@mgh.harvard.edu]').center(term_width) + "\n"
 
     description_str = ""
     for str in description:
