@@ -253,7 +253,10 @@ def get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaf
 
         for idx in range(len(best_match_names)):
             best_match_name = best_match_names[idx]
-            payload=CRISPRessoCOREResources.find_indels_substitutions(best_match_s1s[idx],best_match_s2s[idx],refs[best_match_name]['include_idxs'])
+            if args.use_legacy_insertion_quantification:
+                payload=CRISPRessoCOREResources.find_indels_substitutions_legacy(best_match_s1s[idx],best_match_s2s[idx],refs[best_match_name]['include_idxs'])
+            else:
+                payload=CRISPRessoCOREResources.find_indels_substitutions(best_match_s1s[idx],best_match_s2s[idx],refs[best_match_name]['include_idxs'])
             payload['ref_name'] = best_match_name
             payload['aln_scores'] = aln_scores
 
@@ -1983,7 +1986,7 @@ def main():
         #operates on variantCache
         if args.bam_input:
             aln_stats = process_bam(args.bam_input,args.bam_chr_loc,crispresso2_info['bam_output'],variantCache,ref_names,refs,args)
-        if args.fastq_output:
+        elif args.fastq_output:
             aln_stats = process_fastq_write_out(processed_output_filename,crispresso2_info['fastq_output'],variantCache,ref_names,refs,args)
         else:
             aln_stats = process_fastq(processed_output_filename,variantCache,ref_names,refs,args)
@@ -2139,7 +2142,9 @@ def main():
             effective_len_dicts                 [ref_name] = defaultdict(int)
 
             hists_inframe                       [ref_name] = defaultdict(int)
+            hists_inframe                       [ref_name][0] = 0
             hists_frameshift                    [ref_name] = defaultdict(int)
+            hists_frameshift                    [ref_name][0] = 0
         #end initialize data structures for each ref
         def get_allele_row(reference_name, variant_count, aln_ref_names_str, aln_ref_scores_str, variant_payload, write_detailed_allele_table):
             """
@@ -2482,7 +2487,10 @@ def main():
 
                 #align this variant to ref1 sequence
                 ref_aln_name,s1,s2,score = variantCache[variant]['ref_aln_details'][0]
-                payload=CRISPRessoCOREResources.find_indels_substitutions(s1,s2,refs[ref1_name]['include_idxs'])
+                if args.use_legacy_insertion_quantification:
+                    payload=CRISPRessoCOREResources.find_indels_substitutions_legacy(s1,s2,refs[ref1_name]['include_idxs'])
+                else:
+                    payload=CRISPRessoCOREResources.find_indels_substitutions(s1,s2,refs[ref1_name]['include_idxs'])
 
                 #indels in this alignment against ref1 should be recorded for each ref it was originally assigned to, as well as for ref1
                 #for example, if this read aligned to ref3, align this read to ref1, and add the resulting indels to ref1_all_insertion_count_vectors[ref3] as well as ref1_all_insertion_count_vectors[ref1]
@@ -2618,15 +2626,6 @@ def main():
             refs[ref_name]['hlengths'] = hlengths
             refs[ref_name]['center_index'] = center_index
 
-            if not dict(hists_inframe[ref_name]):
-                hists_inframe[ref_name]={0:0}
-            else:
-                hists_inframe[ref_name]=dict(hists_inframe[ref_name])
-
-            if not dict(hists_frameshift[ref_name]):
-                hists_frameshift[ref_name]={0:0}
-            else:
-                hists_frameshift[ref_name]=dict(hists_frameshift[ref_name])
 
             count_tot = counts_total[ref_name]
             if count_tot > 0:
@@ -4440,8 +4439,12 @@ def main():
             global_MODIFIED_NON_FRAMESHIFT = 0
             global_NON_MODIFIED_NON_FRAMESHIFT = 0
             global_SPLICING_SITES_MODIFIED = 0
+
             global_hists_frameshift = defaultdict(lambda :0)
+            global_hists_frameshift[0] = 0 #fill with at least the zero value (in case there are no others)
+
             global_hists_inframe = defaultdict(lambda :0)
+            global_hists_inframe[0] = 0
 
             global_count_total = 0
             global_count_modified = 0
