@@ -301,7 +301,7 @@ def main():
                 tot_counts_2 = np.array(mod_freqs_2['Total'],dtype=float)
                 unmod_counts_2 = tot_counts_2 - mod_counts_2
 
-                fisher_results = [stats.fisher_exact([[z[0],z[1]],[z[2],z[3]]]) if max(z) > 0 else [nan,1.0] for z in zip(mod_counts_1,unmod_counts_1,mod_counts_2,unmod_counts_2)]
+                fisher_results = [stats.fisher_exact([[z[0],z[1]],[z[2],z[3]]]) if max(z) > 0 else [np.NaN,1.0] for z in zip(mod_counts_1,unmod_counts_1,mod_counts_2,unmod_counts_2)]
                 oddsratios,pvalues = [ a for a,b in fisher_results ], [ b for a,b in fisher_results ]
 
                 mod_df = []
