@@ -877,7 +877,7 @@ def main():
                     info('Index file for input .bam file exists, skipping generation.')
                 else:
                     info('Creating index file for input .bam file...')
-                    bam_input_file = _jp(os.path.basename(bam_input_file))+".sorted.bam"
+                    bam_input_file = _jp(os.path.basename(args.bam_input))+".sorted.bam"
                     sb.call('samtools sort -o '+bam_input_file+' ' + args.bam_input,shell=True)
                     sb.call('samtools index %s ' % (bam_input_file), shell=True)
                     files_to_remove.append(bam_input_file)
