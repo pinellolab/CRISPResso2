@@ -1019,9 +1019,18 @@ def main():
                 if len(amp_seq) == 0:
                     raise BadParameterException("Amplicon " + str(idx + 1) + " has length 0. Please check the --amplicon_seq parameter.")
 
+                this_name = 'Amplicon'+str(idx)
+                if idx >= len(amplicon_name_arr):
+                    amplicon_name_arr.append(this_name)
+
+                this_min_aln_score = args.default_min_aln_score
+                if idx >= len(amplicon_min_alignment_score_arr):
+                    amplicon_min_alignment_score_arr.append(this_min_aln_score)
+
         if args.expected_hdr_amplicon_seq != "":
             amplicon_seq_arr.append(args.expected_hdr_amplicon_seq)
             amplicon_name_arr.append('HDR')
+            amplicon_min_alignment_score_arr.append(args.default_min_aln_score)
 
         amplicon_quant_window_coordinates_arr = ['']*len(amplicon_seq_arr)
         if args.quantification_window_coordinates is not None:
@@ -2486,6 +2495,7 @@ def main():
                 ref1_all_base_count_vectors[ref_names[0]+"_"+nuc ] = all_base_count_vectors[ref_names[0]+"_"+nuc].copy()
 
             #then go through and align and add other reads
+            #this is our second time iterating through the variantCache -- this time just for HDR and prime editing
             for variant in variantCache:
                 #skip variant if there were none observed
                 variant_count = variantCache[variant]['count']
@@ -2496,6 +2506,11 @@ def main():
                 if len(aln_ref_names) == 1 and ref_names[0] == aln_ref_names[0]: #if this read was only aligned to ref1, skip it because we already included the indels when we initialized the ref1_all_deletion_count_vectors array
                     continue
 
+                class_name = variantCache[variant]['class_name'] #for classifying read e.g. 'HDR_MODIFIED' for pie chart
+                #if class is AMBIGUOUS (set above if the args.expand_ambiguous_alignments param is false) don't add the modifications in this allele to the allele summaries
+                if class_name == "AMBIGUOUS":
+                    continue #for ambiguous reads, don't add indels to reference totals
+
                 #align this variant to ref1 sequence
                 ref_aln_name,s1,s2,score = variantCache[variant]['ref_aln_details'][0]
                 if args.use_legacy_insertion_quantification:
@@ -2503,10 +2518,10 @@ def main():
                 else:
                     payload=CRISPRessoCOREResources.find_indels_substitutions(s1,s2,refs[ref1_name]['include_idxs'])
 
-                #indels in this alignment against ref1 should be recorded for each ref it was originally assigned to, as well as for ref1
+                #indels in this alignment against ref1 should be recorded for each ref it was originally assigned to
                 #for example, if this read aligned to ref3, align this read to ref1, and add the resulting indels to ref1_all_insertion_count_vectors[ref3] as well as ref1_all_insertion_count_vectors[ref1]
                 #   Thus, ref1_all_insertion_count_vectors[ref3] will show the position of indels of reads that aligned to ref3, but mapped onto ref1
-                #   And ref1_alle_insertion_count_vectors[ref1] will show the position of indels of all reads, mapped onto ref1
+                #   And ref1_alle_insertion_count_vectors[ref1] will show the position of indels of all reads, mapped onto ref1 (as copied above)
                 for ref_name in aln_ref_names:
                     if ref_name == ref_names[0]:
                         continue
@@ -3956,7 +3971,7 @@ def main():
                         tot = float(counts_total[ref_name_for_hdr])
                         for nuc in ['A','C','G','T','N','-']:
                             nuc_pcts.append(np.concatenate(([ref_name_for_hdr,nuc], np.array(ref1_all_base_count_vectors[ref_name_for_hdr+"_"+nuc]).astype(np.float)/tot)))
-                    colnames = ['Batch','Nucleotide']+list(refs[ref_names[0]]['sequence'])
+                    colnames = ['Batch','Nucleotide']+list(refs[ref_names_for_hdr[0]]['sequence'])
                     hdr_nucleotide_percentage_summary_df = pd.DataFrame(nuc_pcts,columns=colnames)
 
                     mod_pcts = []
@@ -3976,11 +3991,19 @@ def main():
 #                    include_idxs_list = refs[ref_names_for_hdr[0]]['include_idxs']
                     include_idxs_list = [] # the quantification windows may be different between different amplicons
 
+                    ref_plot_name = refs[ref_names_for_hdr[0]]['ref_plot_name']
+                    mod_freq_filename = _jp(ref_plot_name + 'Reads_from_all_amplicons_modification_percent_table.txt')
+                    hdr_modification_percentage_summary_df.rename(columns={'Batch':'Amplicon'}).to_csv(mod_freq_filename,sep='\t',header=True,index=False)
+                    nuc_freq_filename = _jp(ref_plot_name + 'Reads_from_all_amplicons_nucleotide_percent_table.txt')
+                    hdr_nucleotide_percentage_summary_df.rename(columns={'Batch':'Amplicon'}).to_csv(nuc_freq_filename,sep='\t',header=True,index=False)
+
                     plot_root = _jp('4g.HDR_nucleotide_percentage_quilt')
                     CRISPRessoPlot.plot_nucleotide_quilt(hdr_nucleotide_percentage_summary_df,hdr_modification_percentage_summary_df,plot_root,save_png,sgRNA_intervals=sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,quantification_window_idxs=include_idxs_list)
                     crispresso2_info['refs'][ref_names_for_hdr[0]]['plot_4g_root'] = os.path.basename(plot_root)
                     crispresso2_info['refs'][ref_names_for_hdr[0]]['plot_4g_caption'] = "Figure 4g: Nucleotide distribution across all amplicons. At each base in the reference amplicon, the percentage of each base as observed in sequencing reads is shown (A = green; C = orange; G = yellow; T = purple). Black bars show the percentage of reads for which that base was deleted. Brown bars between bases show the percentage of reads having an insertion at that position."
                     crispresso2_info['refs'][ref_names_for_hdr[0]]['plot_4g_data'] = []
+                    crispresso2_info['refs'][ref_names_for_hdr[0]]['plot_4g_data'].append(('Nucleotide percentage table for all reads aligned to ' + ref_names[0],os.path.basename(nuc_freq_filename)))
+                    crispresso2_info['refs'][ref_names_for_hdr[0]]['plot_4g_data'].append(('Modification percentage table for all reads aligned to ' + ref_names[0],os.path.basename(mod_freq_filename)))
                     for ref_name_for_hdr in ref_names_for_hdr:
                         if 'nuc_freq_filename' in crispresso2_info['refs'][ref_name_for_hdr]:
                             crispresso2_info['refs'][ref_names_for_hdr[0]]['plot_4g_data'].append(('Nucleotide frequency table for ' + ref_name_for_hdr,os.path.basename(crispresso2_info['refs'][ref_name_for_hdr]['nuc_freq_filename'])))
