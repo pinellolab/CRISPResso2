@@ -437,6 +437,25 @@ def load_crispresso_info(crispresso_output_folder=""):
     except Exception as e:
         raise Exception('Cannot open CRISPResso info file at ' + crispresso_info_file + "\n" + str(e))
 
+def get_command_output(command):
+    """
+    Runs a shell command and returns an iter to read the output
+
+    param:
+        command: shell command to run
+
+    returns:
+        iter to read the output
+    """
+
+    p = sb.Popen(command,
+            stdout=sb.PIPE,
+            stderr=sb.STDOUT,shell=True,
+#            encoding='utf-8',universal_newlines=True)
+            universal_newlines=True,
+            bufsize=-1)#bufsize system default
+    return iter(p.stdout.readline, b'')
+
 
 def get_most_frequent_reads(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,min_paired_end_reads_overlap,debug=False):
     """

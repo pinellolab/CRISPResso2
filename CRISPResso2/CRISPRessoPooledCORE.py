@@ -292,6 +292,7 @@ def main():
         parser.add_argument('--compile_postrun_references', help='If set, a file will be produced which compiles the reference sequences of frequent amplicons.',action='store_true')
         parser.add_argument('--compile_postrun_reference_allele_cutoff',type=float,help='Only alleles with at least this percentage frequency in the population will be reported in the postrun analysis. This parameter is given as a percent, so 30 is 30%%.',default=30)
         parser.add_argument('--alternate_alleles',type=str,help='Path to tab-separated file with alternate allele sequences for pooled experiments. This file has the columns "region_name","reference_seqs", and "reference_names" and gives the reference sequences of alternate alleles that will be passed to CRISPResso for each individual region for allelic analysis. Multiple reference alleles and reference names for a given region name are separated by commas (no spaces).',default='')
+        parser.add_argument('--read_grouping_position_tolerance',type=int,help='If a amplicons_file is specified, reads within this number of basepairs from specified amplicons will be analyzed as reads from that amplicon.',default=10)
 
         args = parser.parse_args()
 
@@ -647,12 +648,35 @@ def main():
 
             N_READS_ALIGNED=get_n_aligned_bam(bam_filename_amplicons)
 
-            s1=r"samtools view -F 4 %s 2>>%s | grep -v ^'@'" % (bam_filename_amplicons,log_filename)
-            s2=r'''|awk '{ gzip_filename=sprintf("gzip >> OUTPUTPATH%s.fastq.gz",$3);\
-            print "@"$1"\n"$10"\n+\n"$11  | gzip_filename;}' '''
+            if args.amplicons_file != '':
+                #call sort command
+                sb.call(cmd,shell=True)
+                #open
+                bam_iter = CRISPRessoShared.get_command_output('samtools vew {bam file} ')
+                #iterate through reads and write one file..
+                curr_file = None
+                curr_chr = None
+                curr_pos = None
+                for bam_line in bam_iter:
+                    bam_line_els = bam_line.split("\t")
+                    line_chr = bam_line_els[2]
+                    line_pos = bam_line_els[3]
 
-            cmd=s1+s2.replace('OUTPUTPATH',_jp(''))
-            sb.call(cmd,shell=True)
+                    #if curr_File does not exist or this read comes from a new region, open a new file
+                    if curr_file is not None or curr_chr == line_chr and abs(line_pos-curr_pos) < args.read_grouping_position_tolerance:
+                        #open a new file and assign it to curr_file
+                        curr_file = open(_jp({filename}))
+
+                    #write to curr_file
+                    curr_file.write(....)
+
+            else:
+                s1=r"samtools view -F 4 %s 2>>%s | grep -v ^'@'" % (bam_filename_amplicons,log_filename)
+                s2=r'''|awk '{ gzip_filename=sprintf("gzip >> OUTPUTPATH%s.fastq.gz",$3);\
+                print "@"$1"\n"$10"\n+\n"$11  | gzip_filename;}' '''
+
+                cmd=s1+s2.replace('OUTPUTPATH',_jp(''))
+                sb.call(cmd,shell=True)
 
             alternate_alleles = {}
             if args.alternate_alleles:
