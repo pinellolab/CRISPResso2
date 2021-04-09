@@ -293,7 +293,6 @@ def main():
         parser.add_argument('--compile_postrun_references', help='If set, a file will be produced which compiles the reference sequences of frequent amplicons.',action='store_true')
         parser.add_argument('--compile_postrun_reference_allele_cutoff',type=float,help='Only alleles with at least this percentage frequency in the population will be reported in the postrun analysis. This parameter is given as a percent, so 30 is 30%%.',default=30)
         parser.add_argument('--alternate_alleles',type=str,help='Path to tab-separated file with alternate allele sequences for pooled experiments. This file has the columns "region_name","reference_seqs", and "reference_names" and gives the reference sequences of alternate alleles that will be passed to CRISPResso for each individual region for allelic analysis. Multiple reference alleles and reference names for a given region name are separated by commas (no spaces).',default='')
-        parser.add_argument('--read_grouping_position_tolerance',type=int,help='If a amplicons_file is specified, reads within this number of basepairs from specified amplicons will be analyzed as reads from that amplicon.',default=10)
 
         args = parser.parse_args()
 
@@ -649,32 +648,40 @@ def main():
 
             N_READS_ALIGNED=get_n_aligned_bam(bam_filename_amplicons)
 
-            bam_iter = CRISPRessoShared.get_command_output(
-                'samtools sort {bam_file} | samtools view -F 4 2>> {log_file}'.format(
-                    bam_file=bam_filename_amplicons,
-                    log_file=log_filename,
-                ),
-            )
-            curr_file, curr_chr = None, None
-            for bam_line in bam_iter:
-                bam_line_els = bam_line.split('\t')
-                line_chr = bam_line_els[2]
+            if df_template.shape[0] < 50:
+                s1=r"samtools view -F 4 %s 2>>%s | grep -v ^'@'" % (bam_filename_amplicons,log_filename)
+                s2=r'''|awk '{ gzip_filename=sprintf("gzip >> OUTPUTPATH%s.fastq.gz",$3);\
+                print "@"$1"\n"$10"\n+\n"$11  | gzip_filename;}' '''
 
-                # at the first line open new file, or at next amplicon
-                # close previous file and open new one
-                if curr_chr != line_chr:
-                    if curr_file is not None:
-                        curr_file.close()
-                    curr_file = gzip.open(
-                        _jp('{0}.fastq.gz'.format(line_chr)),
-                        'wb',
-                    )
-                curr_file.write('@{read_name}\n{seq}\n+\n{qual}\n'.format(
-                    read_name=bam_line_els[0],
-                    seq=bam_line_els[9],
-                    qual=bam_line_els[10],
-                ))
-                curr_chr = line_chr
+                cmd=s1+s2.replace('OUTPUTPATH',_jp(''))
+                sb.call(cmd,shell=True)
+            else:
+                bam_iter = CRISPRessoShared.get_command_output(
+                    'samtools sort {bam_file} | samtools view -F 4 2>> {log_file}'.format(
+                        bam_file=bam_filename_amplicons,
+                        log_file=log_filename,
+                    ),
+                )
+                curr_file, curr_chr = None, None
+                for bam_line in bam_iter:
+                    bam_line_els = bam_line.split('\t')
+                    line_chr = bam_line_els[2]
+
+                    # at the first line open new file, or at next amplicon
+                    # close previous file and open new one
+                    if curr_chr != line_chr:
+                        if curr_file is not None:
+                            curr_file.close()
+                        curr_file = gzip.open(
+                            _jp('{0}.fastq.gz'.format(line_chr)),
+                            'wb',
+                        )
+                    curr_file.write('@{read_name}\n{seq}\n+\n{qual}\n'.format(
+                        read_name=bam_line_els[0],
+                        seq=bam_line_els[9],
+                        qual=bam_line_els[10],
+                    ))
+                    curr_chr = line_chr
 
             alternate_alleles = {}
             if args.alternate_alleles:
