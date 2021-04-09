@@ -13,6 +13,7 @@ from copy import deepcopy
 from datetime import datetime
 import subprocess as sb
 import glob
+import gzip
 import argparse
 import unicodedata
 import string
@@ -648,35 +649,32 @@ def main():
 
             N_READS_ALIGNED=get_n_aligned_bam(bam_filename_amplicons)
 
-            if args.amplicons_file != '':
-                #call sort command
-                sb.call(cmd,shell=True)
-                #open
-                bam_iter = CRISPRessoShared.get_command_output('samtools vew {bam file} ')
-                #iterate through reads and write one file..
-                curr_file = None
-                curr_chr = None
-                curr_pos = None
-                for bam_line in bam_iter:
-                    bam_line_els = bam_line.split("\t")
-                    line_chr = bam_line_els[2]
-                    line_pos = bam_line_els[3]
+            bam_iter = CRISPRessoShared.get_command_output(
+                'samtools sort {bam_file} | samtools view -F 4 2>> {log_file}'.format(
+                    bam_file=bam_filename_amplicons,
+                    log_file=log_filename,
+                ),
+            )
+            curr_file, curr_chr = None, None
+            for bam_line in bam_iter:
+                bam_line_els = bam_line.split('\t')
+                line_chr = bam_line_els[2]
 
-                    #if curr_File does not exist or this read comes from a new region, open a new file
-                    if curr_file is not None or curr_chr == line_chr and abs(line_pos-curr_pos) < args.read_grouping_position_tolerance:
-                        #open a new file and assign it to curr_file
-                        curr_file = open(_jp({filename}))
-
-                    #write to curr_file
-                    curr_file.write(....)
-
-            else:
-                s1=r"samtools view -F 4 %s 2>>%s | grep -v ^'@'" % (bam_filename_amplicons,log_filename)
-                s2=r'''|awk '{ gzip_filename=sprintf("gzip >> OUTPUTPATH%s.fastq.gz",$3);\
-                print "@"$1"\n"$10"\n+\n"$11  | gzip_filename;}' '''
-
-                cmd=s1+s2.replace('OUTPUTPATH',_jp(''))
-                sb.call(cmd,shell=True)
+                # at the first line open new file, or at next amplicon
+                # close previous file and open new one
+                if curr_chr != line_chr:
+                    if curr_file is not None:
+                        curr_file.close()
+                    curr_file = gzip.open(
+                        _jp('{0}.fastq.gz'.format(line_chr)),
+                        'wb',
+                    )
+                curr_file.write('@{read_name}\n{seq}\n+\n{qual}\n'.format(
+                    read_name=bam_line_els[0],
+                    seq=bam_line_els[9],
+                    qual=bam_line_els[10],
+                ))
+                curr_chr = line_chr
 
             alternate_alleles = {}
             if args.alternate_alleles:
