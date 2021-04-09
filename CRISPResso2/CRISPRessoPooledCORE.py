@@ -293,6 +293,7 @@ def main():
         parser.add_argument('--compile_postrun_references', help='If set, a file will be produced which compiles the reference sequences of frequent amplicons.',action='store_true')
         parser.add_argument('--compile_postrun_reference_allele_cutoff',type=float,help='Only alleles with at least this percentage frequency in the population will be reported in the postrun analysis. This parameter is given as a percent, so 30 is 30%%.',default=30)
         parser.add_argument('--alternate_alleles',type=str,help='Path to tab-separated file with alternate allele sequences for pooled experiments. This file has the columns "region_name","reference_seqs", and "reference_names" and gives the reference sequences of alternate alleles that will be passed to CRISPResso for each individual region for allelic analysis. Multiple reference alleles and reference names for a given region name are separated by commas (no spaces).',default='')
+        parser.add_argument('--read_grouping_position_tolerance',type=int,help='If a amplicons_file is specified, reads within this number of basepairs from specified amplicons will be analyzed as reads from that amplicon.',default=10)
 
         args = parser.parse_args()
 
