@@ -682,6 +682,8 @@ def main():
                         qual=bam_line_els[10],
                     ))
                     curr_chr = line_chr
+                if curr_file is not None:
+                    curr_file.close()
 
             alternate_alleles = {}
             if args.alternate_alleles:
