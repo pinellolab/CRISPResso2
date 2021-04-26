@@ -2256,6 +2256,8 @@ def main():
                 variant_payload = variantCache[variant]["variant_"+ref_name]
                 if args.discard_indel_reads and (variant_payload['deletion_n'] > 0 or variant_payload['insertion_n'] > 0):
                     counts_discarded[ref_name] += variant_count
+                    allele_row = get_allele_row('DISCARDED_'+aln_ref_names[0],variant_count,aln_ref_names_str,aln_ref_scores_str,variant_payload,args.write_detailed_allele_table)
+                    alleles_list.append(allele_row)
                     continue
 
                 counts_total[ref_name] += variant_count
