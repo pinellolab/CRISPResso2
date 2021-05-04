@@ -898,8 +898,8 @@ def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,qua
     #first, if exact coordinates have been given, set those
     given_include_idxs = []
     if quantification_window_coordinates is not None:
-        coordinate_include_idxs=[]
-        theseCoords = quantification_window_coordinates.split("_")
+        coordinate_include_idxs = []
+        theseCoords = str(quantification_window_coordinates).split("_")
         for coord in theseCoords:
             coordRE = re.match(r'^(\d+)-(\d+)$',coord)
             if coordRE:
