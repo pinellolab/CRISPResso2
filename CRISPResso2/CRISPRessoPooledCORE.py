@@ -286,13 +286,12 @@ def main():
         Please use with caution since increasing this parameter will significantly increase the memory required to run CRISPResso. Can be set to \'max\'.',default='1')
         parser.add_argument('-x','--bowtie2_index', type=str, help='Basename of Bowtie2 index for the reference genome', default='')
         # rationale for setting the default scores:
-        # -k 1 report at most 1 distinct valid alignment
         # --end-to-end - no clipping, match bonus -ma is set to 0
         # -N 0 number of mismatches allowed in seed alignment
         # --np 0 where read (or ref have ambiguous character (N)) penalty is 0
         # -mp 3,2 mismatch penalty - set max mismatch to -3 to coincide with the gap extension penalty (2 is the default min mismatch penalty)
         # --score-min L,-5,-3*(1-H) For a given homology score, we allow up to (1-H) mismatches (-3) or gap extensions (-3) and one gap open (-5). This score translates to -5 + -3(1-H)L where L is the sequence length
-        parser.add_argument('--bowtie2_options_string', type=str, help='Override options for the Bowtie2 alignment command. By default, this is " -k 1 --end-to-end -N 0 --np 0 -mp 3,2 --score-min L,-5,-3(1-H)" where H is the default homology score.', default='')
+        parser.add_argument('--bowtie2_options_string', type=str, help='Override options for the Bowtie2 alignment command. By default, this is " --end-to-end -N 0 --np 0 -mp 3,2 --score-min L,-5,-3(1-H)" where H is the default homology score.', default='')
         parser.add_argument('--use_legacy_bowtie2_options_string', help='Use legacy (more stringent) Bowtie2 alignment parameters: " -k 1 --end-to-end -N 0 --np 0 ".', action='store_true')
         parser.add_argument('--min_reads_to_use_region',  type=float, help='Minimum number of reads that align to a region to perform the CRISPResso analysis', default=1000)
         parser.add_argument('--skip_failed',  help='Continue with pooled analysis even if one sample fails',action='store_true')
@@ -356,7 +355,7 @@ def main():
                 bowtie2_options_string = '-k 1 --end-to-end -N 0 --np 0'
             else:
                 homology_param = -3 * (1-(args.default_min_aln_score/100.0))
-                bowtie2_options_string = " -k 1 --end-to-end -N 0 --np 0 --mp 3,2 --score-min L,-5," + str(homology_param) + " "
+                bowtie2_options_string = " --end-to-end -N 0 --np 0 --mp 3,2 --score-min L,-5," + str(homology_param) + " "
 
         if args.alternate_alleles:
             CRISPRessoShared.check_file(args.alternate_alleles)
@@ -1275,7 +1274,7 @@ def main():
 
 
                     vals = [run_name]
-                    vals.extend([round(unmod_pct,8),round(mod_pct,8),n_aligned,n_tot,n_unmod,n_mod,n_discarded,n_insertion,n_deletion,n_substitution,n_only_insertion,n_only_deletion,n_only_substitution,n_insertion_and_deletion,n_insertion_and_substitution,n_deletion_and_substitution,n_insertion_and_deletion_and_substitution])
+                    vals.extend([round(unmod_pct,8),round(mod_pct,8),n_tot,n_aligned,n_unmod,n_mod,n_discarded,n_insertion,n_deletion,n_substitution,n_only_insertion,n_only_deletion,n_only_substitution,n_insertion_and_deletion,n_insertion_and_substitution,n_deletion_and_substitution,n_insertion_and_deletion_and_substitution])
                     quantification_summary.append(vals)
 
                     good_region_names.append(run_name)
