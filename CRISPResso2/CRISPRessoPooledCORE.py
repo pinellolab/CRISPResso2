@@ -285,7 +285,15 @@ def main():
         parser.add_argument('-p','--n_processes',type=str, help='Specify the number of processes to use for analysis.\
         Please use with caution since increasing this parameter will significantly increase the memory required to run CRISPResso. Can be set to \'max\'.',default='1')
         parser.add_argument('-x','--bowtie2_index', type=str, help='Basename of Bowtie2 index for the reference genome', default='')
-        parser.add_argument('--bowtie2_options_string', type=str, help='Override options for the Bowtie2 alignment command',default=' -k 1 --end-to-end -N 0 --np 0 ')
+        # rationale for setting the default scores:
+        # -k 1 report at most 1 distinct valid alignment
+        # --end-to-end - no clipping, match bonus -ma is set to 0
+        # -N 0 number of mismatches allowed in seed alignment
+        # --np 0 where read (or ref have ambiguous character (N)) penalty is 0
+        # -mp 3,2 mismatch penalty - set max mismatch to -3 to coincide with the gap extension penalty (2 is the default min mismatch penalty)
+        # --score-min L,-5,-3*(1-H) For a given homology score, we allow up to (1-H) mismatches (-3) or gap extensions (-3) and one gap open (-5). This score translates to -5 + -3(1-H)L where L is the sequence length
+        parser.add_argument('--bowtie2_options_string', type=str, help='Override options for the Bowtie2 alignment command. By default, this is " -k 1 --end-to-end -N 0 --np 0 -mp 3,2 --score-min L,-5,-3(1-H)" where H is the default homology score.', default='')
+        parser.add_argument('--use_legacy_bowtie2_options_string', help='Use legacy (more stringent) Bowtie2 alignment parameters: " -k 1 --end-to-end -N 0 --np 0 ".', action='store_true')
         parser.add_argument('--min_reads_to_use_region',  type=float, help='Minimum number of reads that align to a region to perform the CRISPResso analysis', default=1000)
         parser.add_argument('--skip_failed',  help='Continue with pooled analysis even if one sample fails',action='store_true')
         parser.add_argument('--skip_reporting_problematic_regions',help='Skip reporting of problematic regions. By default, when both amplicons (-f) and genome (-x) are provided, problematic reads that align to the genome but to positions other than where the amplicons align are reported as problematic',action='store_true')
@@ -337,10 +345,18 @@ def main():
             info('Only the bowtie2 reference genome index file was provided. The analysis will be perfomed using only genomic regions where enough reads align.')
         elif args.bowtie2_index and args.amplicons_file:
             RUNNING_MODE='AMPLICONS_AND_GENOME'
-            info('Amplicon description file and bowtie2 reference genome index files provided. The analysis will be perfomed using the reads that are aligned ony to the amplicons provided and not to other genomic regions.')
+            info('Amplicon description file and bowtie2 reference genome index files provided. The analysis will be perfomed using the reads that are aligned only to the amplicons provided and not to other genomic regions.')
         else:
             error('Please provide the amplicons description file (-f or --amplicons_file option) or the bowtie2 reference genome index file (-x or --bowtie2_index option) or both.')
             sys.exit(1)
+
+        bowtie2_options_string = args.bowtie2_options_string
+        if args.bowtie2_options_string == "":
+            if args.use_legacy_bowtie2_options_string:
+                bowtie2_options_string = '-k 1 --end-to-end -N 0 --np 0'
+            else:
+                homology_param = -3 * (1-(args.default_min_aln_score/100.0))
+                bowtie2_options_string = " -k 1 --end-to-end -N 0 --np 0 --mp 3,2 --score-min L,-5," + str(homology_param) + " "
 
         if args.alternate_alleles:
             CRISPRessoShared.check_file(args.alternate_alleles)
@@ -640,7 +656,7 @@ def main():
             #align the file to the amplicons (MODE 1)
             info('Align reads to the amplicons...')
             bam_filename_amplicons= _jp('CRISPResso_AMPLICONS_ALIGNED.bam')
-            aligner_command= 'bowtie2 -x %s -p %s %s -U %s 2>>%s | samtools view -bS - > %s' %(custom_index_filename,n_processes,args.bowtie2_options_string,processed_output_filename,log_filename,bam_filename_amplicons)
+            aligner_command= 'bowtie2 -x %s -p %s %s -U %s 2>>%s | samtools view -bS - > %s' %(custom_index_filename,n_processes,bowtie2_options_string,processed_output_filename,log_filename,bam_filename_amplicons)
 
 
             info('Alignment command: ' + aligner_command)
@@ -761,7 +777,7 @@ def main():
                     for idx,row in df_template.iterrows():
                         fastas.write('>%s\n%s\n'%(idx,row.Amplicon_Sequence))
 
-                aligner_command= 'bowtie2 -x %s -p %s %s -f -U %s --no-hd --no-sq 2> %s > %s ' %(args.bowtie2_index,n_processes,args.bowtie2_options_string, \
+                aligner_command= 'bowtie2 -x %s -p %s %s -f -U %s --no-hd --no-sq 2> %s > %s ' %(args.bowtie2_index,n_processes,bowtie2_options_string, \
                     filename_amplicon_seqs_fasta,filename_aligned_amplicons_sam_log,filename_aligned_amplicons_sam)
                 bowtie_status=sb.call(aligner_command,shell=True)
                 if bowtie_status:
@@ -837,7 +853,7 @@ def main():
             else:
                 info('Aligning reads to the provided genome index...')
                 aligner_command= 'bowtie2 -x %s -p %s %s -U %s 2>>%s| samtools view -bS - | samtools sort -@ %d - -o %s' %(args.bowtie2_index,n_processes,
-                    args.bowtie2_options_string,processed_output_filename,log_filename,n_processes,bam_filename_genome)
+                    bowtie2_options_string,processed_output_filename,log_filename,n_processes,bam_filename_genome)
                 info('aligning with command: ' + aligner_command)
                 sb.call(aligner_command,shell=True)
 

@@ -31,7 +31,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.1.0"
+__version__ = "2.1.1"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -901,13 +901,13 @@ def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,qua
         coordinate_include_idxs = []
         theseCoords = str(quantification_window_coordinates).split("_")
         for coord in theseCoords:
-            coordRE = re.match(r'^(\d+)-(\d+)$',coord)
+            coordRE = re.match(r'^(\d+)-(\d+)$', coord)
             if coordRE:
                 start = int(coordRE.group(1))
                 end = int(coordRE.group(2)) + 1
                 if end > ref_seq_length:
                     raise NTException("End coordinate " + str(end) + " for '" + str(coord) + "' in '" + str(theseCoords) + "' is longer than the sequence length ("+str(ref_seq_length)+")")
-                coordinate_include_idxs.extend(range(start,end))
+                coordinate_include_idxs.extend(range(start, end))
             else:
                 raise NTException("Cannot parse analysis window coordinate '" + str(coord) + "' in '" + str(theseCoords) + "'. Coordinates must be given in the form start-end e.g. 5-10 . Please check the --analysis_window_coordinate parameter.")
         given_include_idxs = coordinate_include_idxs
