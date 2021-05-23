@@ -2232,6 +2232,13 @@ def main():
             variant_count = variantCache[variant]['count']
             if (variant_count == 0):
                 continue
+
+            #check to see if this sequence's reverse complement is in the variant
+            rc_variant = CRISPRessoShared.reverse_complement(variant)
+            if rc_variant in variantCache and variantCache[rc_variant]['count'] > 0:
+                variant_count += variantCache[rc_variant]['count']
+                variantCache[rc_variant]['count'] = 0
+                variantCache[variant]['count'] = variant_count
             N_TOTAL += variant_count
 
             aln_ref_names = variantCache[variant]['aln_ref_names'] #list of references this seq aligned to
