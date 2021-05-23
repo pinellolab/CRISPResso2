@@ -1,3 +1,3 @@
 Name	Unmodified%	Modified%	Reads_total	Reads_aligned	Unmodified	Modified	Discarded	Insertions	Deletions	Substitutions	Only Insertions	Only Deletions	Only Substitutions	Insertions and Deletions	Insertions and Substitutions	Deletions and Substitutions	Insertions Deletions and Substitutions
-FANC	86.4321608	13.5678392	199	199	172	27	0	6	19	3	5	19	2	0	1	0	0
-HEK3	68.37606838	31.62393162	234	235	160	74	0	17	56	4	14	56	1	0	3	0	0
+FANC	73.61702128	26.38297872	242	235	173	62	0	8	49	7	6	49	5	0	2	0	0
+HEK3	65.57377049	34.42622951	250	244	160	84	0	18	65	5	15	64	1	0	3	1	0
