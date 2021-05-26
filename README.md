@@ -69,6 +69,11 @@ Alternately, to create a new environment named `crispresso2_env` with CRISPResso
 conda create -n crispresso2_env -c bioconda crispresso2 python=2.7
 ```
 
+Activate your conda environment:
+
+```
+conda activate crispresso2_env
+```
 
 Verify that CRISPResso is installed using the command:
 
