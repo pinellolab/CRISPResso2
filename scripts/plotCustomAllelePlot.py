@@ -296,11 +296,9 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
 
     #cut point vertical line
     if plot_cut_point:
-        print('cut_point_ind is ' + str(cut_point_ind))
         if cut_point_ind is None:
             ax_hm.vlines([plot_nuc_len/2],*ax_hm.get_ylim(),linestyles='dashed')
         else:
-            print('adding cut point here')
             ax_hm.vlines(cut_point_ind,*ax_hm.get_ylim(),linestyles='dashed')
 
     ax_hm_ref.yaxis.tick_right()
