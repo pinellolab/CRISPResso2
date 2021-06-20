@@ -103,14 +103,13 @@ def plot_ambiguous_alleles_tables_from_folder(crispresso_output_folder,fig_filen
             this_ambig_count = df_alleles_around_cut['#Reads'].sum()
             print('Plotting ' + str(this_ambig_count) + ' ambiguous reads for ' + ref_name)
 
-
-	    new_sgRNA_intervals = []
-	    #adjust coordinates of sgRNAs
-	    new_sel_cols_start = cut_point - plot_half_window
-	    for (int_start,int_end) in refs[ref_name]['sgRNA_intervals']:
-		new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1,int_end - new_sel_cols_start - 1)]
+            new_sgRNA_intervals = []
+            #adjust coordinates of sgRNAs
+            new_sel_cols_start = cut_point - plot_half_window
+            for (int_start, int_end) in refs[ref_name]['sgRNA_intervals']:
+                new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1,int_end - new_sel_cols_start - 1)]
             fig_filename_root = fig_filename_root+"_"+ref_name+"_"+sgRNA_label
-	    CRISPRessoPlot.plot_alleles_table(ref_seq_around_cut,df_alleles=df_alleles_around_cut,fig_filename_root=fig_filename_root, MIN_FREQUENCY=MIN_FREQUENCY,MAX_N_ROWS=MAX_N_ROWS,SAVE_ALSO_PNG=SAVE_ALSO_PNG,plot_cut_point=plot_cut_point,sgRNA_intervals=new_sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,annotate_wildtype_allele=crispresso2_info['args'].annotate_wildtype_allele)
+            CRISPRessoPlot.plot_alleles_table(ref_seq_around_cut,df_alleles=df_alleles_around_cut,fig_filename_root=fig_filename_root, MIN_FREQUENCY=MIN_FREQUENCY,MAX_N_ROWS=MAX_N_ROWS,SAVE_ALSO_PNG=SAVE_ALSO_PNG,plot_cut_point=plot_cut_point,sgRNA_intervals=new_sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,annotate_wildtype_allele=crispresso2_info['args'].annotate_wildtype_allele)
 
             plot_count += 1
     print('Plotted ' + str(plot_count) + ' plots')
