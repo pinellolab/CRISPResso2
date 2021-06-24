@@ -31,7 +31,7 @@ if running_python3:
 else:
     import cPickle as cp #python 2.7
 
-__version__ = "2.1.1"
+__version__ = "2.1.2"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -1005,6 +1005,8 @@ def get_crispresso_header(description,header_str):
         header_lines = header_str.splitlines()
         while(len(header_lines) < len(logo_lines)):
             header_lines = [""] + header_lines
+        while(len(header_lines) > len(logo_lines)):
+            logo_lines = [""] + logo_lines
 
         max_header_width = max([len(x) for x in header_lines])
 
