@@ -87,7 +87,8 @@ def main():
         parser.add_argument('-n1','--sample_1_name',  help='Sample 1 name', default='Sample_1')
         parser.add_argument('-n2','--sample_2_name',  help='Sample 2 name', default='Sample_2')
         parser.add_argument('-o','--output_folder',  help='', default='')
-        parser.add_argument('-p','--n_processes',type=int, help='Number of processes to use for CRISPResso comparison',default=1)
+        parser.add_argument('-p','--n_processes',type=str, help='Specify the number of processes to use for analysis.\
+        Please use with caution since increasing this parameter will significantly increase the memory required to run CRISPResso. Can be set to \'max\'.',default='1')
         parser.add_argument('--min_frequency_alleles_around_cut_to_plot', type=float, help='Minimum %% reads required to report an allele in the alleles table plot.', default=0.2)
         parser.add_argument('--max_rows_alleles_around_cut_to_plot',  type=int, help='Maximum number of rows to report in the alleles table plot. ', default=50)
         parser.add_argument('--place_report_in_output_folder',  help='If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output.', action='store_true')
@@ -101,6 +102,12 @@ def main():
 
         sample_1_name = CRISPRessoShared.slugify(args.sample_1_name)
         sample_2_name = CRISPRessoShared.slugify(args.sample_2_name)
+
+        n_processes = 1
+        if args.n_processes == "max":
+            n_processes = CRISPRessoMultiProcessing.get_max_processes()
+        else:
+            n_processes = int(args.n_processes)
 
         #check that the CRISPRessoPooled output is present
         quantification_summary_file_1=check_PooledWGS_output_folder(args.crispresso_pooled_wgs_output_folder_1)
@@ -202,9 +209,7 @@ def main():
                 processed_region_folder_names[idx] = compare_output_name
 
 
-
-        print('debugGGG')
-        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'Comparison')
+        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,n_processes,'Comparison')
         crispresso2_info['processed_regions'] = processed_regions
         crispresso2_info['processed_region_folder_names'] = processed_region_folder_names
 
