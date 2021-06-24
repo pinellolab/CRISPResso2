@@ -1688,7 +1688,7 @@ def plot_unmod_mod_pcts(fig_filename_root,df_summary_quantification,save_png,cut
     plt.xlabel('Number of reads')
     names = [((name[:20] + "..") if len(name) > 18 else name) for name in df['Name'].values]
     plt.yticks(xs,names)
-    if max(df['Reads_total'] > 100000):
+    if df['Reads_total'].max() > 100000:
         plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
 
     if cutoff is not None:
@@ -1731,7 +1731,7 @@ def plot_reads_total(fig_filename_root,df_summary_quantification,save_png,cutoff
     plt.xlabel('Number of reads')
     names = [((name[:20] + "..") if len(name) > 18 else name) for name in df['Name'].values]
     plt.yticks(xs,names)
-    if max(df['Reads_total'] > 100000):
+    if df['Reads_total'].max() > 100000:
         plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
     if cutoff is not None:
         plt.axvline(cutoff,ls='dashed')
