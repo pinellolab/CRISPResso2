@@ -5,16 +5,15 @@ Software pipeline for the analysis of genome editing outcomes from deep sequenci
 (c) 2018 The General Hospital Corporation. All Rights Reserved.
 '''
 
-import os
-import errno
-import sys
-import subprocess as sb
-import glob
 import argparse
-import re
+from copy import deepcopy
+import os
+import sys
 from CRISPResso2 import CRISPRessoShared
 from CRISPResso2 import CRISPRessoMultiProcessing
+from CRISPResso2 import CRISPRessoReport
 import traceback
+import cPickle as cp
 
 
 import logging
@@ -89,13 +88,19 @@ def main():
         parser.add_argument('-n2','--sample_2_name',  help='Sample 2 name', default='Sample_2')
         parser.add_argument('-o','--output_folder',  help='', default='')
         parser.add_argument('-p','--n_processes',type=int, help='Number of processes to use for CRISPResso comparison',default=1)
-        parser.add_argument('--save_also_png',help='Save also .png images additionally to .pdf files',action='store_true')
+        parser.add_argument('--min_frequency_alleles_around_cut_to_plot', type=float, help='Minimum %% reads required to report an allele in the alleles table plot.', default=0.2)
+        parser.add_argument('--max_rows_alleles_around_cut_to_plot',  type=int, help='Maximum number of rows to report in the alleles table plot. ', default=50)
+        parser.add_argument('--place_report_in_output_folder',  help='If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output.', action='store_true')
+        parser.add_argument('--suppress_report',  help='Suppress output report', action='store_true')
         parser.add_argument('--debug', help='Show debug messages', action='store_true')
 
         args = parser.parse_args()
         debug_flag = args.debug
 
-        crispresso_compare_options=['save_also_png',]
+        crispresso_compare_options=['min_frequency_alleles_around_cut_to_plot','max_rows_alleles_around_cut_to_plot','place_report_in_output_folder','suppress_report','debug']
+
+        sample_1_name = CRISPRessoShared.slugify(args.sample_1_name)
+        sample_2_name = CRISPRessoShared.slugify(args.sample_2_name)
 
         #check that the CRISPRessoPooled output is present
         quantification_summary_file_1=check_PooledWGS_output_folder(args.crispresso_pooled_wgs_output_folder_1)
@@ -107,7 +112,7 @@ def main():
         if not args.name:
                  database_id='%s_VS_%s' % (get_name_from_folder(args.crispresso_pooled_wgs_output_folder_1),get_name_from_folder(args.crispresso_pooled_wgs_output_folder_2))
         else:
-                 database_id=args.name
+                 database_id=CRISPRessoShared.slugify(args.name)
 
 
         OUTPUT_DIRECTORY='CRISPRessoPooledWGSCompare_on_%s' % database_id
@@ -132,45 +137,89 @@ def main():
         with open(log_filename,'w+') as outfile:
                   outfile.write('[Command used]:\nCRISPRessoPooledWGSCompare %s\n\n[Execution log]:\n' % ' '.join(sys.argv))
 
+        crispresso2Compare_info_file = os.path.join(OUTPUT_DIRECTORY,'CRISPResso2PooledWGSCompare_info.pickle')
+        crispresso2_info = {} #keep track of all information for this run to be pickled and saved at the end of the run
+        crispresso2_info['version'] = CRISPRessoShared.__version__
+        crispresso2_info['args'] = deepcopy(args)
+
+        crispresso2_info['log_filename'] = os.path.basename(log_filename)
+
+        crispresso2_info['summary_plot_names'] = []
+        crispresso2_info['summary_plot_titles'] = {}
+        crispresso2_info['summary_plot_labels'] = {}
+        crispresso2_info['summary_plot_datas'] = {}
+
+        save_png = True
+        if args.suppress_report:
+            save_png = False
+
 
         #load data and calculate the difference
-        df_quant_1=pd.read_table(quantification_summary_file_1)
-        df_quant_2=pd.read_table(quantification_summary_file_2)
+        df_quant_1=pd.read_csv(quantification_summary_file_1,sep="\t")
+        df_quant_2=pd.read_csv(quantification_summary_file_2,sep="\t")
 #        df_comp=df_quant_1.set_index(['Name','Amplicon']).join(df_quant_2.set_index(['Name','Amplicon']),lsuffix='_%s' % args.sample_1_name,rsuffix='_%s' % args.sample_2_name)
-        df_comp=df_quant_1.set_index('Name').join(df_quant_2.set_index('Name'),lsuffix='_%s' % args.sample_1_name,rsuffix='_%s' % args.sample_2_name)
+        df_comp=df_quant_1.set_index('Name').join(df_quant_2.set_index('Name'),lsuffix='_%s' % sample_1_name,rsuffix='_%s' % sample_2_name)
 
-        df_comp['(%s-%s)_Unmodified%%' % (args.sample_1_name,args.sample_2_name)]=df_comp['Unmodified%%_%s' % args.sample_1_name]-df_comp['Unmodified%%_%s' % args.sample_2_name]
+        df_comp['(%s-%s)_Unmodified%%' % (sample_1_name,args.sample_2_name)]=df_comp['Unmodified%%_%s' % sample_1_name]-df_comp['Unmodified%%_%s' % args.sample_2_name]
 
         df_comp.fillna('NA').to_csv(_jp('COMPARISON_SAMPLES_QUANTIFICATION_SUMMARIES.txt'),sep='\t')
 
 
         #now run CRISPRessoCompare for the pairs for wich we have data in both folders
         crispresso_cmds = []
-        processed_regions = set([])
+        processed_regions = []
+        processed_region_folder_names = {}
+        processed_region_html_files = {}
         for idx,row in df_comp.iterrows():
-            if idx[0] in processed_regions:
+            if idx in processed_regions:
                 continue
             if row.isnull().any():
-                warn('Skipping sample %s since it was not processed in one or both conditions' % idx[0])
+                warn('Skipping sample %s since it was not processed in one or both conditions' % idx)
             else:
-                processed_regions.add(idx[0])
+                processed_regions.append(idx)
                 #crispresso_output_folder_1=os.path.join(args.crispresso_pooled_wgs_output_folder_1,'CRISPResso_on_%s' % idx)
                 #crispresso_output_folder_2=os.path.join(args.crispresso_pooled_wgs_output_folder_2,'CRISPResso_on_%s' % idx)
-                crispresso_output_folder_1=os.path.join(args.crispresso_pooled_wgs_output_folder_1,'CRISPResso_on_%s' % idx[0])
-                crispresso_output_folder_2=os.path.join(args.crispresso_pooled_wgs_output_folder_2,'CRISPResso_on_%s' % idx[0])
-                crispresso_compare_cmd=CRISPResso_compare_to_call +' "%s" "%s" -o "%s" -n1 "%s" -n2 "%s" ' % (crispresso_output_folder_1,
+                crispresso_output_folder_1=os.path.join(args.crispresso_pooled_wgs_output_folder_1,'CRISPResso_on_%s' % idx)
+                crispresso_output_folder_2=os.path.join(args.crispresso_pooled_wgs_output_folder_2,'CRISPResso_on_%s' % idx)
+                compare_output_name = "%s_%s_VS_%s"%(idx,sample_1_name,sample_2_name)
+                crispresso_compare_cmd=CRISPResso_compare_to_call +' "%s" "%s" -o "%s" -n %s -n1 "%s" -n2 "%s" ' % (crispresso_output_folder_1,
                                                                    crispresso_output_folder_2,
                                                                    OUTPUT_DIRECTORY,
-                                                                   args.sample_1_name+'_%s' % idx[0],
-                                                                   args.sample_2_name+'_%s' % idx[0],
+                                                                   compare_output_name,
+                                                                   sample_1_name+'_'+idx,
+                                                                   sample_2_name+'_'+idx
                                                                   )
-
                 crispresso_compare_cmd=CRISPRessoShared.propagate_crispresso_options(crispresso_compare_cmd,crispresso_compare_options,args)
                 info('Running CRISPRessoCompare:%s' % crispresso_compare_cmd)
                 crispresso_cmds.append(crispresso_compare_cmd)
+                sub_folder = os.path.join(OUTPUT_DIRECTORY,"CRISPRessoCompare_on_"+compare_output_name)
+                this_sub_html_file = os.path.basename(sub_folder)+".html"
+                print(' 1 this_sub_html_file: ' + this_sub_html_file)
+                if args.place_report_in_output_folder:
+                    this_sub_html_file = os.path.join(os.path.basename(sub_folder),"CRISPResso2Compare_report.html")
+                print('2 this_sub_html_file: ' + this_sub_html_file)
+                processed_region_html_files[idx] = this_sub_html_file
+                processed_region_folder_names[idx] = compare_output_name
 
 
+
+        print('debugGGG')
         CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'Comparison')
+        crispresso2_info['processed_regions'] = processed_regions
+        crispresso2_info['processed_region_folder_names'] = processed_region_folder_names
+
+        if not args.suppress_report:
+            if args.place_report_in_output_folder:
+                report_name = _jp("CRISPResso2PooledWGSCompare_report.html")
+            else:
+                report_name = OUTPUT_DIRECTORY+'.html'
+            CRISPRessoReport.make_multi_report(processed_regions,processed_region_html_files,report_name,OUTPUT_DIRECTORY,_ROOT,'CRISPREssoPooledWGSCompare Report<br>'+sample_1_name+" vs" + sample_2_name)
+            crispresso2_info['report_location'] = report_name
+            crispresso2_info['report_filename'] = os.path.basename(report_name)
+
+        with open(crispresso2Compare_info_file,"wb") as info_file:
+            cp.dump(crispresso2_info, info_file)
+
         info('All Done!')
         print(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)

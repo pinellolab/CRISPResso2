@@ -462,14 +462,14 @@ def main():
 
         if not args.suppress_report:
             if (args.place_report_in_output_folder):
-                report_name = _jp("CRISPResso2Batch_report.html")
+                report_name = _jp("CRISPResso2Compare_report.html")
             else:
                 report_name = OUTPUT_DIRECTORY+'.html'
             CRISPRessoReport.make_compare_report_from_folder(report_name,crispresso2_info,OUTPUT_DIRECTORY,_ROOT)
             crispresso2_info['report_location'] = report_name
             crispresso2_info['report_filename'] = os.path.basename(report_name)
 
-        cp.dump(crispresso2_info, open(crispresso2Compare_info_file, 'wb' ) )
+        cp.dump(crispresso2_info, open(crispresso2Compare_info_file, 'wb'))
 
         info('Analysis Complete!')
         print(CRISPRessoShared.get_crispresso_footer())
