@@ -681,7 +681,8 @@ def main():
                 for bam_line in bam_iter:
                     bam_line_els = bam_line.split('\t')
                     if len(bam_line_els) < 9:
-                        print('ERROR GOT BAM LINE : ' + bam_line + ' with els: ' + str(bam_line_els))
+                        if args.debug:
+                            info('ERROR got unexpected line from bam: ' + bam_line + ' with els: ' + str(bam_line_els))
                         continue
                     line_chr = bam_line_els[2]
 
