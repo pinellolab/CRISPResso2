@@ -672,7 +672,7 @@ def main():
                 sb.call(cmd,shell=True)
             else:
                 bam_iter = CRISPRessoShared.get_command_output(
-                    'samtools sort {bam_file} | samtools view -F 4 2>> {log_file}'.format(
+                    '(samtools sort {bam_file} | samtools view -F 4) 2>> {log_file}'.format(
                         bam_file=bam_filename_amplicons,
                         log_file=log_filename,
                     ),
@@ -680,6 +680,9 @@ def main():
                 curr_file, curr_chr = None, None
                 for bam_line in bam_iter:
                     bam_line_els = bam_line.split('\t')
+                    if len(bam_line_els) < 9:
+                        print('ERROR GOT BAM LINE : ' + bam_line + ' with els: ' + str(bam_line_els))
+                        continue
                     line_chr = bam_line_els[2]
 
                     # at the first line open new file, or at next amplicon
