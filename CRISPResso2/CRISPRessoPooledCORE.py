@@ -377,9 +377,10 @@ def main():
                          database_id='%s' % get_name_from_fasta(args.fastq_r1)
 
         else:
-                 database_id=args.name
-
-
+            clean_name=CRISPRessoShared.slugify(args.name)
+            if args.name!= clean_name:
+                warn('The specified name %s contained invalid characters and was changed to: %s' % (args.name,clean_name))
+            database_id=clean_name
 
         OUTPUT_DIRECTORY='CRISPRessoPooled_on_%s' % database_id
 
