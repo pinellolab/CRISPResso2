@@ -188,7 +188,11 @@ def make_batch_report_from_folder(crispressoBatch_report_file,crispresso2_info,b
 
         run_names.append(display_name)
 
-    make_multi_report(run_names,sub_html_files,crispressoBatch_report_file,batch_folder,_ROOT,'CRISPResso Batch Output',
+    output_title = 'CRISPResso Batch Output'
+    if crispresso2_info['args'].name != '':
+        output_title += "<br/>"+crispresso2_info['args'].name
+
+    make_multi_report(run_names,sub_html_files,crispressoBatch_report_file,batch_folder,_ROOT,output_title,
         summary_plot_names=summary_plot_names,summary_plot_titles=summary_plot_titles,summary_plot_labels=summary_plot_labels,summary_plot_datas=summary_plot_datas,
         window_nuc_pct_quilts=window_nuc_pct_quilts,
         nuc_pct_quilts=nuc_pct_quilts,
@@ -198,20 +202,32 @@ def make_batch_report_from_folder(crispressoBatch_report_file,crispresso2_info,b
 
 def make_pooled_report_from_folder(crispresso_report_file,crispresso2_info,folder,_ROOT):
     names_arr = crispresso2_info['good_region_names']
-    make_multi_report_from_folder(crispresso2_info,names_arr,'CRISPResso Pooled Output',crispresso_report_file,folder,_ROOT)
+    output_title = 'CRISPResso Pooled Output'
+    if crispresso2_info['args'].name != '':
+        output_title += "<br/>"+crispresso2_info['args'].name
+    make_multi_report_from_folder(crispresso2_info,names_arr,output_title,crispresso_report_file,folder,_ROOT)
 
 def make_compare_report_from_folder(crispresso_report_file,crispresso2_info,folder,_ROOT):
     names_arr = []
-    make_multi_report_from_folder(crispresso2_info,names_arr,'CRISPResso Compare Output',crispresso_report_file,folder,_ROOT)
+    output_title = 'CRISPResso Compare Output'
+    if crispresso2_info['args'].name != '':
+        output_title += "<br/>"+crispresso2_info['args'].name
+    make_multi_report_from_folder(crispresso2_info,names_arr,output_title,crispresso_report_file,folder,_ROOT)
 
 def make_meta_report_from_folder(crispresso_report_file,crispresso2_info,folder,_ROOT):
     names_arr = crispresso2_info['meta_names_arr']
     input_names = crispresso2_info['meta_input_names']
-    make_multi_report_from_folder(crispresso2_info,names_arr,'CRISPResso Meta Output',crispresso_report_file,folder,_ROOT,display_names=input_names)
+    output_title = 'CRISPResso Meta Output'
+    if crispresso2_info['args'].name != '':
+        output_title += "<br/>"+crispresso2_info['args'].name
+    make_multi_report_from_folder(crispresso2_info,names_arr,output_title,crispresso_report_file,folder,_ROOT,display_names=input_names)
 
 def make_wgs_report_from_folder(crispresso_report_file,crispresso2_info,folder,_ROOT):
     names_arr = crispresso2_info['good_region_names']
-    make_multi_report_from_folder(crispresso2_info,names_arr,'CRISPResso WGS Output',crispresso_report_file,folder,_ROOT)
+    output_title = 'CRISPResso WGS Output'
+    if crispresso2_info['args'].name != '':
+        output_title += "<br/>"+crispresso2_info['args'].name
+    make_multi_report_from_folder(crispresso2_info,names_arr,output_title,crispresso_report_file,folder,_ROOT)
 
 def make_multi_report_from_folder(crispresso2_info,names_arr,report_name,crispresso_report_file,folder,_ROOT,display_names=None):
     """

@@ -334,7 +334,11 @@ def main():
         if not args.name:
             database_id='%s' % get_name_from_bam(args.bam_file)
         else:
-            database_id=args.name
+            clean_name=CRISPRessoShared.slugify(args.name)
+            if args.name!= clean_name:
+                warn('The specified name %s contained invalid characters and was changed to: %s' % (args.name,clean_name))
+            database_id=clean_name
+
 
 
         OUTPUT_DIRECTORY='CRISPRessoWGS_on_%s' % database_id

@@ -223,7 +223,10 @@ def main():
 
         batch_folder_name = os.path.splitext(os.path.basename(args.batch_settings))[0]
         if args.name and args.name != "":
-            batch_folder_name = args.name
+            clean_name=CRISPRessoShared.slugify(args.name)
+            if args.name!= clean_name:
+                warn('The specified name %s contained invalid characters and was changed to: %s' % (args.name,clean_name))
+            batch_folder_name=clean_name
 
         output_folder_name='CRISPRessoBatch_on_%s' % batch_folder_name
         OUTPUT_DIRECTORY=os.path.abspath(output_folder_name)
