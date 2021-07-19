@@ -1,0 +1,204 @@
+biolib_version: 2
+modules:
+    main:
+        image: 'local-docker://crispresso2:latest'
+        command: ' '
+        working_directory: /home/biolib/
+        input_files:
+            - COPY / /home/biolib/
+        output_files:
+            - COPY /home/biolib/ /
+        source_files:
+            - COPY / /home/biolib/
+arguments:
+    -
+        key: ''
+        description: CRISPResso Mode
+        key_value_separator: ''
+        default_value: 'CRISPResso'
+        type: dropdown
+        required: false
+        options:
+            'CRISPRessoPooled (Genome)': CRISPRessoPooledGenome
+            'CRISPRessoPooled (Amplicon)': CRISPRessoPooledAmplicon
+            CRISPRessoWGS: CRISPRessoWGS
+            CRISPResso2: CRISPResso
+        sub_arguments:
+            CRISPResso:
+                -
+                    default_value: 'example/nhej.r1.fastq.gz'
+                    description: FASTQ file R1
+                    key: '--fastq_r1'
+                    key_value_separator: ' '
+                    required: true
+                    type: file
+                -
+                    default_value: 'example/nhej.r2.fastq.gz'
+                    description: FASTQ file R2
+                    key: '--fastq_r2'
+                    key_value_separator: ''
+                    required: false
+                    type: file
+                -
+                    default_value: 'AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT'
+                    description: Amplicon sequence (comma-separated)
+                    key: '--amplicon_seq'
+                    key_value_separator: ' '
+                    required: true
+                    type: text
+                -
+                    default_value: 'nhej'
+                    description: Amplicon name (comma-separated)
+                    key: '--amplicon_name'
+                    key_value_separator: ' '
+                    required: false
+                    type: text
+                -
+                    default_value: ''
+                    description: Guide sequence (sgRNA)
+                    key: '--guide_seq'
+                    key_value_separator: ' '
+                    required: false
+                    type: text
+                -
+                    default_value: ''
+                    description: Amplicon sequence expected after HDR
+                    key: '--expected_hdr_amplicon_seq'
+                    key_value_separator: ' '
+                    required: false
+                    type: text
+                -
+                    default_value: ''
+                    description: Coding sequence (subsequence of amplicon)
+                    key: '--coding_seq'
+                    key_value_separator: ' '
+                    required: false
+                    type: text
+                -
+                    default_value: ''
+                    description: Quantification window size
+                    key: '--quantification_window_size'
+                    key_value_separator: ' '
+                    required: false
+                    type: number
+                -
+                    default_value: ''
+                    description: Quantification window center
+                    key: '--quantification_window_center'
+                    key_value_separator: ' '
+                    required: false
+                    type: number
+            CRISPRessoWGS:
+                -
+                    default_value: ''
+                    description: Genome aligned BAM file
+                    key: '-b'
+                    key_value_separator: ' '
+                    required: true
+                    type: file
+                -
+                    default_value: ''
+                    description: Reference genome (FASTA)
+                    key: '-r'
+                    key_value_separator: ' '
+                    required: true
+                    type: file
+                -
+                    default_value: ''
+                    description: Description file (BED file)
+                    key: '-f'
+                    key_value_separator: ' '
+                    required: true
+                    type: file
+            CRISPRessoPooledGenome:
+                -
+                    default_value: ''
+                    description: FASTQ file R1
+                    key: '-r1'
+                    key_value_separator: ' '
+                    required: true
+                    type: file
+                -
+                    default_value: ''
+                    description: FASTQ file R2 (paired-end only)
+                    key: '-r2'
+                    key_value_separator: ''
+                    required: false
+                    type: file
+                -
+                    default_value: ''
+                    description: Genome (bowtie2 format)
+                    key: '-x'
+                    key_value_separator: ''
+                    required: false
+                    type: file
+                -
+                    default_value: 1000
+                    description: Minimum read number to use region
+                    key: '--min_reads_to_use_region'
+                    key_value_separator: ' '
+                    required: true
+                    type: number
+            CRISPRessoPooledAmplicon:
+                -
+                    default_value: ''
+                    description: FASTQ file R1
+                    key: '-r1'
+                    key_value_separator: ' '
+                    required: true
+                    type: file
+                -
+                    default_value: ''
+                    description: FASTQ file R2 (paired-end only)
+                    key: '-r2'
+                    key_value_separator: ''
+                    required: false
+                    type: file
+                -
+                    default_value: ''
+                    description: Description file (BED file)
+                    key: '-f'
+                    key_value_separator: ' '
+                    required: true
+                    type: file
+                -
+                    default_value: 1000
+                    description: Minimum read number to use region
+                    key: '--min_reads_to_use_region'
+                    key_value_separator: ' '
+                    required: true
+                    type: number
+    -
+        default_value: ''
+        description: Output file name
+        key: '--name'
+        key_value_separator: ' '
+        required: false
+        type: text
+    -
+        default_value: '.'
+        description: Output folder
+        key: '--output'
+        key_value_separator: ' '
+        required: false
+        type: text
+    -
+        default_value: ''
+        description: Produce annotated FASTQ file for each read
+        key: ''
+        key_value_separator: ' '
+        required: false
+        type: toggle
+        options:
+            'off': ''
+            'on': '--fastq_output'
+    -
+        default_value: ''
+        description: Produce base editor output
+        key: ''
+        key_value_separator: ' '
+        required: false
+        type: toggle
+        options:
+            'off': ''
+            'on': '--base_editor_output'

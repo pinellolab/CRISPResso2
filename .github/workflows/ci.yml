@@ -1,0 +1,33 @@
+name: CI
+
+on: push
+
+env:
+    BIOLIB_LOG: debug
+    BIOLIB_PROJECT_URI: CRISPResso_demo/CRISPResso2_fork
+    LOCAL_DOCKER_TAG: crispresso2:latest
+
+jobs:
+    build-and-publish:
+        name: Build Docker image and publish if on main
+        runs-on: ubuntu-latest
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v2
+
+            -   name: Build docker image
+                run: docker build -t $LOCAL_DOCKER_TAG .
+
+            -   name: Setup Python
+                uses: actions/setup-python@v2
+                with:
+                    python-version: 3.8.6
+
+            -   name: Install BioLib CLI
+                run: pip3 install pybiolib
+
+            -   name: Publish new version to BioLib if on master branch
+                if: github.ref == 'refs/heads/master'
+                run: biolib push $BIOLIB_PROJECT_URI
+                env:
+                    BIOLIB_TOKEN: ${{ secrets.BIOLIB_TOKEN }}
