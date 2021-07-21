@@ -584,7 +584,7 @@ def process_bam(bam_filename,bam_chr_loc,output_bam,variantCache,ref_names,refs,
     cmd = 'samtools view -Sb '+output_sam + '>'+output_bam + ' && samtools index ' + output_bam
     bam_status=sb.call(cmd,shell=True)
     if bam_status:
-            raise Exception('Bam creation failed. Command used: '+cmd)
+            raise CRISPRessoShared.BadParameterException('Bam creation failed. Command used: '+cmd)
 
     info("Finished reads; N_TOT_READS: %d N_COMPUTED_ALN: %d N_CACHED_ALN: %d N_COMPUTED_NOTALN: %d N_CACHED_NOTALN: %d"%(N_TOT_READS,N_COMPUTED_ALN,N_CACHED_ALN,N_COMPUTED_NOTALN,N_CACHED_NOTALN))
     aln_stats = {"N_TOT_READS" : N_TOT_READS,
@@ -1007,7 +1007,7 @@ def main():
                 for idx,seq in enumerate(guides):
                     info('Detected guide ' + str(idx) + ":" + str(seq))
             if amplicon_seq_arr == 0:
-                raise BadParameterException("Cannot automatically infer amplicon sequence.")
+                raise CRISPRessoShared.BadParameterException("Cannot automatically infer amplicon sequence.")
 
         else: #not auto
             amplicon_seq_arr = args.amplicon_seq.split(",")
@@ -1017,7 +1017,7 @@ def main():
 
             for idx, amp_seq in enumerate(amplicon_seq_arr):
                 if len(amp_seq) == 0:
-                    raise BadParameterException("Amplicon " + str(idx + 1) + " has length 0. Please check the --amplicon_seq parameter.")
+                    raise CRISPRessoShared.BadParameterException("Amplicon " + str(idx + 1) + " has length 0. Please check the --amplicon_seq parameter.")
 
                 this_name = 'Amplicon'+str(idx)
                 if idx >= len(amplicon_name_arr):
