@@ -106,8 +106,8 @@ def main():
         parser.add_argument('-bs','--batch_settings', type=str, help='Settings file for batch. Must be tab-separated text file. The header row contains CRISPResso parameters (e.g., fastq_r1, fastq_r2, amplicon_seq, and other optional parameters). Each following row sets parameters for an additional batch.',required=True)
         parser.add_argument('--skip_failed',  help='Continue with batch analysis even if one sample fails',action='store_true')
         parser.add_argument('--min_reads_for_inclusion',  help='Minimum number of reads for a batch to be included in the batch summary', type=int, default=0)
-        parser.add_argument('-p','--n_processes',type=int, help='Specify the number of processes to use for quantification.\
-        Please use with caution since increasing this parameter will increase the memory required to run CRISPResso.',default=1)
+        parser.add_argument('-p','--n_processes',type=str, help='Specify the number of processes to use for analysis.\
+        Please use with caution since increasing this parameter will significantly increase the memory required to run CRISPResso. Can be set to \'max\'.',default='1')
         parser.add_argument('-bo','--batch_output_folder',  help='Directory where batch analysis output will be stored')
         parser.add_argument('--crispresso_command', help='CRISPResso command to call',default='CRISPResso')
 
@@ -131,6 +131,12 @@ def main():
         batch_params.rename(index=str,columns=CRISPRessoShared.get_crispresso_options_lookup(),inplace=True)
         batch_count = batch_params.shape[0]
         batch_params.index = range(batch_count)
+
+        n_processes = 1
+        if args.n_processes == "max":
+            n_processes = CRISPRessoMultiProcessing.get_max_processes()
+        else:
+            n_processes = int(args.n_processes)
 
         if 'fastq_r1' not in batch_params and 'bam_input' not in batch_params:
             raise CRISPRessoShared.BadParameterException("fastq_r1 must be specified in the batch settings file. Current headings are: "
@@ -284,7 +290,7 @@ def main():
         crispresso2_info['batch_names_arr'] = batch_names_arr
         crispresso2_info['batch_input_names'] = batch_input_names
 
-        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,args.n_processes,'batch',args.skip_failed)
+        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds,n_processes,'batch',args.skip_failed)
 
         run_datas = [] #crispresso2 info from each row
 
