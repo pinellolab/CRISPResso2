@@ -201,10 +201,8 @@ def main():
                 crispresso_cmds.append(crispresso_compare_cmd)
                 sub_folder = os.path.join(OUTPUT_DIRECTORY,"CRISPRessoCompare_on_"+compare_output_name)
                 this_sub_html_file = os.path.basename(sub_folder)+".html"
-                print(' 1 this_sub_html_file: ' + this_sub_html_file)
                 if args.place_report_in_output_folder:
                     this_sub_html_file = os.path.join(os.path.basename(sub_folder),"CRISPResso2Compare_report.html")
-                print('2 this_sub_html_file: ' + this_sub_html_file)
                 processed_region_html_files[idx] = this_sub_html_file
                 processed_region_folder_names[idx] = compare_output_name
 
