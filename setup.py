@@ -3,8 +3,8 @@
 Setup script for CRISPResso2 -- Software pipeline for the analysis of genome editing outcomes from deep sequencing data
 @status:  beta
 @version: $Revision$
-@author:  Kendell Clement
-@contact: kclement@mgh.harvard.edu
+@author:  edilytics
+@contact: contact@edilytics.com
 
 CRISPResso2 - Kendell Clement and Luca Pinello 2020
 Software pipeline for the analysis of genome editing outcomes from deep sequencing data
@@ -32,15 +32,11 @@ import sys
 import re
 
 def main():
-    if float(sys.version[:3])<2.7 or float(sys.version[:3])>=2.8:
-        sys.stderr.write("CRITICAL: Python version must be 2.7!\n")
-        sys.exit(1)
-
     version = re.search(
-    	'^__version__\s*=\s*"(.*)"',
-    	open('CRISPResso2/CRISPRessoShared.py').read(),
-    	re.M
-    	).group(1)
+        r'^__version__\s*=\s*"(.*)"',
+        open('CRISPResso2/CRISPRessoShared.py').read(),
+        re.M
+    ).group(1)
 
     ext_modules = [
             Extension("CRISPResso2.CRISPRessoCOREResources", ["CRISPResso2/CRISPRessoCOREResources" + ext], include_dirs=numpy_include_dir, extra_compile_args=['-w','-Ofast'] ),
@@ -48,7 +44,7 @@ def main():
                        ]
     if has_cython:
         from Cython.Build import cythonize
-        ext_modules = cythonize(ext_modules, language_level="2")
+        ext_modules = cythonize(ext_modules, language_level="3")
 
 
     call_root = "CRISPResso"
@@ -85,19 +81,17 @@ def main():
               'License :: Other/Proprietary License',
               'Operating System :: POSIX',
               'Topic :: Scientific/Engineering :: Bio-Informatics',
-              'Programming Language :: Python :: 2 :: Only',
+              'Programming Language :: Python :: 3 :: Only',
               'Programming Language :: Cython',
               ],
           install_requires=[
-              'pandas>=0.15,<=0.24',
-              'matplotlib>=1.3.1,<=2.2.3',
-              'argparse>=1.3,<=1.4',
-    	      'seaborn>0.7.1,<0.10',
-              'jinja2==2.10',
-    	      'scipy==1.1.0',
-              'numpy>=1.9,<=1.16.6',
-              'kiwisolver<1.2',
-              'pyparsing<3',
+              'pandas',  # '>=0.15,<=0.24',
+              'matplotlib',  # '>=1.3.1,<=2.2.3',
+              'argparse', #  '>=1.3,<=1.4',
+              'seaborn', # '>0.7.1,<0.10',
+              'jinja2',
+              'scipy',
+              'numpy',
               ],
           cmdclass = command_classes,
           ext_modules = ext_modules

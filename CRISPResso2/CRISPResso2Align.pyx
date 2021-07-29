@@ -5,7 +5,7 @@ from cython.view cimport array as cvarray
 import numpy as np
 cimport numpy as np
 
-
+from libc.stdlib cimport free, malloc
 
 cimport cython
 import sys
@@ -13,13 +13,9 @@ import os.path
 
 cdef extern from "stdlib.h":
     ctypedef unsigned int size_t
-    size_t strlen(char *s)
 
 cdef extern from "Python.h":
     ctypedef void PyObject
-    PyObject *PyString_FromStringAndSize(char *, size_t)
-    int _PyString_Resize(PyObject **, size_t)
-    char * PyString_AS_STRING(PyObject *)
 
 ctypedef np.int_t DTYPE_INT
 ctypedef np.uint_t DTYPE_UINT
@@ -27,6 +23,14 @@ ctypedef np.int8_t DTYPE_BOOL
 
 cdef size_t UP = 1, LEFT = 2, DIAG = 3, NONE = 4
 cdef size_t MARRAY = 1, IARRAY = 2, JARRAY = 3
+
+
+cdef char* get_c_string_with_length(size_t length):
+    cdef char* c_string = <char *> malloc((length + 1) * sizeof(char))
+    if not c_string:
+        raise MemoryError()
+    return c_string
+
 
 def read_matrix(path):
     """
@@ -38,29 +42,29 @@ def read_matrix(path):
     cdef size_t ai = 0, i
     cdef int v, mat_size
 
-    fh = open(path)
-    headers = None
-    while headers is None:
-        line = fh.readline().strip()
-        if line[0] == '#': continue
-        headers = [ord(x) for x in line.split(' ') if x]
-    mat_size = max(headers) + 1
+    with open(path) as fh:
+        headers = None
+        while headers is None:
+            line = fh.readline().strip()
+            if line[0] == '#': continue
+            headers = [ord(x) for x in line.split(' ') if x]
+        mat_size = max(headers) + 1
 
-    a = np.zeros((mat_size, mat_size), dtype=np.int)
+        a = np.zeros((mat_size, mat_size), dtype=int)
 
-    line = fh.readline()
-    while line:
-        line_vals = [int(x) for x in line[:-1].split(' ')[1:] if x]
-        for ohidx, val in zip(headers, line_vals):
-            a[headers[ai], ohidx] = val
-        ai += 1
         line = fh.readline()
+        while line:
+            line_vals = [int(x) for x in line[:-1].split(' ')[1:] if x]
+            for ohidx, val in zip(headers, line_vals):
+                a[headers[ai], ohidx] = val
+            ai += 1
+            line = fh.readline()
 
     return a
 
 @cython.boundscheck(False)
 @cython.nonecheck(False)
-def global_align(char* seqj, char* seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
+def global_align(str pystr_seqj, str pystr_seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
           np.ndarray[DTYPE_INT,ndim=1] gap_incentive, int gap_open=-1,
           int gap_extend=-1):
     """
@@ -74,8 +78,13 @@ def global_align(char* seqj, char* seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
 
     """
 
-    cdef size_t max_j = strlen(seqj)
-    cdef size_t max_i = strlen(seqi)
+    byte_seqj = pystr_seqj.encode('UTF-8')
+    cdef char* seqj = byte_seqj
+    byte_seqi = pystr_seqi.encode('UTF-8')
+    cdef char* seqi = byte_seqi
+
+    cdef size_t max_j = len(pystr_seqj)
+    cdef size_t max_i = len(pystr_seqi)
     if len(gap_incentive) != max_i + 1:
         print('\nERROR: Mismatch in gap_incentive length (gap_incentive: ' + str(len(gap_incentive)) + ' ref: '+str(max_i+1) + '\n')
         return 0
@@ -84,12 +93,10 @@ def global_align(char* seqj, char* seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
     cdef size_t i = 0, j = 0, seqlen, align_counter = 0, p
     cdef int diag_score, up_score, left_score, tscore
 
-    cdef char *align_j
-    cdef char *align_i
+    cdef str align_j
+    cdef str align_i
     cdef char ci
     cdef char cj
-    cdef PyObject *ai
-    cdef PyObject *aj
 
     #create 3 arrays of scores and 3 arrays of pointers
     # M array - best alignment so far ending with a match
@@ -120,14 +127,14 @@ def global_align(char* seqj, char* seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
 # gap extension penalty for gaps starting at beginning
     #init i matrix
     for i in range(1,max_j+1):
-      iScore[0,i] = gap_extend * i
+        iScore[0,i] = gap_extend * i + gap_incentive[0]
 #    iScore[0,1:] = [gap_extend * np.arange(1, max_j+1, dtype=np.int)]
     iScore[0:,0] = min_score
     iPointer[0,1:] = IARRAY
 
     #init j matrix
     for i in range(1,max_i+1):
-      jScore[i,0] = gap_extend * i
+        jScore[i,0] = gap_extend * i + gap_incentive[0]
     #jScore[1:,0] = np.vectorize(gap_extend * np.arange(1, max_i+1, dtype=np.int))
     jScore[0,0:] = min_score
     jPointer[1:,0] = JARRAY
@@ -150,21 +157,21 @@ def global_align(char* seqj, char* seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
             iFromMVal = gap_open + mScore[i, j - 1] + gap_incentive[i]
             iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]
             if iFromMVal > iExtendVal:
-                    iScore[i,j] = iFromMVal
-                    iPointer[i,j] = MARRAY
+                iScore[i,j] = iFromMVal
+                iPointer[i,j] = MARRAY
             else:
-                    iScore[i,j] = iExtendVal
-                    iPointer[i,j] = IARRAY
+                iScore[i,j] = iExtendVal
+                iPointer[i,j] = IARRAY
 
             jFromMVal = gap_open + mScore[i - 1, j] + gap_incentive[i-1]
 	    #no gap incentive here -- J already got the gap incentive when it transitioned from M, so don't add it again if we're extending.
             jExtendVal = gap_extend + jScore[i - 1, j]
             if jFromMVal > jExtendVal:
-                    jScore[i,j] =  jFromMVal
-                    jPointer[i,j] = MARRAY
+                jScore[i,j] =  jFromMVal
+                jPointer[i,j] = MARRAY
             else:
-                    jScore[i,j] = jExtendVal
-                    jPointer[i,j] = JARRAY
+                jScore[i,j] = jExtendVal
+                jPointer[i,j] = JARRAY
 
             mVal = mScore[i - 1, j - 1] + matrix[ci,cj]
             iVal = iScore[i - 1, j - 1] + matrix[ci,cj]
@@ -196,20 +203,20 @@ def global_align(char* seqj, char* seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
         iFromMVal = gap_extend + mScore[i, j - 1] + gap_incentive[i]
         iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]
         if iFromMVal > iExtendVal:
-                iScore[i,j] =  iFromMVal
-                iPointer[i,j] = MARRAY
+            iScore[i,j] =  iFromMVal
+            iPointer[i,j] = MARRAY
         else:
-                iScore[i,j] = iExtendVal
-                iPointer[i,j] = IARRAY
+            iScore[i,j] = iExtendVal
+            iPointer[i,j] = IARRAY
 
         jFromMVal = gap_extend + mScore[i - 1, j] + gap_incentive[i-1]
         jExtendVal = gap_extend + jScore[i - 1, j]
         if jFromMVal > jExtendVal:
-                jScore[i,j] =  jFromMVal
-                jPointer[i,j] = MARRAY
+            jScore[i,j] =  jFromMVal
+            jPointer[i,j] = MARRAY
         else:
-                jScore[i,j] = jExtendVal
-                jPointer[i,j] = JARRAY
+            jScore[i,j] = jExtendVal
+            jPointer[i,j] = JARRAY
 
         mVal = mScore[i - 1, j - 1] + matrix[ci,cj]
         iVal = iScore[i - 1, j - 1] + matrix[ci,cj]
@@ -239,20 +246,20 @@ def global_align(char* seqj, char* seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
         iFromMVal = gap_extend + mScore[i, j - 1] + gap_incentive[i]
         iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]
         if iFromMVal > iExtendVal:
-                iScore[i,j] =  iFromMVal
-                iPointer[i,j] = MARRAY
+            iScore[i,j] =  iFromMVal
+            iPointer[i,j] = MARRAY
         else:
-                iScore[i,j] = iExtendVal
-                iPointer[i,j] = IARRAY
+            iScore[i,j] = iExtendVal
+            iPointer[i,j] = IARRAY
 
         jFromMVal = gap_extend + mScore[i - 1, j] + gap_incentive[i-1]
         jExtendVal = gap_extend + jScore[i - 1, j]
         if jFromMVal > jExtendVal:
-                jScore[i,j] =  jFromMVal
-                jPointer[i,j] = MARRAY
+            jScore[i,j] =  jFromMVal
+            jPointer[i,j] = MARRAY
         else:
-                jScore[i,j] = jExtendVal
-                jPointer[i,j] = JARRAY
+            jScore[i,j] = jExtendVal
+            jPointer[i,j] = JARRAY
 
 
         mVal = mScore[i - 1, j - 1] + matrix[ci,cj]
@@ -275,14 +282,7 @@ def global_align(char* seqj, char* seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
 #        print('lastRow: mScore['+str(i) + ',' + str(j) +']: ' + str(mScore[i,j]) + ': max(' + str(mScore[i - 1, j - 1])+ '+ (' + str(ci)+ ',' + str(cj) + ') ' + str(matrix[ci,cj]) + ', i:'+str(iVal) + ',j:' + str(jVal))
 
 
-    seqlen = max_i + max_j
-    ai = PyString_FromStringAndSize(NULL, seqlen)
-    aj = PyString_FromStringAndSize(NULL, seqlen)
 
-    # had to use this and PyObject instead of assigning directly...
-    align_j = PyString_AS_STRING(aj)
-    align_i = PyString_AS_STRING(ai)
-#
 #    print('mScore')
 #    for ii in range(mScore.shape[0]):
 #      for jj in range(mScore.shape[1]):
@@ -299,9 +299,11 @@ def global_align(char* seqj, char* seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
 #        print(str(jScore[ii,jj]) + '.' + str(jPointer[ii,jj])+ ","),
 #      print("\n"),
 
+    seqlen = max_i + max_j
+    cdef char* tmp_align_j = get_c_string_with_length(seqlen)
+    cdef char* tmp_align_i = get_c_string_with_length(seqlen)
+
     cdef int matchCount = 0
-
-
     i = max_i
     j = max_j
     ci = seqi[i - 1]
@@ -321,44 +323,59 @@ def global_align(char* seqj, char* seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
 #    print('seqi' + str(seqi))
 #    print('seqj' + str(seqj))
     while i > 0 or j > 0:
-#        print("i: " + str(i) + " j: " + str(j) + " currMatrix: " + str(currMatrix) + " match score: " + str(mScore[i,j]) + " last match: " +  str(mScore[i-1,j-1]) + " matrix[" + str(ci) + "," + str(cj) + "]: " + str(matrix[ci,cj]) + " last j " + str(jScore[i,j]) + " last i: " + str(iScore[i,j]) + " mpointer: " + str(mPointer[i,j]) + " ipointer: " + str(iPointer[i,j]) + " jpointer: " + str(jPointer[i,j]))
+        # print("i: " + str(i) + " j: " + str(j) + " currMatrix: " + str(currMatrix) + " match score: " + str(mScore[i,j]) + " last match: " +  str(mScore[i-1,j-1]) + " matrix[" + str(ci) + "," + str(cj) + "]: " + str(matrix[ci,cj]) + " last j " + str(jScore[i,j]) + " last i: " + str(iScore[i,j]) + " mpointer: " + str(mPointer[i,j]) + " ipointer: " + str(iPointer[i,j]) + " jpointer: " + str(jPointer[i,j]))
 
         currVal = mScore[i,j]
         currPtr = mPointer[i,j]
-        if currMatrix == 2:
-          currVal = iScore[i,j]
-          currPtr = iPointer[i,j]
-        if currMatrix == 3:
-          currVal = jScore[i,j]
-          currPtr = jPointer[i,j]
+        if currMatrix == IARRAY:
+            currVal = iScore[i,j]
+            currPtr = iPointer[i,j]
+        if currMatrix == JARRAY:
+            currVal = jScore[i,j]
+            currPtr = jPointer[i,j]
 #        print("i: " + str(i) + " j: " + str(j) + " " + str(currMatrix) +':' + str(currVal) + ' > ' + str(currPtr))
-        if i > 0 or j > 0:
-          if currMatrix == MARRAY:
+        if currMatrix == MARRAY: # 1
             currMatrix = mPointer[i,j]
-            i -= 1
-            j -= 1
-            align_j[align_counter] = cj
-            align_i[align_counter] = ci
+            tmp_align_j[align_counter] = cj
+            tmp_align_i[align_counter] = ci
             if cj == ci:
-                 matchCount += 1
+                matchCount += 1
 
-            ci = seqi[i-1]
-            cj = seqj[j-1]
+            if i > 1:
+                i -= 1
+                ci = seqi[i - 1]
+            else:
+                i = 0
+                ci = seqi[i]
+            if j > 1:
+                j -= 1
+                cj = seqj[j - 1]
+            else:
+                j = 0
+                cj = seqj[j]
 
 #            print('in M set to ' + str(currMatrix))
-          elif currMatrix == JARRAY:
+        elif currMatrix == JARRAY: # 3
             currMatrix = jPointer[i,j]
-            i -= 1
-            align_j[align_counter] = c"-"
-            align_i[align_counter] = ci
-            ci = seqi[i-1]
-          elif currMatrix == IARRAY:
+            tmp_align_j[align_counter] = c"-"
+            tmp_align_i[align_counter] = ci
+            if i > 1:
+                i -= 1
+                ci = seqi[i - 1]
+            else:
+                i = 0
+                ci = seqi[i]
+        elif currMatrix == IARRAY: # 2
             currMatrix = iPointer[i,j]
-            j -= 1
-            align_j[align_counter] = cj
-            align_i[align_counter] = c"-"
-            cj = seqj[j-1]
-          else:
+            tmp_align_j[align_counter] = cj
+            tmp_align_i[align_counter] = c"-"
+            if j > 1:
+                j -= 1
+                cj = seqj[j - 1]
+            else:
+                j = 0
+                cj = seqj[j]
+        else:
             print('i: ' + str(i) + ' j: ' + str(j))
             print('currMatrix:' + str(currMatrix))
             print('seqj: ' + str(seqj) + ' seqi: ' + str(seqi))
@@ -366,10 +383,16 @@ def global_align(char* seqj, char* seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
 #          print('at end, currMatrix is ' + str(currMatrix))
 
         align_counter += 1
+    try:
+        align_j = tmp_align_j[:align_counter].decode('UTF-8', 'strict')
+    finally:
+        free(tmp_align_j)
+    try:
+        align_i = tmp_align_i[:align_counter].decode('UTF-8', 'strict')
+    finally:
+        free(tmp_align_i)
 
-    _PyString_Resize(&aj, align_counter)
-    _PyString_Resize(&ai, align_counter)
-
+    # print(tounicode_with_length_and_free(alig))
 #    print(str(matchCount) + " aln: " + str(align_counter))
     final_score = 100*matchCount/float(align_counter)
-    return (<object>aj)[::-1], (<object>ai)[::-1],final_score
+    return align_j[::-1], align_i[::-1], round(final_score, 3)
