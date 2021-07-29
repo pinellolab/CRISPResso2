@@ -13,7 +13,7 @@ usage = '\n- CRISPResso2 Docker Container -\n\t- Possible commands: \n\t  CRISPR
 
 if len(sys.argv)==1:
 
-    print usage
+    print(usage)
     sys.exit(1)
 
 if sys.argv[1]=='CRISPResso':
@@ -32,6 +32,6 @@ elif sys.argv[1]=='CRISPRessoAggregate':
     sb.call(["CRISPRessoAggregate"]+ sys.argv[2:])
 elif sys.argv[1]=='License':
     with open("LICENSE.txt", 'r') as fin:
-        print fin.read()
+        print(fin.read())
 else:
-    print usage
+    print(usage)
