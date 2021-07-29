@@ -10,17 +10,12 @@ RUN apt-get update && apt-get install gcc g++ bowtie2 samtools \
   -y --no-install-recommends \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* \
-  && micromamba config --add channels defaults \
-  && micromamba config --add channels conda-forge \
-  && micromamba config --add channels bioconda \
-  && micromamba config --set remote_connect_timeout_secs 60 \
-  && micromamba config --set ssl_verify no \
-  && micromamba install --debug -c bioconda trimmomatic flash numpy cython jinja2 \
-  && micromamba clean -all --yes
+  && micromamba install -c defaults -c conda-forge -c bioconda -y -n base --debug -c bioconda trimmomatic flash numpy cython jinja2 \
+  && micromamba clean --all --yes
 
 #install ms fonts
-RUN echo "deb http://httpredir.debian.org/debian jessie main contrib" > /etc/apt/sources.list \
-  && echo "deb http://security.debian.org/ jessie/updates main contrib" >> /etc/apt/sources.list \
+RUN echo "deb http://httpredir.debian.org/debian buster main contrib" > /etc/apt/sources.list \
+  && echo "deb http://security.debian.org/ buster/updates main contrib" >> /etc/apt/sources.list \
   && echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections \
   && apt-get update \
   && apt-get install -y ttf-mscorefonts-installer \
