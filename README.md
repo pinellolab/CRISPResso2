@@ -116,7 +116,7 @@ docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso --fast
 ```
 
 ### Example run: Non-homologous end joining (NHEJ)
-Download the test datasets [nhej.r1.fastq.gz](https://crispresso.pinellolab.partners.org/static/demo/nhej.r1.fastq.gz) and [nhej.r2.fastq.gz]( https://crispresso.pinellolab.partners.org/static/demo/nhej.r2.fastq.gz) to your current directory. This is the first 25,000 sequences from a paired-end sequencing experiment. To analyze this experiment, run the command:
+Download the test datasets [nhej.r1.fastq.gz](https://crispresso.pinellolab.partners.org/static/demo/nhej.r1.fastq.gz) and [nhej.r2.fastq.gz](https://crispresso.pinellolab.partners.org/static/demo/nhej.r2.fastq.gz) to your current directory. This is the first 25,000 sequences from a paired-end sequencing experiment. To analyze this experiment, run the command:
 
 *Using Bioconda:*
 ```
@@ -131,7 +131,7 @@ docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso --fast
 This should produce a folder called 'CRISPResso_on_nhej'. Open the file called CRISPResso_on_nhej/CRISPResso2_report.html in a web browser, and you should see an output like this: [CRISPResso2_report.html](https://crispresso.pinellolab.partners.org/static/demo/CRISPResso_on_nhej/CRISPResso2_report.html).
 
 ### Example run: Multiple alleles
-Download the test dataset [allele_specific.fastq.gz]( https://crispresso.pinellolab.partners.org/static/demo/allele_specific.fastq.gz) to your current directory. This is the first 25,000 sequences from a editing experiment targeting one allele. To analyze this experiment, run the following command:
+Download the test dataset [allele_specific.fastq.gz](https://crispresso.pinellolab.partners.org/static/demo/allele_specific.fastq.gz) to your current directory. This is the first 25,000 sequences from a editing experiment targeting one allele. To analyze this experiment, run the following command:
 
 *Using Bioconda:*
 ```
@@ -146,7 +146,7 @@ docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso --fast
 This should produce a folder called 'CRISPResso_on_allele_specific'. Open the file called CRISPResso_on_allele_specific/CRISPResso2_report.html in a web browser, and you should see an output like this: [CRISPResso2_report.html](https://crispresso.pinellolab.partners.org/static/demo/CRISPResso_on_allele_specific/CRISPResso2_report.html).
 
 ### Example run: Base editing experiment
-Download the test dataset [base_editor.fastq.gz]( https://crispresso.pinellolab.partners.org/static/demo/base_editor.fastq.gz) to your current directory. This is the first 25,000 sequences from an editing experiment performed at the EMX1 locus. To analyze this experiment, run the following command:
+Download the test dataset [base_editor.fastq.gz](https://crispresso.pinellolab.partners.org/static/demo/base_editor.fastq.gz) to your current directory. This is the first 25,000 sequences from an editing experiment performed at the EMX1 locus. To analyze this experiment, run the following command:
 
 *Using Bioconda:*
 ```
@@ -445,7 +445,7 @@ For each amplicon, the following files are produced with the name of the amplico
 *MODIFICATION_FREQUENCY_SUMMARY.txt* and *MODIFICATION_PERCENTAGE_SUMMARY.txt* aggregate the modification frequency and percentage at each position in the amplicon for each sample.
 
 #### Example run: Batch mode
-Download the test dataset files [SRR3305543.fastq.gz]( https://crispresso.pinellolab.partners.org/static/demo/SRR3305543.fastq.gz), [SRR3305544.fastq.gz](https://crispresso.pinellolab.partners.org/static/demo/SRR3305544.fastq.gz), [SRR3305545.fastq.gz]( https://crispresso.pinellolab.partners.org/static/demo/SRR3305545.fastq.gz), and [SRR3305546.fastq.gz]( https://crispresso.pinellolab.partners.org/static/demo/SRR3305546.fastq.gz) to your current directory. These are files are the first 25,000 sequences from an editing experiment performed on several base editors. Also include a batch file that lists these files and the sample names: [batch.batch](https://crispresso.pinellolab.partners.org/static/demo/batch.batch) To analyze this experiment, run the following command:
+Download the test dataset files [SRR3305543.fastq.gz](https://crispresso.pinellolab.partners.org/static/demo/SRR3305543.fastq.gz), [SRR3305544.fastq.gz](https://crispresso.pinellolab.partners.org/static/demo/SRR3305544.fastq.gz), [SRR3305545.fastq.gz](https://crispresso.pinellolab.partners.org/static/demo/SRR3305545.fastq.gz), and [SRR3305546.fastq.gz](https://crispresso.pinellolab.partners.org/static/demo/SRR3305546.fastq.gz) to your current directory. These are files are the first 25,000 sequences from an editing experiment performed on several base editors. Also include a batch file that lists these files and the sample names: [batch.batch](https://crispresso.pinellolab.partners.org/static/demo/batch.batch) To analyze this experiment, run the following command:
 
 *Using Bioconda:*
 ```
@@ -717,6 +717,36 @@ discovered, even if the region is not mappable to any amplicon (however,
 his may be time consuming). Finally the Amplicon mode is the fastest,
 although the least reliable in terms of quantification accuracy.
 
+#### Parameter List
+
+-f or --amplicons_file: Amplicons description file (default: ''). This file is a tab-delimited text file with up to 5 columns (2 required):
+        AMPLICON_NAME:  an identifier for the amplicon (must be unique)
+        AMPLICON_SEQUENCE:  amplicon sequence used in the experiment
+        sgRNA_SEQUENCE (OPTIONAL):  sgRNA sequence used for this amplicon without the PAM sequence. Multiple guides can be given separated by commas and not spaces. If not available enter NA.
+        EXPECTED_AMPLICON_AFTER_HDR (OPTIONAL): expected amplicon sequence in case of HDR. If not available enter NA.
+        CODING_SEQUENCE (OPTIONAL): Subsequence(s) of the amplicon corresponding to coding sequences. If more than one separate them by commas and not spaces. If not available enter NA.
+
+--gene_annotations: Gene Annotation Table from UCSC Genome Browser Tables <http://genome.ucsc.edu/cgi-bin/hgTables?command=start>, please select as table "knownGene", as output format "all fields from selected table" and as file returned "gzip compressed". (default: '')
+
+-x or --bowtie2_index: Basename of Bowtie2 index for the reference genome. (default: '')
+
+--bowtie2_options_string: Override options for the Bowtie2 alignment command. By default, this is " --end-to-end -N 0 --np 0 -mp 3,2 --score-min L,-5,-3(1-H)" where H is the default homology score. (default: '')
+
+--use_legacy_bowtie2_options_string: Use legacy (more stringent) Bowtie2 alignment parameters: " -k 1 --end-to-end -N 0 --np 0 ". (default: False)
+
+--min_reads_to_use_region: Minimum number of reads that align to a region to perform the CRISPResso analysis. (default: 1000)
+
+--skip_failed: Continue with pooled analysis even if one sample fails. (default: False)
+
+--skip_reporting_problematic_regions: Skip reporting of problematic regions. By default, when both amplicons (-f) and genome (-x) are provided, problematic reads that align to the genome but to positions other than where the amplicons align are reported as problematic. (default: False)
+
+--compile_postrun_references: If set, a file will be produced which compiles the reference sequences of frequent amplicons. (default: False)
+
+--compile_postrun_reference_allele_cutoff: Only alleles with at least this percentage frequency in the population will be reported in the postrun analysis. This parameter is given as a percent, so 30 is 30%. (default: 30)
+
+--alternate_alleles: Path to tab-separated file with alternate allele sequences for pooled experiments. This file has the columns "region_name","reference_seqs", and "reference_names" and gives the reference sequences of alternate alleles that will be passed to CRISPResso for each individual region for allelic analysis. Multiple reference alleles and reference names for a given region name are separated by commas (no spaces). (default: '')
+
+--limit_open_files_for_demux: If set, only one file will be opened during demultiplexing of read alignment locations. This will be slightly slower as the reads must be sorted, but may be necessary if the number of amplicons is greater than the number of files that can be opened due to OS constraints. (default: False)
 
 ### CRISPRessoWGS
 
@@ -833,6 +863,20 @@ The output from these files will consist of:
 This utility is particular useful to investigate and quantify mutation
 frequency in a list of potential target or off-target sites, coming for
 example from prediction tools, or from other orthogonal assays.
+
+#### Parameter List
+
+-b or --bam_file: WGS aligned bam file. (default: 'bam filename')
+
+-f or --region_file: Regions description file. A BED format file containing the regions to analyze, one per line. The REQUIRED columns are: chr_id(chromosome name), bpstart(start position), bpend(end position), the optional columns are: name (an unique indentifier for the region), guide_seq, expected_hdr_amplicon_seq,coding_seq, see CRISPResso help for more details on these last 3 parameters).
+
+-r or --reference_file: A FASTA format reference file (for example hg19.fa for the human genome). (default: '')
+
+--min_reads_to_use_region: Minimum number of reads that align to a region to perform the CRISPResso analysis. (default: 10)
+
+--gene_annotations: Gene Annotation Table from UCSC Genome Browser Tables <http://genome.ucsc.edu/cgi-bin/hgTables?command=start>, please select as table "knownGene", as output format "all fields from selected table" and as file returned "gzip compressed". (default: '')
+
+--crispresso_command: CRISPResso command to call. (default: 'CRISPResso')
 
 ### CRISPRessoCompare
 
