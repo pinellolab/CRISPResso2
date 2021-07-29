@@ -17,7 +17,7 @@ import pandas as pd
 def get_max_processes():
     return mp.cpu_count()
 
-def run_crispresso(crispresso_cmds,descriptor,idx):
+def run_crispresso(crispresso_cmds, descriptor, idx):
     """
     Runs a specified crispresso command specified by idx
     Used for multiprocessing by run_crispresso_cmds
@@ -30,37 +30,43 @@ def run_crispresso(crispresso_cmds,descriptor,idx):
 
     logging.info('Running CRISPResso on %s #%d/%d: %s' % (descriptor, idx, len(crispresso_cmds), crispresso_cmd))
 
-    return_value = sb.call(crispresso_cmd,shell=True)
+    return_value = sb.call(crispresso_cmd, shell=True)
 
     if return_value == 137:
-        logging.warn('CRISPResso was killed by your system (return value %d) on %s #%d: "%s"\nPlease reduce the number of processes (-p) and run again.'%(return_value,descriptor,idx,crispresso_cmd))
+        logging.warn('CRISPResso was killed by your system (return value %d) on %s #%d: "%s"\nPlease reduce the number of processes (-p) and run again.'%(return_value, descriptor, idx, crispresso_cmd))
     elif return_value != 0:
-        logging.warn('CRISPResso command failed (return value %d) on %s #%d: "%s"'%(return_value,descriptor,idx,crispresso_cmd))
+        logging.warn('CRISPResso command failed (return value %d) on %s #%d: "%s"'%(return_value, descriptor, idx, crispresso_cmd))
     else:
-        logging.info('Finished CRISPResso %s #%d' %(descriptor,idx))
+        logging.info('Finished CRISPResso %s #%d' %(descriptor, idx))
     return return_value
 
-def run_crispresso_cmds(crispresso_cmds,n_processes=1,descriptor = 'region',continue_on_fail=False):
+def run_crispresso_cmds(crispresso_cmds,n_processes="1",descriptor = 'region',continue_on_fail=False):
     """
     input: crispresso_cmds: list of crispresso commands to run
     descriptor: label printed out describing a command e.g. "Could not process 'region' 5" or "Could not process 'batch' 5"
     """
-    logging.info("Running CRISPResso with %d processes" % n_processes)
-    pool = mp.Pool(processes = n_processes)
+    int_n_processes = 1
+    if n_processes == "max":
+        int_n_processes = get_max_processes()
+    else:
+        int_n_processes = int(n_processes)
+
+    logging.info("Running CRISPResso with %d processes" % int_n_processes)
+    pool = mp.Pool(processes=int_n_processes)
     idxs = range(len(crispresso_cmds))
-    pFunc = partial(run_crispresso,crispresso_cmds,descriptor)
+    pFunc = partial(run_crispresso, crispresso_cmds, descriptor)
 
     #handle signals -- bug in python 2.7 (https://stackoverflow.com/questions/11312525/catch-ctrlc-sigint-and-exit-multiprocesses-gracefully-in-python)
     original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGINT, original_sigint_handler)
     try:
-        res = pool.map_async(pFunc,idxs)
+        res = pool.map_async(pFunc, idxs)
         ret_vals = res.get(60*60*60) # Without the timeout this blocking call ignores all signals.
         for idx, ret in enumerate(ret_vals):
             if ret == 137:
-                raise Exception('CRISPResso %s #%d was killed by your system. Please decrease the number of processes (-p) and run again.'%(descriptor,idx))
+                raise Exception('CRISPResso %s #%d was killed by your system. Please decrease the number of processes (-p) and run again.'%(descriptor, idx))
             if ret != 0 and not continue_on_fail:
-                raise Exception('CRISPResso %s #%d failed. For more information, try running the command: "%s"'%(descriptor,idx,crispresso_cmds[idx]))
+                raise Exception('CRISPResso %s #%d failed. For more information, try running the command: "%s"'%(descriptor, idx, crispresso_cmds[idx]))
     except KeyboardInterrupt:
         pool.terminate()
         logging.warn('Caught SIGINT. Program Terminated')
@@ -100,15 +106,15 @@ def run_pandas_apply_parallel(input_df, input_function_chunk, n_processes=1):
         of dataframe manipulation is relatively small
     """
     #shuffle the dataset to avoid finishing all the ones on top while leaving the ones on the bottom unfinished
-    n_splits = min(n_processes,len(input_df))
-    df_split = np.array_split(input_df.sample(frac=1),n_splits)
+    n_splits = min(n_processes, len(input_df))
+    df_split = np.array_split(input_df.sample(frac=1), n_splits)
     pool = mp.Pool(processes = n_splits)
 
     #handle signals -- bug in python 2.7 (https://stackoverflow.com/questions/11312525/catch-ctrlc-sigint-and-exit-multiprocesses-gracefully-in-python)
     original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGINT, original_sigint_handler)
     try:
-        r = pool.map_async(input_function_chunk,df_split)
+        r = pool.map_async(input_function_chunk, df_split)
         results = r.get(60*60*60) # Without the timeout this blocking call ignores all signals.
         df_new = pd.concat(results)
     except KeyboardInterrupt:
@@ -138,9 +144,9 @@ def run_function_on_array_chunk_parallel(input_array, input_function, n_processe
     original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGINT, original_sigint_handler)
     try:
-        n = int(max(10,len(input_array)/n_processes)) #don't parallelize unless at least 10 tasks
+        n = int(max(10, len(input_array)/n_processes)) #don't parallelize unless at least 10 tasks
         input_chunks = [input_array[i * n:(i + 1) * n] for i in range((len(input_array) + n - 1) // n )]
-        r = pool.map_async(input_function,input_chunks)
+        r = pool.map_async(input_function, input_chunks)
         results = r.get(60*60*60) # Without the timeout this blocking call ignores all signals.
     except KeyboardInterrupt:
         pool.terminate()
@@ -158,7 +164,7 @@ def run_function_on_array_chunk_parallel(input_array, input_function, n_processe
 
 
 def run_subprocess(cmd):
-    return sb.call(cmd,shell=True)
+    return sb.call(cmd, shell=True)
 
 def run_parallel_commands(commands_arr,n_processes=1,descriptor='CRISPResso2',continue_on_fail=False):
     """
@@ -171,13 +177,13 @@ def run_parallel_commands(commands_arr,n_processes=1,descriptor='CRISPResso2',co
     original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGINT, original_sigint_handler)
     try:
-        res = pool.map_async(run_subprocess,commands_arr)
+        res = pool.map_async(run_subprocess, commands_arr)
         ret_vals = res.get(60*60*60) # Without the timeout this blocking call ignores all signals.
         for idx, ret in enumerate(ret_vals):
             if ret == 137:
-                raise Exception('%s #%d was killed by your system. Please decrease the number of processes (-p) and run again.'%(descriptor,idx))
+                raise Exception('%s #%d was killed by your system. Please decrease the number of processes (-p) and run again.'%(descriptor, idx))
             if ret != 0 and not continue_on_fail:
-                raise Exception('%s #%d failed'%(descriptor,idx))
+                raise Exception('%s #%d failed'%(descriptor, idx))
     except KeyboardInterrupt:
         pool.terminate()
         logging.warn('Caught SIGINT. Program Terminated')

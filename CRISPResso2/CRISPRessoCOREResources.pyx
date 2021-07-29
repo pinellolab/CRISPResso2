@@ -3,16 +3,24 @@ import numpy as np
 cimport numpy as np
 import re
 
+cdef extern from "stdlib.h":
+    ctypedef unsigned int size_t
+    size_t strlen(char* s)
 
-re_find_indels=re.compile("(-*-)")
+
+cdef extern from "Python.h":
+    ctypedef void PyObject
+    int _PyBytes_Resize(PyObject **, size_t)
+    char * PyBytes_AS_STRING(PyObject *)
+
+
+re_find_indels = re.compile("(-*-)")
 
 @cython.boundscheck(False)
 @cython.nonecheck(False)
 @cython.wraparound(False)
-def find_indels_substitutions(_read_seq_al,_ref_seq_al,_include_indx):
+def find_indels_substitutions(read_seq_al, ref_seq_al, _include_indx):
 
-    cdef char* ref_seq_al = _ref_seq_al
-    cdef char* read_seq_al = _read_seq_al
     cdef char* sub_seq=''
 
     cdef int st
@@ -36,29 +44,27 @@ def find_indels_substitutions(_read_seq_al,_ref_seq_al,_include_indx):
     all_substitution_values=[]
     substitution_values=[]
 
-    nucSet = set(['A','T','C','G','N'])
+    nucSet = set(['A', 'T', 'C', 'G', 'N'])
     idx=0
-    for idx_c,c in enumerate(ref_seq_al):
+    for idx_c, c in enumerate(ref_seq_al):
+        if c in nucSet:
+            ref_positions.append(idx)
+            if ref_seq_al[idx_c]!=read_seq_al[idx_c] and read_seq_al[idx_c] != '-' and read_seq_al[idx_c] != 'N':
+                all_substitution_positions.append(idx)
+                all_substitution_values.append(read_seq_al[idx_c])
+                if idx in _include_indx:
+                    substitution_positions.append(idx)
+                    substitution_values.append(read_seq_al[idx_c])
 
-            if c in nucSet:
-                ref_positions.append(idx)
-                if ref_seq_al[idx_c]!=read_seq_al[idx_c] and read_seq_al[idx_c]!='-' and read_seq_al[idx_c] != 'N':
-                    all_substitution_positions.append(idx)
-                    all_substitution_values.append(read_seq_al[idx_c])
-                    if idx in _include_indx:
-                        substitution_positions.append(idx)
-                        substitution_values.append(read_seq_al[idx_c])
+            idx+=1
 
-                idx+=1
-
+        else:
+            if idx==0:
+                ref_positions.append(-1)
             else:
-                if idx==0:
-                    ref_positions.append(-1)
-                else:
-                    ref_positions.append(-idx)
+                ref_positions.append(-idx)
 
     substitution_n = len(substitution_positions)
-
 
     #the remainder of positions are with reference to the original reference sequence indexes we calculated above
     all_deletion_positions=[]
@@ -71,7 +77,6 @@ def find_indels_substitutions(_read_seq_al,_ref_seq_al,_include_indx):
     insertion_positions=[]
     insertion_coordinates = []
     insertion_sizes=[]
-
 
     include_indx_set = set(_include_indx)
     for p in re_find_indels.finditer(read_seq_al):
@@ -140,14 +145,8 @@ def find_indels_substitutions(_read_seq_al,_ref_seq_al,_include_indx):
 @cython.boundscheck(False)
 @cython.nonecheck(False)
 @cython.wraparound(False)
-def find_indels_substitutions_legacy(_read_seq_al,_ref_seq_al,_include_indx):
-    #this legacy function includes insertions if they border the quantification window
-    #(e.g. if the quantification window is 1bp then insertions 1bp away from the predicted
-    #cut site will be quantified). In the current version with a 1bp quantification window,
-    #only insertions at the predicted cut site would be counted.
+def find_indels_substitutions_legacy(read_seq_al, ref_seq_al, _include_indx):
 
-    cdef char* ref_seq_al = _ref_seq_al
-    cdef char* read_seq_al = _read_seq_al
     cdef char* sub_seq=''
 
     cdef int st
@@ -171,29 +170,27 @@ def find_indels_substitutions_legacy(_read_seq_al,_ref_seq_al,_include_indx):
     all_substitution_values=[]
     substitution_values=[]
 
-    nucSet = set(['A','T','C','G','N'])
+    nucSet = set(['A', 'T', 'C', 'G', 'N'])
     idx=0
-    for idx_c,c in enumerate(ref_seq_al):
+    for idx_c, c in enumerate(ref_seq_al):
+        if c in nucSet:
+            ref_positions.append(idx)
+            if ref_seq_al[idx_c]!=read_seq_al[idx_c] and read_seq_al[idx_c] != '-' and read_seq_al[idx_c] != 'N':
+                all_substitution_positions.append(idx)
+                all_substitution_values.append(read_seq_al[idx_c])
+                if idx in _include_indx:
+                    substitution_positions.append(idx)
+                    substitution_values.append(read_seq_al[idx_c])
 
-            if c in nucSet:
-                ref_positions.append(idx)
-                if ref_seq_al[idx_c]!=read_seq_al[idx_c] and read_seq_al[idx_c]!='-' and read_seq_al[idx_c] != 'N':
-                    all_substitution_positions.append(idx)
-                    all_substitution_values.append(read_seq_al[idx_c])
-                    if idx in _include_indx:
-                        substitution_positions.append(idx)
-                        substitution_values.append(read_seq_al[idx_c])
+            idx+=1
 
-                idx+=1
-
+        else:
+            if idx==0:
+                ref_positions.append(-1)
             else:
-                if idx==0:
-                    ref_positions.append(-1)
-                else:
-                    ref_positions.append(-idx)
+                ref_positions.append(-idx)
 
     substitution_n = len(substitution_positions)
-
 
     #the remainder of positions are with reference to the original reference sequence indexes we calculated above
     all_deletion_positions=[]
@@ -206,7 +203,6 @@ def find_indels_substitutions_legacy(_read_seq_al,_ref_seq_al,_include_indx):
     insertion_positions=[]
     insertion_coordinates = []
     insertion_sizes=[]
-
 
     include_indx_set = set(_include_indx)
     for p in re_find_indels.finditer(read_seq_al):
@@ -271,9 +267,7 @@ def find_indels_substitutions_legacy(_read_seq_al,_ref_seq_al,_include_indx):
 	    'ref_positions':ref_positions,
     }
     return retDict
-cdef extern from "stdlib.h":
-    ctypedef unsigned int size_t
-    size_t strlen(char *s)
+
 
 def calculate_homology(a, b):
     cdef char *al = a
