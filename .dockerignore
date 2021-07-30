@@ -2,5 +2,6 @@
 tests
 dist
 CRISPResso2/*.c
+CRISPResso2.egg-info
 build
 .git
