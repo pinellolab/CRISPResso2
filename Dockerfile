@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install gcc g++ bowtie2 samtools \
   -y --no-install-recommends \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* \
-  && micromamba install -c defaults -c conda-forge -c bioconda -y -n base --debug -c bioconda trimmomatic flash numpy cython jinja2 \
+  && micromamba install -c defaults -c conda-forge -c bioconda -y -n base --debug -c bioconda trimmomatic flash numpy cython jinja2 tbb=2020.2 \
   && micromamba clean --all --yes
 
 #install ms fonts
