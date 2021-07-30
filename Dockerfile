@@ -2,16 +2,19 @@
 # Dockerfile to build CRISPResso2
 ############################################################
 
+#FROM continuumio/miniconda3
 FROM mambaorg/micromamba:0.13.1
 
 # File Author / Maintainer
 MAINTAINER Kendell Clement
-RUN apt-get update && apt-get install gcc g++ bowtie2 samtools \
+RUN apt-get update && apt-get install gcc g++ bowtie2 samtools libsys-hostname-long-perl \
   -y --no-install-recommends \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* \
-  && micromamba install -c defaults -c conda-forge -c bioconda -y -n base --debug -c bioconda trimmomatic flash numpy cython jinja2 tbb=2020.2 \
-  && micromamba clean --all --yes
+  && rm -rf /usr/share/man/* \
+  && rm -rf /usr/share/doc/* \
+  && conda install -c defaults -c conda-forge -c bioconda -y -n base --debug -c bioconda trimmomatic flash numpy cython jinja2 tbb=2020.2 \
+  && conda clean --all --yes
 
 #install ms fonts
 RUN echo "deb http://httpredir.debian.org/debian buster main contrib" > /etc/apt/sources.list \
