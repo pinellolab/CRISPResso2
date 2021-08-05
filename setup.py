@@ -87,7 +87,6 @@ def main():
           install_requires=[
               'pandas',  # '>=0.15,<=0.24',
               'matplotlib',  # '>=1.3.1,<=2.2.3',
-              'argparse', #  '>=1.3,<=1.4',
               'seaborn', # '>0.7.1,<0.10',
               'jinja2',
               'scipy',
