@@ -5,7 +5,6 @@ Software pipeline for the analysis of genome editing outcomes from deep sequenci
 '''
 
 import argparse
-from collections import defaultdict
 import datetime
 import errno
 import gzip
@@ -18,7 +17,6 @@ import string
 import shutil
 import signal
 import subprocess as sb
-import sys
 import unicodedata
 from math import floor, sqrt
 
@@ -27,7 +25,7 @@ from CRISPResso2 import CRISPRessoCOREResources
 from CRISPResso2.CRISPRessoMultiProcessing import get_max_processes
 
 
-__version__ = "2.1.3"
+__version__ = "2.2.0"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -68,7 +66,6 @@ class OutputFolderIncompleteException(Exception):
 
 
 #########################################
-
 
 
 def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams={}):
