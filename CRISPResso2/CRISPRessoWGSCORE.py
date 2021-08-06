@@ -353,7 +353,7 @@ def main():
         logging.getLogger().addHandler(logging.FileHandler(log_filename))
 
         crispresso2_info_file = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso2WGS_info.json')
-        crispresso2_info = {'running_info': {}, 'results': {}} #keep track of all information for this run to be pickled and saved at the end of the run
+        crispresso2_info = {'running_info': {}, 'results': {'alignment_stats': {}, 'general_plots': {}}} #keep track of all information for this run to be pickled and saved at the end of the run
         crispresso2_info['running_info']['version'] = CRISPRessoShared.__version__
         crispresso2_info['running_info']['args'] = deepcopy(args)
 
@@ -625,21 +625,21 @@ def main():
                 )
                 ref_name = run_data['ref_names'][0] #only expect one amplicon sequence
                 n_tot = row.n_reads
-                n_aligned = run_data['counts_total'][ref_name]
-                n_unmod = run_data['counts_unmodified'][ref_name]
-                n_mod = run_data['counts_modified'][ref_name]
-                n_discarded = run_data['counts_discarded'][ref_name]
+                n_aligned = run_data['results']['alignment_stats']['counts_total'][ref_name]
+                n_unmod = run_data['results']['alignment_stats']['counts_unmodified'][ref_name]
+                n_mod = run_data['results']['alignment_stats']['counts_modified'][ref_name]
+                n_discarded = run_data['results']['alignment_stats']['counts_discarded'][ref_name]
 
-                n_insertion = run_data['counts_insertion'][ref_name]
-                n_deletion = run_data['counts_deletion'][ref_name]
-                n_substitution = run_data['counts_substitution'][ref_name]
-                n_only_insertion = run_data['counts_only_insertion'][ref_name]
-                n_only_deletion = run_data['counts_only_deletion'][ref_name]
-                n_only_substitution = run_data['counts_only_substitution'][ref_name]
-                n_insertion_and_deletion = run_data['counts_insertion_and_deletion'][ref_name]
-                n_insertion_and_substitution = run_data['counts_insertion_and_substitution'][ref_name]
-                n_deletion_and_substitution = run_data['counts_deletion_and_substitution'][ref_name]
-                n_insertion_and_deletion_and_substitution = run_data['counts_insertion_and_deletion_and_substitution'][ref_name]
+                n_insertion = run_data['results']['alignment_stats']['counts_insertion'][ref_name]
+                n_deletion = run_data['results']['alignment_stats']['counts_deletion'][ref_name]
+                n_substitution = run_data['results']['alignment_stats']['counts_substitution'][ref_name]
+                n_only_insertion = run_data['results']['alignment_stats']['counts_only_insertion'][ref_name]
+                n_only_deletion = run_data['results']['alignment_stats']['counts_only_deletion'][ref_name]
+                n_only_substitution = run_data['results']['alignment_stats']['counts_only_substitution'][ref_name]
+                n_insertion_and_deletion = run_data['results']['alignment_stats']['counts_insertion_and_deletion'][ref_name]
+                n_insertion_and_substitution = run_data['results']['alignment_stats']['counts_insertion_and_substitution'][ref_name]
+                n_deletion_and_substitution = run_data['results']['alignment_stats']['counts_deletion_and_substitution'][ref_name]
+                n_insertion_and_deletion_and_substitution = run_data['results']['alignment_stats']['counts_insertion_and_deletion_and_substitution'][ref_name]
 
                 unmod_pct = "NA"
                 mod_pct = "NA"
