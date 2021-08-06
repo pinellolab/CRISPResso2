@@ -234,11 +234,11 @@ def main():
             outfile.write('[Command used]:\n%s\n\n[Execution log]:\n' % ' '.join(sys.argv))
 
         crispresso2Meta_info_file = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso2Meta_info.json')
-        crispresso2_info = {} #keep track of all information for this run to be pickled and saved at the end of the run
-        crispresso2_info['version'] = CRISPRessoShared.__version__
-        crispresso2_info['args'] = deepcopy(args)
+        crispresso2_info = {'running_info': {}, 'results': {}} #keep track of all information for this run to be pickled and saved at the end of the run
+        crispresso2_info['running_info']['version'] = CRISPRessoShared.__version__
+        crispresso2_info['running_info']['args'] = deepcopy(args)
 
-        crispresso2_info['log_filename'] = os.path.basename(log_filename)
+        crispresso2_info['running_info']['log_filename'] = os.path.basename(log_filename)
 
         crispresso_cmds = []
         meta_names_arr = []
@@ -320,7 +320,7 @@ def main():
                 if run_data is None:
                     continue
 
-                amplicon_modification_file=os.path.join(folder_name, run_data['quant_of_editing_freq_filename'])
+                amplicon_modification_file=os.path.join(folder_name, run_data['running_info']['quant_of_editing_freq_filename'])
                 with open(amplicon_modification_file, 'r') as infile:
                     file_head = infile.readline()
                     if not wrote_header:
@@ -339,7 +339,7 @@ def main():
                 run_data = run_datas[idx]
                 if run_data is None:
                     continue
-                amplicon_modification_file=os.path.join(folder_name, run_data['mapping_stats_filename'])
+                amplicon_modification_file=os.path.join(folder_name, run_data['running_info']['mapping_stats_filename'])
                 with open(amplicon_modification_file, 'r') as infile:
                     file_head = infile.readline()
                     if not wrote_header:
@@ -354,8 +354,8 @@ def main():
             else:
                 report_name = OUTPUT_DIRECTORY+'.html'
             CRISPRessoReport.make_meta_report_from_folder(report_name, crispresso2_info, OUTPUT_DIRECTORY, _ROOT)
-            crispresso2_info['report_location'] = report_name
-            crispresso2_info['report_filename'] = os.path.basename(report_name)
+            crispresso2_info['running_info']['report_location'] = report_name
+            crispresso2_info['running_info']['report_filename'] = os.path.basename(report_name)
 
         CRISPRessoShared.write_crispresso_info(
             crispresso2Meta_info_file, crispresso2_info,

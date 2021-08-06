@@ -85,11 +85,11 @@ ___________________________________
         crispresso2Aggregate_info_file = os.path.join(
             OUTPUT_DIRECTORY, 'CRISPResso2Aggregate_info.json',
         )
-        crispresso2_info = {} #keep track of all information for this run to be pickled and saved at the end of the run
-        crispresso2_info['version'] = CRISPRessoShared.__version__
-        crispresso2_info['args'] = deepcopy(args)
+        crispresso2_info = {'running_info': {}, 'results': {}} #keep track of all information for this run to be pickled and saved at the end of the run
+        crispresso2_info['running_info']['version'] = CRISPRessoShared.__version__
+        crispresso2_info['running_info']['args'] = deepcopy(args)
 
-        crispresso2_info['log_filename'] = os.path.basename(log_filename)
+        crispresso2_info['running_info']['log_filename'] = os.path.basename(log_filename)
 
         #glob returns paths including the original prefix
         all_files = []
@@ -192,8 +192,8 @@ ___________________________________
             for crispresso2_folder in crispresso2_folders:
                 crispresso2_folder_names[crispresso2_folder] = CRISPRessoShared.slugify(crispresso2_folder)
                 this_sub_html_file = crispresso2_folder+".html"
-                if crispresso2_folder_infos[crispresso2_folder]['args'].place_report_in_output_folder:
-                    this_sub_html_file = os.path.join(crispresso2_folder, crispresso2_folder_infos[crispresso2_folder]['report_filename'])
+                if crispresso2_folder_infos[crispresso2_folder]['running_info']['args'].place_report_in_output_folder:
+                    this_sub_html_file = os.path.join(crispresso2_folder, crispresso2_folder_infos[crispresso2_folder]['running_info']['report_filename'])
                 crispresso2_folder_htmls[crispresso2_folder] = os.path.abspath(this_sub_html_file)
 
             all_amplicons = set()
@@ -491,7 +491,7 @@ ___________________________________
                 for crispresso2_folder in crispresso2_folders:
                     run_data = crispresso2_folder_infos[crispresso2_folder]
                     run_name = crispresso2_folder_names[crispresso2_folder]
-                    amplicon_modification_file=os.path.join(crispresso2_folder, run_data['quant_of_editing_freq_filename'])
+                    amplicon_modification_file=os.path.join(crispresso2_folder, run_data['running_info']['quant_of_editing_freq_filename'])
                     with open(amplicon_modification_file, 'r') as infile:
                         file_head = infile.readline()
                         if not wrote_header:
@@ -500,7 +500,7 @@ ___________________________________
                         for line in infile:
                             outfile.write(crispresso2_folder + "\t" + line)
 
-                    n_tot = run_data['aln_stats']['N_TOT_READS']
+                    n_tot = run_data['running_info']['alignment_stats']['N_TOT_READS']
                     n_aligned = 0
                     n_unmod = 0
                     n_mod = 0
@@ -580,7 +580,7 @@ ___________________________________
                 for crispresso2_folder in crispresso2_folders:
                     run_data = crispresso2_folder_infos[crispresso2_folder]
                     run_name = crispresso2_folder_names[crispresso2_folder]
-                    mapping_file=os.path.join(crispresso2_folder, run_data['mapping_stats_filename'])
+                    mapping_file=os.path.join(crispresso2_folder, run_data['running_info']['mapping_stats_filename'])
                     with open(mapping_file, 'r') as infile:
                         file_head = infile.readline()
                         if not wrote_header:
@@ -594,18 +594,18 @@ ___________________________________
                 if (args.place_report_in_output_folder):
                     report_filename = _jp("CRISPResso2Aggregate_report.html")
                 CRISPRessoReport.make_aggregate_report(crispresso2_info, args.name, report_filename, OUTPUT_DIRECTORY, _ROOT, crispresso2_folders, crispresso2_folder_htmls)
-                crispresso2_info['report_location'] = report_filename
-                crispresso2_info['report_filename'] = os.path.basename(report_filename)
+                crispresso2_info['running_info']['report_location'] = report_filename
+                crispresso2_info['running_info']['report_filename'] = os.path.basename(report_filename)
 
         end_time =  datetime.now()
         end_time_string =  end_time.strftime('%Y-%m-%d %H:%M:%S')
         running_time = end_time - start_time
         running_time_string =  str(running_time)
 
-        crispresso2_info['end_time'] = end_time
-        crispresso2_info['end_time_string'] = end_time_string
-        crispresso2_info['running_time'] = running_time
-        crispresso2_info['running_time_string'] = running_time_string
+        crispresso2_info['running_info']['end_time'] = end_time
+        crispresso2_info['running_info']['end_time_string'] = end_time_string
+        crispresso2_info['running_info']['running_time'] = running_time
+        crispresso2_info['running_info']['running_time_string'] = running_time_string
 
         CRISPRessoShared.write_crispresso_info(
             crispresso2Aggregate_info_file, crispresso2_info,

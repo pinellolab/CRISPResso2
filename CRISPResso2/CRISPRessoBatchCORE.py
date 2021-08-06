@@ -239,11 +239,11 @@ def main():
             outfile.write('[Command used]:\n%s\n\n[Execution log]:\n' % ' '.join(sys.argv))
 
         crispresso2Batch_info_file = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso2Batch_info.json')
-        crispresso2_info = {} #keep track of all information for this run to be pickled and saved at the end of the run
-        crispresso2_info['version'] = CRISPRessoShared.__version__
-        crispresso2_info['args'] = deepcopy(args)
+        crispresso2_info = {'running_info': {}, 'results': {}} #keep track of all information for this run to be pickled and saved at the end of the run
+        crispresso2_info['running_info']['version'] = CRISPRessoShared.__version__
+        crispresso2_info['running_info']['args'] = deepcopy(args)
 
-        crispresso2_info['log_filename'] = os.path.basename(log_filename)
+        crispresso2_info['running_info']['log_filename'] = os.path.basename(log_filename)
 
         #this is potentially the square-root of the input n_processes because sub-CRISPResso commands will take some processes as well
         args.n_processes = CRISPRessoShared.get_sub_n_processes(suppress_plots=args.suppress_plots, suppress_report=args.suppress_report, n_processes=args.n_processes)
@@ -257,7 +257,7 @@ def main():
                     cmd_copy[i] = os.path.basename(cmd_copy[i])
 
             crispresso_cmd_to_write = ' '.join(cmd_copy) #clean command doesn't show the absolute path to the executable or other files
-        crispresso2_info['command_used'] = crispresso_cmd_to_write
+        crispresso2_info['running_info']['command_used'] = crispresso_cmd_to_write
 
         crispresso_cmds = []
         batch_names_arr = []
@@ -621,7 +621,7 @@ def main():
                 if run_data is None:
                     continue
 
-                amplicon_modification_file=os.path.join(folder_name, run_data['quant_of_editing_freq_filename'])
+                amplicon_modification_file=os.path.join(folder_name, run_data['running_info']['quant_of_editing_freq_filename'])
                 with open(amplicon_modification_file, 'r') as infile:
                     file_head = infile.readline()
                     if not wrote_header:
@@ -640,7 +640,7 @@ def main():
                 run_data = run_datas[idx]
                 if run_data is None:
                     continue
-                amplicon_modification_file=os.path.join(folder_name, run_data['mapping_stats_filename'])
+                amplicon_modification_file=os.path.join(folder_name, run_data['running_info']['mapping_stats_filename'])
                 with open(amplicon_modification_file, 'r') as infile:
                     file_head = infile.readline()
                     if not wrote_header:
@@ -655,18 +655,18 @@ def main():
             else:
                 report_name = OUTPUT_DIRECTORY+'.html'
             CRISPRessoReport.make_batch_report_from_folder(report_name, crispresso2_info, OUTPUT_DIRECTORY, _ROOT)
-            crispresso2_info['report_location'] = report_name
-            crispresso2_info['report_filename'] = os.path.basename(report_name)
+            crispresso2_info['running_info']['report_location'] = report_name
+            crispresso2_info['running_info']['report_filename'] = os.path.basename(report_name)
 
         end_time =  datetime.now()
         end_time_string =  end_time.strftime('%Y-%m-%d %H:%M:%S')
         running_time = end_time - start_time
         running_time_string =  str(running_time)
 
-        crispresso2_info['end_time'] = end_time
-        crispresso2_info['end_time_string'] = end_time_string
-        crispresso2_info['running_time'] = running_time
-        crispresso2_info['running_time_string'] = running_time_string
+        crispresso2_info['running_info']['end_time'] = end_time
+        crispresso2_info['running_info']['end_time_string'] = end_time_string
+        crispresso2_info['running_info']['running_time'] = running_time
+        crispresso2_info['running_info']['running_time_string'] = running_time_string
 
         CRISPRessoShared.write_crispresso_info(
             crispresso2Batch_info_file,
