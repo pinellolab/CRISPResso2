@@ -106,14 +106,14 @@ def main():
         sample_1_name = args.sample_1_name
         if args.sample_1_name is None:
             sample_1_name = "Sample 1"
-            if 'name' in run_info_1 and run_info_1['name'] != '':
-                sample_1_name = run_info_1['name']
+            if 'name' in run_info_1 and run_info_1['running_info']['name'] != '':
+                sample_1_name = run_info_1['running_info']['name']
 
         sample_2_name = args.sample_2_name
         if args.sample_2_name is None:
             sample_2_name = "Sample 2"
-            if 'name' in run_info_2 and run_info_2['name'] != '':
-                sample_2_name = run_info_2['name']
+            if 'name' in run_info_2 and run_info_2['running_info']['name'] != '':
+                sample_2_name = run_info_2['running_info']['name']
 
 
         get_name_from_folder=lambda x: os.path.basename(os.path.abspath(x)).replace('CRISPResso_on_', '')
@@ -147,11 +147,11 @@ def main():
                   outfile.write('[Command used]:\nCRISPRessoCompare %s\n\n[Execution log]:\n' % ' '.join(sys.argv))
 
         crispresso2Compare_info_file = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso2Compare_info.json')
-        crispresso2_info = {} #keep track of all information for this run to be pickled and saved at the end of the run
-        crispresso2_info['version'] = CRISPRessoShared.__version__
-        crispresso2_info['args'] = deepcopy(args)
+        crispresso2_info = {'running_info': {}, 'results': {}} #keep track of all information for this run to be pickled and saved at the end of the run
+        crispresso2_info['running_info']['version'] = CRISPRessoShared.__version__
+        crispresso2_info['running_info']['args'] = deepcopy(args)
 
-        crispresso2_info['log_filename'] = os.path.basename(log_filename)
+        crispresso2_info['running_info']['log_filename'] = os.path.basename(log_filename)
 
         crispresso2_info['summary_plot_names'] = []
         crispresso2_info['summary_plot_titles'] = {}
@@ -226,8 +226,8 @@ def main():
             crispresso2_info['summary_plot_names'].append(plot_name)
             crispresso2_info['summary_plot_titles'][plot_name] = 'Editing efficiency comparison'
             crispresso2_info['summary_plot_labels'][plot_name] = 'Figure 1: Comparison for amplicon ' + amplicon_name + '; Left: Percentage of modified and unmodified reads in each sample; Right: relative percentage of modified and unmodified reads'
-            output_1 = os.path.join(args.crispresso_output_folder_1, run_info_1['report_filename'])
-            output_2 = os.path.join(args.crispresso_output_folder_1, run_info_2['report_filename'])
+            output_1 = os.path.join(args.crispresso_output_folder_1, run_info_1['running_info']['report_filename'])
+            output_2 = os.path.join(args.crispresso_output_folder_1, run_info_2['running_info']['report_filename'])
             crispresso2_info['summary_plot_datas'][plot_name] = []
             if os.path.isfile(output_1):
                 crispresso2_info['summary_plot_datas'][plot_name].append((sample_1_name +' output', os.path.relpath(output_1, OUTPUT_DIRECTORY)))
@@ -383,8 +383,8 @@ def main():
             else:
                 report_name = OUTPUT_DIRECTORY+'.html'
             CRISPRessoReport.make_compare_report_from_folder(report_name, crispresso2_info, OUTPUT_DIRECTORY, _ROOT)
-            crispresso2_info['report_location'] = report_name
-            crispresso2_info['report_filename'] = os.path.basename(report_name)
+            crispresso2_info['running_info']['report_location'] = report_name
+            crispresso2_info['running_info']['report_filename'] = os.path.basename(report_name)
 
         CRISPRessoShared.write_crispresso_info(crispresso2Compare_info_file, crispresso2_info)
 

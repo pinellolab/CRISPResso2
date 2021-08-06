@@ -414,7 +414,7 @@ def check_output_folder(output_folder):
     amplicon_info = {}
     amplicons = run_data['ref_names']
 
-    quantification_file=os.path.join(output_folder, run_data['quant_of_editing_freq_filename'])
+    quantification_file = os.path.join(output_folder, run_data['running_info']['quant_of_editing_freq_filename'])
     if os.path.exists(quantification_file):
         with open(quantification_file) as quant_file:
             head_line = quant_file.readline()

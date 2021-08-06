@@ -353,11 +353,11 @@ def main():
         logging.getLogger().addHandler(logging.FileHandler(log_filename))
 
         crispresso2_info_file = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso2WGS_info.json')
-        crispresso2_info = {} #keep track of all information for this run to be pickled and saved at the end of the run
-        crispresso2_info['version'] = CRISPRessoShared.__version__
-        crispresso2_info['args'] = deepcopy(args)
+        crispresso2_info = {'running_info': {}, 'results': {}} #keep track of all information for this run to be pickled and saved at the end of the run
+        crispresso2_info['running_info']['version'] = CRISPRessoShared.__version__
+        crispresso2_info['running_info']['args'] = deepcopy(args)
 
-        crispresso2_info['log_filename'] = os.path.basename(log_filename)
+        crispresso2_info['running_info']['log_filename'] = os.path.basename(log_filename)
         crispresso2_info['finished_steps'] = {}
 
 
@@ -370,7 +370,7 @@ def main():
                     cmd_copy[i] = os.path.basename(cmd_copy[i])
 
             crispresso_cmd_to_write = ' '.join(cmd_copy) #clean command doesn't show the absolute path to the executable or other files
-        crispresso2_info['command_used'] = crispresso_cmd_to_write
+        crispresso2_info['running_info']['command_used'] = crispresso_cmd_to_write
 
         with open(log_filename, 'w+') as outfile:
             outfile.write('CRISPResso version %s\n[Command used]:\n%s\n\n[Execution log]:\n' %(CRISPRessoShared.__version__, crispresso_cmd_to_write))
@@ -380,21 +380,21 @@ def main():
         if args.no_rerun:
             if os.path.exists(crispresso2_info_file):
                 previous_run_data = CRISPRessoShared.load_crispresso_info(OUTPUT_DIRECTORY)
-                if previous_run_data['version'] == CRISPRessoShared.__version__:
+                if previous_run_data['running_info']['version'] == CRISPRessoShared.__version__:
                     args_are_same = True
                     for arg in vars(args):
                         if arg == "no_rerun" or arg == "debug" or arg == "n_processes":
                             continue
-                        if arg not in vars(previous_run_data['args']):
+                        if arg not in vars(previous_run_data['running_info']['args']):
                             info('Comparing current run to previous run: old run had argument ' + str(arg) + ' \nRerunning.')
                             args_are_same = False
-                        elif str(getattr(previous_run_data['args'], arg)) != str(getattr(args, arg)):
-                            info('Comparing current run to previous run:\n\told argument ' + str(arg) + ' = ' + str(getattr(previous_run_data['args'], arg)) + '\n\tnew argument: ' + str(arg) + ' = ' + str(getattr(args, arg)) + '\nRerunning.')
+                        elif str(getattr(previous_run_data['running_info']['args'], arg)) != str(getattr(args, arg)):
+                            info('Comparing current run to previous run:\n\told argument ' + str(arg) + ' = ' + str(getattr(previous_run_data['running_info']['args'], arg)) + '\n\tnew argument: ' + str(arg) + ' = ' + str(getattr(args, arg)) + '\nRerunning.')
                             args_are_same = False
 
                     if args_are_same:
                         if 'end_time_string' in previous_run_data:
-                            info('Analysis already completed on %s!'%previous_run_data['end_time_string'])
+                            info('Analysis already completed on %s!'%previous_run_data['running_info']['end_time_string'])
                             sys.exit(0)
                         else:
                             can_finish_incomplete_run = True
@@ -404,7 +404,7 @@ def main():
                                     if args.debug:
                                         info('finished: ' + key)
                 else:
-                    info('The no_rerun flag is set, but this analysis will be rerun because the existing run was performed using an old version of CRISPResso (' + str(previous_run_data['version']) + ').')
+                    info('The no_rerun flag is set, but this analysis will be rerun because the existing run was performed using an old version of CRISPResso (' + str(previous_run_data['running_info']['version']) + ').')
 
         #write this file early on so we can check the params if we have to rerun
         CRISPRessoShared.write_crispresso_info(
@@ -705,18 +705,18 @@ def main():
             else:
                 report_name = OUTPUT_DIRECTORY+'.html'
             CRISPRessoReport.make_wgs_report_from_folder(report_name, crispresso2_info, OUTPUT_DIRECTORY, _ROOT)
-            crispresso2_info['report_location'] = report_name
-            crispresso2_info['report_filename'] = os.path.basename(report_name)
+            crispresso2_info['running_info']['report_location'] = report_name
+            crispresso2_info['running_info']['report_filename'] = os.path.basename(report_name)
 
         end_time =  datetime.now()
         end_time_string =  end_time.strftime('%Y-%m-%d %H:%M:%S')
         running_time = end_time - start_time
         running_time_string =  str(running_time)
 
-        crispresso2_info['end_time'] = end_time
-        crispresso2_info['end_time_string'] = end_time_string
-        crispresso2_info['running_time'] = running_time
-        crispresso2_info['running_time_string'] = running_time_string
+        crispresso2_info['running_info']['end_time'] = end_time
+        crispresso2_info['running_info']['end_time_string'] = end_time_string
+        crispresso2_info['running_info']['running_time'] = running_time
+        crispresso2_info['running_info']['running_time_string'] = running_time_string
 
         CRISPRessoShared.write_crispresso_info(
             crispresso2_info_file, crispresso2_info,
