@@ -3060,9 +3060,9 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,M
     crispresso2_info = CRISPRessoShared.load_crispresso_info(crispresso_output_folder)
 
     if MIN_FREQUENCY is None:
-        MIN_FREQUENCY = crispresso2_info['args'].min_frequency_alleles_around_cut_to_plot
+        MIN_FREQUENCY = crispresso2_info['running_info']['args'].min_frequency_alleles_around_cut_to_plot
     if MAX_N_ROWS is None:
-        MAX_N_ROWS = crispresso2_info['args'].max_rows_alleles_around_cut_to_plot
+        MAX_N_ROWS = crispresso2_info['running_info']['args'].max_rows_alleles_around_cut_to_plot
 
     plot_count = 0
 
@@ -3091,7 +3091,7 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,M
             cut_point = sgRNA_cut_points[ind]
             plot_cut_point = sgRNA_plot_cut_points[ind]
             plot_idxs = sgRNA_plot_idxs[ind]
-            plot_half_window = max(1, crispresso2_info['args'].plot_window_size)
+            plot_half_window = max(1, crispresso2_info['running_info']['args'].plot_window_size)
             ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_half_window+1:cut_point+plot_half_window+1]
 
             new_sgRNA_intervals = []
@@ -3188,7 +3188,7 @@ def plot_nucleotide_quilt_from_folder(crispresso_output_folder,fig_filename_root
             cut_point = sgRNA_cut_points[ind]
             plot_cut_point = sgRNA_plot_cut_points[ind]
             plot_idxs = sgRNA_plot_idxs[ind]
-            plot_half_window = max(1, crispresso2_info['args'].plot_window_size)
+            plot_half_window = max(1, crispresso2_info['running_info']['args'].plot_window_size)
             ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_half_window+1:cut_point+plot_half_window+1]
 
             new_sgRNA_intervals = []

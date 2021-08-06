@@ -226,11 +226,11 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
             )
 
         crispresso2Compare_info_file = os.path.join(OUTPUT_DIRECTORY,'CRISPResso2PooledWGSCompare_info.pickle')
-        crispresso2_info = {} #keep track of all information for this run to be pickled and saved at the end of the run
-        crispresso2_info['version'] = CRISPRessoShared.__version__
-        crispresso2_info['args'] = deepcopy(args)
+        crispresso2_info = {'running_info': {}, 'results': {}} #keep track of all information for this run to be pickled and saved at the end of the run
+        crispresso2_info['running_info']['version'] = CRISPRessoShared.__version__
+        crispresso2_info['running_info']['args'] = deepcopy(args)
 
-        crispresso2_info['log_filename'] = os.path.basename(log_filename)
+        crispresso2_info['running_info']['log_filename'] = os.path.basename(log_filename)
 
         crispresso2_info['summary_plot_names'] = []
         crispresso2_info['summary_plot_titles'] = {}
@@ -332,8 +332,8 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
                     sample_1_name, sample_2_name,
                 ),
             )
-            crispresso2_info['report_location'] = report_name
-            crispresso2_info['report_filename'] = os.path.basename(report_name)
+            crispresso2_info['running_info']['report_location'] = report_name
+            crispresso2_info['running_info']['report_filename'] = os.path.basename(report_name)
 
         CRISPRessoShared.write_crispresso_info(
             crispresso2Compare_info_file, crispresso2_info,

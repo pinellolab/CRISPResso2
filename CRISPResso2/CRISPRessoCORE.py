@@ -815,14 +815,14 @@ def main():
         _jp=lambda filename: os.path.join(OUTPUT_DIRECTORY, clean_file_prefix + filename) #handy function to put a file in the output directory
 
         crispresso2_info_file = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso2_info.json')
-        crispresso2_info = {} #keep track of all information for this run to be pickled and saved at the end of the run
-        crispresso2_info['version'] = CRISPRessoShared.__version__
-        crispresso2_info['args'] = deepcopy(args)
+        crispresso2_info = {'running_info': {}, 'results': {}} #keep track of all information for this run to be pickled and saved at the end of the run
+        crispresso2_info['running_info']['version'] = CRISPRessoShared.__version__
+        crispresso2_info['running_info']['args'] = deepcopy(args)
 
         log_filename=_jp('CRISPResso_RUNNING_LOG.txt')
-        crispresso2_info['log_filename'] = os.path.basename(log_filename)
+        crispresso2_info['running_info']['log_filename'] = os.path.basename(log_filename)
 
-        crispresso2_info['name'] = database_id
+        crispresso2_info['running_info']['name'] = database_id
 
         crispresso_cmd_to_write = ' '.join(sys.argv)
         if args.write_cleaned_report:
@@ -833,7 +833,7 @@ def main():
                     cmd_copy[i] = os.path.basename(cmd_copy[i])
 
             crispresso_cmd_to_write = ' '.join(cmd_copy) #clean command doesn't show the absolute path to the executable or other files
-        crispresso2_info['command_used'] = crispresso_cmd_to_write
+        crispresso2_info['running_info']['command_used'] = crispresso_cmd_to_write
 
         try:
             os.makedirs(OUTPUT_DIRECTORY)
@@ -853,23 +853,23 @@ def main():
         if args.no_rerun:
             if os.path.exists(crispresso2_info_file):
                 previous_run_data = CRISPRessoShared.load_crispresso_info(OUTPUT_DIRECTORY)
-                if previous_run_data['version'] == CRISPRessoShared.__version__:
+                if previous_run_data['running_info']['version'] == CRISPRessoShared.__version__:
                     args_are_same = True
                     for arg in vars(args):
                         if arg == "no_rerun":
                             continue
-                        if arg not in vars(previous_run_data['args']):
+                        if arg not in vars(previous_run_data['running_info']['args']):
                             info('Comparing current run to previous run: old run had argument ' + str(arg) + ' \nRerunning.')
                             args_are_same = False
-                        elif str(getattr(previous_run_data['args'], arg)) != str(getattr(args, arg)):
-                            info('Comparing current run to previous run:\n\told argument ' + str(arg) + ' = ' + str(getattr(previous_run_data['args'], arg)) + '\n\tnew argument: ' + str(arg) + ' = ' + str(getattr(args, arg)) + '\nRerunning.')
+                        elif str(getattr(previous_run_data['running_info']['args'], arg)) != str(getattr(args, arg)):
+                            info('Comparing current run to previous run:\n\told argument ' + str(arg) + ' = ' + str(getattr(previous_run_data['running_info']['args'], arg)) + '\n\tnew argument: ' + str(arg) + ' = ' + str(getattr(args, arg)) + '\nRerunning.')
                             args_are_same = False
 
                     if args_are_same:
-                        info('Analysis already completed on %s!'%previous_run_data['end_time_string'])
+                        info('Analysis already completed on %s!'%previous_run_data['running_info']['end_time_string'])
                         sys.exit(0)
                 else:
-                    info('The no_rerun flag is set, but this analysis will be rerun because the existing run was performed using an old version of CRISPResso (' + str(previous_run_data['version']) + ').')
+                    info('The no_rerun flag is set, but this analysis will be rerun because the existing run was performed using an old version of CRISPResso (' + str(previous_run_data['running_info']['version']) + ').')
 
 
         def rreplace(s, old, new):
@@ -1695,12 +1695,12 @@ def main():
             clean_args_string_arr.append("%s: %s"%(str(arg), val))
 
         if args.write_cleaned_report:
-            crispresso2_info['args_string'] = '\n'.join(sorted(clean_args_string_arr))
+            crispresso2_info['running_info']['args_string'] = '\n'.join(sorted(clean_args_string_arr))
         else:
-            crispresso2_info['args_string'] = '\n'.join(sorted(args_string_arr))
+            crispresso2_info['running_info']['args_string'] = '\n'.join(sorted(args_string_arr))
 
-        crispresso2_info['start_time'] = start_time
-        crispresso2_info['start_time_string'] = start_time_string
+        crispresso2_info['running_info']['start_time'] = start_time
+        crispresso2_info['running_info']['start_time_string'] = start_time_string
 
         if args.split_interleaved_input:
             if args.fastq_r2!='' or args.bam_input != '':
@@ -2710,8 +2710,8 @@ def main():
         with zipfile.ZipFile(allele_frequency_table_zip_filename, 'w', zipfile.ZIP_DEFLATED, allowZip64=True) as myzip:
             myzip.write(allele_frequency_table_fileLoc, allele_frequency_table_filename)
         os.remove(allele_frequency_table_fileLoc)
-        crispresso2_info['allele_frequency_table_filename'] = os.path.basename(allele_frequency_table_filename) #filename is the name of the file in the zip
-        crispresso2_info['allele_frequency_table_zip_filename'] = os.path.basename(allele_frequency_table_zip_filename)
+        crispresso2_info['running_info']['allele_frequency_table_filename'] = os.path.basename(allele_frequency_table_filename) #filename is the name of the file in the zip
+        crispresso2_info['running_info']['allele_frequency_table_zip_filename'] = os.path.basename(allele_frequency_table_zip_filename)
 
 
 
@@ -2762,7 +2762,7 @@ def main():
                 vals.extend([str(x) for x in [unmod_pct, mod_pct, N_READS_INPUT, N_TOTAL, n_aligned, n_unmod, n_mod, n_discarded, n_insertion, n_deletion, n_substitution, n_only_insertion, n_only_deletion, n_only_substitution, n_insertion_and_deletion, n_insertion_and_substitution, n_deletion_and_substitution, n_insertion_and_deletion_and_substitution]])
                 outfile.write("\t".join(vals) + "\n")
 
-        crispresso2_info['quant_of_editing_freq_filename'] = os.path.basename(quant_of_editing_freq_filename)
+        crispresso2_info['running_info']['quant_of_editing_freq_filename'] = os.path.basename(quant_of_editing_freq_filename)
 
 
         #write statistics
@@ -2774,8 +2774,8 @@ def main():
         with open(mapping_stats_filename, 'w+') as outfile:
             outfile.write('READS IN INPUTS\tREADS AFTER PREPROCESSING\tREADS ALIGNED\tN_COMPUTED_ALN\tN_CACHED_ALN\tN_COMPUTED_NOTALN\tN_CACHED_NOTALN\n')
             outfile.write("\t".join([str(x) for x in[N_READS_INPUT, N_READS_AFTER_PREPROCESSING, N_TOTAL, aln_stats['N_COMPUTED_ALN'], aln_stats['N_CACHED_ALN'], aln_stats['N_COMPUTED_NOTALN'], aln_stats['N_CACHED_NOTALN']]]) + "\n")
-        crispresso2_info['aln_stats'] = aln_stats
-        crispresso2_info['mapping_stats_filename'] = os.path.basename(mapping_stats_filename)
+        crispresso2_info['running_info']['alignment_stats'] = aln_stats
+        crispresso2_info['running_info']['mapping_stats_filename'] = os.path.basename(mapping_stats_filename)
 
         def save_vector_to_file(vector, filename):
             #np.savetxt(_jp('%s.txt' %name), np.vstack([(np.arange(len(vector))+1),vector]).T, fmt=['%d','%.18e'],delimiter='\t', newline='\n', header='amplicon position\teffect',footer='', comments='# ')
@@ -4470,10 +4470,10 @@ def main():
         running_time = end_time - start_time
         running_time_string =  str(running_time)
 
-        crispresso2_info['end_time'] = end_time
-        crispresso2_info['end_time_string'] = end_time_string
-        crispresso2_info['running_time'] = running_time
-        crispresso2_info['running_time_string'] = running_time_string
+        crispresso2_info['running_info']['end_time'] = end_time
+        crispresso2_info['running_info']['end_time_string'] = end_time_string
+        crispresso2_info['running_info']['running_time'] = running_time
+        crispresso2_info['running_info']['running_time_string'] = running_time_string
 
 
         if not args.suppress_report:
@@ -4482,8 +4482,8 @@ def main():
             else:
                 report_name = OUTPUT_DIRECTORY+'.html'
             CRISPRessoReport.make_report(crispresso2_info, report_name, OUTPUT_DIRECTORY, _ROOT)
-            crispresso2_info['report_location'] = report_name
-            crispresso2_info['report_filename'] = os.path.basename(report_name)
+            crispresso2_info['running_info']['report_location'] = report_name
+            crispresso2_info['running_info']['report_filename'] = os.path.basename(report_name)
 
         CRISPRessoShared.write_crispresso_info(
             crispresso2_info_file,
