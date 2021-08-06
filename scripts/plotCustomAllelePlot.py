@@ -73,19 +73,19 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,p
     """
     crispresso2_info = CRISPRessoShared.load_crispresso_info(crispresso_output_folder)
 
-    if not crispresso2_info['args'].write_detailed_allele_table:
+    if not crispresso2_info['running_info']['args'].write_detailed_allele_table:
         raise Exception('CRISPResso run must be run with the parameter --write_detailed_allele_table')
 
 
     if MIN_FREQUENCY is None:
-        MIN_FREQUENCY = crispresso2_info['args'].min_frequency_alleles_around_cut_to_plot
+        MIN_FREQUENCY = crispresso2_info['running_info']['args'].min_frequency_alleles_around_cut_to_plot
     if MAX_N_ROWS is None:
-        MAX_N_ROWS = crispresso2_info['args'].max_rows_alleles_around_cut_to_plot
+        MAX_N_ROWS = crispresso2_info['running_info']['args'].max_rows_alleles_around_cut_to_plot
 
     plot_count = 0
 
-    z = zipfile.ZipFile(os.path.join(crispresso_output_folder,crispresso2_info['allele_frequency_table_zip_filename']))
-    zf = z.open(crispresso2_info['allele_frequency_table_filename'])
+    z = zipfile.ZipFile(os.path.join(crispresso_output_folder,crispresso2_info['running_info']['allele_frequency_table_zip_filename']))
+    zf = z.open(crispresso2_info['running_info']['allele_frequency_table_filename'])
     df_alleles = pd.read_csv(zf,sep="\t")
     full_len = df_alleles['#Reads'].sum()
     df_alleles['ref_positions'] = df_alleles['ref_positions'].apply(arrStr_to_arr)
@@ -128,7 +128,7 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,p
                 new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1,int_end - new_sel_cols_start - 1)]
 
             fig_filename_root = fig_filename_root+"_"+ref_name+"_"+sgRNA_label
-            plot_alleles_table(ref_seq_around_cut,df_alleles=df_alleles_around_cut,fig_filename_root=fig_filename_root,cut_point_ind=cut_point-new_sel_cols_start, MIN_FREQUENCY=MIN_FREQUENCY,MAX_N_ROWS=MAX_N_ROWS,SAVE_ALSO_PNG=SAVE_ALSO_PNG,plot_cut_point=plot_cut_point,sgRNA_intervals=new_sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,annotate_wildtype_allele=crispresso2_info['args'].annotate_wildtype_allele)
+            plot_alleles_table(ref_seq_around_cut,df_alleles=df_alleles_around_cut,fig_filename_root=fig_filename_root,cut_point_ind=cut_point-new_sel_cols_start, MIN_FREQUENCY=MIN_FREQUENCY,MAX_N_ROWS=MAX_N_ROWS,SAVE_ALSO_PNG=SAVE_ALSO_PNG,plot_cut_point=plot_cut_point,sgRNA_intervals=new_sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,annotate_wildtype_allele=crispresso2_info['running_info']['args'].annotate_wildtype_allele)
 
             plot_count += 1
     print('Plotted ' + str(plot_count) + ' plots')
