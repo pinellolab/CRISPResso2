@@ -815,7 +815,7 @@ def main():
         _jp=lambda filename: os.path.join(OUTPUT_DIRECTORY, clean_file_prefix + filename) #handy function to put a file in the output directory
 
         crispresso2_info_file = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso2_info.json')
-        crispresso2_info = {'running_info': {}, 'results': {}} #keep track of all information for this run to be pickled and saved at the end of the run
+        crispresso2_info = {'running_info': {}, 'results': {'alignment_stats': {}, 'general_plots': {}}} #keep track of all information for this run to be pickled and saved at the end of the run
         crispresso2_info['running_info']['version'] = CRISPRessoShared.__version__
         crispresso2_info['running_info']['args'] = deepcopy(args)
 
@@ -2788,10 +2788,10 @@ def main():
                 outfile.write(vectorName +"\t" + "\t".join([str(x) for x in vector]) + "\n") #next, vectors are printed
             outfile.close()
 
-        crispresso2_info['insertion_pct_vectors'] = insertion_pct_vectors
-        crispresso2_info['deletion_pct_vectors'] = insertion_pct_vectors
-        crispresso2_info['substitution_pct_vectors'] = insertion_pct_vectors
-        crispresso2_info['indelsub_pct_vectors'] = insertion_pct_vectors
+        crispresso2_info['results']['alignment_stats']['insertion_pct_vectors'] = insertion_pct_vectors
+        crispresso2_info['results']['alignment_stats']['deletion_pct_vectors'] = insertion_pct_vectors
+        crispresso2_info['results']['alignment_stats']['substitution_pct_vectors'] = insertion_pct_vectors
+        crispresso2_info['results']['alignment_stats']['indelsub_pct_vectors'] = insertion_pct_vectors
 
 
         #set unique plot name to appear as prefix to files for each reference
@@ -4443,27 +4443,27 @@ def main():
                 except Exception as e:
                     warn('Skipping removal of: %s: %s' %(file_to_remove, e))
 
-        crispresso2_info['counts_total'] = counts_total
-        crispresso2_info['counts_modified'] = counts_modified
-        crispresso2_info['counts_unmodified'] = counts_unmodified
-        crispresso2_info['counts_discarded'] = counts_discarded
+        crispresso2_info['results']['alignment_stats']['counts_total'] = counts_total
+        crispresso2_info['results']['alignment_stats']['counts_modified'] = counts_modified
+        crispresso2_info['results']['alignment_stats']['counts_unmodified'] = counts_unmodified
+        crispresso2_info['results']['alignment_stats']['counts_discarded'] = counts_discarded
 
-        crispresso2_info['counts_insertion'] = counts_insertion
-        crispresso2_info['counts_deletion'] = counts_deletion
-        crispresso2_info['counts_substitution'] = counts_substitution
+        crispresso2_info['results']['alignment_stats']['counts_insertion'] = counts_insertion
+        crispresso2_info['results']['alignment_stats']['counts_deletion'] = counts_deletion
+        crispresso2_info['results']['alignment_stats']['counts_substitution'] = counts_substitution
 
-        crispresso2_info['counts_only_insertion'] = counts_only_insertion
-        crispresso2_info['counts_only_deletion'] = counts_only_deletion
-        crispresso2_info['counts_only_substitution'] = counts_only_substitution
-        crispresso2_info['counts_insertion_and_deletion'] = counts_insertion_and_deletion
-        crispresso2_info['counts_insertion_and_substitution'] = counts_insertion_and_substitution
-        crispresso2_info['counts_deletion_and_substitution'] = counts_deletion_and_substitution
-        crispresso2_info['counts_insertion_and_deletion_and_substitution'] = counts_insertion_and_deletion_and_substitution
-        crispresso2_info['counts_modified_frameshift'] = counts_modified_frameshift
-        crispresso2_info['counts_modified_non_frameshift'] = counts_modified_non_frameshift
-        crispresso2_info['counts_non_modified_non_frameshift'] = counts_non_modified_non_frameshift
-        crispresso2_info['counts_splicing_sites_modified'] = counts_splicing_sites_modified
-        crispresso2_info['class_counts'] = class_counts
+        crispresso2_info['results']['alignment_stats']['counts_only_insertion'] = counts_only_insertion
+        crispresso2_info['results']['alignment_stats']['counts_only_deletion'] = counts_only_deletion
+        crispresso2_info['results']['alignment_stats']['counts_only_substitution'] = counts_only_substitution
+        crispresso2_info['results']['alignment_stats']['counts_insertion_and_deletion'] = counts_insertion_and_deletion
+        crispresso2_info['results']['alignment_stats']['counts_insertion_and_substitution'] = counts_insertion_and_substitution
+        crispresso2_info['results']['alignment_stats']['counts_deletion_and_substitution'] = counts_deletion_and_substitution
+        crispresso2_info['results']['alignment_stats']['counts_insertion_and_deletion_and_substitution'] = counts_insertion_and_deletion_and_substitution
+        crispresso2_info['results']['alignment_stats']['counts_modified_frameshift'] = counts_modified_frameshift
+        crispresso2_info['results']['alignment_stats']['counts_modified_non_frameshift'] = counts_modified_non_frameshift
+        crispresso2_info['results']['alignment_stats']['counts_non_modified_non_frameshift'] = counts_non_modified_non_frameshift
+        crispresso2_info['results']['alignment_stats']['counts_splicing_sites_modified'] = counts_splicing_sites_modified
+        crispresso2_info['results']['alignment_stats']['class_counts'] = class_counts
 
         end_time =  datetime.now()
         end_time_string =  end_time.strftime('%Y-%m-%d %H:%M:%S')
