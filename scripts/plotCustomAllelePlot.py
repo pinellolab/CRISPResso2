@@ -90,8 +90,8 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,p
     full_len = df_alleles['#Reads'].sum()
     df_alleles['ref_positions'] = df_alleles['ref_positions'].apply(arrStr_to_arr)
 
-    ref_names = crispresso2_info['ref_names']
-    refs = crispresso2_info['refs']
+    ref_names = crispresso2_info['results']['ref_names']
+    refs = crispresso2_info['results']['refs']
     for ref_name in ref_names:
         sgRNA_sequences = refs[ref_name]['sgRNA_sequences']
         sgRNA_cut_points = refs[ref_name]['sgRNA_cut_points']

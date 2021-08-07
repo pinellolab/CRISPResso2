@@ -412,7 +412,7 @@ def check_output_folder(output_folder):
         run_data = json.load(fh)
 
     amplicon_info = {}
-    amplicons = run_data['ref_names']
+    amplicons = run_data['results']['ref_names']
 
     quantification_file = os.path.join(output_folder, run_data['running_info']['quant_of_editing_freq_filename'])
     if os.path.exists(quantification_file):
@@ -423,18 +423,18 @@ def check_output_folder(output_folder):
                 line_els = line.split("\t")
                 amplicon_name = line_els[0]
                 amplicon_info[amplicon_name] = {}
-                amplicon_quant_file = os.path.join(output_folder, run_data['refs'][amplicon_name]['combined_pct_vector_filename'])
+                amplicon_quant_file = os.path.join(output_folder, run_data['results']['refs'][amplicon_name]['combined_pct_vector_filename'])
                 if not os.path.exists(amplicon_quant_file):
                     raise OutputFolderIncompleteException('The folder %s is not a valid CRISPResso2 output folder. Cannot find quantification file %s for amplicon %s.' % (output_folder, amplicon_quant_file, amplicon_name))
                 amplicon_info[amplicon_name]['quantification_file'] = amplicon_quant_file
 
-                amplicon_mod_count_file = os.path.join(output_folder, run_data['refs'][amplicon_name]['quant_window_mod_count_filename'])
+                amplicon_mod_count_file = os.path.join(output_folder, run_data['results']['refs'][amplicon_name]['quant_window_mod_count_filename'])
                 if not os.path.exists(amplicon_mod_count_file):
                     raise OutputFolderIncompleteException('The folder %s  is not a valid CRISPResso2 output folder. Cannot find modification count vector file %s for amplicon %s.' % (output_folder, amplicon_mod_count_file, amplicon_name))
                 amplicon_info[amplicon_name]['modification_count_file'] = amplicon_mod_count_file
 
-                if 'allele_frequency_files' in run_data['refs'][amplicon_name]:
-                    amplicon_info[amplicon_name]['allele_files'] = [os.path.join(output_folder, x) for x in run_data['refs'][amplicon_name]['allele_frequency_files']]
+                if 'allele_frequency_files' in run_data['results']['refs'][amplicon_name]:
+                    amplicon_info[amplicon_name]['allele_files'] = [os.path.join(output_folder, x) for x in run_data['results']['refs'][amplicon_name]['allele_frequency_files']]
                 else:
                     amplicon_info[amplicon_name]['allele_files'] = []
 

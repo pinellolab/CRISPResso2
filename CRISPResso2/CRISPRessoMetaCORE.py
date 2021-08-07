@@ -275,8 +275,8 @@ def main():
 
             run_data = CRISPRessoShared.load_crispresso_info(folder_name)
             run_datas.append(run_data)
-            for ref_name in run_data['ref_names']:
-                ref_seq = run_data['refs'][ref_name]['sequence']
+            for ref_name in run_data['results']['ref_names']:
+                ref_seq = run_data['results']['refs'][ref_name]['sequence']
                 all_amplicons.add(ref_seq)
                 #if this amplicon is called something else in another sample, just call it the amplicon
                 if ref_name in amplicon_names and amplicon_names[ref_seq] != ref_name:
