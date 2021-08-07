@@ -3066,8 +3066,8 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,M
 
     plot_count = 0
 
-    ref_names = crispresso2_info['ref_names']
-    refs = crispresso2_info['refs']
+    ref_names = crispresso2_info['results']['ref_names']
+    refs = crispresso2_info['results']['refs']
     for ref_name in ref_names:
         sgRNA_sequences = refs[ref_name]['sgRNA_sequences']
         sgRNA_cut_points = refs[ref_name]['sgRNA_cut_points']
@@ -3080,7 +3080,7 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,M
         reference_seq = refs[ref_name]['sequence']
 
         for ind, sgRNA in enumerate(sgRNA_sequences):
-            alleles_filename = os.path.join(crispresso_output_folder, crispresso2_info['refs'][ref_name]['allele_frequency_files'][ind])
+            alleles_filename = os.path.join(crispresso_output_folder, crispresso2_info['results']['refs'][ref_name]['allele_frequency_files'][ind])
             df_alleles = pd.read_table(alleles_filename)
             df_alleles = df_alleles.reset_index().set_index('Aligned_Sequence')
 
@@ -3149,8 +3149,8 @@ def plot_nucleotide_quilt_from_folder(crispresso_output_folder,fig_filename_root
 
     plot_count = 0
 
-    ref_names = crispresso2_info['ref_names']
-    refs = crispresso2_info['refs']
+    ref_names = crispresso2_info['results']['ref_names']
+    refs = crispresso2_info['results']['refs']
     for ref_name in ref_names:
         sgRNA_sequences = refs[ref_name]['sgRNA_sequences']
         sgRNA_cut_points = refs[ref_name]['sgRNA_cut_points']
@@ -3162,10 +3162,10 @@ def plot_nucleotide_quilt_from_folder(crispresso_output_folder,fig_filename_root
 
         reference_seq = refs[ref_name]['sequence']
 
-        nucleotide_pct_file = os.path.join(crispresso_output_folder, run_data['refs'][ref_name]['nuc_pct_filename'])
+        nucleotide_pct_file = os.path.join(crispresso_output_folder, run_data['results']['refs'][ref_name]['nuc_pct_filename'])
         ampSeq_np, nuc_pcts = CRISPRessoShared.parse_count_file(nucleotide_pct_file)
 
-        mod_count_file = os.path.join(crispresso_output_folder, run_data['refs'][ref_name]['mod_count_filename'])
+        mod_count_file = os.path.join(crispresso_output_folder, run_data['results']['refs'][ref_name]['mod_count_filename'])
         ampSeq_cf, mod_counts = CRISPRessoShared.parse_count_file(mod_count_file)
 
         mod_pcts = {}

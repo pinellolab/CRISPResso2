@@ -297,8 +297,8 @@ def main():
 
             run_data = CRISPRessoShared.load_crispresso_info(folder_name)
             run_datas.append(run_data)
-            for ref_name in run_data['ref_names']:
-                ref_seq = run_data['refs'][ref_name]['sequence']
+            for ref_name in run_data['results']['ref_names']:
+                ref_seq = run_data['results']['refs'][ref_name]['sequence']
                 all_amplicons.add(ref_seq)
                 #if this amplicon is called something else in another sample, just call it the amplicon
                 if ref_name in amplicon_names and amplicon_names[ref_seq] != ref_name:
@@ -369,8 +369,8 @@ def main():
                     continue
                 batch_has_amplicon = False
                 batch_amplicon_name = ''
-                for ref_name in run_data['ref_names']:
-                    if amplicon_seq == run_data['refs'][ref_name]['sequence']:
+                for ref_name in run_data['results']['ref_names']:
+                    if amplicon_seq == run_data['results']['refs'][ref_name]['sequence']:
                         batch_has_amplicon = True
                         batch_amplicon_name = ref_name
                 if not batch_has_amplicon:
@@ -378,27 +378,27 @@ def main():
                 batches_with_this_amplicon.append(idx)
 
                 if consensus_guides == []:
-                    consensus_guides = run_data['refs'][batch_amplicon_name]['sgRNA_sequences']
-                    consensus_include_idxs = run_data['refs'][batch_amplicon_name]['include_idxs']
-                    consensus_sgRNA_intervals = run_data['refs'][batch_amplicon_name]['sgRNA_intervals']
-                    consensus_sgRNA_plot_idxs = run_data['refs'][batch_amplicon_name]['sgRNA_plot_idxs']
+                    consensus_guides = run_data['results']['refs'][batch_amplicon_name]['sgRNA_sequences']
+                    consensus_include_idxs = run_data['results']['refs'][batch_amplicon_name]['include_idxs']
+                    consensus_sgRNA_intervals = run_data['results']['refs'][batch_amplicon_name]['sgRNA_intervals']
+                    consensus_sgRNA_plot_idxs = run_data['results']['refs'][batch_amplicon_name]['sgRNA_plot_idxs']
 
-                if run_data['refs'][batch_amplicon_name]['sgRNA_sequences'] != consensus_guides:
+                if run_data['results']['refs'][batch_amplicon_name]['sgRNA_sequences'] != consensus_guides:
                     guides_all_same = False
-                if set(run_data['refs'][batch_amplicon_name]['include_idxs']) != set(consensus_include_idxs):
+                if set(run_data['results']['refs'][batch_amplicon_name]['include_idxs']) != set(consensus_include_idxs):
                     guides_all_same = False
 
-                if 'nuc_freq_filename' not in run_data['refs'][batch_amplicon_name]:
+                if 'nuc_freq_filename' not in run_data['results']['refs'][batch_amplicon_name]:
                     info("Skipping the amplicon '%s' in folder '%s'. Cannot find nucleotide information."%(batch_amplicon_name, folder_name))
                     continue
 
-                nucleotide_frequency_file = os.path.join(folder_name, run_data['refs'][batch_amplicon_name]['nuc_freq_filename'])
+                nucleotide_frequency_file = os.path.join(folder_name, run_data['results']['refs'][batch_amplicon_name]['nuc_freq_filename'])
                 ampSeq_nf, nuc_freqs = CRISPRessoShared.parse_count_file(nucleotide_frequency_file)
 
-                nucleotide_pct_file = os.path.join(folder_name, run_data['refs'][batch_amplicon_name]['nuc_pct_filename'])
+                nucleotide_pct_file = os.path.join(folder_name, run_data['results']['refs'][batch_amplicon_name]['nuc_pct_filename'])
                 ampSeq_np, nuc_pcts = CRISPRessoShared.parse_count_file(nucleotide_pct_file)
 
-                count_file = os.path.join(folder_name, run_data['refs'][batch_amplicon_name]['mod_count_filename'])
+                count_file = os.path.join(folder_name, run_data['results']['refs'][batch_amplicon_name]['mod_count_filename'])
                 ampSeq_cf, mod_freqs = CRISPRessoShared.parse_count_file(count_file)
 
                 if ampSeq_nf is None or ampSeq_np is None or ampSeq_cf is None:
