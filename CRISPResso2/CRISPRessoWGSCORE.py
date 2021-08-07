@@ -623,7 +623,7 @@ def main():
                 run_data = CRISPRessoShared.load_crispresso_info(
                     _jp(folder_name),
                 )
-                ref_name = run_data['ref_names'][0] #only expect one amplicon sequence
+                ref_name = run_data['results']['ref_names'][0] #only expect one amplicon sequence
                 n_tot = row.n_reads
                 n_aligned = run_data['results']['alignment_stats']['counts_total'][ref_name]
                 n_unmod = run_data['results']['alignment_stats']['counts_unmodified'][ref_name]
