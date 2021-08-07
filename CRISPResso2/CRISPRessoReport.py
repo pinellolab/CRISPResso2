@@ -69,7 +69,7 @@ def make_report(run_data, crispresso_report_file, crispresso_folder, _ROOT):
 
 
     amplicons = []
-    for amplicon_name in run_data['ref_names']:
+    for amplicon_name in run_data['results']['ref_names']:
         amplicons.append(amplicon_name)
         amplicon_fig_names = []
         amplicon_fig_locs = {}
@@ -81,18 +81,18 @@ def make_report(run_data, crispresso_report_file, crispresso_folder, _ROOT):
 
         for fig in ['2a', '3a', '3b', '4a', '4b', '4c', '4d', '4e', '4f', '4g', '5', '6', '7', '8', '10a', '10b', '10c', '11a']:
             fig_name = 'plot_'+ fig
-            if fig_name + '_root' in run_data['refs'][amplicon_name]:
-                add_fig_if_exists(fig_name, run_data['refs'][amplicon_name][fig_name + '_root'], 'Figure ' + fig_name, run_data['refs'][amplicon_name][fig_name + '_caption'], run_data['refs'][amplicon_name][fig_name + '_data'],
+            if fig_name + '_root' in run_data['results']['refs'][amplicon_name]:
+                add_fig_if_exists(fig_name, run_data['results']['refs'][amplicon_name][fig_name + '_root'], 'Figure ' + fig_name, run_data['results']['refs'][amplicon_name][fig_name + '_caption'], run_data['results']['refs'][amplicon_name][fig_name + '_data'],
                         amplicon_fig_names, amplicon_fig_locs, amplicon_fig_titles, amplicon_fig_captions, amplicon_fig_datas)
 
         this_sgRNA_based_fig_names = {}
         for fig in ['2b', '9', '10d', '10e', '10f', '10g', '11b']:
         #fig 2b's
             this_fig_names = []
-            if 'plot_'+fig+'_roots' in run_data['refs'][amplicon_name]:
-                for idx, plot_root in enumerate(run_data['refs'][amplicon_name]['plot_'+fig+'_roots']):
+            if 'plot_'+fig+'_roots' in run_data['results']['refs'][amplicon_name]:
+                for idx, plot_root in enumerate(run_data['results']['refs'][amplicon_name]['plot_'+fig+'_roots']):
                     fig_name = "plot_"+fig+"_" + str(idx)
-                    add_fig_if_exists(fig_name, plot_root, 'Figure ' + fig_name + ' sgRNA ' + str(idx+1), run_data['refs'][amplicon_name]['plot_'+fig+'_captions'][idx], run_data['refs'][amplicon_name]['plot_'+fig+'_datas'][idx],
+                    add_fig_if_exists(fig_name, plot_root, 'Figure ' + fig_name + ' sgRNA ' + str(idx+1), run_data['results']['refs'][amplicon_name]['plot_'+fig+'_captions'][idx], run_data['results']['refs'][amplicon_name]['plot_'+fig+'_datas'][idx],
                         this_fig_names, amplicon_fig_locs, amplicon_fig_titles, amplicon_fig_captions, amplicon_fig_datas)
             this_sgRNA_based_fig_names[fig] = this_fig_names
 
@@ -284,11 +284,11 @@ def make_multi_report_from_folder(crispresso2_info,names_arr,report_name,crispre
 
         this_sub_2a_labels = []
         this_sub_2a_pdfs = []
-        for ref_name in run_data['ref_names']:
-            if 'plot_2a_root' in run_data['refs'][ref_name]:
-                pdf_file = run_data['refs'][ref_name]['plot_2a_root']+".pdf"
+        for ref_name in run_data['results']['ref_names']:
+            if 'plot_2a_root' in run_data['results']['refs'][ref_name]:
+                pdf_file = run_data['results']['refs'][ref_name]['plot_2a_root']+".pdf"
                 if os.path.exists(pdf_file):
-                    this_sub_2a_pdfs.append(run_data['refs'][ref_name]['plot_2a_root']+".pdf")
+                    this_sub_2a_pdfs.append(run_data['results']['refs'][ref_name]['plot_2a_root']+".pdf")
                     this_sub_2a_labels.append("Nucleotide distribution across " + ref_name)
 
         sub_2a_labels[display_name] = this_sub_2a_labels

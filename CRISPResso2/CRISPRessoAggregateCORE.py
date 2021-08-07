@@ -203,8 +203,8 @@ ___________________________________
             completed_batch_arr = []
             for crispresso2_folder in crispresso2_folders:
                 run_data = crispresso2_folder_infos[crispresso2_folder]
-                for ref_name in run_data['ref_names']:
-                    ref_seq = run_data['refs'][ref_name]['sequence']
+                for ref_name in run_data['results']['ref_names']:
+                    ref_seq = run_data['results']['refs'][ref_name]['sequence']
                     all_amplicons.add(ref_seq)
                     #if this amplicon is called something else in another sample, just call it the amplicon
                     if ref_name in amplicon_names and amplicon_names[ref_seq] != ref_name:
@@ -232,8 +232,8 @@ ___________________________________
                     suffix_counter += 1
                 seen_names.append(amplicon_names[amplicon])
 
-            crispresso2_info['ref_names'] = seen_names
-            crispresso2_info['refs'] = {}
+            crispresso2_info['results']['ref_names'] = seen_names
+            crispresso2_info['results']['refs'] = {}
             crispresso2_info['summary_plot_names'] = []
             crispresso2_info['summary_plot_titles'] = {}
             crispresso2_info['summary_plot_labels'] = {}
@@ -252,7 +252,7 @@ ___________________________________
             #report for amplicons that appear multiple times
             for amplicon_index, amplicon_seq in enumerate(all_amplicons):
                 amplicon_name = amplicon_names[amplicon_seq]
-                crispresso2_info['refs'][amplicon_name] = {}
+                crispresso2_info['results']['refs'][amplicon_name] = {}
                 #only perform comparison if amplicon seen in more than one sample
                 if amplicon_counts[amplicon_seq] < 2:
                     continue
@@ -276,8 +276,8 @@ ___________________________________
                     run_data = crispresso2_folder_infos[crispresso2_folder]
                     run_has_amplicon = False
                     run_amplicon_name = ''
-                    for ref_name in run_data['ref_names']:
-                        if amplicon_seq == run_data['refs'][ref_name]['sequence']:
+                    for ref_name in run_data['results']['ref_names']:
+                        if amplicon_seq == run_data['results']['refs'][ref_name]['sequence']:
                             run_has_amplicon = True
                             run_amplicon_name = ref_name
                     if not run_has_amplicon:
@@ -285,27 +285,27 @@ ___________________________________
                     runs_with_this_amplicon.append(crispresso2_folder)
 
                     if consensus_guides == []:
-                        consensus_guides = run_data['refs'][run_amplicon_name]['sgRNA_sequences']
-                        consensus_include_idxs = run_data['refs'][run_amplicon_name]['include_idxs']
-                        consensus_sgRNA_intervals = run_data['refs'][run_amplicon_name]['sgRNA_intervals']
-                        consensus_sgRNA_plot_idxs = run_data['refs'][run_amplicon_name]['sgRNA_plot_idxs']
+                        consensus_guides = run_data['results']['refs'][run_amplicon_name]['sgRNA_sequences']
+                        consensus_include_idxs = run_data['results']['refs'][run_amplicon_name]['include_idxs']
+                        consensus_sgRNA_intervals = run_data['results']['refs'][run_amplicon_name]['sgRNA_intervals']
+                        consensus_sgRNA_plot_idxs = run_data['results']['refs'][run_amplicon_name]['sgRNA_plot_idxs']
 
-                    if run_data['refs'][run_amplicon_name]['sgRNA_sequences'] != consensus_guides:
+                    if run_data['results']['refs'][run_amplicon_name]['sgRNA_sequences'] != consensus_guides:
                         guides_all_same = False
-                    if set(run_data['refs'][run_amplicon_name]['include_idxs']) != set(consensus_include_idxs):
+                    if set(run_data['results']['refs'][run_amplicon_name]['include_idxs']) != set(consensus_include_idxs):
                         guides_all_same = False
 
-                    if 'nuc_freq_filename' not in run_data['refs'][run_amplicon_name]:
+                    if 'nuc_freq_filename' not in run_data['results']['refs'][run_amplicon_name]:
                         info("Skipping the amplicon '%s' in folder '%s'. Cannot find nucleotide information."%(run_amplicon_name, crispresso2_folder))
                         continue
 
-                    nucleotide_frequency_file = os.path.join(crispresso2_folder, run_data['refs'][run_amplicon_name]['nuc_freq_filename'])
+                    nucleotide_frequency_file = os.path.join(crispresso2_folder, run_data['results']['refs'][run_amplicon_name]['nuc_freq_filename'])
                     ampSeq_nf, nuc_freqs = CRISPRessoShared.parse_count_file(nucleotide_frequency_file)
 
-                    nucleotide_pct_file = os.path.join(crispresso2_folder, run_data['refs'][run_amplicon_name]['nuc_pct_filename'])
+                    nucleotide_pct_file = os.path.join(crispresso2_folder, run_data['results']['refs'][run_amplicon_name]['nuc_pct_filename'])
                     ampSeq_np, nuc_pcts = CRISPRessoShared.parse_count_file(nucleotide_pct_file)
 
-                    count_file = os.path.join(crispresso2_folder, run_data['refs'][run_amplicon_name]['mod_count_filename'])
+                    count_file = os.path.join(crispresso2_folder, run_data['results']['refs'][run_amplicon_name]['mod_count_filename'])
                     ampSeq_cf, mod_freqs = CRISPRessoShared.parse_count_file(count_file)
 
                     if ampSeq_nf is None or ampSeq_np is None or ampSeq_cf is None:
@@ -392,11 +392,11 @@ ___________________________________
                     modification_percentage_summary_filename = _jp(amplicon_plot_name + 'MODIFICATION_PERCENTAGE_SUMMARY.txt')
                     modification_percentage_summary_df.to_csv(modification_percentage_summary_filename, sep='\t', index=None)
 
-                    crispresso2_info['refs'][amplicon_name]['nucleotide_frequency_summary_filename'] = os.path.basename(nucleotide_frequency_summary_filename)
-                    crispresso2_info['refs'][amplicon_name]['nucleotide_percentage_summary_filename'] = os.path.basename(nucleotide_percentage_summary_filename)
+                    crispresso2_info['results']['refs'][amplicon_name]['nucleotide_frequency_summary_filename'] = os.path.basename(nucleotide_frequency_summary_filename)
+                    crispresso2_info['results']['refs'][amplicon_name]['nucleotide_percentage_summary_filename'] = os.path.basename(nucleotide_percentage_summary_filename)
 
-                    crispresso2_info['refs'][amplicon_name]['modification_frequency_summary_filename'] = os.path.basename(modification_frequency_summary_filename)
-                    crispresso2_info['refs'][amplicon_name]['modification_percentage_summary_filename'] = os.path.basename(modification_percentage_summary_filename)
+                    crispresso2_info['results']['refs'][amplicon_name]['modification_frequency_summary_filename'] = os.path.basename(modification_frequency_summary_filename)
+                    crispresso2_info['results']['refs'][amplicon_name]['modification_percentage_summary_filename'] = os.path.basename(modification_percentage_summary_filename)
 
                     #if guides are all the same, merge substitutions and perform base editor comparison at guide quantification window
                     if guides_all_same and consensus_guides != []:
@@ -517,7 +517,7 @@ ___________________________________
                     n_deletion_and_substitution = 0
                     n_insertion_and_deletion_and_substitution = 0
 
-                    for ref_name in run_data['ref_names']: #multiple alleles could be provided
+                    for ref_name in run_data['results']['ref_names']: #multiple alleles could be provided
                         n_aligned += run_data['results']['alignment_stats']['counts_total'][ref_name]
                         n_unmod += run_data['results']['alignment_stats']['counts_unmodified'][ref_name]
                         n_mod += run_data['results']['alignment_stats']['counts_modified'][ref_name]

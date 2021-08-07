@@ -1267,7 +1267,7 @@ def main():
                     n_deletion_and_substitution = 0
                     n_insertion_and_deletion_and_substitution = 0
 
-                    for ref_name in run_data['ref_names']: #multiple alleles could be provided
+                    for ref_name in run_data['results']['ref_names']: #multiple alleles could be provided
                         n_aligned += run_data['results']['alignment_stats']['counts_total'][ref_name]
                         n_unmod += run_data['results']['alignment_stats']['counts_unmodified'][ref_name]
                         n_mod += run_data['results']['alignment_stats']['counts_modified'][ref_name]
@@ -1443,7 +1443,7 @@ def main():
                     run_data = CRISPRessoShared.load_crispresso_info(sub_folder)
                 except Exception as e:
                     raise Exception('CRISPResso run %s is not complete. Cannot read CRISPResso2_info.json file.'% sub_folder)
-                ref_sequences = [run_data['refs'][ref_name]['sequence'] for ref_name in run_data['ref_names']]
+                ref_sequences = [run_data['results']['refs'][ref_name]['sequence'] for ref_name in run_data['results']['ref_names']]
                 allele_frequency_table_zip_filename = os.path.join(sub_folder, run_data['running_info']['allele_frequency_table_zip_filename'])
                 if not os.path.exists(allele_frequency_table_zip_filename):
                     raise Exception('CRISPResso run %s is not complete. Cannot read allele frequency table.'% sub_folder)
@@ -1469,8 +1469,8 @@ def main():
                                 this_alleles.append(allele_seq)
                                 this_freqs.append(allele_freq)
                                 this_ref_name = ""
-                                for ref_name in run_data['ref_names']:
-                                    if allele_seq == run_data['refs'][ref_name]['sequence']:
+                                for ref_name in run_data['results']['ref_names']:
+                                    if allele_seq == run_data['results']['refs'][ref_name]['sequence']:
                                         this_ref_name = ref_name
                                 if this_ref_name == "":
                                     this_ref_name = "Alt_" + str(new_allele_idx)

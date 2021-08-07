@@ -185,8 +185,8 @@ def main():
             len_amplicon=profile_1.shape[0]
             effect_vector_any_1=profile_1[:, 1]
             effect_vector_any_2=profile_2[:, 1]
-            cut_points = run_info_1['refs'][amplicon_name]['sgRNA_cut_points']
-            sgRNA_intervals = run_info_1['refs'][amplicon_name]['sgRNA_intervals']
+            cut_points = run_info_1['results']['refs'][amplicon_name]['sgRNA_cut_points']
+            sgRNA_intervals = run_info_1['results']['refs'][amplicon_name]['sgRNA_intervals']
 
 
             #Quantification comparison barchart

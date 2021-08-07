@@ -69,8 +69,8 @@ def plot_ambiguous_alleles_tables_from_folder(crispresso_output_folder,fig_filen
 
     print("Filtered to " + str(ambig_len) + "/" + str(full_len) + " ambiguous reads")
 
-    ref_names = crispresso2_info['ref_names']
-    refs = crispresso2_info['refs']
+    ref_names = crispresso2_info['results']['ref_names']
+    refs = crispresso2_info['results']['refs']
     print("Ambiguous alleles will be plotted against to the sequence of the first reference sequence ("+ref_names[0]+")")
     for ref_name in ref_names:
         sgRNA_sequences = refs[ref_name]['sgRNA_sequences']
