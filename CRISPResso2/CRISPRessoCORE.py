@@ -3028,9 +3028,9 @@ def main():
             else:
                 CRISPRessoPlot.plot_read_barplot(**plot_1a_input)
 
-            crispresso2_info['plot_1a_root'] = os.path.basename(plot_1a_root)
-            crispresso2_info['plot_1a_caption'] = "Figure 1a: The number of reads in input fastqs, after preprocessing, and after alignment to amplicons."
-            crispresso2_info['plot_1a_data'] = [('Mapping statistics', os.path.basename(mapping_stats_filename))]
+            crispresso2_info['results']['general_plots']['plot_1a_root'] = os.path.basename(plot_1a_root)
+            crispresso2_info['results']['general_plots']['plot_1a_caption'] = "Figure 1a: The number of reads in input fastqs, after preprocessing, and after alignment to amplicons."
+            crispresso2_info['results']['general_plots']['plot_1a_data'] = [('Mapping statistics', os.path.basename(mapping_stats_filename))]
 
             plot_1b_root = _jp("1b.Alignment_pie_chart")
             plot_1c_root = _jp('1c.Alignment_barplot')
@@ -3044,15 +3044,15 @@ def main():
                 'barplot_plot_root': plot_1c_root,
                 'save_png': save_png
             }
-            crispresso2_info['plot_1b_root'] = os.path.basename(plot_1b_root)
-            crispresso2_info['plot_1b_caption'] = "Figure 1b: Alignment and editing frequency of reads as determined by the percentage and number of sequence reads showing unmodified and modified alleles."
+            crispresso2_info['results']['general_plots']['plot_1b_root'] = os.path.basename(plot_1b_root)
+            crispresso2_info['results']['general_plots']['plot_1b_caption'] = "Figure 1b: Alignment and editing frequency of reads as determined by the percentage and number of sequence reads showing unmodified and modified alleles."
             if args.expected_hdr_amplicon_seq != "":
-                crispresso2_info['plot_1b_caption'] = "Figure 1b: Alignment and editing frequency of reads as determined by the percentage and number of sequence reads showing unmodified and modified alleles. NHEJ reads align more closely to the unmodified reference sequence, but have mutations present in the specified quantification window. HDR reads align to the HDR reference sequence and have no mutations in the specified quantification window. Imperfect HDR reads have mutations in the specified window. AMBIGUOUS reads align equally well to the unmodified and HDR reference sequences."
-            crispresso2_info['plot_1b_data'] = [('Quantification of editing', os.path.basename(quant_of_editing_freq_filename))]
+                crispresso2_info['results']['general_plots']['plot_1b_caption'] = "Figure 1b: Alignment and editing frequency of reads as determined by the percentage and number of sequence reads showing unmodified and modified alleles. NHEJ reads align more closely to the unmodified reference sequence, but have mutations present in the specified quantification window. HDR reads align to the HDR reference sequence and have no mutations in the specified quantification window. Imperfect HDR reads have mutations in the specified window. AMBIGUOUS reads align equally well to the unmodified and HDR reference sequences."
+            crispresso2_info['results']['general_plots']['plot_1b_data'] = [('Quantification of editing', os.path.basename(quant_of_editing_freq_filename))]
 
-            crispresso2_info['plot_1c_root'] = os.path.basename(plot_1c_root)
-            crispresso2_info['plot_1c_caption'] = "Figure 1c: Alignment and editing frequency of reads as determined by the percentage and number of sequence reads showing unmodified and modified alleles."
-            crispresso2_info['plot_1c_data'] = [('Quantification of editing', os.path.basename(quant_of_editing_freq_filename))]
+            crispresso2_info['results']['general_plots']['plot_1c_root'] = os.path.basename(plot_1c_root)
+            crispresso2_info['results']['general_plots']['plot_1c_caption'] = "Figure 1c: Alignment and editing frequency of reads as determined by the percentage and number of sequence reads showing unmodified and modified alleles."
+            crispresso2_info['results']['general_plots']['plot_1c_data'] = [('Quantification of editing', os.path.basename(quant_of_editing_freq_filename))]
             if n_processes > 1:
                 plot_results.append(plot_pool.submit(
                     CRISPRessoPlot.plot_class_piechart_and_barplot,
@@ -3089,9 +3089,9 @@ def main():
                 else:
                     CRISPRessoPlot.plot_class_dsODN_piechart(**plot_1d_input)
 
-                crispresso2_info['plot_1d_root'] = os.path.basename(plot_root)
-                crispresso2_info['plot_1d_caption'] = "Figure 1d: Frequency of detection of dsODN " + args.dsODN
-                crispresso2_info['plot_1d_data'] = [('Allele table', os.path.basename(allele_frequency_table_filename))]
+                crispresso2_info['results']['general_plots']['plot_1d_root'] = os.path.basename(plot_root)
+                crispresso2_info['results']['general_plots']['plot_1d_caption'] = "Figure 1d: Frequency of detection of dsODN " + args.dsODN
+                crispresso2_info['results']['general_plots']['plot_1d_data'] = [('Allele table', os.path.basename(allele_frequency_table_filename))]
         ###############################################################################################################################################
 
         #hold mod pct dfs for each amplicon/guide
@@ -4199,9 +4199,9 @@ def main():
                     CRISPRessoPlot.plot_global_frameshift_analysis(
                         **plot_5a_input,
                     )
-                crispresso2_info['plot_5a_root'] = os.path.basename(plot_root)
-                crispresso2_info['plot_5a_caption'] = "Figure 5a: Frameshift analysis of coding sequence reads affected by modifications for all reads. Unmodified reference reads are excluded from this plot, and all HDR reads are included in this plot."
-                crispresso2_info['plot_5a_data'] = []
+                crispresso2_info['results']['general_plots']['plot_5a_root'] = os.path.basename(plot_root)
+                crispresso2_info['results']['general_plots']['plot_5a_caption'] = "Figure 5a: Frameshift analysis of coding sequence reads affected by modifications for all reads. Unmodified reference reads are excluded from this plot, and all HDR reads are included in this plot."
+                crispresso2_info['results']['general_plots']['plot_5a_data'] = []
 
                  #profiles-----------------------------------------------------------------------------------
                 plot_root = _jp('6a.Global_frameshift_in-frame_mutation_profiles')
@@ -4221,12 +4221,12 @@ def main():
                         **plot_6a_input,
                     )
 
-                crispresso2_info['plot_6a_root'] = os.path.basename(plot_root)
-                crispresso2_info['plot_6a_caption'] = "Figure 6a: Frameshift and in-frame mutagenesis profiles for all reads indicating position affected by modification. The y axis shows the number of reads and percentage of all reads in that category (frameshifted (top) or in-frame (bottom)). %d reads with no length modifications are not shown."%global_hists_inframe[0]
-                crispresso2_info['plot_6a_data'] = []
+                crispresso2_info['results']['general_plots']['plot_6a_root'] = os.path.basename(plot_root)
+                crispresso2_info['results']['general_plots']['plot_6a_caption'] = "Figure 6a: Frameshift and in-frame mutagenesis profiles for all reads indicating position affected by modification. The y axis shows the number of reads and percentage of all reads in that category (frameshifted (top) or in-frame (bottom)). %d reads with no length modifications are not shown."%global_hists_inframe[0]
+                crispresso2_info['results']['general_plots']['plot_6a_data'] = []
                 for ref_name in ref_names:
                     if 'indel_histogram_filename' in crispresso2_info['refs'][ref_name]:
-                        crispresso2_info['plot_6a_data'].append(('Indel histogram for ' + ref_name, os.path.basename(crispresso2_info['refs'][ref_name]['indel_histogram_filename'])))
+                        crispresso2_info['results']['general_plots']['plot_6a_data'].append(('Indel histogram for ' + ref_name, os.path.basename(crispresso2_info['refs'][ref_name]['indel_histogram_filename'])))
 
 
                 #-----------------------------------------------------------------------------------------------------------
@@ -4246,9 +4246,9 @@ def main():
                     CRISPRessoPlot.plot_impact_on_splice_sites(
                         **plot_8a_input,
                     )
-                crispresso2_info['plot_8a_root'] = os.path.basename(plot_root)
-                crispresso2_info['plot_8a_caption'] = "Figure 8a: Predicted impact on splice sites for all reads. Potential splice sites modified refers to reads in which the either of the two intronic positions adjacent to exon junctions are disrupted."
-                crispresso2_info['plot_8a_data'] = []
+                crispresso2_info['results']['general_plots']['plot_8a_root'] = os.path.basename(plot_root)
+                crispresso2_info['results']['general_plots']['plot_8a_caption'] = "Figure 8a: Predicted impact on splice sites for all reads. Potential splice sites modified refers to reads in which the either of the two intronic positions adjacent to exon junctions are disrupted."
+                crispresso2_info['results']['general_plots']['plot_8a_data'] = []
 
             #end global coding seq plots
 
@@ -4421,9 +4421,9 @@ def main():
                         CRISPRessoPlot.plot_scaffold_indel_lengths(
                             **plot_11c_input,
                         )
-                    crispresso2_info['plot_11c_root'] = os.path.basename(plot_root)
-                    crispresso2_info['plot_11c_caption'] = "Figure 11a: Scaffold insertion lengths and deletion lengths in reads that contain a scaffold insertion. 'Length matching scaffold' shows the number of basepairs immediately after the pegRNA extension sequence that exactly match the scaffold RNA sequence. 'Insertion length' shows the length of the insertion immediately after the pegRNA extension sequence (including bases that do not match the scaffold sequence)."
-                    crispresso2_info['plot_11c_data'] = [('Scaffold insertion alleles with insertion sizes', os.path.basename(scaffold_insertion_sizes_filename))]
+                    crispresso2_info['results']['general_plots']['plot_11c_root'] = os.path.basename(plot_root)
+                    crispresso2_info['results']['general_plots']['plot_11c_caption'] = "Figure 11a: Scaffold insertion lengths and deletion lengths in reads that contain a scaffold insertion. 'Length matching scaffold' shows the number of basepairs immediately after the pegRNA extension sequence that exactly match the scaffold RNA sequence. 'Insertion length' shows the length of the insertion immediately after the pegRNA extension sequence (including bases that do not match the scaffold sequence)."
+                    crispresso2_info['results']['general_plots']['plot_11c_data'] = [('Scaffold insertion alleles with insertion sizes', os.path.basename(scaffold_insertion_sizes_filename))]
 
         # join plotting pool
         wait(plot_results)
