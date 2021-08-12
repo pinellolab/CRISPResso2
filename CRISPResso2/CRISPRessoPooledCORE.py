@@ -118,7 +118,7 @@ def summarize_region_fastq_chunk(input_arr):
         chr_string = "_".join(region_info[1:len(region_info)-2]) #in case there are underscores
         region_string='%s:%s-%d' % (chr_string, region_info[-2], int(region_info[-1])-1)
         p = sb.Popen("samtools faidx %s %s | grep -v ^\> | tr -d '\n'" %(uncompressed_reference, region_string), shell=True, stdout=sb.PIPE)
-        seq = p.communicate()[0]
+        seq = p.communicate()[0].decode('utf-8')
         p = sb.Popen(('z' if region_fastq.endswith('.gz') else '' ) +"cat < %s | wc -l" % region_fastq, shell=True, stdout=sb.PIPE)
         n_reads = int(float(p.communicate()[0])/4.0)
         ret_val.append([chr_string] + region_info[-2:]+[region_fastq, n_reads, seq])
@@ -956,7 +956,7 @@ def main():
                 #next, get all of the chromosome names (for parallelization)
                 enumerate_chr_cmd = "samtools view -H %s" % bam_filename_genome
                 p = sb.Popen(enumerate_chr_cmd, shell=True, stdout=sb.PIPE)
-                chr_lines = p.communicate()[0].split("\n")
+                chr_lines = p.communicate()[0].decode('utf-8').split("\n")
                 chrs = []
                 chr_lens = {}
                 for chr_line in chr_lines:
@@ -1379,7 +1379,7 @@ def main():
 #    			print("command is: "+cmd)
 #    		    p = sb.Popen(cmd, shell=True,stdout=sb.PIPE)
                 p = sb.Popen(cmd, shell=True, stdout=sb.PIPE, preexec_fn=default_sigpipe)
-                top_unaligned = p.communicate()[0]
+                top_unaligned = p.communicate()[0].decode('utf-8')
                 top_unaligned_filename=_jp('CRISPRessoPooled_TOP_UNALIGNED.txt')
 
                 with open(top_unaligned_filename, 'w') as outfile:
