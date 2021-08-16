@@ -52,7 +52,7 @@ def filterFastqs(fastq_r1=None,fastq_r2=None,fastq_r1_out=None,fastq_r2_out=None
             f1_out_filename = fastq_r1_out
 
     else:
-        f1_in = open(fastq_r1, 'r')
+        f1_in = open(fastq_r1, 'rb')
         f1_out_filename=fastq_r1.replace('.fastq', '')+'_filtered.fastq'
         if fastq_r1_out:
             f1_out_filename = fastq_r1_out
@@ -71,7 +71,7 @@ def filterFastqs(fastq_r1=None,fastq_r2=None,fastq_r1_out=None,fastq_r2_out=None
             if fastq_r2_out:
                 f2_out_filename = fastq_r2_out
         else:
-            f2_in = open(fastq_r2, 'r')
+            f2_in = open(fastq_r2, 'rb')
             f2_out_filename=fastq_r2.replace('.fastq', '')+'_filtered.fastq'
             if fastq_r2_out:
                 f2_out_filename = fastq_r2_out
