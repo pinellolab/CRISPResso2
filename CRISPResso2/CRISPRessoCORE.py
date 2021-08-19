@@ -368,10 +368,10 @@ def get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2
     """
 
     # three sets of indices
-    aln_ind_in_r1 = 0  # indexes in r1 aln1_seq (including gaps)
-    aln_ind_in_r2 = 0
-    ind_in_r1 = 0  # indexes in non-gapped positions in r1 aln1_seq to match to quailty
-    ind_in_r2 = 0
+    seq_ind_in_r1 = 0  # indexes in r1 aln1_seq (including gaps)
+    seq_ind_in_r2 = 0
+    qual_ind_in_r1 = 0  # indexes in non-gapped positions in r1 aln1_seq to match to quailty
+    qual_ind_in_r2 = 0
     ref_ind_in_r1 = 0  # indexes in non-gapped positions in r1 ref aln1_ref to match to r2 ref aln2_ref
     ref_ind_in_r2 = 0
 
@@ -387,44 +387,75 @@ def get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2
 
     # iterate over all positions
     # aln1_seq and aln1_ref have the same length, so it doesn't matter which one we choose
-    while aln_ind_in_r1 < len(aln1_ref) or aln_ind_in_r2 < len(aln2_ref):
-#        print('aln_ind_in_r1: ' + str(aln_ind_in_r1) + ' aln_ind_in_r2: ' + str(aln_ind_in_r2))
-#        print('ind_in_r1: ' + str(ind_in_r1) + ' ind_in_r1: ' + str(ind_in_r2))
-        if aln_ind_in_r1 >= ind_r1_start and aln_ind_in_r1 <= ind_r1_stop:
-            if aln_ind_in_r2 >= ind_r2_start and aln_ind_in_r2 <= ind_r2_stop:
-                #both are in range
-                this_nuc = get_greater_qual_nuc(aln1_seq[aln_ind_in_r1], qual1[ind_in_r1], aln2_seq[aln_ind_in_r2], qual2[ind_in_r2])
+    while seq_ind_in_r1 < len(aln1_ref) or seq_ind_in_r2 < len(aln2_ref):
+        # print('seq_ind_in_r1: ' + str(seq_ind_in_r1) + ' seq_ind_in_r2: ' + str(seq_ind_in_r2))
+        # print('ref_ind_in_r1: ' + str(ref_ind_in_r1) + ' ref_ind_in_r2: ' + str(ref_ind_in_r2))
+        # print('r1 in range: ' + str(ind_r1_start <= seq_ind_in_r1 <= ind_r1_stop))
+        # print('r2 in range: ' + str(ind_r2_start <= seq_ind_in_r2 <= ind_r2_stop))
+        # print('qual_ind_in_r1: ' + str(qual_ind_in_r1) + ' qual_ind_in_r2: ' + str(qual_ind_in_r2))
+        # print('final_aln: ' + final_aln + ' final_ref: ' + final_ref)
+        # print('---------------')
+        if ind_r1_start <= seq_ind_in_r1 <= ind_r1_stop:
+            if ind_r2_start <= seq_ind_in_r2 <= ind_r2_stop:
+                # both are in range
+                this_nuc = get_greater_qual_nuc(
+                    aln1_seq[seq_ind_in_r1],
+                    qual1[qual_ind_in_r1],
+                    aln2_seq[seq_ind_in_r2],
+                    qual2[qual_ind_in_r2],
+                )
                 final_aln += this_nuc
                 final_ref += aln1_ref[ref_ind_in_r1]
             else:
-                #only r1 is in range
-                this_nuc = aln1_seq[aln_ind_in_r1]
+                # only r1 is in range
+                this_nuc = aln1_seq[seq_ind_in_r1]
                 final_aln += this_nuc
                 final_ref += aln1_ref[ref_ind_in_r1]
-        elif aln_ind_in_r2 >= ind_r2_start and aln_ind_in_r2 <= ind_r2_stop:
-            #only r2 is in range
-            this_nuc = aln2_seq[aln_ind_in_r2]
+        elif ind_r2_start <= seq_ind_in_r2 <= ind_r2_stop:
+            # only r2 is in range
+            this_nuc = aln2_seq[seq_ind_in_r2]
             final_aln += this_nuc
             final_ref += aln1_ref[ref_ind_in_r1]
         else:
+            # neither are in range
             final_aln += "N"
             final_ref += aln1_ref[ref_ind_in_r1]
 
-        if aln_ind_in_r1 < len(aln1_seq):
-            if aln1_seq[aln_ind_in_r1] != '-':
-                ind_in_r1 += 1
-            if aln1_ref[aln_ind_in_r1] != '-':
-                ref_ind_in_r1 += 1
-        aln_ind_in_r1 += 1
-
-        if aln_ind_in_r2 < len(aln2_seq):
-            if aln2_seq[aln_ind_in_r2] != '-':
-                ind_in_r2 += 1
-            if aln2_ref[aln_ind_in_r2] != '-':
+        if seq_ind_in_r1 < len(aln1_ref):
+            if seq_ind_in_r2 < len(aln2_ref):
+                # both are in range
+                if aln1_seq[seq_ind_in_r1] != '-':
+                    qual_ind_in_r1 += 1
+                if aln2_seq[seq_ind_in_r2] != '-':
+                    qual_ind_in_r2 += 1
+                if aln1_ref[seq_ind_in_r1] == '-' and aln2_ref[seq_ind_in_r2] != '-':
+                    # gap in r2 ref, but not r1 ref
+                    ref_ind_in_r1 += 1
+                    seq_ind_in_r1 += 1
+                elif aln1_ref[seq_ind_in_r1] != '-' and aln2_ref[seq_ind_in_r2] == '-':
+                    # gap in r1 ref, but not r2 ref
+                    ref_ind_in_r2 += 1
+                    seq_ind_in_r2 += 1
+                else:
+                    # either both refs have gaps or neither have a gap
+                    ref_ind_in_r1 += 1
+                    ref_ind_in_r2 += 1
+                    seq_ind_in_r1 += 1
+                    seq_ind_in_r2 += 1
+            else:
+                # only r1 is in range
+                if aln1_seq[seq_ind_in_r2] != '-':
+                    qual_ind_in_r2 += 1
+                if aln1_ref[seq_ind_in_r1] != '-':
+                    ref_ind_in_r1 += 1
+                    seq_ind_in_r1 += 1
+        elif seq_ind_in_r2 < len(aln2_ref):
+            # only r2 is in range
+            if aln2_seq[seq_ind_in_r2] != '-':
+                qual_ind_in_r2 += 1
+            if aln2_ref[seq_ind_in_r2] != '-':
                 ref_ind_in_r2 += 1
-        aln_ind_in_r2 += 1
-
-
+                seq_ind_in_r2 += 1
 
     final_homology_score = 0
     for i in range(len(final_ref)):
