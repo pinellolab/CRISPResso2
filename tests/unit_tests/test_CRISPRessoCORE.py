@@ -91,7 +91,7 @@ def test_get_consensus_alignment_from_pairs():
     aln_seq, ref_seq, score = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
     assert aln_seq ==      "NNC-ANNGAN"
     assert ref_seq ==      "ATCGATCGAT"
-    assert score == 50 #double check this score... should be 5/10
+    assert score == 40 #double check this score... should be 4/10
 
 if __name__ == "__main__":
 # execute only if run as a script
