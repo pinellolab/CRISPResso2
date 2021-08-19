@@ -93,6 +93,32 @@ def test_get_consensus_alignment_from_pairs():
     assert ref_seq ==      "ATCGATCGAT"
     assert score == 40 #double check this score... should be 4/10
 
+    # deletion in r2
+    qual1                =   "AAA"
+    aln1_seq             = "--CGA-----".replace(" ","")
+    aln1_ref             = "ATCGATCGAT".replace(" ","")
+    aln2_seq             = "-----T-GA-".replace(" ","")
+    aln2_ref             = "ATCGATCGAT".replace(" ","")
+    qual2                =      "AAA"
+
+    aln_seq, ref_seq, score = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
+    assert aln_seq ==      "NNCGAT-GAN"
+    assert ref_seq ==      "ATCGATCGAT"
+    assert score == 60 #double check this score... should be 6/10
+
+    # insertion at beginning of r1
+    qual1                = "AAAA"
+    aln1_seq             = "TA-CGA----- ".replace(" ","")
+    aln1_ref             = "-ATCGATCGAT ".replace(" ","")
+    aln2_seq             = " --------AT ".replace(" ","")
+    aln2_ref             = " ATCGATCGAT".replace(" ","")
+    qual2                =      "AAA"
+
+    aln_seq, ref_seq, score = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
+    assert aln_seq ==      "TA-CGANNNAT"
+    assert ref_seq ==      "-ATCGATCGAT"
+    assert score == 54 #double check this score... should be 6/11
+
 if __name__ == "__main__":
 # execute only if run as a script
     test_get_consensus_alignment_from_pairs()
