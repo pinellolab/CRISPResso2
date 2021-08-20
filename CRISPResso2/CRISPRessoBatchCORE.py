@@ -268,8 +268,8 @@ def main():
             batch_names_arr.append(batch_name)
             batch_input_names[batch_name] = row["name"]
 
-            crispresso_cmd= args.crispresso_command + ' -o %s --name %s' % (OUTPUT_DIRECTORY, batch_name)
-            crispresso_cmd=propagate_options(crispresso_cmd, crispresso_options_for_batch, batch_params, idx)
+            crispresso_cmd = args.crispresso_command + ' -o %s --name %s' % (OUTPUT_DIRECTORY, batch_name)
+            crispresso_cmd = propagate_options(crispresso_cmd, crispresso_options_for_batch, batch_params, idx)
             if row.amplicon_seq == "":
                 crispresso_cmd += ' --auto '
             crispresso_cmds.append(crispresso_cmd)
@@ -287,7 +287,6 @@ def main():
         completed_batch_arr = []
         for idx, row in batch_params.iterrows():
             batch_name = CRISPRessoShared.slugify(row["name"])
-            file_prefix = row['file_prefix']
             folder_name = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso_on_%s' % batch_name)
             run_data_file = os.path.join(folder_name, 'CRISPResso2_info.json')
             if not os.path.isfile(run_data_file):
@@ -362,7 +361,6 @@ def main():
             batches_with_this_amplicon = []
             for idx, row in batch_params.iterrows():
                 batch_name = CRISPRessoShared.slugify(row["name"])
-                file_prefix = row['file_prefix']
                 folder_name = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso_on_%s' % batch_name)
                 run_data = run_datas[idx]
                 if run_data is None:
@@ -615,7 +613,6 @@ def main():
             wrote_header = False
             for idx, row in batch_params.iterrows():
                 batch_name = CRISPRessoShared.slugify(row["name"])
-                file_prefix = row['file_prefix']
                 folder_name = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso_on_%s' % batch_name)
                 run_data = run_datas[idx]
                 if run_data is None:
@@ -629,6 +626,26 @@ def main():
                         wrote_header = True
                     for line in infile:
                         outfile.write(batch_name + "\t" + line)
+
+
+        #summarize frameshift and splicing site mods
+        with open(_jp('CRISPRessoBatch_quantification_of_frameshift_splicing.txt'), 'w') as outfile:
+            outfile.write("\t".join(['Batch','Reference','total_reads','modified_frameshift','modified_non_frameshift','non_modified_non_frameshift','splicing_sites_modified','splice_sites_unmodified'])+"\n")
+            for idx, row in batch_params.iterrows():
+                batch_name = CRISPRessoShared.slugify(row["name"])
+                folder_name = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso_on_%s' % batch_name)
+                run_data = run_datas[idx]
+                if run_data is None:
+                    continue
+
+                for ref_name in run_data['results']['ref_names']:
+                    count_total = run_data['results']['alignment_stats']['counts_total'][ref_name]
+                    count_modified_frameshift = run_data['results']['alignment_stats']['counts_modified_frameshift'][ref_name]
+                    count_modified_non_frameshift = run_data['results']['alignment_stats']['counts_modified_non_frameshift'][ref_name]
+                    count_non_modified_non_frameshift = run_data['results']['alignment_stats']['counts_non_modified_non_frameshift'][ref_name]
+                    count_splicing_sites_modified = run_data['results']['alignment_stats']['counts_splicing_sites_modified'][ref_name]
+                    count_splicing_sites_unmodified = count_total - count_splicing_sites_modified
+                    outfile.write("\t".join([str(x) for x in [batch_name,ref_name,count_total,count_modified_frameshift,count_modified_non_frameshift,count_non_modified_non_frameshift,count_splicing_sites_modified,count_splicing_sites_unmodified]])+"\n")
 
         #summarize alignment
         with open(_jp('CRISPRessoBatch_mapping_statistics.txt'), 'w') as outfile:

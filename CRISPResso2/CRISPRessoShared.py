@@ -25,7 +25,7 @@ from CRISPResso2 import CRISPRessoCOREResources
 from CRISPResso2.CRISPRessoMultiProcessing import get_max_processes
 
 
-__version__ = "2.2.0"
+__version__ = "2.2.1"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -304,8 +304,8 @@ def capitalize_sequence(x):
 def slugify(value): #adapted from the Django project
 
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
-    value = re.sub(rb'[^\w\s-]', '_', value).strip()
-    value = re.sub(rb'[-\s]+', '-', value)
+    value = re.sub(rb'[^\w\s-]', b'_', value).strip()
+    value = re.sub(rb'[-\s]+', b'-', value)
 
     return value.decode('utf-8')
 
@@ -1145,8 +1145,8 @@ def get_alignment_coordinates(to_sequence,from_sequence,aln_matrix,needleman_wun
     """
     this_gap_incentive = np.zeros(len(from_sequence)+1, dtype=np.int)
     fws1, fws2, fwscore=CRISPResso2Align.global_align(to_sequence, from_sequence, matrix=aln_matrix, gap_open=needleman_wunsch_gap_open, gap_extend=needleman_wunsch_gap_extend, gap_incentive=this_gap_incentive)
-    print(fws1)
-    print(fws2)
+#    print(fws1)
+#    print(fws2)
     s1inds_l = []
     s1inds_r = []
     s1ix_l = -1
