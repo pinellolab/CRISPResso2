@@ -1478,7 +1478,6 @@ def plot_global_frameshift_analysis(
             (0.99607843,  0.90980392,  0.78431373, 0.8),
         ],
         autopct='%1.1f%%',
-        normalize=False,
     )
 
     ax.set_axis_off()
