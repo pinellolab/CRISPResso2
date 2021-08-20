@@ -337,6 +337,10 @@ def main():
         window_nuc_conv_plot_names = []
         nuc_conv_plot_names = []
 
+        crispresso2_info['summary_plot_titles'] = {}
+        crispresso2_info['summary_plot_labels'] = {}
+        crispresso2_info['summary_plot_datas'] = {}
+
         #report for amplicons that appear multiple times
         for amplicon_index, amplicon_seq in enumerate(all_amplicons):
             #only perform comparison if amplicon seen in more than one sample
@@ -487,9 +491,6 @@ def main():
                 crispresso2_info['modification_frequency_summary_filename'] = os.path.basename(modification_frequency_summary_filename)
                 crispresso2_info['modification_percentage_summary_filename'] = os.path.basename(modification_percentage_summary_filename)
 
-                crispresso2_info['summary_plot_titles'] = {}
-                crispresso2_info['summary_plot_labels'] = {}
-                crispresso2_info['summary_plot_datas'] = {}
 
                 #if guides are all the same, merge substitutions and perform base editor comparison at guide quantification window
                 if guides_all_same and consensus_guides != []:
