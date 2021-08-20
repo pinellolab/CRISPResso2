@@ -63,7 +63,7 @@ def make_report(run_data, crispresso_report_file, crispresso_folder, _ROOT):
     global_fig_names= []
     for fig in ['1a', '1b', '1c', '1d', '5a', '6a', '8a', '11c']:
         fig_name = 'plot_'+ fig
-        if fig_name + '_root' in run_data:
+        if fig_name + '_root' in run_data['results']['general_plots']:
             add_fig_if_exists(fig_name, run_data['results']['general_plots'][fig_name + '_root'], 'Figure ' + fig, run_data['results']['general_plots'][fig_name + '_caption'], run_data['results']['general_plots'][fig_name+'_data'],
                 global_fig_names, fig_locs, fig_titles, fig_captions, fig_datas)
 
