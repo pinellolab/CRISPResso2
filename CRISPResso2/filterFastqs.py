@@ -141,7 +141,7 @@ def run_mBPN(f1_in, f1_out, min_bp_qual_in_read, min_av_read_qual, min_bp_qual_o
         plusLine = f1_in.readline().rstrip()
         qualLine = f1_in.readline().rstrip()
         npQualLine = numpy.frombuffer(qualLine, dtype=numpy.uint8)-33 #assume illumina 1.7
-        npSeqLine = numpy.frombuffer(seqLine, 'c')
+        npSeqLine = numpy.frombuffer(seqLine, 'c').copy()
         npSeqLine[npQualLine < min_bp_qual_or_N] = 'N'
         f1_out.write("%s\n%s\n%s\n%s\n"%(idLine, npSeqLine.tostring().decode('utf-8'), plusLine.decode('utf-8'), qualLine.decode('utf-8')))
         idLine = f1_in.readline().rstrip().decode('utf-8')
@@ -207,7 +207,7 @@ def run_mRQ_mBPN(f1_in, f1_out, min_bp_qual_in_read, min_av_read_qual, min_bp_qu
         npQualLine = numpy.frombuffer(qualLine, dtype=numpy.uint8)-33 #assume illumina 1.7
         mean = numpy.mean(npQualLine)
         if mean >= min_av_read_qual:
-            npSeqLine = numpy.frombuffer(seqLine, 'c')
+            npSeqLine = numpy.frombuffer(seqLine, 'c').copy()
             npSeqLine[npQualLine < min_bp_qual_or_N] = 'N'
             f1_out.write("%s\n%s\n%s\n%s\n"%(idLine, npSeqLine.tostring().decode('utf-8'), plusLine.decode('utf-8'), qualLine.decode('utf-8')))
         idLine = f1_in.readline().rstrip().decode('utf-8')
@@ -223,7 +223,7 @@ def run_mBP_mRQ_mBPN(f1_in, f1_out, min_bp_qual_in_read, min_av_read_qual, min_b
         if min >= min_bp_qual_in_read:
             mean = numpy.mean(npQualLine)
             if mean >= min_av_read_qual:
-                npSeqLine = numpy.frombuffer(seqLine, 'c')
+                npSeqLine = numpy.frombuffer(seqLine, 'c').copy()
                 npSeqLine[npQualLine < min_bp_qual_or_N] = 'N'
                 f1_out.write("%s\n%s\n%s\n%s\n"%(idLine, npSeqLine.tostring().decode('utf-8'), plusLine.decode('utf-8'), qualLine.decode('utf-8')))
         idLine = f1_in.readline().rstrip().decode('utf-8')
@@ -243,10 +243,10 @@ def run_mBPN_pair(f1_in, f1_out, f2_in, f2_out, min_bp_qual_in_read, min_av_read
 
         npQualLine = numpy.frombuffer(qualLine, dtype=numpy.uint8)-33 #assume illumina 1.7
         npQualLine2 = numpy.frombuffer(qualLine2, dtype=numpy.uint8)-33 #assume illumina 1.7
-        npSeqLine = numpy.frombuffer(seqLine, 'c')
+        npSeqLine = numpy.frombuffer(seqLine, 'c').copy()
         npSeqLine[npQualLine < min_bp_qual_or_N] = 'N'
         f1_out.write("%s\n%s\n%s\n%s\n"%(idLine, npSeqLine.tostring().decode('utf-8'), plusLine.decode('utf-8'), qualLine.decode('utf-8')))
-        npSeqLine2 = numpy.frombuffer(seqLine2, 'c')
+        npSeqLine2 = numpy.frombuffer(seqLine2, 'c').copy()
         npSeqLine2[npQualLine2 < min_bp_qual_or_N] = 'N'
         f2_out.write("%s\n%s\n%s\n%s\n"%(idLine2, npSeqLine2.tostring().decode('utf-8'), plusLine2.decode('utf-8'), qualLine2.decode('utf-8')))
 
@@ -336,10 +336,10 @@ def run_mBP_mBPN_pair(f1_in, f1_out, f2_in, f2_out, min_bp_qual_in_read, min_av_
         min = numpy.min(npQualLine)
         min2 = numpy.min(npQualLine2)
         if min >= min_bp_qual_in_read and min2 >= min_bp_qual_in_read:
-            npSeqLine = numpy.frombuffer(seqLine, 'c')
+            npSeqLine = numpy.frombuffer(seqLine, 'c').copy()
             npSeqLine[npQualLine < min_bp_qual_or_N] = 'N'
             f1_out.write("%s\n%s\n%s\n%s\n"%(idLine, npSeqLine.tostring().decode('utf-8'), plusLine.decode('utf-8'), qualLine.decode('utf-8')))
-            npSeqLine2 = numpy.frombuffer(seqLine2, 'c')
+            npSeqLine2 = numpy.frombuffer(seqLine2, 'c').copy()
             npSeqLine2[npQualLine2 < min_bp_qual_or_N] = 'N'
             f2_out.write("%s\n%s\n%s\n%s\n"%(idLine2, npSeqLine2.tostring().decode('utf-8'), plusLine2.decode('utf-8'), qualLine2.decode('utf-8')))
         idLine = f1_in.readline().rstrip().decode('utf-8')
@@ -361,10 +361,10 @@ def run_mRQ_mBPN_pair(f1_in, f1_out, f2_in, f2_out, min_bp_qual_in_read, min_av_
         mean = numpy.mean(npQualLine)
         mean2 = numpy.mean(npQualLine2)
         if mean >= min_av_read_qual and mean2 >= min_av_read_qual:
-            npSeqLine = numpy.frombuffer(seqLine, 'c')
+            npSeqLine = numpy.frombuffer(seqLine, 'c').copy()
             npSeqLine[npQualLine < min_bp_qual_or_N] = 'N'
             f1_out.write("%s\n%s\n%s\n%s\n"%(idLine, npSeqLine.tostring().decode('utf-8'), plusLine.decode('utf-8'), qualLine.decode('utf-8')))
-            npSeqLine2 = numpy.frombuffer(seqLine2, 'c')
+            npSeqLine2 = numpy.frombuffer(seqLine2, 'c').copy()
             npSeqLine2[npQualLine2 < min_bp_qual_or_N] = 'N'
             f2_out.write("%s\n%s\n%s\n%s\n"%(idLine2, npSeqLine2.tostring().decode('utf-8'), plusLine2.decode('utf-8'), qualLine2.decode('utf-8')))
         idLine = f1_in.readline().rstrip().decode('utf-8')
@@ -389,10 +389,10 @@ def run_mBP_mRQ_mBPN_pair(f1_in, f1_out, f2_in, f2_out, min_bp_qual_in_read, min
             mean = numpy.mean(npQualLine)
             mean2 = numpy.mean(npQualLine2)
             if mean >= min_av_read_qual and mean2 >= min_av_read_qual:
-                npSeqLine = numpy.frombuffer(seqLine, 'c')
+                npSeqLine = numpy.frombuffer(seqLine, 'c').copy()
                 npSeqLine[npQualLine < min_bp_qual_or_N] = 'N'
                 f1_out.write("%s\n%s\n%s\n%s\n"%(idLine, npSeqLine.tostring().decode('utf-8'), plusLine.decode('utf-8'), qualLine.decode('utf-8')))
-                npSeqLine2 = numpy.frombuffer(seqLine2, 'c')
+                npSeqLine2 = numpy.frombuffer(seqLine2, 'c').copy()
                 npSeqLine2[npQualLine2 < min_bp_qual_or_N] = 'N'
                 f2_out.write("%s\n%s\n%s\n%s\n"%(idLine2, npSeqLine2.tostring().decode('utf-8'), plusLine2.decode('utf-8'), qualLine2.decode('utf-8')))
         idLine = f1_in.readline().rstrip().decode('utf-8')
