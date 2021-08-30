@@ -377,7 +377,7 @@ def main():
                         args.name, clean_name,
                     ),
                 )
-                database_id = clean_name
+            database_id = clean_name
 
 
 
