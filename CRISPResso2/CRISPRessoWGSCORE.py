@@ -332,7 +332,7 @@ def main():
                          args.name, clean_name,
                     ),
                 )
-                database_id = clean_name
+            database_id = clean_name
 
 
         OUTPUT_DIRECTORY='CRISPRessoWGS_on_%s' % database_id
