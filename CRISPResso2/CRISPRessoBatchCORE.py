@@ -604,10 +604,10 @@ def main():
                             crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), ('Modification frequencies', os.path.basename(modification_frequency_summary_filename))]
 
 
-        crispresso2_info['window_nuc_pct_quilt_plot_names'] = window_nuc_pct_quilt_plot_names
-        crispresso2_info['nuc_pct_quilt_plot_names'] = nuc_pct_quilt_plot_names
-        crispresso2_info['window_nuc_conv_plot_names'] = window_nuc_conv_plot_names
-        crispresso2_info['nuc_conv_plot_names'] = nuc_conv_plot_names
+        crispresso2_info['results']['general_plots']['window_nuc_pct_quilt_plot_names'] = window_nuc_pct_quilt_plot_names
+        crispresso2_info['results']['general_plots']['nuc_pct_quilt_plot_names'] = nuc_pct_quilt_plot_names
+        crispresso2_info['results']['general_plots']['window_nuc_conv_plot_names'] = window_nuc_conv_plot_names
+        crispresso2_info['results']['general_plots']['nuc_conv_plot_names'] = nuc_conv_plot_names
 
         #summarize amplicon modifications
         with open(_jp('CRISPRessoBatch_quantification_of_editing_frequency.txt'), 'w') as outfile:
