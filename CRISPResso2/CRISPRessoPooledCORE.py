@@ -1310,10 +1310,10 @@ def main():
 
         crispresso2_info['results']['alignment_stats']['samples_quantification_summary_filename'] = os.path.basename(samples_quantification_summary_filename)
         crispresso2_info['final_data'] = df_final_data
-        crispresso2_info['all_region_names'] = all_region_names
-        crispresso2_info['all_region_read_counts'] = all_region_read_counts
-        crispresso2_info['good_region_names'] = good_region_names
-        crispresso2_info['good_region_folders'] = good_region_folders
+        crispresso2_info['results']['all_region_names'] = all_region_names
+        crispresso2_info['results']['all_region_read_counts'] = all_region_read_counts
+        crispresso2_info['results']['good_region_names'] = good_region_names
+        crispresso2_info['results']['good_region_folders'] = good_region_folders
         crispresso2_info['running_mode'] = RUNNING_MODE
 
         crispresso2_info['summary_plot_names'] = []
@@ -1434,7 +1434,7 @@ def main():
 
         if args.compile_postrun_references:
             postrun_references = []
-            names_arr = crispresso2_info['good_region_names']
+            names_arr = crispresso2_info['results']['good_region_names']
             for name in names_arr:
                 folder_name = 'CRISPResso_on_%s' % name
                 sub_folder = os.path.join(OUTPUT_DIRECTORY, folder_name)
