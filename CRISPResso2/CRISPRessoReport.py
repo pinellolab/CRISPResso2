@@ -201,7 +201,7 @@ def make_batch_report_from_folder(crispressoBatch_report_file, crispresso2_info,
 
 
 def make_pooled_report_from_folder(crispresso_report_file, crispresso2_info, folder, _ROOT):
-    names_arr = crispresso2_info['good_region_names']
+    names_arr = crispresso2_info['results']['good_region_names']
     output_title = 'CRISPResso Pooled Output'
     if crispresso2_info['running_info']['args'].name != '':
         output_title += '<br/>{0}'.format(crispresso2_info['running_info']['args'].name)
@@ -223,7 +223,7 @@ def make_meta_report_from_folder(crispresso_report_file, crispresso2_info, folde
     make_multi_report_from_folder(crispresso2_info, names_arr, output_title, crispresso_report_file, folder, _ROOT, display_names=input_names)
 
 def make_wgs_report_from_folder(crispresso_report_file, crispresso2_info, folder, _ROOT):
-    names_arr = crispresso2_info['good_region_names']
+    names_arr = crispresso2_info['results']['good_region_names']
     output_title = 'CRISPResso WGS Output'
     if crispresso2_info['running_info']['args'].name != '':
         output_title += '<br/>{0}'.format(crispresso2_info['running_info']['args'].name)
