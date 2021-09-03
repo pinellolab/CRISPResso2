@@ -358,7 +358,7 @@ def main():
         crispresso2_info['running_info']['args'] = deepcopy(args)
 
         crispresso2_info['running_info']['log_filename'] = os.path.basename(log_filename)
-        crispresso2_info['finished_steps'] = {}
+        crispresso2_info['running_info']['finished_steps'] = {}
 
 
         crispresso_cmd_to_write = ' '.join(sys.argv)
@@ -398,9 +398,9 @@ def main():
                             sys.exit(0)
                         else:
                             can_finish_incomplete_run = True
-                            if 'finished_steps' in previous_run_data:
-                                for key in previous_run_data['finished_steps'].keys():
-                                    crispresso2_info['finished_steps'][key] = previous_run_data['finished_steps'][key]
+                            if 'finished_steps' in previous_run_data['running_info']:
+                                for key in previous_run_data['running_info']['finished_steps'].keys():
+                                    crispresso2_info['running_info']['finished_steps'][key] = previous_run_data['running_info']['finished_steps'][key]
                                     if args.debug:
                                         info('finished: ' + key)
                 else:
@@ -540,7 +540,7 @@ def main():
         report_reads_aligned_filename = _jp('REPORT_READS_ALIGNED_TO_SELECTED_REGIONS_WGS.txt')
         num_rows_without_fastq = len(df_regions[df_regions.row_fastq_exists == False])
 
-        if can_finish_incomplete_run and num_rows_without_fastq == 0 and os.path.isfile(report_reads_aligned_filename) and 'generation_of_fastq_files_for_each_amplicon' in crispresso2_info['finished_steps']:
+        if can_finish_incomplete_run and num_rows_without_fastq == 0 and os.path.isfile(report_reads_aligned_filename) and 'generation_of_fastq_files_for_each_amplicon' in crispresso2_info['running_info']['finished_steps']:
             info('Skipping generation of fastq files for each amplicon.')
             df_regions = pd.read_csv(report_reads_aligned_filename, comment='#', sep='\t', dtype={'Name':str, 'chr_id':str})
             df_regions.set_index('Name', inplace=True)
@@ -555,7 +555,7 @@ def main():
             df_regions.fillna('NA').to_csv(report_reads_aligned_filename, sep='\t', columns = cols_to_print, index_label="Name")
 
             #save progress
-            crispresso2_info['finished_steps']['generation_of_fastq_files_for_each_amplicon'] = True
+            crispresso2_info['running_info']['finished_steps']['generation_of_fastq_files_for_each_amplicon'] = True
             CRISPRessoShared.write_crispresso_info(
                 crispresso2_info_file, crispresso2_info,
             )
