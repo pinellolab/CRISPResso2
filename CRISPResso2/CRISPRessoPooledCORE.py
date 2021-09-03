@@ -406,7 +406,7 @@ def main():
         crispresso2_info['running_info']['args'] = deepcopy(args)
 
         crispresso2_info['running_info']['log_filename'] = os.path.basename(log_filename)
-        crispresso2_info['finished_steps'] = {}
+        crispresso2_info['running_info']['finished_steps'] = {}
 
         #keep track of args to see if it is possible to skip computation steps on rerun
         can_finish_incomplete_run = False
@@ -434,9 +434,9 @@ def main():
                         else:
                             can_finish_incomplete_run = True
                             #add previous run info to this run
-                            if 'finished_steps' in previous_run_data:
-                                for key in previous_run_data['finished_steps'].keys():
-                                    crispresso2_info['finished_steps'][key] = previous_run_data['finished_steps'][key]
+                            if 'finished_steps' in previous_run_data['running_info']:
+                                for key in previous_run_data['running_info']['finished_steps'].keys():
+                                    crispresso2_info['running_info']['finished_steps'][key] = previous_run_data['running_info']['finished_steps'][key]
                                     if args.debug:
                                         info('finished: ' + key)
                 else:
@@ -555,13 +555,13 @@ def main():
              info('Done!')
 
 
-        if can_finish_incomplete_run and 'count_input_reads' in crispresso2_info['finished_steps']:
-            (N_READS_INPUT, N_READS_AFTER_PREPROCESSING) = crispresso2_info['finished_steps']['count_input_reads']
+        if can_finish_incomplete_run and 'count_input_reads' in crispresso2_info['running_info']['finished_steps']:
+            (N_READS_INPUT, N_READS_AFTER_PREPROCESSING) = crispresso2_info['running_info']['finished_steps']['count_input_reads']
         #count reads
         else:
             N_READS_INPUT=get_n_reads_fastq(args.fastq_r1)
             N_READS_AFTER_PREPROCESSING=get_n_reads_fastq(processed_output_filename)
-            crispresso2_info['finished_steps']['count_input_reads'] = (N_READS_INPUT, N_READS_AFTER_PREPROCESSING)
+            crispresso2_info['running_info']['finished_steps']['count_input_reads'] = (N_READS_INPUT, N_READS_AFTER_PREPROCESSING)
             CRISPRessoShared.write_crispresso_info(
                 crispresso2_info_file, crispresso2_info
             )
@@ -778,7 +778,7 @@ def main():
             filename_aligned_amplicons_sam_log = _jp('CRISPResso_amplicons_aligned.sam.log')
             filename_amplicon_seqs_fasta = _jp('CRISPResso_amplicons_to_align.fa')
 
-            if can_finish_incomplete_run and 'mapping_amplicons_to_reference_genome' in crispresso2_info['finished_steps']:
+            if can_finish_incomplete_run and 'mapping_amplicons_to_reference_genome' in crispresso2_info['running_info']['finished_steps']:
                 info('Reading previously-computed alignment of amplicons to genome')
                 additional_columns_df = pd.read_csv(filename_amplicon_aligned_locations, sep="\t")
                 additional_columns_df.set_index('Name', inplace=True)
@@ -811,7 +811,7 @@ def main():
                 additional_columns_df = pd.DataFrame(additional_columns, columns=['Name', 'chr_id', 'bpstart', 'bpend', 'strand', 'Reference_Sequence']).set_index('Name')
                 additional_columns_df.to_csv(filename_amplicon_aligned_locations, sep="\t", index_label='Name')
 
-                crispresso2_info['finished_steps']['mapping_amplicons_to_reference_genome'] = True
+                crispresso2_info['running_info']['finished_steps']['mapping_amplicons_to_reference_genome'] = True
                 CRISPRessoShared.write_crispresso_info(
                     crispresso2_info_file, crispresso2_info
                 )
@@ -859,9 +859,9 @@ def main():
         if RUNNING_MODE=='ONLY_GENOME' or RUNNING_MODE=='AMPLICONS_AND_GENOME':
             bam_filename_genome = _jp('%s_GENOME_ALIGNED.bam' % database_id)
 
-            if can_finish_incomplete_run and 'n_reads_aligned_genome' in crispresso2_info['finished_steps']:
+            if can_finish_incomplete_run and 'n_reads_aligned_genome' in crispresso2_info['running_info']['finished_steps']:
                 info('Using previously-computed alignment of reads to genome')
-                N_READS_ALIGNED = crispresso2_info['finished_steps']['n_reads_aligned_genome']
+                N_READS_ALIGNED = crispresso2_info['running_info']['finished_steps']['n_reads_aligned_genome']
             else:
                 info('Aligning reads to the provided genome index...')
                 aligner_command= 'bowtie2 -x %s -p %s %s -U %s 2>>%s| samtools view -bS - | samtools sort -@ %d - -o %s' %(args.bowtie2_index, n_processes_for_pooled,
@@ -874,7 +874,7 @@ def main():
                 N_READS_ALIGNED=get_n_aligned_bam(bam_filename_genome)
 
                 #save progress up to this point
-                crispresso2_info['finished_steps']['n_reads_aligned_genome'] = N_READS_ALIGNED
+                crispresso2_info['running_info']['finished_steps']['n_reads_aligned_genome'] = N_READS_ALIGNED
                 CRISPRessoShared.write_crispresso_info(
                     crispresso2_info_file, crispresso2_info,
                 )
@@ -883,7 +883,7 @@ def main():
             MAPPED_REGIONS=_jp('MAPPED_REGIONS/')
             REPORT_ALL_DEPTH=_jp('REPORT_READS_ALIGNED_TO_GENOME_ALL_DEPTHS.txt')
 
-            if can_finish_incomplete_run and 'genome_demultiplexing' in crispresso2_info['finished_steps'] and os.path.isfile(REPORT_ALL_DEPTH):
+            if can_finish_incomplete_run and 'genome_demultiplexing' in crispresso2_info['running_info']['finished_steps'] and os.path.isfile(REPORT_ALL_DEPTH):
                 info('Using previously-computed demultiplexing of genomic reads')
                 df_all_demux = pd.read_csv(REPORT_ALL_DEPTH, sep='\t')
                 df_all_demux['loc'] = df_all_demux['chr_id']+' ' + df_all_demux['start'].apply(str) + ' '+df_all_demux['end'].apply(str)
@@ -1014,7 +1014,7 @@ def main():
                     raise NoReadsAlignedException("No reads aligned to the specified genome")
 
 
-                crispresso2_info['finished_steps']['genome_demultiplexing'] = True
+                crispresso2_info['running_info']['finished_steps']['genome_demultiplexing'] = True
                 CRISPRessoShared.write_crispresso_info(
                     crispresso2_info_file, crispresso2_info,
                 )
@@ -1036,9 +1036,9 @@ def main():
             n_reads_aligned_genome=[]
             fastq_region_filenames=[]
 
-            if can_finish_incomplete_run and 'crispresso_amplicons_and_genome' in crispresso2_info['finished_steps']:
+            if can_finish_incomplete_run and 'crispresso_amplicons_and_genome' in crispresso2_info['running_info']['finished_steps']:
                 info('Using previously-computed crispresso runs')
-                (n_reads_aligned_genome, fastq_region_filenames, files_to_match) = crispresso2_info['finished_steps']['crispresso_amplicons_and_genome'];
+                (n_reads_aligned_genome, fastq_region_filenames, files_to_match) = crispresso2_info['running_info']['finished_steps']['crispresso_amplicons_and_genome'];
             else:
                 crispresso_cmds = []
                 for idx, row in df_template.iterrows():
@@ -1088,7 +1088,7 @@ def main():
 
                 CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, args.n_processes, 'amplicon', args.skip_failed)
 
-                crispresso2_info['finished_steps']['crispresso_amplicons_and_genome'] = (n_reads_aligned_genome, fastq_region_filenames, files_to_match)
+                crispresso2_info['running_info']['finished_steps']['crispresso_amplicons_and_genome'] = (n_reads_aligned_genome, fastq_region_filenames, files_to_match)
                 CRISPRessoShared.write_crispresso_info(
                     crispresso2_info_file, crispresso2_info,
                 )
@@ -1108,7 +1108,7 @@ def main():
                 df_regions=pd.DataFrame(columns=['chr_id', 'bpstart', 'bpend', 'fastq_file', 'n_reads', 'Reference_sequence'])
             else:
                 filename_problematic_regions = _jp('REPORTS_READS_ALIGNED_TO_GENOME_NOT_MATCHING_AMPLICONS.txt')
-                if can_finish_incomplete_run and 'reporting_problematic_regions' in crispresso2_info['finished_steps']:
+                if can_finish_incomplete_run and 'reporting_problematic_regions' in crispresso2_info['running_info']['finished_steps']:
                     info('Skipping previously-computed reporting of problematic regions')
                     df_regions = pd.read_csv(filename_problematic_regions, sep='\t')
                 else:
@@ -1138,7 +1138,7 @@ def main():
 
                     df_regions.fillna('NA').to_csv(filename_problematic_regions, sep='\t', index=None)
 
-                    crispresso2_info['finished_steps']['reporting_problematic_regions'] = True
+                    crispresso2_info['running_info']['finished_steps']['reporting_problematic_regions'] = True
                     CRISPRessoShared.write_crispresso_info(
                         crispresso2_info_file, crispresso2_info,
                     )
@@ -1147,7 +1147,7 @@ def main():
         if RUNNING_MODE=='ONLY_GENOME' :
             #Load regions and build REFERENCE TABLES
             filename_reads_aligned_to_genome_only = _jp('REPORT_READS_ALIGNED_TO_GENOME_ONLY.txt')
-            if can_finish_incomplete_run and 'demultiplexing_genome_only_regions' in crispresso2_info['finished_steps'] and os.path.exists(filename_reads_aligned_to_genome_only):
+            if can_finish_incomplete_run and 'demultiplexing_genome_only_regions' in crispresso2_info['running_info']['finished_steps'] and os.path.exists(filename_reads_aligned_to_genome_only):
                 info('Using previously-computed extraction of aligned regions')
                 df_regions = pd.read_csv(filename_reads_aligned_to_genome_only, sep="\t")
             else:
@@ -1179,13 +1179,13 @@ def main():
 
                 df_regions.fillna('NA').to_csv(filename_reads_aligned_to_genome_only, sep='\t', index=None)
 
-                crispresso2_info['finished_steps']['demultiplexing_genome_only_regions'] = True
+                crispresso2_info['running_info']['finished_steps']['demultiplexing_genome_only_regions'] = True
                 CRISPRessoShared.write_crispresso_info(
                     crispresso2_info_file, crispresso2_info,
                 )
 
             #run CRISPResso (last step of genome-only mode)
-            if can_finish_incomplete_run and 'crispresso_genome_only' in crispresso2_info['finished_steps']:
+            if can_finish_incomplete_run and 'crispresso_genome_only' in crispresso2_info['running_info']['finished_steps']:
                 info('Using previously-computed crispresso runs')
             else:
                 info('Running CRISPResso on the regions discovered...')
@@ -1203,7 +1203,7 @@ def main():
                         info('Skipping region: %s-%d-%d , not enough reads (%d)' %(row.chr_id, row.bpstart, row.bpend, row.n_reads))
                 CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, args.n_processes, 'region', args.skip_failed)
 
-                crispresso2_info['finished_steps']['crispresso_genome_only'] = True
+                crispresso2_info['running_info']['finished_steps']['crispresso_genome_only'] = True
                 CRISPRessoShared.write_crispresso_info(
                     crispresso2_info_file, crispresso2_info,
                 )
