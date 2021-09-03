@@ -1316,10 +1316,10 @@ def main():
         crispresso2_info['results']['good_region_folders'] = good_region_folders
         crispresso2_info['running_mode'] = RUNNING_MODE
 
-        crispresso2_info['summary_plot_names'] = []
-        crispresso2_info['summary_plot_titles'] = {}
-        crispresso2_info['summary_plot_labels'] = {}
-        crispresso2_info['summary_plot_datas'] = {}
+        crispresso2_info['results']['general_plots']['summary_plot_names'] = []
+        crispresso2_info['results']['general_plots']['summary_plot_titles'] = {}
+        crispresso2_info['results']['general_plots']['summary_plot_labels'] = {}
+        crispresso2_info['results']['general_plots']['summary_plot_datas'] = {}
 
 
         df_summary_quantification.set_index('Name')
@@ -1333,20 +1333,20 @@ def main():
 
             CRISPRessoPlot.plot_reads_total(plot_root, df_summary_quantification, save_png, args.min_reads_to_use_region)
             plot_name = os.path.basename(plot_root)
-            crispresso2_info['summary_plot_root'] = plot_name
-            crispresso2_info['summary_plot_names'].append(plot_name)
-            crispresso2_info['summary_plot_titles'][plot_name] = 'CRISPRessoPooled Read Allocation Summary'
-            crispresso2_info['summary_plot_labels'][plot_name] = 'Each bar shows the total number of reads allocated to each amplicon. The vertical line shows the cutoff for analysis, set using the --min_reads_to_use_region parameter.'
-            crispresso2_info['summary_plot_datas'][plot_name] = [('CRISPRessoPooled summary', os.path.basename(samples_quantification_summary_filename))]
+            crispresso2_info['results']['general_plots']['summary_plot_root'] = plot_name
+            crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
+            crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'CRISPRessoPooled Read Allocation Summary'
+            crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Each bar shows the total number of reads allocated to each amplicon. The vertical line shows the cutoff for analysis, set using the --min_reads_to_use_region parameter.'
+            crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('CRISPRessoPooled summary', os.path.basename(samples_quantification_summary_filename))]
 
             plot_root = _jp("CRISPRessoPooled_modification_summary")
             CRISPRessoPlot.plot_unmod_mod_pcts(plot_root, df_summary_quantification, save_png, args.min_reads_to_use_region)
             plot_name = os.path.basename(plot_root)
-            crispresso2_info['summary_plot_root'] = plot_name
-            crispresso2_info['summary_plot_names'].append(plot_name)
-            crispresso2_info['summary_plot_titles'][plot_name] = 'CRISPRessoPooled Modification Summary'
-            crispresso2_info['summary_plot_labels'][plot_name] = 'Each bar shows the total number of reads aligned to each amplicon, divided into the reads that are modified and unmodified. The vertical line shows the cutoff for analysis, set using the --min_reads_to_use_region parameter.'
-            crispresso2_info['summary_plot_datas'][plot_name] = [('CRISPRessoPooled summary', os.path.basename(samples_quantification_summary_filename))]
+            crispresso2_info['results']['general_plots']['summary_plot_root'] = plot_name
+            crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
+            crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'CRISPRessoPooled Modification Summary'
+            crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Each bar shows the total number of reads aligned to each amplicon, divided into the reads that are modified and unmodified. The vertical line shows the cutoff for analysis, set using the --min_reads_to_use_region parameter.'
+            crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('CRISPRessoPooled summary', os.path.basename(samples_quantification_summary_filename))]
 
 
 

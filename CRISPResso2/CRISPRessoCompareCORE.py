@@ -153,10 +153,10 @@ def main():
 
         crispresso2_info['running_info']['log_filename'] = os.path.basename(log_filename)
 
-        crispresso2_info['summary_plot_names'] = []
-        crispresso2_info['summary_plot_titles'] = {}
-        crispresso2_info['summary_plot_labels'] = {}
-        crispresso2_info['summary_plot_datas'] = {}
+        crispresso2_info['results']['general_plots']['summary_plot_names'] = []
+        crispresso2_info['results']['general_plots']['summary_plot_titles'] = {}
+        crispresso2_info['results']['general_plots']['summary_plot_labels'] = {}
+        crispresso2_info['results']['general_plots']['summary_plot_datas'] = {}
 
         save_png = True
         if args.suppress_report:
@@ -223,16 +223,16 @@ def main():
                 save_png,
             )
 
-            crispresso2_info['summary_plot_names'].append(plot_name)
-            crispresso2_info['summary_plot_titles'][plot_name] = 'Editing efficiency comparison'
-            crispresso2_info['summary_plot_labels'][plot_name] = 'Figure 1: Comparison for amplicon ' + amplicon_name + '; Left: Percentage of modified and unmodified reads in each sample; Right: relative percentage of modified and unmodified reads'
+            crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
+            crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'Editing efficiency comparison'
+            crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Figure 1: Comparison for amplicon ' + amplicon_name + '; Left: Percentage of modified and unmodified reads in each sample; Right: relative percentage of modified and unmodified reads'
             output_1 = os.path.join(args.crispresso_output_folder_1, run_info_1['running_info']['report_filename'])
             output_2 = os.path.join(args.crispresso_output_folder_1, run_info_2['running_info']['report_filename'])
-            crispresso2_info['summary_plot_datas'][plot_name] = []
+            crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = []
             if os.path.isfile(output_1):
-                crispresso2_info['summary_plot_datas'][plot_name].append((sample_1_name +' output', os.path.relpath(output_1, OUTPUT_DIRECTORY)))
+                crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name].append((sample_1_name +' output', os.path.relpath(output_1, OUTPUT_DIRECTORY)))
             if os.path.isfile(output_2):
-                crispresso2_info['summary_plot_datas'][plot_name].append((sample_2_name+ ' output', os.path.relpath(output_2, OUTPUT_DIRECTORY)))
+                crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name].append((sample_2_name+ ' output', os.path.relpath(output_2, OUTPUT_DIRECTORY)))
 
 
             mod_file_1 = amplicon_info_1[amplicon_name]['modification_count_file']
@@ -313,10 +313,10 @@ def main():
                     _jp(plot_name),
                     save_png,
                 )
-                crispresso2_info['summary_plot_names'].append(plot_name)
-                crispresso2_info['summary_plot_titles'][plot_name] = mod_name +' locations'
-                crispresso2_info['summary_plot_labels'][plot_name] = mod_name + ' location comparison for amplicon ' + amplicon_name + '; Top: percent difference; Bottom: p-value.'
-                crispresso2_info['summary_plot_datas'][plot_name] = [(mod_name+' quantification', os.path.basename(mod_filename))]
+                crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
+                crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = mod_name +' locations'
+                crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = mod_name + ' location comparison for amplicon ' + amplicon_name + '; Top: percent difference; Bottom: p-value.'
+                crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [(mod_name+' quantification', os.path.basename(mod_filename))]
 
 
             #create merged heatmaps for each cut site
@@ -361,20 +361,20 @@ def main():
                         plot_name = '3.'+output_root+'_top'
                         CRISPRessoPlot.plot_alleles_table_compare(ref_seq_around_cut, merged.sort_values(['each_LFC'], ascending=True), sample_1_name, sample_2_name, _jp(plot_name),
                                     MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot, MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot, SAVE_ALSO_PNG=save_png)
-                        crispresso2_info['summary_plot_names'].append(plot_name)
-                        crispresso2_info['summary_plot_titles'][plot_name] = 'Alleles enriched in ' + sample_1_name
-                        crispresso2_info['summary_plot_labels'][plot_name] = 'Distribution comparison of alleles. Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site. '+ \
+                        crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
+                        crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'Alleles enriched in ' + sample_1_name
+                        crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Distribution comparison of alleles. Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site. '+ \
                         'The proportion and number of reads is shown for each sample on the right, with the values for ' + sample_1_name + ' followed by the values for ' + sample_2_name +'. Alleles are sorted for enrichment in ' + sample_1_name+'.'
-                        crispresso2_info['summary_plot_datas'][plot_name] = [('Allele comparison table', os.path.basename(allele_comparison_file))]
+                        crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Allele comparison table', os.path.basename(allele_comparison_file))]
 
                         plot_name = '3.'+output_root+'_bottom'
                         CRISPRessoPlot.plot_alleles_table_compare(ref_seq_around_cut, merged.sort_values(['each_LFC'], ascending=False), sample_1_name, sample_2_name, _jp(plot_name),
                                     MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot, MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot, SAVE_ALSO_PNG=save_png)
-                        crispresso2_info['summary_plot_names'].append(plot_name)
-                        crispresso2_info['summary_plot_titles'][plot_name] = 'Alleles enriched in ' + sample_2_name
-                        crispresso2_info['summary_plot_labels'][plot_name] = 'Distribution comparison of alleles. Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site. '+ \
+                        crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
+                        crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'Alleles enriched in ' + sample_2_name
+                        crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Distribution comparison of alleles. Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site. '+ \
                         'The proportion and number of reads is shown for each sample on the right, with the values for ' + sample_1_name + ' followed by the values for ' + sample_2_name +'. Alleles are sorted for enrichment in ' + sample_2_name+'.'
-                        crispresso2_info['summary_plot_datas'][plot_name] = [('Allele comparison table', os.path.basename(allele_comparison_file))]
+                        crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Allele comparison table', os.path.basename(allele_comparison_file))]
 
 
         if not args.suppress_report:
