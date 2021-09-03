@@ -550,7 +550,7 @@ ___________________________________
             df_summary_quantification=pd.DataFrame(quantification_summary, columns=header_els)
             samples_quantification_summary_filename = _jp('CRISPRessoAggregate_quantification_of_editing_frequency.txt') #this file has one line for each run (sum of all amplicons)
             df_summary_quantification.fillna('NA').to_csv(samples_quantification_summary_filename, sep='\t', index=None)
-            crispresso2_info['samples_quantification_summary_filename'] = os.path.basename(samples_quantification_summary_filename)
+            crispresso2_info['results']['alignment_stats']['samples_quantification_summary_filename'] = os.path.basename(samples_quantification_summary_filename)
             crispresso2_info['samples_quantification_summary_by_amplicon_filename'] = os.path.basename(samples_quantification_summary_by_amplicon_filename)
             df_summary_quantification.set_index('Name')
 
