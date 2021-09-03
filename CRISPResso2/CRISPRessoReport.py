@@ -144,11 +144,11 @@ def make_batch_report_from_folder(crispressoBatch_report_file, crispresso2_info,
     batch_names = crispresso2_info['completed_batch_arr']
     display_names = crispresso2_info['batch_input_names']
 
-    window_nuc_pct_quilts = crispresso2_info['window_nuc_pct_quilt_plot_names']
-    nuc_pct_quilts = crispresso2_info['nuc_pct_quilt_plot_names']
+    window_nuc_pct_quilts = crispresso2_info['results']['general_plots']['window_nuc_pct_quilt_plot_names']
+    nuc_pct_quilts = crispresso2_info['results']['general_plots']['nuc_pct_quilt_plot_names']
 
-    window_nuc_conv_plots = crispresso2_info['window_nuc_conv_plot_names']
-    nuc_conv_plots = crispresso2_info['nuc_conv_plot_names']
+    window_nuc_conv_plots = crispresso2_info['results']['general_plots']['window_nuc_conv_plot_names']
+    nuc_conv_plots = crispresso2_info['results']['general_plots']['nuc_conv_plot_names']
 
     summary_plot_names = []
     if 'summary_plot_names' in crispresso2_info['results']['general_plots']:
@@ -376,11 +376,11 @@ def make_aggregate_report(crispresso2_info,report_name,crispresso_report_file,cr
         summary_plot_datas = crispresso2_info['results']['general_plots']['summary_plots_datas']
 
     window_nuc_pct_quilts = []
-    if 'window_nuc_pct_quilt_plot_names' in crispresso2_info:
-        window_nuc_pct_quilts = crispresso2_info['window_nuc_pct_quilt_plot_names']
+    if 'window_nuc_pct_quilt_plot_names' in crispresso2_info['results']['general_plots']:
+        window_nuc_pct_quilts = crispresso2_info['results']['general_plots']['window_nuc_pct_quilt_plot_names']
     nuc_pct_quilts = []
-    if 'nuc_pct_quilt_plot_names' in crispresso2_info:
-        nuc_pct_quilts = crispresso2_info['nuc_pct_quilt_plot_names']
+    if 'nuc_pct_quilt_plot_names' in crispresso2_info['results']['general_plots']:
+        nuc_pct_quilts = crispresso2_info['results']['general_plots']['nuc_pct_quilt_plot_names']
 
     run_names = []
     sub_html_files = {}
