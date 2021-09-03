@@ -234,10 +234,10 @@ ___________________________________
 
             crispresso2_info['results']['ref_names'] = seen_names
             crispresso2_info['results']['refs'] = {}
-            crispresso2_info['summary_plot_names'] = []
-            crispresso2_info['summary_plot_titles'] = {}
-            crispresso2_info['summary_plot_labels'] = {}
-            crispresso2_info['summary_plot_datas'] = {}
+            crispresso2_info['results']['general_plots']['summary_plot_names'] = []
+            crispresso2_info['results']['general_plots']['summary_plot_titles'] = {}
+            crispresso2_info['results']['general_plots']['summary_plot_labels'] = {}
+            crispresso2_info['results']['general_plots']['summary_plot_datas'] = {}
 
             with open(_jp('CRISPRessoAggregate_amplicon_information.txt'), 'w') as outfile:
                 outfile.write("\t".join(['Amplicon Name', 'Number of sources', 'Amplicon sources', 'Amplicon sequence']) + "\n")
@@ -442,11 +442,11 @@ ___________________________________
                                 CRISPRessoPlot.plot_nucleotide_quilt(sub_nucleotide_percentage_summary_df, sub_modification_percentage_summary_df, this_window_nuc_pct_quilt_plot_name, save_png, sgRNA_intervals=sub_sgRNA_intervals, quantification_window_idxs=include_idxs, group_column='Folder')
                                 plot_name = os.path.basename(this_window_nuc_pct_quilt_plot_name)
                                 window_nuc_pct_quilt_plot_names.append(plot_name)
-                                crispresso2_info['summary_plot_titles'][plot_name] = 'sgRNA: ' + sgRNA + ' Amplicon: ' + amplicon_name
+                                crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'sgRNA: ' + sgRNA + ' Amplicon: ' + amplicon_name
                                 if len(consensus_guides) == 1:
-                                    crispresso2_info['summary_plot_titles'][plot_name] = ''
-                                crispresso2_info['summary_plot_labels'][plot_name] = 'Composition of each base around the guide ' + sgRNA + ' for the amplicon ' + amplicon_name
-                                crispresso2_info['summary_plot_datas'][plot_name] = [(amplicon_name + ' nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), (amplicon_name + ' modification frequencies', os.path.basename(modification_frequency_summary_filename))]
+                                    crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = ''
+                                crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Composition of each base around the guide ' + sgRNA + ' for the amplicon ' + amplicon_name
+                                crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [(amplicon_name + ' nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), (amplicon_name + ' modification frequencies', os.path.basename(modification_frequency_summary_filename))]
 
                                 sub_nucleotide_frequency_summary_df = pd.concat([sub_nucleotide_frequency_summary_df.iloc[:, 0:2],
                                                                             sub_nucleotide_frequency_summary_df.iloc[:, 2:].apply(pd.to_numeric)], axis=1)
@@ -463,11 +463,11 @@ ___________________________________
                             CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df, modification_percentage_summary_df, this_nuc_pct_quilt_plot_name, save_png, sgRNA_intervals=consensus_sgRNA_intervals, quantification_window_idxs=include_idxs, group_column='Folder')
                             plot_name = os.path.basename(this_nuc_pct_quilt_plot_name)
                             nuc_pct_quilt_plot_names.append(plot_name)
-                            crispresso2_info['summary_plot_titles'][plot_name] = 'Amplicon: ' + amplicon_name
+                            crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'Amplicon: ' + amplicon_name
                             if len(amplicon_names) == 1:
-                                crispresso2_info['summary_plot_titles'][plot_name] = ''
-                            crispresso2_info['summary_plot_labels'][plot_name] = 'Composition of each base for the amplicon ' + amplicon_name
-                            crispresso2_info['summary_plot_datas'][plot_name] = [(amplicon_name + ' nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), (amplicon_name + ' modification frequencies', os.path.basename(modification_frequency_summary_filename))]
+                                crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = ''
+                            crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Composition of each base for the amplicon ' + amplicon_name
+                            crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [(amplicon_name + ' nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), (amplicon_name + ' modification frequencies', os.path.basename(modification_frequency_summary_filename))]
 
                     else: #guides are not the same
                         if not args.suppress_plots:
@@ -475,8 +475,8 @@ ___________________________________
                             CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df, modification_percentage_summary_df, this_nuc_pct_quilt_plot_name, save_png, group_column='Folder')
                             plot_name = os.path.basename(this_nuc_pct_quilt_plot_name)
                             nuc_pct_quilt_plot_names.append(plot_name)
-                            crispresso2_info['summary_plot_labels'][plot_name] = 'Composition of each base for the amplicon ' + amplicon_name
-                            crispresso2_info['summary_plot_datas'][plot_name] = [(amplicon_name + ' nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), (amplicon_name + ' modification frequencies', os.path.basename(modification_frequency_summary_filename))]
+                            crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Composition of each base for the amplicon ' + amplicon_name
+                            crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [(amplicon_name + ' nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), (amplicon_name + ' modification frequencies', os.path.basename(modification_frequency_summary_filename))]
 
             crispresso2_info['window_nuc_pct_quilt_plot_names'] = window_nuc_pct_quilt_plot_names
             crispresso2_info['nuc_pct_quilt_plot_names'] = nuc_pct_quilt_plot_names
@@ -559,20 +559,20 @@ ___________________________________
 
                 CRISPRessoPlot.plot_reads_total(plot_root, df_summary_quantification, save_png, args.min_reads_for_inclusion)
                 plot_name = os.path.basename(plot_root)
-                crispresso2_info['summary_plot_root'] = plot_name
-                crispresso2_info['summary_plot_names'].append(plot_name)
-                crispresso2_info['summary_plot_titles'][plot_name] = 'CRISPRessoAggregate Mapping Statistics Summary'
-                crispresso2_info['summary_plot_labels'][plot_name] = 'Each bar shows the total number of reads in each sample. The vertical line shows the cutoff for analysis, set using the --min_reads_for_inclusion parameter.'
-                crispresso2_info['summary_plot_datas'][plot_name] = [('CRISPRessoAggregate summary', os.path.basename(samples_quantification_summary_filename)), ('CRISPRessoAggregate summary by amplicon', os.path.basename(samples_quantification_summary_by_amplicon_filename))]
+                crispresso2_info['results']['general_plots']['summary_plot_root'] = plot_name
+                crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
+                crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'CRISPRessoAggregate Mapping Statistics Summary'
+                crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Each bar shows the total number of reads in each sample. The vertical line shows the cutoff for analysis, set using the --min_reads_for_inclusion parameter.'
+                crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('CRISPRessoAggregate summary', os.path.basename(samples_quantification_summary_filename)), ('CRISPRessoAggregate summary by amplicon', os.path.basename(samples_quantification_summary_by_amplicon_filename))]
 
                 plot_root = _jp("CRISPRessoAggregate_quantification_of_editing_frequency")
                 CRISPRessoPlot.plot_unmod_mod_pcts(plot_root, df_summary_quantification, save_png, args.min_reads_for_inclusion)
                 plot_name = os.path.basename(plot_root)
-                crispresso2_info['summary_plot_root'] = plot_name
-                crispresso2_info['summary_plot_names'].append(plot_name)
-                crispresso2_info['summary_plot_titles'][plot_name] = 'CRISPRessoAggregate Modification Summary'
-                crispresso2_info['summary_plot_labels'][plot_name] = 'Each bar shows the total number of reads aligned to each amplicon, divided into the reads that are modified and unmodified. The vertical line shows the cutoff for analysis, set using the --min_reads_for_inclusion parameter.'
-                crispresso2_info['summary_plot_datas'][plot_name] = [('CRISPRessoAggregate summary', os.path.basename(samples_quantification_summary_filename)), ('CRISPRessoAggregate summary by amplicon', os.path.basename(samples_quantification_summary_by_amplicon_filename))]
+                crispresso2_info['results']['general_plots']['summary_plot_root'] = plot_name
+                crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
+                crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'CRISPRessoAggregate Modification Summary'
+                crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Each bar shows the total number of reads aligned to each amplicon, divided into the reads that are modified and unmodified. The vertical line shows the cutoff for analysis, set using the --min_reads_for_inclusion parameter.'
+                crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('CRISPRessoAggregate summary', os.path.basename(samples_quantification_summary_filename)), ('CRISPRessoAggregate summary by amplicon', os.path.basename(samples_quantification_summary_by_amplicon_filename))]
 
             #summarize alignment
             with open(_jp('CRISPRessoAggregate_mapping_statistics.txt'), 'w') as outfile:

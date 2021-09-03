@@ -337,9 +337,9 @@ def main():
         window_nuc_conv_plot_names = []
         nuc_conv_plot_names = []
 
-        crispresso2_info['summary_plot_titles'] = {}
-        crispresso2_info['summary_plot_labels'] = {}
-        crispresso2_info['summary_plot_datas'] = {}
+        crispresso2_info['results']['general_plots']['summary_plot_titles'] = {}
+        crispresso2_info['results']['general_plots']['summary_plot_labels'] = {}
+        crispresso2_info['results']['general_plots']['summary_plot_datas'] = {}
 
         #report for amplicons that appear multiple times
         for amplicon_index, amplicon_seq in enumerate(all_amplicons):
@@ -536,11 +536,11 @@ def main():
                             CRISPRessoPlot.plot_nucleotide_quilt(sub_nucleotide_percentage_summary_df, sub_modification_percentage_summary_df, this_window_nuc_pct_quilt_plot_name, save_png, sgRNA_intervals=sub_sgRNA_intervals, quantification_window_idxs=include_idxs)
                             plot_name = os.path.basename(this_window_nuc_pct_quilt_plot_name)
                             window_nuc_pct_quilt_plot_names.append(plot_name)
-                            crispresso2_info['summary_plot_titles'][plot_name] = 'sgRNA: ' + sgRNA + ' Amplicon: ' + amplicon_name
+                            crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'sgRNA: ' + sgRNA + ' Amplicon: ' + amplicon_name
                             if len(consensus_guides) == 1:
-                                crispresso2_info['summary_plot_titles'][plot_name] = ''
-                            crispresso2_info['summary_plot_labels'][plot_name] = 'Composition of each base around the guide ' + sgRNA + ' for the amplicon ' + amplicon_name
-                            crispresso2_info['summary_plot_datas'][plot_name] = [('Nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), ('Modification frequencies', os.path.basename(modification_frequency_summary_filename))]
+                                crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = ''
+                            crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Composition of each base around the guide ' + sgRNA + ' for the amplicon ' + amplicon_name
+                            crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), ('Modification frequencies', os.path.basename(modification_frequency_summary_filename))]
 
                             sub_nucleotide_frequency_summary_df = pd.concat([sub_nucleotide_frequency_summary_df.iloc[:, 0:2],
                                                                         sub_nucleotide_frequency_summary_df.iloc[:, 2:].apply(pd.to_numeric)], axis=1)
@@ -557,11 +557,11 @@ def main():
                                 CRISPRessoPlot.plot_conversion_map(sub_nucleotide_percentage_summary_df, this_window_nuc_conv_plot_name, args.conversion_nuc_from, args.conversion_nuc_to, save_png, sgRNA_intervals=sub_sgRNA_intervals, quantification_window_idxs=include_idxs)
                                 plot_name = os.path.basename(this_window_nuc_conv_plot_name)
                                 window_nuc_conv_plot_names.append(plot_name)
-                                crispresso2_info['summary_plot_titles'][plot_name] = 'sgRNA: ' + sgRNA + ' Amplicon: ' + amplicon_name
+                                crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'sgRNA: ' + sgRNA + ' Amplicon: ' + amplicon_name
                                 if len(consensus_guides) == 1:
-                                    crispresso2_info['summary_plot_titles'][plot_name] = ''
-                                crispresso2_info['summary_plot_labels'][plot_name] = args.conversion_nuc_from + '->' + args.conversion_nuc_to +' conversion rates around the guide ' + sgRNA + ' for the amplicon ' + amplicon_name
-                                crispresso2_info['summary_plot_datas'][plot_name] = [('Nucleotide frequencies around sgRNA', os.path.basename(sub_nucleotide_frequency_summary_filename)),
+                                    crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = ''
+                                crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = args.conversion_nuc_from + '->' + args.conversion_nuc_to +' conversion rates around the guide ' + sgRNA + ' for the amplicon ' + amplicon_name
+                                crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Nucleotide frequencies around sgRNA', os.path.basename(sub_nucleotide_frequency_summary_filename)),
                                                                                     ('Nucleotide percentages around sgRNA', os.path.basename(sub_nucleotide_percentage_summary_filename))
                                                                                 ]
 
@@ -570,22 +570,22 @@ def main():
                         CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df, modification_percentage_summary_df, this_nuc_pct_quilt_plot_name, save_png, sgRNA_intervals=consensus_sgRNA_intervals, quantification_window_idxs=include_idxs)
                         plot_name = os.path.basename(this_nuc_pct_quilt_plot_name)
                         nuc_pct_quilt_plot_names.append(plot_name)
-                        crispresso2_info['summary_plot_titles'][plot_name] = 'Amplicon: ' + amplicon_name
+                        crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'Amplicon: ' + amplicon_name
                         if len(amplicon_names) == 1:
-                            crispresso2_info['summary_plot_titles'][plot_name] = ''
-                        crispresso2_info['summary_plot_labels'][plot_name] = 'Composition of each base for the amplicon ' + amplicon_name
-                        crispresso2_info['summary_plot_datas'][plot_name] = [('Nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), ('Modification frequencies', os.path.basename(modification_frequency_summary_filename))]
+                            crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = ''
+                        crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Composition of each base for the amplicon ' + amplicon_name
+                        crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), ('Modification frequencies', os.path.basename(modification_frequency_summary_filename))]
                         if args.base_editor_output:
                             this_nuc_conv_plot_name = _jp(amplicon_plot_name + 'Nucleotide_conversion_map')
                             CRISPRessoPlot.plot_conversion_map(nucleotide_percentage_summary_df, this_nuc_conv_plot_name, args.conversion_nuc_from, args.conversion_nuc_to, save_png, sgRNA_intervals=consensus_sgRNA_intervals, quantification_window_idxs=include_idxs)
                             plot_name = os.path.basename(this_nuc_conv_plot_name)
                             nuc_conv_plot_names.append(plot_name)
-                            crispresso2_info['summary_plot_titles'][plot_name] = 'Amplicon: ' + amplicon_name
+                            crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'Amplicon: ' + amplicon_name
                             if len(amplicon_names) == 1:
-                                crispresso2_info['summary_plot_titles'][plot_name] = ''
-                            crispresso2_info['summary_plot_titles'][plot_name] = ''
-                            crispresso2_info['summary_plot_labels'][plot_name] = args.conversion_nuc_from + '->' + args.conversion_nuc_to +' conversion rates for the amplicon ' + amplicon_name
-                            crispresso2_info['summary_plot_datas'][plot_name] = [('Nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), ('Modification frequencies', os.path.basename(modification_frequency_summary_filename))]
+                                crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = ''
+                            crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = ''
+                            crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = args.conversion_nuc_from + '->' + args.conversion_nuc_to +' conversion rates for the amplicon ' + amplicon_name
+                            crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), ('Modification frequencies', os.path.basename(modification_frequency_summary_filename))]
 
                 else: #guides are not the same
                     if not args.suppress_plots:
@@ -593,15 +593,15 @@ def main():
                         CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df, modification_percentage_summary_df, this_nuc_pct_quilt_plot_name, save_png)
                         plot_name = os.path.basename(this_nuc_pct_quilt_plot_name)
                         nuc_pct_quilt_plot_names.append(plot_name)
-                        crispresso2_info['summary_plot_labels'][plot_name] = 'Composition of each base for the amplicon ' + amplicon_name
-                        crispresso2_info['summary_plot_datas'][plot_name] = [('Nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), ('Modification frequencies', os.path.basename(modification_frequency_summary_filename))]
+                        crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Composition of each base for the amplicon ' + amplicon_name
+                        crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), ('Modification frequencies', os.path.basename(modification_frequency_summary_filename))]
                         if args.base_editor_output:
                             this_nuc_conv_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt')
                             CRISPRessoPlot.plot_conversion_map(nucleotide_percentage_summary_df, this_nuc_conv_plot_name, args.conversion_nuc_from, args.conversion_nuc_to, save_png)
                             plot_name = os.path.basename(this_nuc_conv_plot_name)
                             nuc_conv_plot_names.append(plot_name)
-                            crispresso2_info['summary_plot_labels'][plot_name] = args.conversion_nuc_from + '->' + args.conversion_nuc_to +' conversion rates for the amplicon ' + amplicon_name
-                            crispresso2_info['summary_plot_datas'][plot_name] = [('Nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), ('Modification frequencies', os.path.basename(modification_frequency_summary_filename))]
+                            crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = args.conversion_nuc_from + '->' + args.conversion_nuc_to +' conversion rates for the amplicon ' + amplicon_name
+                            crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), ('Modification frequencies', os.path.basename(modification_frequency_summary_filename))]
 
 
         crispresso2_info['window_nuc_pct_quilt_plot_names'] = window_nuc_pct_quilt_plot_names

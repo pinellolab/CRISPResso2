@@ -232,10 +232,10 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
 
         crispresso2_info['running_info']['log_filename'] = os.path.basename(log_filename)
 
-        crispresso2_info['summary_plot_names'] = []
-        crispresso2_info['summary_plot_titles'] = {}
-        crispresso2_info['summary_plot_labels'] = {}
-        crispresso2_info['summary_plot_datas'] = {}
+        crispresso2_info['results']['general_plots']['summary_plot_names'] = []
+        crispresso2_info['results']['general_plots']['summary_plot_titles'] = {}
+        crispresso2_info['results']['general_plots']['summary_plot_labels'] = {}
+        crispresso2_info['results']['general_plots']['summary_plots_datas'] = {}
 
         save_png = True
         if args.suppress_report:
