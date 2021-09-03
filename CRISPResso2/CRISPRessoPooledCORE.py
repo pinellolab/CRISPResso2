@@ -1308,7 +1308,7 @@ def main():
         else:
             df_summary_quantification.fillna('NA').to_csv(samples_quantification_summary_filename, sep='\t', index=None)
 
-        crispresso2_info['samples_quantification_summary_filename'] = os.path.basename(samples_quantification_summary_filename)
+        crispresso2_info['results']['alignment_stats']['samples_quantification_summary_filename'] = os.path.basename(samples_quantification_summary_filename)
         crispresso2_info['final_data'] = df_final_data
         crispresso2_info['all_region_names'] = all_region_names
         crispresso2_info['all_region_read_counts'] = all_region_read_counts
