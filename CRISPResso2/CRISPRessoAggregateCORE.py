@@ -143,8 +143,8 @@ ___________________________________
                     batch_data = CRISPRessoShared.load_crispresso_info(
                         folder, 'CRISPResso2Batch_info.json',
                     )
-                    if 'completed_batch_arr' in batch_data:
-                        run_names = batch_data['completed_batch_arr']
+                    if 'completed_batch_arr' in batch_data['results']:
+                        run_names = batch_data['results']['completed_batch_arr']
                         for run_name in run_names:
                             run_folder_loc = os.path.join(folder, 'CRISPResso_on_%s'%run_name)
                             try:
