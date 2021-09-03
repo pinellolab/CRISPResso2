@@ -161,7 +161,7 @@ def make_batch_report_from_folder(crispressoBatch_report_file, crispresso2_info,
         summary_plot_labels = crispresso2_info['results']['general_plots']['summary_plot_labels']
     summary_plot_datas = {}
     if 'summary_plot_datas' in crispresso2_info['results']['general_plots']:
-        summary_plot_datas = crispresso2_info['results']['general_plots']['summary_plots_datas']
+        summary_plot_datas = crispresso2_info['results']['general_plots']['summary_plot_datas']
 
     #find path between the report and the data (if the report is in another directory vs in the same directory as the data)
     crispresso_data_path = os.path.relpath(batch_folder, os.path.dirname(crispressoBatch_report_file))
@@ -257,7 +257,7 @@ def make_multi_report_from_folder(crispresso2_info,names_arr,report_name,crispre
         summary_plot_labels = crispresso2_info['results']['general_plots']['summary_plot_labels']
     summary_plot_datas = {}
     if 'summary_plot_datas' in crispresso2_info['results']['general_plots']:
-        summary_plot_datas = crispresso2_info['results']['general_plots']['summary_plots_datas']
+        summary_plot_datas = crispresso2_info['results']['general_plots']['summary_plot_datas']
 
     run_names = []
     sub_html_files = {}
@@ -373,7 +373,7 @@ def make_aggregate_report(crispresso2_info,report_name,crispresso_report_file,cr
         summary_plot_labels = crispresso2_info['results']['general_plots']['summary_plot_labels']
     summary_plot_datas = {}
     if 'summary_plot_datas' in crispresso2_info['results']['general_plots']:
-        summary_plot_datas = crispresso2_info['results']['general_plots']['summary_plots_datas']
+        summary_plot_datas = crispresso2_info['results']['general_plots']['summary_plot_datas']
 
     window_nuc_pct_quilts = []
     if 'window_nuc_pct_quilt_plot_names' in crispresso2_info['results']['general_plots']:
