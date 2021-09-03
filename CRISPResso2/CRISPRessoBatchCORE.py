@@ -274,8 +274,8 @@ def main():
                 crispresso_cmd += ' --auto '
             crispresso_cmds.append(crispresso_cmd)
 
-        crispresso2_info['batch_names_arr'] = batch_names_arr
-        crispresso2_info['batch_input_names'] = batch_input_names
+        crispresso2_info['results']['batch_names_arr'] = batch_names_arr
+        crispresso2_info['results']['batch_input_names'] = batch_input_names
 
         CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, args.n_processes, 'batch', args.skip_failed)
 
@@ -310,7 +310,7 @@ def main():
 
             completed_batch_arr.append(batch_name)
 
-        crispresso2_info['completed_batch_arr'] = completed_batch_arr
+        crispresso2_info['results']['completed_batch_arr'] = completed_batch_arr
 
         #make sure amplicon names aren't super long
         for amplicon in all_amplicons:
@@ -485,11 +485,11 @@ def main():
                 modification_percentage_summary_filename = _jp(amplicon_plot_name + 'MODIFICATION_PERCENTAGE_SUMMARY.txt')
                 modification_percentage_summary_df.to_csv(modification_percentage_summary_filename, sep='\t', index=None)
 
-                crispresso2_info['nucleotide_frequency_summary_filename'] = os.path.basename(nucleotide_frequency_summary_filename)
-                crispresso2_info['nucleotide_percentage_summary_filename'] = os.path.basename(nucleotide_percentage_summary_filename)
+                crispresso2_info['results']['nucleotide_frequency_summary_filename'] = os.path.basename(nucleotide_frequency_summary_filename)
+                crispresso2_info['results']['nucleotide_percentage_summary_filename'] = os.path.basename(nucleotide_percentage_summary_filename)
 
-                crispresso2_info['modification_frequency_summary_filename'] = os.path.basename(modification_frequency_summary_filename)
-                crispresso2_info['modification_percentage_summary_filename'] = os.path.basename(modification_percentage_summary_filename)
+                crispresso2_info['results']['modification_frequency_summary_filename'] = os.path.basename(modification_frequency_summary_filename)
+                crispresso2_info['results']['modification_percentage_summary_filename'] = os.path.basename(modification_percentage_summary_filename)
 
 
                 #if guides are all the same, merge substitutions and perform base editor comparison at guide quantification window

@@ -141,8 +141,8 @@ def make_report(run_data, crispresso_report_file, crispresso_folder, _ROOT):
     outfile.close()
 
 def make_batch_report_from_folder(crispressoBatch_report_file, crispresso2_info, batch_folder, _ROOT):
-    batch_names = crispresso2_info['completed_batch_arr']
-    display_names = crispresso2_info['batch_input_names']
+    batch_names = crispresso2_info['results']['completed_batch_arr']
+    display_names = crispresso2_info['results']['batch_input_names']
 
     window_nuc_pct_quilts = crispresso2_info['results']['general_plots']['window_nuc_pct_quilt_plot_names']
     nuc_pct_quilts = crispresso2_info['results']['general_plots']['nuc_pct_quilt_plot_names']
