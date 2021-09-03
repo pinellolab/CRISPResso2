@@ -123,8 +123,8 @@ ___________________________________
                     pooled_data = CRISPRessoShared.load_crispresso_info(
                         folder, 'CRISPResso2Pooled_info.json',
                     )
-                    if 'good_region_names' in pooled_data:
-                        run_names = pooled_data['good_region_names']
+                    if 'good_region_names' in pooled_data['results']:
+                        run_names = pooled_data['results']['good_region_names']
                         for run_name in run_names:
                             run_folder_loc = os.path.join(folder, 'CRISPResso_on_%s'%run_name)
                             try:
@@ -164,7 +164,7 @@ ___________________________________
                         folder, 'CRISPResso2WGS_info.json',
                     )
                     if 'good_region_folders' in wgs_data:
-                        run_names = wgs_data['good_region_folders']
+                        run_names = wgs_data['results']['good_region_folders']
                         for run_name in run_names:
                             run_folder_loc = os.path.join(folder, 'CRISPResso_on_%s'%run_name)
                             try:
