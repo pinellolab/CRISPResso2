@@ -226,7 +226,7 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
             )
 
         crispresso2Compare_info_file = os.path.join(OUTPUT_DIRECTORY,'CRISPResso2PooledWGSCompare_info.pickle')
-        crispresso2_info = {'running_info': {}, 'results': {'alignment_stats': {}, 'general_plots': {}}} #keep track of all information for this run to be pickled and saved at the end of the run
+        crispresso2_info = {'running_info': {}, 'results': {'alignment_stats': {}, 'general_plots': {}}} #keep track of all information for this run to be saved at the end of the run
         crispresso2_info['running_info']['version'] = CRISPRessoShared.__version__
         crispresso2_info['running_info']['args'] = deepcopy(args)
 
@@ -314,8 +314,8 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
         CRISPRessoMultiProcessing.run_crispresso_cmds(
             crispresso_cmds, n_processes, 'Comparison',
         )
-        crispresso2_info['processed_regions'] = processed_regions
-        crispresso2_info['processed_region_folder_names'] = processed_region_folder_names
+        crispresso2_info['results']['processed_regions'] = processed_regions
+        crispresso2_info['results']['processed_region_folder_names'] = processed_region_folder_names
 
         if not args.suppress_report:
             if args.place_report_in_output_folder:
