@@ -292,7 +292,11 @@ def get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaf
         return new_variant #return new variant with best match score of 0, but include the scores of insufficient alignments
 
     #handle ambiguous alignments
-    if len(best_match_names) > 1 and not args.expand_ambiguous_alignments: #got 'Ambiguous' -- don't count toward total (e.g. indels at each position for the ref)
+    if len(best_match_names) > 1:
+        if args.assign_ambiguous_alignments_to_first_reference: #if ambiguous, and this flag is set, just assign to the first amplicon
+            new_variant['class_name'] = class_names[0]
+            new_variant['aln_ref_names'] = [best_match_names[0]]
+        elif not args.expand_ambiguous_alignments: #got 'Ambiguous' -- don't count toward total (e.g. indels at each position for the ref)
             new_variant['class_name'] = 'AMBIGUOUS'
 
     #search for prime editing scaffold
@@ -772,6 +776,9 @@ def main():
             arg_parser.print_help()
             raise CRISPRessoShared.BadParameterException('Please provide input data for analysis e.g. using the --fastq_r1 parameter.')
 
+        if args.assign_ambiguous_alignments_to_first_reference and args.expand_ambiguous_alignments:
+            arg_parser.print_help()
+            raise CRISPRessoShared.BadParameterException('The options --assign_ambiguous_alignments_to_first_reference and --expand_ambiguous_alignments are mutually exclusive and cannot be both set.')
 
         if args.amplicon_seq is None and args.auto is False:
             arg_parser.print_help()
@@ -2112,7 +2119,6 @@ def main():
                     'substitution_values': variant_payload['substitution_values']
     			}
             else:
-            #    'Reference_Name':'AMBIGUOUS_'+aln_ref_names[0],
                 allele_row = {'#Reads':variant_count,
                        'Aligned_Sequence': variant_payload['aln_seq'],
                        'Reference_Sequence':variant_payload['aln_ref'],
