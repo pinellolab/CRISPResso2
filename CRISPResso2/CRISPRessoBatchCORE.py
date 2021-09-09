@@ -341,10 +341,10 @@ def main():
         crispresso2_info['results']['general_plots']['summary_plot_labels'] = {}
         crispresso2_info['results']['general_plots']['summary_plot_datas'] = {}
 
-        #report for amplicons that appear multiple times
+        #report for amplicons
         for amplicon_index, amplicon_seq in enumerate(all_amplicons):
             #only perform comparison if amplicon seen in more than one sample
-            if amplicon_counts[amplicon_seq] < 2:
+            if amplicon_counts[amplicon_seq] < 1:
                 continue
 
             amplicon_name = amplicon_names[amplicon_seq]
