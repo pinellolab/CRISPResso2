@@ -25,7 +25,7 @@ from CRISPResso2 import CRISPRessoCOREResources
 from CRISPResso2.CRISPRessoMultiProcessing import get_max_processes
 
 
-__version__ = "2.2.2"
+__version__ = "2.2.4"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -80,6 +80,7 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('-amas', '--amplicon_min_alignment_score', type=str,  help='Amplicon Minimum Alignment Score; score between 0 and 100; sequences must have at least this homology score with the amplicon to be aligned (can be comma-separated list of multiple scores, corresponding to amplicon sequences given in --amplicon_seq)', default="")
     parser.add_argument('--default_min_aln_score', '--min_identity_score',  type=int, help='Default minimum homology score for a read to align to a reference amplicon', default=60)
     parser.add_argument('--expand_ambiguous_alignments', help='If more than one reference amplicon is given, reads that align to multiple reference amplicons will count equally toward each amplicon. Default behavior is to exclude ambiguous alignments.', action='store_true')
+    parser.add_argument('--assign_ambiguous_alignments_to_first_reference', help='If more than one reference amplicon is given, ambiguous reads that align with the same score to multiple amplicons will be assigned to the first amplicon. Default behavior is to exclude ambiguous alignments.', action='store_true')
     parser.add_argument('-g', '--guide_seq', '--sgRNA', help="sgRNA sequence, if more than one, please separate by commas. Note that the sgRNA needs to be input as the guide RNA sequence (usually 20 nt) immediately adjacent to but not including the PAM sequence (5' of NGG for SpCas9). If the PAM is found on the opposite strand with respect to the Amplicon Sequence, ensure the sgRNA sequence is also found on the opposite strand. The CRISPResso convention is to depict the expected cleavage position using the value of the parameter '--quantification_window_center' nucleotides from the 3' end of the guide. In addition, the use of alternate nucleases besides SpCas9 is supported. For example, if using the Cpf1 system, enter the sequence (usually 20 nt) immediately 3' of the PAM sequence and explicitly set the '--cleavage_offset' parameter to 1, since the default setting of -3 is suitable only for SpCas9.", default='')
     parser.add_argument('-gn', '--guide_name', help="sgRNA names, if more than one, please separate by commas.", default='')
     parser.add_argument('-fg', '--flexiguide_seq', help="sgRNA sequence (flexible) (can be comma-separated list of multiple flexiguides). The flexiguide sequence will be aligned to the amplicon sequence(s), as long as the guide sequence has homology as set by --flexiguide_homology.")
