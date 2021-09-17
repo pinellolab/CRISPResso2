@@ -47,7 +47,7 @@ CRISPResso2 introduces four key innovations for the analysis of genome editing d
 CRISPResso2 can be installed using the [conda](http://conda.pydata.org/docs/intro.html) package manager [Bioconda](https://bioconda.github.io/), or it can be run using the [Docker](https://www.docker.com/) containerization system.
 
 ### Bioconda
-To install CRISPResso2 using Bioconda, download and install Anaconda Python 2.7, following the instructions at: https://www.anaconda.com/distribution/.
+To install CRISPResso2 using Bioconda, download and install Anaconda Python, following the instructions at: https://www.anaconda.com/distribution/.
 
 Open a terminal and type:
 
@@ -66,7 +66,7 @@ conda install CRISPResso2
 Alternately, to create a new environment named `crispresso2_env` with CRISPResso2, type:
 
 ```
-conda create -n crispresso2_env -c bioconda crispresso2 python=2.7
+conda create -n crispresso2_env -c bioconda crispresso2
 ```
 
 Activate your conda environment:
