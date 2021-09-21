@@ -630,7 +630,7 @@ def process_fastq_write_out(fastq_input, fastq_output, variantCache, ref_names, 
     not_aln[''] = "" #add empty sequence to the not_aln in case the fastq has an extra newline at the end
 
     if fastq_input.endswith('.gz'):
-        fastq_input_handle=gzip.open(fastq_input)
+        fastq_input_handle=gzip.open(fastq_input, 'rt')
     else:
         fastq_input_handle=open(fastq_input)
 
