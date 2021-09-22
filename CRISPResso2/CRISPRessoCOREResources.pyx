@@ -98,10 +98,10 @@ def find_indels_substitutions(read_seq_al, ref_seq_al, _include_indx):
 
     for p in re_find_indels.finditer(ref_seq_al):
         st,en=p.span()
-        #sometimes deletions run off the end of the reference
-        if en > idx: # if insertion happened after ref
+        #sometimes insertions run off the end of the reference
+        if st == 0: # if insertion happened before ref
           continue
-        if st < 1: #if start starts before ref
+        if en == len(ref_seq_al): # if insertion happened after ref
           continue
         ref_st = ref_positions[st-1]
         ref_en = ref_positions[en]
@@ -224,10 +224,10 @@ def find_indels_substitutions_legacy(read_seq_al, ref_seq_al, _include_indx):
 
     for p in re_find_indels.finditer(ref_seq_al):
         st,en=p.span()
-        #sometimes deletions run off the end of the reference
-        if en > idx: # if insertion happened after ref
+        #sometimes insertions run off the end of the reference
+        if st == 0: # if insertion happened before ref
           continue
-        if st < 1: #if start starts before ref
+        if en == len(ref_seq_al): # if insertion happened after ref
           continue
         ref_st = ref_positions[st-1]
         ref_en = ref_positions[en]
