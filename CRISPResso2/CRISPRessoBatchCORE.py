@@ -107,6 +107,60 @@ def main():
 
         CRISPRessoShared.check_file(args.batch_settings)
 
+
+        batch_folder_name = os.path.splitext(os.path.basename(args.batch_settings))[0]
+        if args.name and args.name != "":
+            clean_name = CRISPRessoShared.slugify(args.name)
+            if args.name != clean_name:
+                warn(
+                    'The specified name {0} contained invalid characters and was changed to: {1}'.format(
+                        args.name, clean_name,
+                    ),
+                )
+            batch_folder_name = clean_name
+
+        output_folder_name='CRISPRessoBatch_on_%s' % batch_folder_name
+        OUTPUT_DIRECTORY=os.path.abspath(output_folder_name)
+
+        if args.batch_output_folder:
+                 OUTPUT_DIRECTORY=os.path.join(os.path.abspath(args.batch_output_folder), output_folder_name)
+
+        _jp=lambda filename: os.path.join(OUTPUT_DIRECTORY, filename) #handy function to put a file in the output directory
+
+        try:
+                 info('Creating Folder %s' % OUTPUT_DIRECTORY)
+                 os.makedirs(OUTPUT_DIRECTORY)
+        except:
+                 warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
+
+        log_filename=_jp('CRISPRessoBatch_RUNNING_LOG.txt')
+        logging.getLogger().addHandler(logging.FileHandler(log_filename))
+
+        with open(log_filename, 'w+') as outfile:
+            outfile.write('[Command used]:\n%s\n\n[Execution log]:\n' % ' '.join(sys.argv))
+
+        crispresso2Batch_info_file = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso2Batch_info.json')
+        crispresso2_info = {'running_info': {}, 'results': {'alignment_stats': {}, 'general_plots': {}}} #keep track of all information for this run to be saved at the end of the run
+        crispresso2_info['running_info']['version'] = CRISPRessoShared.__version__
+        crispresso2_info['running_info']['args'] = deepcopy(args)
+
+        crispresso2_info['running_info']['log_filename'] = os.path.basename(log_filename)
+
+        #this is potentially the square-root of the input n_processes because sub-CRISPResso commands will take some processes as well
+        orig_n_processes = args.n_processes
+        args.n_processes = CRISPRessoShared.get_sub_n_processes(suppress_plots=args.suppress_plots, suppress_report=args.suppress_report, n_processes=args.n_processes)
+
+        crispresso_cmd_to_write = ' '.join(sys.argv)
+        if args.write_cleaned_report:
+            cmd_copy = sys.argv[:]
+            cmd_copy[0] = 'CRISPRessoBatch'
+            for i in range(len(cmd_copy)):
+                if os.sep in cmd_copy[i]:
+                    cmd_copy[i] = os.path.basename(cmd_copy[i])
+
+            crispresso_cmd_to_write = ' '.join(cmd_copy) #clean command doesn't show the absolute path to the executable or other files
+        crispresso2_info['running_info']['command_used'] = crispresso_cmd_to_write
+
         ##parse excel sheet
         batch_params=pd.read_csv(args.batch_settings, comment='#', sep='\t')
         #pandas either allows for auto-detect sep or for comment. not both
@@ -206,58 +260,6 @@ def main():
             for guide_seq in guides_are_in_amplicon:
                 if guides_are_in_amplicon[guide_seq] != 1:
                     warn('\nThe guide sequence provided on row %d (%s) is not present in any amplicon sequence:%s! \nNOTE: The guide will be ignored for the analysis. Please check your input!' % (idx+1, row.guide_seq, curr_amplicon_seq))
-
-        batch_folder_name = os.path.splitext(os.path.basename(args.batch_settings))[0]
-        if args.name and args.name != "":
-            clean_name = CRISPRessoShared.slugify(args.name)
-            if args.name != clean_name:
-                warn(
-                    'The specified name {0} contained invalid characters and was changed to: {1}'.format(
-                        args.name, clean_name,
-                    ),
-                )
-            batch_folder_name = clean_name
-
-        output_folder_name='CRISPRessoBatch_on_%s' % batch_folder_name
-        OUTPUT_DIRECTORY=os.path.abspath(output_folder_name)
-
-        if args.batch_output_folder:
-                 OUTPUT_DIRECTORY=os.path.join(os.path.abspath(args.batch_output_folder), output_folder_name)
-
-        _jp=lambda filename: os.path.join(OUTPUT_DIRECTORY, filename) #handy function to put a file in the output directory
-
-        try:
-                 info('Creating Folder %s' % OUTPUT_DIRECTORY)
-                 os.makedirs(OUTPUT_DIRECTORY)
-        except:
-                 warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
-
-        log_filename=_jp('CRISPRessoBatch_RUNNING_LOG.txt')
-        logging.getLogger().addHandler(logging.FileHandler(log_filename))
-
-        with open(log_filename, 'w+') as outfile:
-            outfile.write('[Command used]:\n%s\n\n[Execution log]:\n' % ' '.join(sys.argv))
-
-        crispresso2Batch_info_file = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso2Batch_info.json')
-        crispresso2_info = {'running_info': {}, 'results': {'alignment_stats': {}, 'general_plots': {}}} #keep track of all information for this run to be saved at the end of the run
-        crispresso2_info['running_info']['version'] = CRISPRessoShared.__version__
-        crispresso2_info['running_info']['args'] = deepcopy(args)
-
-        crispresso2_info['running_info']['log_filename'] = os.path.basename(log_filename)
-
-        #this is potentially the square-root of the input n_processes because sub-CRISPResso commands will take some processes as well
-        args.n_processes = CRISPRessoShared.get_sub_n_processes(suppress_plots=args.suppress_plots, suppress_report=args.suppress_report, n_processes=args.n_processes)
-
-        crispresso_cmd_to_write = ' '.join(sys.argv)
-        if args.write_cleaned_report:
-            cmd_copy = sys.argv[:]
-            cmd_copy[0] = 'CRISPRessoBatch'
-            for i in range(len(cmd_copy)):
-                if os.sep in cmd_copy[i]:
-                    cmd_copy[i] = os.path.basename(cmd_copy[i])
-
-            crispresso_cmd_to_write = ' '.join(cmd_copy) #clean command doesn't show the absolute path to the executable or other files
-        crispresso2_info['running_info']['command_used'] = crispresso_cmd_to_write
 
         crispresso_cmds = []
         batch_names_arr = []
