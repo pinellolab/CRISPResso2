@@ -694,7 +694,7 @@ def main():
                             curr_file.close()
                         curr_file = gzip.open(
                             _jp('{0}.fastq.gz'.format(line_chr)),
-                            'wb',
+                            'wt',
                         )
                     curr_file.write('@{read_name}\n{seq}\n+\n{qual}\n'.format(
                         read_name=bam_line_els[0],
