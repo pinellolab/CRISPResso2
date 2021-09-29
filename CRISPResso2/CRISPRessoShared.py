@@ -603,8 +603,12 @@ def get_command_output(command):
                  #  encoding='utf-8',universal_newlines=True)
                  universal_newlines=True,
                  bufsize=-1)  # bufsize system default
-    return iter(p.stdout.readline, b'')
-
+    while(True):
+        retcode = p.poll()
+        line = p.stdout.readline()
+        yield line
+        if retcode is not None:
+            break
 
 def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command, max_paired_end_reads_overlap, min_paired_end_reads_overlap, debug=False):
     """
@@ -847,16 +851,16 @@ def force_merge_pairs(r1_filename, r2_filename, output_filename):
     """
 
     if r1_filename.endswith('.gz'):
-        f1 = gzip.open(r1_filename, 'rb')
+        f1 = gzip.open(r1_filename, 'rt')
     else:
         f1 = open(r1_filename, 'r')
     if r2_filename.endswith('.gz'):
-        f2 = gzip.open(r2_filename, 'rb')
+        f2 = gzip.open(r2_filename, 'rt')
     else:
         f2 = open(r2_filename, 'r')
 
     if output_filename.endswith('.gz'):
-        f_out = gzip.open(output_filename, 'wb')
+        f_out = gzip.open(output_filename, 'wt')
     else:
         f_out = open(output_filename, 'w')
 
