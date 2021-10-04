@@ -214,11 +214,8 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
     ref_seq_hm=np.expand_dims(seq_to_numbers(reference_seq),1).T
     ref_seq_annot_hm=np.expand_dims(list(reference_seq),1).T
 
-    NEW_SEABORN=np.sum(np.array(map(int,sns.__version__.split('.')))*(100,10,1))>= 80
-
-    if NEW_SEABORN:
-        annot=annot[::-1]
-        X=X[::-1]
+    annot=annot[::-1]
+    X=X[::-1]
 
     N_ROWS=len(X)
     N_COLUMNS=plot_nuc_len
