@@ -19,7 +19,7 @@ re_find_indels = re.compile("(-*-)")
 @cython.boundscheck(False)
 @cython.nonecheck(False)
 @cython.wraparound(False)
-def find_indels_substitutions(read_seq_al, ref_seq_al, _include_indx):
+cpdef find_indels_substitutions(read_seq_al, ref_seq_al, _include_indx):
 
     #ref_positions holds the indices for which positions map back to the original reference
     # for example,
@@ -49,7 +49,7 @@ def find_indels_substitutions(read_seq_al, ref_seq_al, _include_indx):
     insertion_sizes = []
     cdef int start_insertion = -1  # the -1 value indicates that there currently isn't an insertion
 
-    cdef int seq_len = len(ref_seq_al)
+    cdef size_t seq_len = len(ref_seq_al)
     include_indx_set = set(_include_indx)
     nucSet = set(['A', 'T', 'C', 'G', 'N'])
     cdef int idx = 0
@@ -96,9 +96,9 @@ def find_indels_substitutions(read_seq_al, ref_seq_al, _include_indx):
                 deletion_sizes.append(end_deletion - start_deletion)
             start_deletion = -1
 
-    substitution_n = len(substitution_positions)
-    deletion_n = np.sum(deletion_sizes)
-    insertion_n = np.sum(insertion_sizes)
+    cdef size_t substitution_n = len(substitution_positions)
+    cdef size_t deletion_n = sum(deletion_sizes)
+    cdef size_t insertion_n = sum(insertion_sizes)
 
     return {
         'all_insertion_positions': all_insertion_positions,
