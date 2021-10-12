@@ -1248,6 +1248,38 @@ def plot_frameshift_analysis(
     plot_root,
     save_also_png=False,
 ):
+    """Plot 5: Plot a pie chart to plot_root showing classification of reads with regard to coding region for a specific reference sequence, also including a diagram of where the coding region is within the amplicon.
+
+    Parameters
+    ----------
+    modified_frameshift : int
+        Number of reads that were modified resulting in a frameshift
+    modified_non_frameshift : int
+        Number of reads that were modified that did not result in a frameshift
+    non_modified_non_frameshift : int
+        Number of reads not modified and not resulting in a frameshift.
+    cut_points : list
+        List of locations of cut points in this reference
+    plot_cut_points : boolean
+        Whether to plot cut points. If true, cut points are shown
+    sgRNA_intervals : list
+        List of (start, stop) coordinates for sgRNAs
+    exon_intervals : list
+        List of (start, stop) coordinates for exons
+    ref_len : int
+        Length of reference sequence
+    ref_name : string
+        Name of this reference
+    plot_root : string
+        String of output plot file (.pdf and/or .png will be appended)
+    save_also_png : boolean
+        Whether to plot the .png (in addition to the .pdf)
+
+    Returns
+        Nothing
+    -------
+
+    """
     fig = plt.figure(figsize=(12, 14))
     ax1 = plt.subplot2grid((6, 3), (0, 0), colspan=3, rowspan=5)
 
@@ -1271,6 +1303,7 @@ def plot_frameshift_analysis(
         autopct='%1.2f%%',
     )
 
+    # ax2 is the diagram showing the amplicon and location of coding regions
     ax2 = plt.subplot2grid((6, 3), (5, 0), colspan=3, rowspan=1)
     ax2.plot(
         [0, ref_len], [0, 0], '-k', linewidth=2, label=ref_name + ' sequence',
@@ -1305,7 +1338,7 @@ def plot_frameshift_analysis(
             if not added_legend and plot_cut_points[idx]:
                 ax2.plot(
                     [cut_point + 0.5, cut_point + 0.5],
-                    [0, y_max],
+                    [-0.1, 0.1],
                     '--k',
                     linewidth=2,
                     label='Predicted cleavage position',
@@ -1314,14 +1347,14 @@ def plot_frameshift_analysis(
             elif plot_cut_points[idx]:
                 ax2.plot(
                     [cut_point + 0.5, cut_point + 0.5],
-                    [0, y_max],
+                    [-0.1, 0.1],
                     '--k',
                     linewidth=2,
                     label='_nolegend_',
                 )
 
             for idx, sgRNA_int in enumerate(sgRNA_intervals):
-                if not added_sgRNA_legend and idx==0:
+                if not added_sgRNA_legend and idx == 0:
                     ax2.plot(
                         [sgRNA_int[0], sgRNA_int[1]],
                         [0, 0],
@@ -1329,7 +1362,7 @@ def plot_frameshift_analysis(
                         c=(0, 0, 0, 0.15),
                         label='sgRNA',
                         solid_capstyle='butt',
-                    )
+                        )
                     added_sgRNA_legend = True
                 else:
                     ax2.plot(
