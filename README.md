@@ -63,7 +63,7 @@ To install CRISPResso2 into the current conda environment, type:
 conda install CRISPResso2
 ```
 
-Alternately, to create a new environment named `crispresso2_env` with CRISPResso2, type:
+Alternatively, to create a new environment named `crispresso2_env` with CRISPResso2, type:
 
 ```
 conda create -n crispresso2_env -c bioconda crispresso2
