@@ -28,6 +28,8 @@ def main():
     parser.add_argument("--save_png",help="If set, pngs will also be produced (as well as pdfs).",action="store_true")
     parser.add_argument("--plot_left",help="Number of bases to plot to the left of the cut site",type=int,default=20)
     parser.add_argument("--plot_right",help="Number of bases to plot to the right of the cut site",type=int,default=20)
+    parser.add_argument("--plot_center",help="Center of plot. If set, plots for guide RNAs will not be generated -- only a plot centered at this position will be plotted.",type=int,default=None)
+
 
     args = parser.parse_args()
 
@@ -103,14 +105,11 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,p
 
         reference_seq = refs[ref_name]['sequence']
 
-        for ind,sgRNA in enumerate(sgRNA_sequences):
-            sgRNA_label = sgRNA # for file names
-            if sgRNA_names[ind] != "":
-                sgRNA_label = sgRNA_names[ind]
+        if args.plot_center is not None:
+            sgRNA_label = 'custom'
 
-            cut_point = sgRNA_cut_points[ind]
-            plot_cut_point = sgRNA_plot_cut_points[ind]
-            plot_idxs = sgRNA_plot_idxs[ind]
+            cut_point = args.plot_center
+            plot_cut_point = args.plot_center
             ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_left+1:cut_point+plot_right+1]
 
             df_alleles_around_cut=get_dataframe_around_cut_assymetrical(df_alleles, cut_point, plot_left, plot_right)
@@ -131,6 +130,35 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,p
             plot_alleles_table(ref_seq_around_cut,df_alleles=df_alleles_around_cut,fig_filename_root=fig_filename_root,cut_point_ind=cut_point-new_sel_cols_start, MIN_FREQUENCY=MIN_FREQUENCY,MAX_N_ROWS=MAX_N_ROWS,SAVE_ALSO_PNG=SAVE_ALSO_PNG,plot_cut_point=plot_cut_point,sgRNA_intervals=new_sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,annotate_wildtype_allele=crispresso2_info['running_info']['args'].annotate_wildtype_allele)
 
             plot_count += 1
+        else:
+            for ind,sgRNA in enumerate(sgRNA_sequences):
+                sgRNA_label = sgRNA # for file names
+                if sgRNA_names[ind] != "":
+                    sgRNA_label = sgRNA_names[ind]
+
+                cut_point = sgRNA_cut_points[ind]
+                plot_cut_point = sgRNA_plot_cut_points[ind]
+                plot_idxs = sgRNA_plot_idxs[ind]
+                ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_left+1:cut_point+plot_right+1]
+
+                df_alleles_around_cut=get_dataframe_around_cut_assymetrical(df_alleles, cut_point, plot_left, plot_right)
+                this_allele_count = len(df_alleles_around_cut.index)
+                if this_allele_count < 1:
+                    print('No reads found for ' + ref_name)
+                    continue
+                this_reads_count = df_alleles_around_cut['#Reads'].sum()
+                print('Plotting ' + str(this_reads_count) + ' reads for ' + ref_name)
+
+                new_sgRNA_intervals = []
+                #adjust coordinates of sgRNAs
+                new_sel_cols_start = cut_point - plot_left
+                for (int_start, int_end) in refs[ref_name]['sgRNA_intervals']:
+                    new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1,int_end - new_sel_cols_start - 1)]
+
+                fig_filename_root = fig_filename_root+"_"+ref_name+"_"+sgRNA_label
+                plot_alleles_table(ref_seq_around_cut,df_alleles=df_alleles_around_cut,fig_filename_root=fig_filename_root,cut_point_ind=cut_point-new_sel_cols_start, MIN_FREQUENCY=MIN_FREQUENCY,MAX_N_ROWS=MAX_N_ROWS,SAVE_ALSO_PNG=SAVE_ALSO_PNG,plot_cut_point=plot_cut_point,sgRNA_intervals=new_sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,annotate_wildtype_allele=crispresso2_info['args'].annotate_wildtype_allele)
+
+                plot_count += 1
     print('Plotted ' + str(plot_count) + ' plots')
 
 def plot_alleles_table(reference_seq,df_alleles,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,plot_cut_point=True,cut_point_ind=None,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,custom_colors=None,annotate_wildtype_allele='****',):
