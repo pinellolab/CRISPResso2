@@ -1360,7 +1360,7 @@ def main():
                 nicking_qw_center = int(args.quantification_window_center.split(",")[0])
                 nicking_qw_size = int(args.quantification_window_size.split(",")[0])
                 pe_guides, pe_orig_guide_seqs, pe_guide_mismatches, pe_guide_names, pe_guide_qw_centers, pe_guide_qw_sizes, pe_guide_plot_cut_points = get_prime_editing_guides(this_seq, this_name, amplicon_seq_arr[0],
-                        prime_editing_edited_amp_seq, prime_editing_extension_seq_dna, args.prime_editing_pegRNA_extension_quantification_window_size, nicking_qw_center, nicking_qw_size)
+                        prime_editing_edited_amp_seq, prime_editing_extension_seq_dna, args.prime_editing_pegRNA_extension_quantification_window_size, nicking_qw_center, nicking_qw_size, aln_matrix,args.needleman_wunsch_gap_open,args.needleman_wunsch_gap_extend)
                 this_guides.extend(pe_guides)
                 this_orig_guide_seqs.extend(pe_orig_guide_seqs)
                 this_guide_mismatches.extend(pe_guide_mismatches)
