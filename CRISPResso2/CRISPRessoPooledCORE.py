@@ -350,15 +350,15 @@ def main():
         if args.alternate_alleles:
             CRISPRessoShared.check_file(args.alternate_alleles)
 
-        #for computation performed in CRISPressoPooled (e.g. bowtie alignment, etc) use n_processes_for_pooled
+        # for computation performed in CRISPRessoPooled (e.g. bowtie alignment, etc) use n_processes_for_pooled
         n_processes_for_pooled = 1
         if args.n_processes == "max":
             n_processes_for_pooled = CRISPRessoMultiProcessing.get_max_processes()
         else:
             n_processes_for_pooled = int(args.n_processes)
 
-        #here, we set args.n_processes as another value because this value is propagated to sub-CRISPResso runs (not for usage in CRISPRessoPooled)
-        args.n_processes = CRISPRessoShared.get_sub_n_processes(suppress_plots=args.suppress_plots, suppress_report=args.suppress_report, n_processes=args.n_processes)
+        # here, we set args.n_processes as 1 because this value is propagated to sub-CRISPResso runs (not for usage in CRISPRessoWGS)
+        args.n_processes = 1
 
         ####TRIMMING AND MERGING
         get_name_from_fasta=lambda  x: os.path.basename(x).replace('.fastq', '').replace('.gz', '').replace('.fq', '')
@@ -762,7 +762,7 @@ def main():
                 else:
                     warn('Skipping amplicon [%s] because no reads align to it\n'% idx)
 
-            CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, args.n_processes, 'amplicon', args.skip_failed)
+            CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_pooled, 'amplicon', args.skip_failed)
 
             df_template['n_reads']=n_reads_aligned_amplicons
             df_template['n_reads_aligned_%']=df_template['n_reads']/float(N_READS_ALIGNED)*100
@@ -1086,7 +1086,7 @@ def main():
                         n_reads_aligned_genome.append(0)
                         warn("The amplicon %s doesn't have any reads mapped to it!\n Please check your amplicon sequence." %  idx)
 
-                CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, args.n_processes, 'amplicon', args.skip_failed)
+                CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_pooled, 'amplicon', args.skip_failed)
 
                 crispresso2_info['running_info']['finished_steps']['crispresso_amplicons_and_genome'] = (n_reads_aligned_genome, fastq_region_filenames, files_to_match)
                 CRISPRessoShared.write_crispresso_info(
@@ -1195,7 +1195,7 @@ def main():
                         crispresso_cmds.append(crispresso_cmd)
                     else:
                         info('Skipping region: %s-%d-%d , not enough reads (%d)' %(row.chr_id, row.bpstart, row.bpend, row.n_reads))
-                CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, args.n_processes, 'region', args.skip_failed)
+                CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_pooled, 'region', args.skip_failed)
 
                 crispresso2_info['running_info']['finished_steps']['crispresso_genome_only'] = True
                 CRISPRessoShared.write_crispresso_info(

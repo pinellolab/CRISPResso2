@@ -309,15 +309,15 @@ def main():
         if args.gene_annotations:
             check_file(args.gene_annotations)
 
-        # for computation performed in CRISPressoPooled (e.g. bowtie alignment, etc) use n_processes_for_wgs
+        # for computation performed in CRISPRessoWGS (e.g. bowtie alignment, etc) use n_processes_for_wgs
         n_processes_for_wgs = 1
         if args.n_processes == "max":
             n_processes_for_wgs = CRISPRessoMultiProcessing.get_max_processes()
         else:
             n_processes_for_wgs = int(args.n_processes)
 
-        # here, we set args.n_processes as another value because this value is propagated to sub-CRISPResso runs (not for usage in CRISPRessoWGS)
-        args.n_processes = CRISPRessoShared.get_sub_n_processes(suppress_plots=args.suppress_plots, suppress_report=args.suppress_report, n_processes=args.n_processes)
+        # here, we set args.n_processes as 1 because this value is propagated to sub-CRISPResso runs (not for usage in CRISPRessoWGS)
+        args.n_processes = 1
 
         #INIT
         get_name_from_bam=lambda  x: os.path.basename(x).replace('.bam', '')
@@ -592,7 +592,7 @@ def main():
             else:
                 info('\nThe region [%s] has too few reads mapped to it (%d)! Not running CRISPResso!' % (idx, row['n_reads']))
 
-        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, args.n_processes, 'region', args.skip_failed)
+        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_wgs, 'region', args.skip_failed)
 
         quantification_summary=[]
         all_region_names = []
