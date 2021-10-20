@@ -146,9 +146,14 @@ def main():
 
         crispresso2_info['running_info']['log_filename'] = os.path.basename(log_filename)
 
-        #this is potentially the square-root of the input n_processes because sub-CRISPResso commands will take some processes as well
-        orig_n_processes = args.n_processes
-        args.n_processes = CRISPRessoShared.get_sub_n_processes(suppress_plots=args.suppress_plots, suppress_report=args.suppress_report, n_processes=args.n_processes)
+        n_processes_for_batch = 1
+        if args.n_processes == "max":
+            n_processes_for_batch = CRISPRessoMultiProcessing.get_max_processes()
+        else:
+            n_processes_for_batch = int(args.n_processes)
+
+        #this value will be propagated to sub-commands, so set it as 1 here
+        args.n_processes = 1
 
         crispresso_cmd_to_write = ' '.join(sys.argv)
         if args.write_cleaned_report:
@@ -279,7 +284,7 @@ def main():
         crispresso2_info['results']['batch_names_arr'] = batch_names_arr
         crispresso2_info['results']['batch_input_names'] = batch_input_names
 
-        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, args.n_processes, 'batch', args.skip_failed)
+        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_batch, 'batch', args.skip_failed)
 
         run_datas = [] #crispresso2 info from each row
 

@@ -25,7 +25,7 @@ from CRISPResso2 import CRISPRessoCOREResources
 from CRISPResso2.CRISPRessoMultiProcessing import get_max_processes
 
 
-__version__ = "2.2.5"
+__version__ = "2.2.6"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -64,6 +64,8 @@ class AutoException(Exception):
 class OutputFolderIncompleteException(Exception):
     pass
 
+class InstallationException(Exception):
+    pass
 
 #########################################
 
@@ -250,41 +252,6 @@ def propagate_crispresso_options(cmd, options, params):
                 else:
                     cmd+=' --%s %s' % (option, str(val))
     return cmd
-
-
-def get_sub_n_processes(suppress_plots=False, suppress_report=False, n_processes=1):
-    """Determine how many sub processes to run for sub CRISPResso commands.
-
-    For CRISPRessoBatch, CRISPRessoPooled, etc, some demultiplexing or preprocessing is performed, and then demultiplexed samples are analyzed with CRISPResso (a sub-CRISPResso command)
-    This function determines how many processes to run per sub-CRISPresso command
-    If no plotting or reports are going to be generated, it just runs with 1 processes (because there's no speedup at this point)
-    If plotting is to be performed, sqrt(n_processes) are returned
-
-    Parameters
-    ----------
-    suppress_plots : bool
-        Whether to suppress plots in output (default: False)
-    suppress_report : bool
-        Whether to suppress report in output (default: False)
-    n_processes : str of a number (e.g. 1,2,3,4) or 'max'
-        The number of processes to use (default: 1)
-
-    Returns
-    -------
-    int
-        The number of processes to run per sub-crispresso command
-
-    """
-    n_processes = str(n_processes)
-    if suppress_plots or suppress_report:
-        return 1
-    else:
-        if n_processes == 'max':
-            n_processes = get_max_processes()
-        else:
-            n_processes = int(n_processes)
-        return max(1, floor(sqrt(n_processes)))
-
 
 #######
 # Sequence functions
