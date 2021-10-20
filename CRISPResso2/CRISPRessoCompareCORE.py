@@ -14,16 +14,18 @@ from CRISPResso2 import CRISPRessoPlot
 from CRISPResso2 import CRISPRessoReport
 
 import logging
-logging.basicConfig(level=logging.INFO,
+logging.basicConfig(
                      format='%(levelname)-5s @ %(asctime)s:\n\t %(message)s \n',
                      datefmt='%a, %d %b %Y %H:%M:%S',
                      stream=sys.stderr,
                      filemode="w"
                      )
-error = logging.critical
-warn  = logging.warning
-debug = logging.debug
-info  = logging.info
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+error   = logger.critical
+warn    = logger.warning
+debug   = logger.debug
+info    = logger.info
 
 
 def check_library(library_name):
@@ -141,7 +143,7 @@ def main():
                  warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
 
         log_filename=_jp('CRISPRessoCompare_RUNNING_LOG.txt')
-        logging.getLogger().addHandler(logging.FileHandler(log_filename))
+        logger.addHandler(logging.FileHandler(log_filename))
 
         with open(log_filename, 'w+') as outfile:
                   outfile.write('[Command used]:\nCRISPRessoCompare %s\n\n[Execution log]:\n' % ' '.join(sys.argv))
