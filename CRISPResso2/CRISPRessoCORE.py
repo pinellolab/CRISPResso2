@@ -41,17 +41,21 @@ present = datetime.now()
 #    sys.exit(1)
 
 import logging
-#from test._mock_backport import inplace
-logging.basicConfig(level=logging.INFO,
+
+logging.basicConfig(
                      format='%(levelname)-5s @ %(asctime)s:\n\t %(message)s \n',
                      datefmt='%a, %d %b %Y %H:%M:%S',
                      stream=sys.stderr,
                      filemode="w"
                      )
-error   = logging.critical
-warn    = logging.warning
-debug   = logging.debug
-info    = logging.info
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+error   = logger.critical
+warn    = logger.warning
+debug   = logger.debug
+info    = logger.info
 
 ####Support functions###
 
@@ -855,7 +859,7 @@ def main():
             warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
 
         finally:
-            logging.getLogger().addHandler(logging.FileHandler(log_filename))
+            logger.addHandler(logging.FileHandler(log_filename))
 
             with open(log_filename, 'w+') as outfile:
                 outfile.write('CRISPResso version %s\n[Command used]:\n%s\n\n[Execution log]:\n' %(CRISPRessoShared.__version__, crispresso_cmd_to_write))

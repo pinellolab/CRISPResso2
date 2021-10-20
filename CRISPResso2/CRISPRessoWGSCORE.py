@@ -24,16 +24,18 @@ from CRISPResso2 import CRISPRessoPlot
 
 
 import logging
-logging.basicConfig(level=logging.INFO,
+logging.basicConfig(
                      format='%(levelname)-5s @ %(asctime)s:\n\t %(message)s \n',
                      datefmt='%a, %d %b %Y %H:%M:%S',
                      stream=sys.stderr,
                      filemode="w"
                      )
-error   = logging.critical
-warn    = logging.warning
-debug   = logging.debug
-info    = logging.info
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+error   = logger.critical
+warn    = logger.warning
+debug   = logger.debug
+info    = logger.info
 
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -350,7 +352,7 @@ def main():
                  warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
 
         log_filename=_jp('CRISPRessoWGS_RUNNING_LOG.txt')
-        logging.getLogger().addHandler(logging.FileHandler(log_filename))
+        logger.addHandler(logging.FileHandler(log_filename))
 
         crispresso2_info_file = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso2WGS_info.json')
         crispresso2_info = {'running_info': {}, 'results': {'alignment_stats': {}, 'general_plots': {}}} #keep track of all information for this run to be pickled and saved at the end of the run
