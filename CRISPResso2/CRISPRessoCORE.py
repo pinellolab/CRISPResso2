@@ -102,8 +102,13 @@ def get_n_reads_fastq(fastq_filename):
     return int(float(p.communicate()[0])/4.0)
 
 def get_n_reads_bam(bam_filename,bam_chr_loc=""):
-    p = sb.Popen("samtools view -c " + bam_filename + " " + bam_chr_loc, shell=True, stdout=sb.PIPE)
-    return int(float(p.communicate()[0]))
+    cmd = "samtools view -c " + bam_filename + " " + bam_chr_loc
+    p = sb.Popen(cmd, shell=True, stdout=sb.PIPE)
+    try:
+        retval = int(float(p.communicate()[0]))
+    except ValueError:
+        raise CRISPRessoShared.InstallationException('Error when running the command:' + cmd + '\nCheck that samtools is installed correctly.')
+    return retval
 
 #import time
 #start = time.time()
@@ -499,7 +504,7 @@ def process_bam(bam_filename, bam_chr_loc, output_bam, variantCache, ref_names, 
     output_sam = output_bam+".sam"
     with open(output_sam, "w") as sam_out:
         #first, write header to sam
-        proc = sb.Popen(['samtools', 'view', '-H', bam_filename], stdout=sb.PIPE, stderr=sb.PIPE, bufsize=1)
+        proc = sb.Popen(['samtools', 'view', '-H', bam_filename], stdout=sb.PIPE, stderr=sb.PIPE, encoding='utf-8')
         for line in proc.stdout:
             sam_out.write(line)
 
@@ -507,9 +512,9 @@ def process_bam(bam_filename, bam_chr_loc, output_bam, variantCache, ref_names, 
         sam_out.write('@PG\tID:crispresso2\tPN:crispresso2\tVN:'+CRISPRessoShared.__version__+'\tCL:"'+crispresso_cmd_to_write+'"\n')
 
         if bam_chr_loc != "":
-            proc = sb.Popen(['samtools', 'view', bam_filename, bam_chr_loc], stdout=sb.PIPE, bufsize=1)
+            proc = sb.Popen(['samtools', 'view', bam_filename, bam_chr_loc], stdout=sb.PIPE, encoding='utf-8')
         else:
-            proc = sb.Popen(['samtools', 'view', bam_filename], stdout=sb.PIPE, bufsize=1)
+            proc = sb.Popen(['samtools', 'view', bam_filename], stdout=sb.PIPE, encoding='utf-8')
         for sam_line in proc.stdout:
             sam_line_els = sam_line.rstrip().split("\t")
             fastq_seq = sam_line_els[9]
@@ -891,7 +896,7 @@ def main():
                     info('Index file for input .bam file exists, skipping generation.')
                 else:
                     info('Creating index file for input .bam file...')
-                    bam_input_file = _jp(os.path.basename(args.bam_input_file))+".sorted.bam"
+                    bam_input_file = _jp(os.path.basename(args.bam_input))+".sorted.bam"
                     sb.call('samtools sort -o '+bam_input_file+' ' + args.bam_input, shell=True)
                     sb.call('samtools index %s ' % (bam_input_file), shell=True)
                     files_to_remove.append(bam_input_file)
