@@ -1090,13 +1090,13 @@ def main():
             pegRNA_spacer_seq = args.prime_editing_pegRNA_spacer_seq.upper().replace('U', 'T')
 
             #check that the pegRNA aligns to the reference (and not the RC)
-            amp_incentive = np.zeros(len(amplicon_seq_arr[0])+1,dtype=np.int)
+            amp_incentive = np.zeros(len(amplicon_seq_arr[0])+1,dtype=int)
             f1,f2,fw_score=CRISPResso2Align.global_align(pegRNA_spacer_seq,amplicon_seq_arr[0],matrix=aln_matrix,gap_incentive=amp_incentive,gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
             r1,r2,rv_score=CRISPResso2Align.global_align(pegRNA_spacer_seq,CRISPRessoShared.reverse_complement(amplicon_seq_arr[0]),matrix=aln_matrix,gap_incentive=amp_incentive,gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
             if rv_score > fw_score:
                 raise CRISPRessoShared.BadParameterException('The prime editing pegRNA spacer sequence appears to be given in the 3\'->5\' order. The prime editing pegRNA spacer sequence (--prime_editing_pegRNA_spacer_seq) must be given in the RNA 5\'->3\' order.')
 
-            ref_incentive = np.zeros(len(prime_editing_extension_seq_dna)+1, dtype=np.int)
+            ref_incentive = np.zeros(len(prime_editing_extension_seq_dna)+1, dtype=int)
             f1, f2, fw_score=CRISPResso2Align.global_align(pegRNA_spacer_seq, prime_editing_extension_seq_dna, matrix=aln_matrix, gap_incentive=ref_incentive, gap_open=args.needleman_wunsch_gap_open, gap_extend=0,)
             r1, r2, rv_score=CRISPResso2Align.global_align(pegRNA_spacer_seq, extension_seq_dna_top_strand, matrix=aln_matrix, gap_incentive=ref_incentive, gap_open=args.needleman_wunsch_gap_open, gap_extend=0,)
             if rv_score > fw_score:
@@ -1325,14 +1325,14 @@ def main():
                 for idx, guide in enumerate(args.flexiguide_seq.split(",")):
                     #for all amps in forward and reverse complement amps:
                     for amp_seq in [this_seq, CRISPRessoShared.reverse_complement(this_seq)]:
-                        ref_incentive = np.zeros(len(amp_seq)+1, dtype=np.int)
+                        ref_incentive = np.zeros(len(amp_seq)+1, dtype=int)
                         s1, s2, score=CRISPResso2Align.global_align(guide, amp_seq, matrix=aln_matrix, gap_incentive=ref_incentive, gap_open=args.needleman_wunsch_gap_open, gap_extend=args.needleman_wunsch_gap_extend,)
                         potential_guide = s1.strip("-")
                         if abs(len(potential_guide) - len(guide)) < 2: #if length of putative guide is off by less than 2, keep it (allows 1 gap)
                             loc = s1.find(potential_guide)
                             potential_ref = amp_seq[loc:loc+len(potential_guide)]
                             #realign to test for number of mismatches
-                            ref_incentive = np.zeros(len(potential_ref)+1, dtype=np.int)
+                            ref_incentive = np.zeros(len(potential_ref)+1, dtype=int)
                             sub_s1, sub_s2, sub_score=CRISPResso2Align.global_align(guide, potential_ref, matrix=aln_matrix, gap_incentive=ref_incentive, gap_open=args.needleman_wunsch_gap_open, gap_extend=args.needleman_wunsch_gap_extend,)
                             mismatches = []
                             for i in range(len(sub_s1)):
@@ -1425,7 +1425,7 @@ def main():
             # protect from the wrong splitting of exons by the users to avoid false splicing sites
             this_splicing_positions = set(this_splicing_positions).difference(this_exon_positions)
 
-            this_gap_incentive = np.zeros(this_seq_length+1, dtype=np.int)
+            this_gap_incentive = np.zeros(this_seq_length+1, dtype=int)
             for cut_point in this_sgRNA_cut_points:
                 this_gap_incentive[cut_point+1] = args.needleman_wunsch_gap_incentive
 
@@ -1585,7 +1585,7 @@ def main():
 
                 if (needs_cut_points or needs_sgRNA_intervals) and clone_has_cut_points:
                     this_cut_points = [s1inds[X] for X in refs[clone_ref_name]['sgRNA_cut_points']]
-                    this_gap_incentive = np.zeros(refs[ref_name]['sequence_length']+1, dtype=np.int)
+                    this_gap_incentive = np.zeros(refs[ref_name]['sequence_length']+1, dtype=int)
                     for cut_point in this_cut_points:
                         this_gap_incentive[cut_point + 1] = args.needleman_wunsch_gap_incentive
 

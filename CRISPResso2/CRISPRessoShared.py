@@ -673,7 +673,7 @@ def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,
             this_amplicon_seq_arr = amplicon_seq_arr[:]
             this_amplicon_max_pct = 0 #keep track of similarity to most-similar already-found amplicons
             for amp_seq in this_amplicon_seq_arr:
-                ref_incentive = np.zeros(len(amp_seq)+1, dtype=np.int)
+                ref_incentive = np.zeros(len(amp_seq)+1, dtype=int)
                 fws1, fws2, fwscore=CRISPResso2Align.global_align(seq, amp_seq, matrix=aln_matrix, gap_incentive=ref_incentive, gap_open=needleman_wunsch_gap_open, gap_extend=needleman_wunsch_gap_extend,)
                 rvs1, rvs2, rvscore=CRISPResso2Align.global_align(reverse_complement(seq), amp_seq, matrix=aln_matrix, gap_incentive=ref_incentive, gap_open=needleman_wunsch_gap_open, gap_extend=needleman_wunsch_gap_extend,)
                 #if the sequence is similar to a previously-seen read, don't add it
@@ -716,7 +716,7 @@ def guess_guides(amplicon_sequence,fastq_r1,fastq_r2,number_of_reads_to_consider
     seq_lines = get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command, max_paired_end_reads_overlap, min_paired_end_reads_overlap)
 
     amp_len = len(amplicon_sequence)
-    gap_incentive = np.zeros(amp_len+1, dtype=np.int)
+    gap_incentive = np.zeros(amp_len+1, dtype=int)
     include_idxs = set(range(0, amp_len))
 
     all_indel_count_vector = np.zeros(amp_len)
@@ -1115,7 +1115,7 @@ def get_alignment_coordinates(to_sequence,from_sequence,aln_matrix,needleman_wun
     inds_l : if there's a gap in to_sequence, these values are filled with the left value
     inds_r : if there's a gap in to_sequence, these values are filled with the right value (after the gap)
     """
-    this_gap_incentive = np.zeros(len(from_sequence)+1, dtype=np.int)
+    this_gap_incentive = np.zeros(len(from_sequence)+1, dtype=int)
     fws1, fws2, fwscore=CRISPResso2Align.global_align(to_sequence, from_sequence, matrix=aln_matrix, gap_open=needleman_wunsch_gap_open, gap_extend=needleman_wunsch_gap_extend, gap_incentive=this_gap_incentive)
 #    print(fws1)
 #    print(fws2)
@@ -1178,7 +1178,7 @@ def get_best_aln_pos_and_mismatches(guide_seq, within_amp_seq, aln_matrix, needl
     s1: aligned s1 (guide_seq)
     s2: aligned s2 (within_amp_seq)
     """
-    ref_incentive = np.zeros(len(within_amp_seq)+1, dtype=np.int)
+    ref_incentive = np.zeros(len(within_amp_seq)+1, dtype=int)
     s1, s2, fw_score=CRISPResso2Align.global_align(guide_seq, within_amp_seq, matrix=aln_matrix, gap_incentive=ref_incentive, gap_open=needleman_wunsch_gap_open, gap_extend=0,)
     range_start_dashes = 0
     m = re.search(r'^-+', s1)
