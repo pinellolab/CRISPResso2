@@ -123,7 +123,7 @@ def clean_filename(filename):
 
 
 def find_overlapping_genes(row, df_genes):
-    df_genes_overlapping=df_genes.ix[(df_genes.chrom==row.chr_id) &
+    df_genes_overlapping=df_genes.loc[(df_genes.chrom==row.chr_id) &
                                      (df_genes.txStart<=row.bpend) &
                                      (row.bpstart<=df_genes.txEnd)]
     genes_overlapping=[]
@@ -460,7 +460,7 @@ def main():
         #check or create names
         for idx, row in df_regions.iterrows():
             if pd.isnull(row.Name):
-                df_regions.ix[idx, 'Name']='_'.join(map(str, [row['chr_id'], row['bpstart'], row['bpend']]))
+                df_regions.iloc[idx,]['Name']='_'.join(map(str, [row['chr_id'], row['bpstart'], row['bpend']]))
 
 
         if not len(df_regions.Name.unique())==df_regions.shape[0]:
@@ -501,7 +501,7 @@ def main():
                                 m in re.finditer(current_guide_seq,  row.sequence)]+[m.start() + offset_rc for m in re.finditer(CRISPRessoShared.reverse_complement(current_guide_seq),  row.sequence)]
 
                 if not cut_points:
-                    df_regions.ix[idx, 'sgRNA']=''
+                    df_regions.iloc[idx,:]['sgRNA']=''
                     info('Cannot find guide ' + str(row.sgRNA) + ' in amplicon ' + str(idx) + ' (' + str(row) + ')')
 
         df_regions['bpstart'] = pd.to_numeric(df_regions['bpstart'])
