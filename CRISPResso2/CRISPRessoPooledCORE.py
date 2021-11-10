@@ -168,6 +168,10 @@ def get_n_reads_fastq(fastq_filename):
      n_reads = int(float(p.communicate()[0])/4.0)
      return n_reads
 
+def get_n_reads_bam(bam_filename):
+    p = sb.Popen("samtools view -c %s" % bam_filename, shell=True, stdout=sb.PIPE)
+    return int(p.communicate()[0])
+
 def get_n_aligned_bam(bam_filename):
     p = sb.Popen("samtools view -F 0x904 -c %s" % bam_filename, shell=True, stdout=sb.PIPE)
     return int(p.communicate()[0])
@@ -261,7 +265,7 @@ def main():
         '''
         print(CRISPRessoShared.get_crispresso_header(description, pooled_string))
 
-        parser = CRISPRessoShared.getCRISPRessoArgParser(parserTitle = 'CRISPRessoPooled Parameters', requiredParams={'fastq_r1':True})
+        parser = CRISPRessoShared.getCRISPRessoArgParser(parserTitle = 'CRISPRessoPooled Parameters')
         parser.add_argument('-f', '--amplicons_file', type=str,  help='Amplicons description file. This file is a tab-delimited text file with up to 5 columns (2 required):\
         \nAMPLICON_NAME:  an identifier for the amplicon (must be unique)\nAMPLICON_SEQUENCE:  amplicon sequence used in the experiment\n\
         \nsgRNA_SEQUENCE (OPTIONAL):  sgRNA sequence used for this amplicon without the PAM sequence. Multiple guides can be given separated by commas and not spaces. If not available enter NA.\
@@ -288,6 +292,8 @@ def main():
         parser.add_argument('--compile_postrun_reference_allele_cutoff', type=float, help='Only alleles with at least this percentage frequency in the population will be reported in the postrun analysis. This parameter is given as a percent, so 30 is 30%%.', default=30)
         parser.add_argument('--alternate_alleles', type=str, help='Path to tab-separated file with alternate allele sequences for pooled experiments. This file has the columns "region_name","reference_seqs", and "reference_names" and gives the reference sequences of alternate alleles that will be passed to CRISPResso for each individual region for allelic analysis. Multiple reference alleles and reference names for a given region name are separated by commas (no spaces).', default='')
         parser.add_argument('--limit_open_files_for_demux', help='If set, only one file will be opened during demultiplexing of read alignment locations. This will be slightly slower as the reads must be sorted, but may be necessary if the number of amplicons is greater than the number of files that can be opened due to OS constraints.', action='store_true')
+        parser.add_argument('--aligned_pooled_bam', type=str, help='Path to aligned input for CRISPRessoPooled processing. If this parameter is specified, the alignments in the given bam will be used to demultiplex reads. If this parameter is not set (default), input reads provided by --fastq_r1 (and optionally --fastq_r2) will be aligned to the reference genome using bowtie2. If the input bam is given, the corresponding reference fasta must also be given to extract reference genomic sequences via the parameter --bowtie2_index. Note that the aligned reads are paired-end seqenced, they should already be merged into 1 read (e.g. via Flash) before alignment.', default=None)
+        parser.add_argument('--demultiplex_only_at_amplicons', help='If set, and an amplicon file (--amplicons_file) and reference sequence (--bowtie2_index) are provided, reads overlapping alignment positions of amplicons will be demultiplexed and assigned to that amplicon. If this flag is not set, the entire genome will be demultiplexed and reads with the same start and stop coordinates as an amplicon will be assigned to that amplicon.', action='store_true')
 
         args = parser.parse_args()
 
@@ -306,9 +312,25 @@ def main():
             sys.exit(1)
 
         #check files
-        CRISPRessoShared.check_file(args.fastq_r1)
-        if args.fastq_r2:
-            CRISPRessoShared.check_file(args.fastq_r2)
+        if args.aligned_pooled_bam is not None:
+            CRISPRessoShared.check_file(args.aligned_pooled_bam)
+            if args.fastq_r1 != '':
+                raise CRISPRessoShared.BadParameterException('Arguments for input fastq cannot be provided when input bam is also provided. Please provide either input reads (--fastq_r1) or input bam alignemnts (--aligned_pooled_bam), but not both.')
+            if args.bowtie2_index == '':
+                raise CRISPRessoShared.BadParameterException('The bowtie2 index must be provided when the aligned pooled bam is given in order to extract reference sequences for alignment. Please provide the bowtie2 index file with the parameter -x or --bowtie2_index.')
+            if args.trim_sequences:
+                raise CRISPRessoShared.BadParameterException('Cannot trim input sequences if input bam is provided.')
+
+
+        elif args.fastq_r1:
+            if args.fastq_r1 == '':
+                raise CRISPRessoShared.BadParameterException('')
+            CRISPRessoShared.check_file(args.fastq_r1)
+            if args.fastq_r2:
+                CRISPRessoShared.check_file(args.fastq_r2)
+        else:
+            parser.print_help()
+            raise CRISPRessoShared.BadParameterException('Please provide input data for pooled analysis e.g. using the --fastq_r1 parameter.')
 
         if args.bowtie2_index:
             if (os.path.isfile(args.bowtie2_index+'.1.bt2l')):
@@ -364,7 +386,9 @@ def main():
         get_name_from_fasta=lambda  x: os.path.basename(x).replace('.fastq', '').replace('.gz', '').replace('.fq', '')
 
         if not args.name:
-            if args.fastq_r2!='':
+            if args.aligned_pooled_bam is not None:
+                database_id=os.path.basename(args.aligned_pooled_bam).replace(".bam","")
+            elif args.fastq_r2!='':
                 database_id='%s_%s' % (get_name_from_fasta(args.fastq_r1), get_name_from_fasta(args.fastq_r2))
             else:
                 database_id='%s' % get_name_from_fasta(args.fastq_r1)
@@ -464,9 +488,13 @@ def main():
 
         info('Processing input')
 
+        # perform read trimming if necessary
+        if args.aligned_pooled_bam is not None:
+            #don't trim reads in aligned bams
+            pass
         #read filtering (for quality) is done at the individual crispresso run
-        if args.fastq_r2=='': #single end reads
-             #check if we need to trim
+        elif args.fastq_r2 == '': #single end reads
+             # check if we need to trim
              if not args.trim_sequences:
                  #create a symbolic link
                  symlink_filename=_jp(os.path.basename(args.fastq_r1))
@@ -489,7 +517,7 @@ def main():
 
              processed_output_filename=output_forward_filename
 
-        else:#paired end reads case
+        else:  # paired end reads case
 
              if not args.trim_sequences:
                  output_forward_paired_filename=args.fastq_r1
@@ -559,8 +587,13 @@ def main():
             (N_READS_INPUT, N_READS_AFTER_PREPROCESSING) = crispresso2_info['running_info']['finished_steps']['count_input_reads']
         #count reads
         else:
-            N_READS_INPUT=get_n_reads_fastq(args.fastq_r1)
-            N_READS_AFTER_PREPROCESSING=get_n_reads_fastq(processed_output_filename)
+            if args.aligned_pooled_bam is not None:
+                N_READS_INPUT = get_n_reads_bam(args.aligned_pooled_bam)
+                N_READS_AFTER_PREPROCESSING = N_READS_INPUT
+            else:
+                N_READS_INPUT=get_n_reads_fastq(args.fastq_r1)
+                N_READS_AFTER_PREPROCESSING=get_n_reads_fastq(processed_output_filename)
+
             crispresso2_info['running_info']['finished_steps']['count_input_reads'] = (N_READS_INPUT, N_READS_AFTER_PREPROCESSING)
             CRISPRessoShared.write_crispresso_info(
                 crispresso2_info_file, crispresso2_info
@@ -735,8 +768,8 @@ def main():
             n_reads_aligned_amplicons=[]
             crispresso_cmds = []
             for idx, row in df_template.iterrows():
-                info('\n Processing:%s' %idx)
                 n_reads_aligned_amplicons.append(get_n_reads_fastq(row['Demultiplexed_fastq.gz_filename']))
+                info('\n Processing:%s with %d reads'%(idx,n_reads_aligned_amplicons))
                 this_amp_seq = row['Amplicon_Sequence']
                 this_amp_name_string = ""
                 if idx in alternate_alleles:
@@ -858,20 +891,41 @@ def main():
         #align in unbiased way the reads to the genome
         if RUNNING_MODE=='ONLY_GENOME' or RUNNING_MODE=='AMPLICONS_AND_GENOME':
             bam_filename_genome = _jp('%s_GENOME_ALIGNED.bam' % database_id)
+            if args.aligned_pooled_bam is not None:
+                bam_filename_genome = args.aligned_pooled_bam
 
             if can_finish_incomplete_run and 'n_reads_aligned_genome' in crispresso2_info['running_info']['finished_steps']:
                 info('Using previously-computed alignment of reads to genome')
                 N_READS_ALIGNED = crispresso2_info['running_info']['finished_steps']['n_reads_aligned_genome']
+
+            # if input bam is provided, don't align reads to the genome
+            if args.aligned_pooled_bam is not None:
+                def rreplace(s, old, new):
+                    li = s.rsplit(old)
+                    return new.join(li)
+                if os.path.exists(rreplace(args.aligned_pooled_bam, ".bam", ".bai")) or os.path.exists(args.aligned_pooled_bam+'.bai'):
+                    info('Index file for input .bam file exists, skipping generation.')
+                else:
+                    info('Index file for input .bam file does not exist. Generating bam index file.')
+                    sb.call('samtools index %s' % bam_filename_genome, shell=True)
+
+                N_READS_ALIGNED = get_n_aligned_bam(bam_filename_genome)
+                #save progress up to this point
+                crispresso2_info['running_info']['finished_steps']['n_reads_aligned_genome'] = N_READS_ALIGNED
+                CRISPRessoShared.write_crispresso_info(
+                    crispresso2_info_file, crispresso2_info,
+                )
             else:
                 info('Aligning reads to the provided genome index...')
-                aligner_command= 'bowtie2 -x %s -p %s %s -U %s 2>>%s| samtools view -bS - | samtools sort -@ %d - -o %s' %(args.bowtie2_index, n_processes_for_pooled,
+                aligner_command = 'bowtie2 -x %s -p %s %s -U %s 2>>%s| samtools view -bS - | samtools sort -@ %d - -o %s' %(args.bowtie2_index, n_processes_for_pooled,
                     bowtie2_options_string, processed_output_filename, log_filename, n_processes_for_pooled, bam_filename_genome)
-                info('aligning with command: ' + aligner_command)
+                if args.debug:
+                    info('Aligning with command: ' + aligner_command)
                 sb.call(aligner_command, shell=True)
 
                 sb.call('samtools index %s' % bam_filename_genome, shell=True)
 
-                N_READS_ALIGNED=get_n_aligned_bam(bam_filename_genome)
+                N_READS_ALIGNED = get_n_aligned_bam(bam_filename_genome)
 
                 #save progress up to this point
                 crispresso2_info['running_info']['finished_steps']['n_reads_aligned_genome'] = N_READS_ALIGNED
@@ -900,101 +954,137 @@ def main():
                 #make the output directory
                 os.mkdir(MAPPED_REGIONS)
 
-                #next, create the general demux command
-                #variables like __CHR__ will be subbed out below for each iteration
-                s1=r'''samtools view -F 0x0004 %s __CHR____REGION__ 2>>%s |''' % (bam_filename_genome, log_filename)+\
-                r'''awk '{OFS="\t"; bpstart=$4;  bpend=bpstart; split ($6,a,"[MIDNSHP]"); n=0;\
-                for (i=1; i in a; i++){\
-                    n+=1+length(a[i]);\
-                    if (substr($6,n,1)=="S"){\
-                        if (bpend==$4)\
-                            bpstart-=a[i];\
-                        else \
-                            bpend+=a[i]; \
+                # if we should only demultiplex where amplicons aligned... (as opposed to the whole genome)
+                if RUNNING_MODE=='AMPLICONS_AND_GENOME' and args.demultiplex_only_at_amplicons:
+                    s1=r'''samtools view -F 0x0004 %s __REGIONCHR__:__REGIONSTART__-__REGIONEND__ 2>>%s |''' % (bam_filename_genome, log_filename)+\
+                    r'''awk 'BEGIN{OFS="\t";num_records=0;fastq_filename="__OUTPUTPATH__REGION___REGIONCHR_____REGIONSTART_____REGIONEND__.fastq";} \
+                        { \
+                            print "@"$1"\n"$10"\n+\n"$11 > fastq_filename; \
+                            num_records++; \
+                        } \
+                    END{ \
+                      close(fastq_filename); \
+                      system("gzip -f "fastq_filename);  \
+                      record_log_str = "__REGIONCHR__\t__REGIONSTART__\t__REGIONEND__\t"num_records"\t"fastq_filename".gz\n"; \
+                        print(record_log_str); \
+                    } \
+                    ' >> __DEMUX_LOGFILENAME__ '''
+                    cmd=(s1).replace('__OUTPUTPATH__', MAPPED_REGIONS)
+                    cmd = cmd.replace("__MIN_READS__", str(args.min_reads_to_use_region))
+                    with open(REPORT_ALL_DEPTH, 'w') as f:
+                        f.write('chr_id\tstart\tend\tnumber of reads\toutput filename\n')
+                    cmd = cmd.replace("__DEMUX_LOGFILENAME__", REPORT_ALL_DEPTH)
+
+                    info('Preparing to demultiplex reads aligned to positions overlapping amplicons in the genome...')
+                    # make command for each amplicon
+
+                    chr_commands = []
+                    for idx, row in df_template.iterrows():
+                        chr_commands.append(cmd.replace('__REGIONCHR__', str(row.chr_id)).replace('__REGIONSTART__',str(row.bpstart)).replace('__REGIONEND__',str(row.bpend)))
+
+                # if we should demultiplex everwhere (not just where amplicons aligned)
+                else:
+                    #next, create the general demux command
+                    #variables like __CHR__ will be subbed out below for each iteration
+                    s1=r'''samtools view -F 0x0004 %s __CHR____REGION__ 2>>%s |''' % (bam_filename_genome, log_filename)+\
+                    r'''awk 'BEGIN {OFS="\t"} {bpstart=$4;  bpend=bpstart; split ($6,a,"[MIDNSHP]"); n=0;\
+                    for (i=1; i in a; i++){\
+                        n+=1+length(a[i]);\
+                        if (substr($6,n,1)=="S"){\
+                            if (bpend==$4)\
+                                bpstart-=a[i];\
+                            else \
+                                bpend+=a[i]; \
+                            }\
+                        else if( (substr($6,n,1)!="I")  && (substr($6,n,1)!="H") )\
+                                bpend+=a[i];\
                         }\
-                    else if( (substr($6,n,1)!="I")  && (substr($6,n,1)!="H") )\
-                            bpend+=a[i];\
-                    }\
-                    if ( ($2 % 32)>=16)\
-                        print $3,bpstart,bpend,"-",$1,$10,$11;\
-                    else\
-                        print $3,bpstart,bpend,"+",$1,$10,$11;}' | '''
+                        if (($2 % 32)>=16)\
+                            print $3,bpstart,bpend,"-",$1,$10,$11;\
+                        else\
+                            print $3,bpstart,bpend,"+",$1,$10,$11;}' | '''
 
-                s2=r'''  sort -k1,1 -k2,2n  | awk \
-                 'BEGIN{chr_id="NA";bpstart=-1;bpend=-1; fastq_filename="NA";num_records=0;fastq_records="";fastq_record_sep="";record_log_str = ""}\
-                { if ( (chr_id!=$1) || (bpstart!=$2) || (bpend!=$3) )\
-                    {\
-                    if (fastq_filename!="NA") {if (num_records < __MIN_READS__){\
-                        record_log_str = record_log_str chr_id"\t"bpstart"\t"bpend"\t"num_records"\tNA\n"} \
-                else{print(fastq_records)>fastq_filename;close(fastq_filename); system("gzip -f "fastq_filename); record_log_str = record_log_str chr_id"\t"bpstart"\t"bpend"\t"num_records"\t"fastq_filename".gz\n"} \
+                    s2=r'''  sort -k1,1 -k2,2n  | awk \
+                     'BEGIN{chr_id="NA";bpstart=-1;bpend=-1; fastq_filename="NA";num_records=0;fastq_records="";fastq_record_sep="";record_log_str = ""}\
+                    { if ( (chr_id!=$1) || (bpstart!=$2) || (bpend!=$3) )\
+                        {\
+                        if (fastq_filename!="NA") {if (num_records < __MIN_READS__){\
+                            record_log_str = record_log_str chr_id"\t"bpstart"\t"bpend"\t"num_records"\tNA\n"} \
+                    else{print(fastq_records)>fastq_filename;close(fastq_filename); system("gzip -f "fastq_filename); record_log_str = record_log_str chr_id"\t"bpstart"\t"bpend"\t"num_records"\t"fastq_filename".gz\n"} \
+                        }\
+                        chr_id=$1; bpstart=$2; bpend=$3;\
+                        fastq_filename=sprintf("__OUTPUTPATH__REGION_%s_%s_%s.fastq",$1,$2,$3);\
+                        num_records = 0;\
+                        fastq_records="";\
+                        fastq_record_sep="";\
+                        }\
+                    fastq_records=fastq_records fastq_record_sep "@"$5"\n"$6"\n+\n"$7; \
+                    fastq_record_sep="\n"; \
+                    num_records++; \
+                    } \
+                    END{ \
+                        if (fastq_filename!="NA") {if (num_records < __MIN_READS__){\
+                            record_log_str = record_log_str chr_id"\t"bpstart"\t"bpend"\t"num_records"\tNA\n"} \
+                    else{printf("%s",fastq_records)>fastq_filename;close(fastq_filename); system("gzip -f "fastq_filename); record_log_str = record_log_str chr_id"\t"bpstart"\t"bpend"\t"num_records"\t"fastq_filename".gz\n"} \
+                        }\
+                        print(record_log_str) \
                     }\
-                    chr_id=$1; bpstart=$2; bpend=$3;\
-                    fastq_filename=sprintf("__OUTPUTPATH__REGION_%s_%s_%s.fastq",$1,$2,$3);\
-                    num_records = 0;\
-                    fastq_records="";\
-                    fastq_record_sep="";\
-                    }\
-                fastq_records=fastq_records fastq_record_sep "@"$5"\n"$6"\n+\n"$7; \
-                fastq_record_sep="\n"; \
-                num_records++; \
-                } \
-                END{ \
-                    if (fastq_filename!="NA") {if (num_records < __MIN_READS__){\
-                        record_log_str = record_log_str chr_id"\t"bpstart"\t"bpend"\t"num_records"\tNA\n"} \
-                else{printf("%shi",fastq_records)>fastq_filename;close(fastq_filename); system("gzip -f "fastq_filename); record_log_str = record_log_str chr_id"\t"bpstart"\t"bpend"\t"num_records"\t"fastq_filename".gz\n"} \
-                    }\
-                    print(record_log_str) \
-                }\
-                ' >> __DEMUX_LOGFILENAME__ '''
-                cmd=(s1+s2).replace('__OUTPUTPATH__', MAPPED_REGIONS)
-                cmd = cmd.replace("__MIN_READS__", str(args.min_reads_to_use_region * 4 - 1))
-                with open(REPORT_ALL_DEPTH, 'w') as f:
-                    f.write('chr_id\tstart\tend\tnumber of reads\toutput filename\n')
-                cmd = cmd.replace("__DEMUX_LOGFILENAME__", REPORT_ALL_DEPTH)
+                    ' >> __DEMUX_LOGFILENAME__ '''
+                    cmd=(s1+s2).replace('__OUTPUTPATH__', MAPPED_REGIONS)
+                    cmd = cmd.replace("__MIN_READS__", str(args.min_reads_to_use_region))
+                    with open(REPORT_ALL_DEPTH, 'w') as f:
+                        f.write('chr_id\tstart\tend\tnumber of reads\toutput filename\n')
+                    cmd = cmd.replace("__DEMUX_LOGFILENAME__", REPORT_ALL_DEPTH)
 
-                info('Preparing to demultiplex reads aligned to the genome...')
-                #next, get all of the chromosome names (for parallelization)
-                enumerate_chr_cmd = "samtools view -H %s" % bam_filename_genome
-                p = sb.Popen(enumerate_chr_cmd, shell=True, stdout=sb.PIPE)
-                chr_lines = p.communicate()[0].decode('utf-8').split("\n")
-                chrs = []
-                chr_lens = {}
-                for chr_line in chr_lines:
-                    m = re.match(r'@SQ\s+SN:(\S+)\s+LN:(\d+)', chr_line)
-                    if m:
-                        chrs.append(m.group(1))
-                        chr_lens[m.group(1)] = int(m.group(2))
+                    info('Preparing to demultiplex reads aligned to the genome...')
+                    #next, get all of the chromosome names (for parallelization)
+                    enumerate_chr_cmd = "samtools view -H %s" % bam_filename_genome
+                    p = sb.Popen(enumerate_chr_cmd, shell=True, stdout=sb.PIPE)
+                    chr_lines = p.communicate()[0].decode('utf-8').split("\n")
+                    chrs = []
+                    chr_lens = {}
+                    for chr_line in chr_lines:
+                        m = re.match(r'@SQ\s+SN:(\S+)\s+LN:(\d+)', chr_line)
+                        if m:
+                            chrs.append(m.group(1))
+                            chr_lens[m.group(1)] = int(m.group(2))
 
-                chr_commands = []
-                for chr_str in chrs:
-                    chr_cmd=cmd.replace('__CHR__', chr_str)
-                    #if we have a lot of reads, split up the chrs too
-                    #with a step size of 10M, there are about 220 regions in hg19
-                    #with a step size of 5M, there are about 368 regions in hg19
-                    chr_step_size = 5000000 #step size for splitting up chrs
-                    chr_len = chr_lens[chr_str]
-                    if N_READS_ALIGNED > 10000000 and chr_len > chr_step_size*2:
-                        curr_pos = 0
-                        curr_end = curr_pos + chr_step_size
-                        while curr_end < chr_len:
-                            #make sure there aren't any reads at this breakpoint
-                            n_reads_at_end = get_n_aligned_bam_region(bam_filename_genome, chr_str, curr_end-5, curr_end+5)
-                            while n_reads_at_end > 0:
-                                curr_end += 500 #look for another place with no reads
-                                if curr_end >= curr_pos:
-                                    curr_end = chr_len
-                                    break
-                                n_reads_at_end = get_n_aligned_bam_region(bam_filename_genome, chr_str, curr_end-5, curr_end+5)
-
-                            chr_commands.append(chr_cmd.replace("__REGION__", ":%d-%d "%(curr_pos, curr_end)))
-                            curr_pos = curr_end
+                    chr_commands = []
+                    for chr_str in chrs:
+                        chr_cmd=cmd.replace('__CHR__', chr_str)
+                        #if we have a lot of reads, split up the chrs too
+                        #with a step size of 10M, there are about 220 regions in hg19
+                        #with a step size of 5M, there are about 368 regions in hg19
+                        chr_step_size = 5000000 #step size for splitting up chrs
+                        chr_len = chr_lens[chr_str]
+                        if N_READS_ALIGNED > 10000000 and chr_len > chr_step_size*2:
+                            curr_pos = 0
                             curr_end = curr_pos + chr_step_size
-                        if curr_end < chr_len:
-                            chr_commands.append(chr_cmd.replace("__REGION__", ":%d-%d "%(curr_pos, chr_len)))
+                            while curr_end < chr_len:
+                                #make sure there aren't any reads at this breakpoint
+                                n_reads_at_end = get_n_aligned_bam_region(bam_filename_genome, chr_str, curr_end-5, curr_end+5)
+                                while n_reads_at_end > 0:
+                                    curr_end += 500 #look for another place with no reads
+                                    if curr_end >= curr_pos:
+                                        curr_end = chr_len
+                                        break
+                                    n_reads_at_end = get_n_aligned_bam_region(bam_filename_genome, chr_str, curr_end-5, curr_end+5)
 
-                    else:
-                        #otherwise do the whole chromosome
-                        chr_commands.append(chr_cmd.replace("__REGION__", ""))
+                                chr_commands.append(chr_cmd.replace("__REGION__", ":%d-%d "%(curr_pos, curr_end)))
+                                curr_pos = curr_end
+                                curr_end = curr_pos + chr_step_size
+                            if curr_end < chr_len:
+                                chr_commands.append(chr_cmd.replace("__REGION__", ":%d-%d "%(curr_pos, chr_len)))
+
+                        else:
+                            #otherwise do the whole chromosome
+                            chr_commands.append(chr_cmd.replace("__REGION__", ""))
+
+                if args.debug:
+                    demux_file = _jp('DEMUX_COMMANDS.txt')
+                    with open(demux_file,'w') as fout:
+                        fout.write("\n\n\n".join(chr_commands))
+                    info('Wrote demultiplexing commands to ' + demux_file)
 
                 info('Demultiplexing reads by location (%d genomic regions)...'%len(chr_commands))
                 CRISPRessoMultiProcessing.run_parallel_commands(chr_commands, n_processes=n_processes_for_pooled, descriptor='Demultiplexing reads by location', continue_on_fail=args.skip_failed)
@@ -1080,7 +1170,7 @@ def main():
                             crispresso_cmds.append(crispresso_cmd)
 
                         else:
-                             warn('The amplicon [%s] has too few reads (%d) mapped to it! Skipping the execution of CRISPResso!' % (idx, N_READS))
+                            warn('The amplicon [%s] has too few reads (%d) mapped to it! Skipping the execution of CRISPResso!' % (idx, N_READS))
                     else:
                         fastq_region_filenames.append('')
                         n_reads_aligned_genome.append(0)
@@ -1383,7 +1473,6 @@ def main():
 
         #cleaning up
         if not args.keep_intermediate:
-             info('Removing Intermediate files...')
 
              if args.fastq_r2!='':
                  files_to_remove+=[processed_output_filename, flash_hist_filename, flash_histogram_filename,\
@@ -1399,6 +1488,7 @@ def main():
                                                    output_forward_unpaired_filename, output_reverse_unpaired_filename]
 
              if RUNNING_MODE=='ONLY_GENOME' or RUNNING_MODE=='AMPLICONS_AND_GENOME':
+                 if args.aligned_pooled_bam is None:
                      files_to_remove+=[bam_filename_genome]
                      files_to_remove+=[bam_filename_genome+".bai"]
 
