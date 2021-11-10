@@ -768,8 +768,9 @@ def main():
             n_reads_aligned_amplicons=[]
             crispresso_cmds = []
             for idx, row in df_template.iterrows():
-                n_reads_aligned_amplicons.append(get_n_reads_fastq(row['Demultiplexed_fastq.gz_filename']))
-                info('\n Processing:%s with %d reads'%(idx,n_reads_aligned_amplicons))
+                this_n_reads = get_n_reads_fastq(row['Demultiplexed_fastq.gz_filename'])
+                n_reads_aligned_amplicons.append(this_n_reads)
+                info('\n Processing:%s with %d reads'%(idx,this_n_reads))
                 this_amp_seq = row['Amplicon_Sequence']
                 this_amp_name_string = ""
                 if idx in alternate_alleles:
