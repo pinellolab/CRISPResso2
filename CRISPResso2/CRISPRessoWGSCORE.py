@@ -417,18 +417,14 @@ def main():
             li = s.rsplit(old)
             return new.join(li)
 
-        bam_index = ''
         #check if bam has the index already
         if os.path.exists(rreplace(args.bam_file, ".bam", ".bai")):
             info('Index file for input .bam file exists, skipping generation.')
-            bam_index = args.bam_file.replace(".bam", ".bai")
         elif os.path.exists(args.bam_file+'.bai'):
             info('Index file for input .bam file exists, skipping generation.')
-            bam_index = args.bam_file+'.bai'
         else:
             info('Creating index file for input .bam file...')
             sb.call('samtools index %s ' % (args.bam_file), shell=True)
-            bam_index = args.bam_file+'.bai'
 
 
         #load gene annotation
