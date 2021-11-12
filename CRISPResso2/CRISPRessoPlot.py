@@ -587,7 +587,7 @@ def plot_amplicon_modifications(
         fancybox=True,
         shadow=True,
     )
-    ylabel_values = np.arange(0, 1, 1.0 / 6.0)
+    y_label_values = np.arange(0, 1, 1.0 / 6.0)
     if y_max > 0:
         y_label_values = np.arange(0, y_max, y_max / 6.0)
     if num_refs == 1:
