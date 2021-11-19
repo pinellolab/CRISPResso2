@@ -188,7 +188,7 @@ def clean_filename(filename):
     return ''.join(c for c in cleanedFilename if c in validFilenameChars)
 
 def find_overlapping_genes(row, df_genes):
-    df_genes_overlapping=df_genes.ix[(df_genes.chrom==row.chr_id) &
+    df_genes_overlapping=df_genes.loc[(df_genes.chrom==row.chr_id) &
                                      (df_genes.txStart<=row.bpend) &
                                      (row.bpstart<=df_genes.txEnd)]
     genes_overlapping=[]
@@ -668,7 +668,7 @@ def main():
 
                     if not cut_points:
                         warn('\nThe guide sequence/s provided: %s is(are) not present in the amplicon sequence:%s! \nNOTE: The guide will be ignored for the analysis. Please check your input!' % (row.sgRNA, row.Amplicon_Sequence))
-                        df_template.ix[idx, 'sgRNA']=''
+                        df_template.iloc[idx,df_template.columns.get_loc('sgRNA')] = ''
 
 
 
