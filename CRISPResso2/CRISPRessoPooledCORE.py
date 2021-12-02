@@ -632,9 +632,18 @@ def main():
             df_template.sgRNA=df_template.sgRNA.apply(CRISPRessoShared.capitalize_sequence)
             df_template.Coding_sequence=df_template.Coding_sequence.apply(CRISPRessoShared.capitalize_sequence)
 
-            if not len(df_template.Amplicon_Sequence.unique())==df_template.shape[0]:
-                duplicated_entries = df_template.Amplicon_Sequence[df_template.Amplicon_Sequence.duplicated()]
-                raise Exception('The amplicon sequences must be distinct! (Duplicated entries: ' + str(duplicated_entries.values) + ')')
+            if (df_template[["Amplicon_Sequence", "sgRNA"]].value_counts().values > 1).any():
+                duplicated_entries = df_template.loc[
+                    df_template[
+                        ["Amplicon_Sequence", "sgRNA"]
+                    ].duplicated(keep=False),
+                    :
+                ]
+                raise Exception(
+                    'The amplicon sequences and sgRNA must be distinct! (Duplicated entries: {0})'.format(
+                        duplicated_entries.values,
+                    ),
+                )
 
             if not len(df_template.Name.unique())==df_template.shape[0]:
                 duplicated_entries = df_template.Name[df_template.Name.duplicated()]
