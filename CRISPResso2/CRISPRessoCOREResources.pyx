@@ -45,9 +45,11 @@ def find_indels_substitutions(read_seq_al, ref_seq_al, _include_indx):
     substitution_values=[]
 
     nucSet = set(['A', 'T', 'C', 'G', 'N'])
-    idx=0
+    cdef int idx = 0
+    cdef int idx_c
+    cdef int current_insertion_size = 0
     for idx_c, c in enumerate(ref_seq_al):
-        if c in nucSet:
+        if c != '-':
             ref_positions.append(idx)
             if ref_seq_al[idx_c]!=read_seq_al[idx_c] and read_seq_al[idx_c] != '-' and read_seq_al[idx_c] != 'N':
                 all_substitution_positions.append(idx)
@@ -55,14 +57,26 @@ def find_indels_substitutions(read_seq_al, ref_seq_al, _include_indx):
                 if idx in _include_indx:
                     substitution_positions.append(idx)
                     substitution_values.append(read_seq_al[idx_c])
-
-            idx+=1
-
-        else:
-            if idx==0:
+            if start_insertion != -1:  # this is the end of an insertion
+                all_insertion_left_positions.append(start_insertion)
+                all_insertion_positions.append(start_insertion)
+                all_insertion_positions.append(idx)
+                if start_insertion in include_indx_set and idx in include_indx_set:
+                    insertion_coordinates.append((start_insertion, idx))
+                    insertion_positions.append(start_insertion)
+                    insertion_positions.append(idx)
+                    insertion_sizes.append(current_insertion_size)
+                start_insertion = -1
+            current_insertion_size = 0
+            idx += 1
+        else:  # the current ref position is -
+            if idx == 0:
                 ref_positions.append(-1)
             else:
                 ref_positions.append(-idx)
+            if idx > 0 and start_insertion == -1:  # this is the first index of an insertion
+                start_insertion = idx - 1
+            current_insertion_size += 1
 
     substitution_n = len(substitution_positions)
 
