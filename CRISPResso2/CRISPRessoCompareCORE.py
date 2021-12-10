@@ -108,15 +108,14 @@ def main():
         sample_1_name = args.sample_1_name
         if args.sample_1_name is None:
             sample_1_name = "Sample 1"
-            if 'name' in run_info_1 and run_info_1['running_info']['name'] != '':
+            if 'running_info' in run_info_1 and 'name' in run_info_1['running_info'] and run_info_1['running_info']['name']:
                 sample_1_name = run_info_1['running_info']['name']
 
         sample_2_name = args.sample_2_name
         if args.sample_2_name is None:
             sample_2_name = "Sample 2"
-            if 'name' in run_info_2 and run_info_2['running_info']['name'] != '':
+            if 'running_info' in run_info_2 and 'name' in run_info_2['running_info'] and run_info_2['running_info']['name']:
                 sample_2_name = run_info_2['running_info']['name']
-
 
         get_name_from_folder=lambda x: os.path.basename(os.path.abspath(x)).replace('CRISPResso_on_', '')
 
