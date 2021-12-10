@@ -1,0 +1,17 @@
+CRISPResso version 2.2.7
+[Command used]:
+/Users/cole/miniconda3/envs/crispresso/bin/CRISPRessoWGS -b Both.Cas9.fastq.smallGenome.bam -r smallGenome/smallGenome.fa -f Cas9.regions.txt --debug
+
+[Execution log]:
+Index file for input .bam file exists, skipping generation.
+The index for the reference fasta file is already present! Skipping generation.
+Retrieving reference sequences for amplicons and checking for sgRNAs
+
+Processing each region...
+Running CRISPResso on each region...
+
+The region [HEK3] has too few reads mapped to it (2)! Not running CRISPResso!
+
+The region [FANCF] has enough reads (23) mapped to it!
+Skipping the folder CRISPResso_on_HEK3: not enough reads, incomplete, or empty folder.
+Analysis Complete!

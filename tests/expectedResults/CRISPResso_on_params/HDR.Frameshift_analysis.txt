@@ -1,0 +1,4 @@
+Frameshift analysis:
+	Noncoding mutation:0 reads
+	In-frame mutation:0 reads
+	Frameshift mutation:16 reads

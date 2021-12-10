@@ -1,0 +1,3 @@
+Batch	Reference	total_reads	modified_frameshift	modified_non_frameshift	non_modified_non_frameshift	splicing_sites_modified	splice_sites_unmodified
+Untreated	Reference	247	0	0	0	0	247
+Cas9	Reference	235	0	0	0	0	235

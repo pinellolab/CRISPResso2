@@ -1,0 +1,7 @@
+[Command used]:
+/Users/cole/miniconda3/envs/crispresso/bin/CRISPRessoBatch -bs FANC.batch -a CGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCCGCCACCGTGCGCCGGGCCTTGCAGTGGGCGCGCTACCTGCGCCACATCCATCGGCGCTTTGGTCGG -g GGAATCCCTTCTGCAGCACC --debug --base_editor
+
+[Execution log]:
+Reporting summary for amplicon: "Reference"
+All guides are equal. Performing comparison of batches for amplicon 'Reference'
+Analysis Complete!

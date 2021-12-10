@@ -1,0 +1,206 @@
+CRISPResso version 2.2.7
+[Command used]:
+/Users/cole/miniconda3/envs/crispresso/bin/CRISPRessoPooled -r1 Both.Cas9.fastq -f Cas9.amplicons.txt --keep_intermediate --min_reads_to_use_region 100 -p 4 --debug
+
+[Execution log]:
+Processing input
+Creating a custom index file with all the amplicons...
+Settings:
+  Output files: "CRISPRessoPooled_on_Both.Cas9/CUSTOM_BOWTIE2_INDEX.*.bt2"
+  Line rate: 6 (line is 64 bytes)
+  Lines per side: 1 (side is 64 bytes)
+  Offset rate: 4 (one in 16)
+  FTable chars: 10
+  Strings: unpacked
+  Max bucket size: default
+  Max bucket size, sqrt multiplier: default
+  Max bucket size, len divisor: 4
+  Difference-cover sample period: 1024
+  Endianness: little
+  Actual local endianness: little
+  Sanity checking: disabled
+  Assertions: disabled
+  Random seed: 0
+  Sizeofs: void*:8, int:4, long:8, size_t:8
+Input files DNA, FASTA:
+  CRISPRessoPooled_on_Both.Cas9/AMPLICONS.fa
+Building a SMALL index
+Reading reference sizes
+  Time reading reference sizes: 00:00:00
+Calculating joined length
+Writing header
+Reserving space for joined string
+Joining reference sequences
+  Time to join reference sequences: 00:00:00
+bmax according to bmaxDivN setting: 113
+Using parameters --bmax 85 --dcv 1024
+  Doing ahead-of-time memory usage test
+  Passed!  Constructing with these parameters: --bmax 85 --dcv 1024
+Constructing suffix-array element generator
+Building DifferenceCoverSample
+  Building sPrime
+  Building sPrimeOrder
+  V-Sorting samples
+  V-Sorting samples time: 00:00:00
+  Allocating rank array
+  Ranking v-sort output
+  Ranking v-sort output time: 00:00:00
+  Invoking Larsson-Sadakane on ranks
+  Invoking Larsson-Sadakane on ranks time: 00:00:00
+  Sanity-checking and returning
+Building samples
+Reserving space for 12 sample suffixes
+Generating random suffixes
+QSorting 12 sample offsets, eliminating duplicates
+QSorting sample offsets, eliminating duplicates time: 00:00:00
+Multikey QSorting 12 samples
+  (Using difference cover)
+  Multikey QSorting samples time: 00:00:00
+Calculating bucket sizes
+Splitting and merging
+  Splitting and merging time: 00:00:00
+Avg bucket size: 455 (target: 84)
+Converting suffix-array elements to index image
+Allocating ftab, absorbFtab
+Entering Ebwt loop
+Getting block 1 of 1
+  No samples; assembling all-inclusive block
+  Sorting block of length 455 for bucket 1
+  (Using difference cover)
+  Sorting block time: 00:00:00
+Returning block of 456 for bucket 1
+Exited Ebwt loop
+fchr[A]: 0
+fchr[C]: 86
+fchr[G]: 221
+fchr[T]: 351
+fchr[$]: 455
+Exiting Ebwt::buildToDisk()
+Returning from initFromVector
+Wrote 4194693 bytes to primary EBWT file: CRISPRessoPooled_on_Both.Cas9/CUSTOM_BOWTIE2_INDEX.1.bt2
+Wrote 120 bytes to secondary EBWT file: CRISPRessoPooled_on_Both.Cas9/CUSTOM_BOWTIE2_INDEX.2.bt2
+Re-opening _in1 and _in2 as input streams
+Returning from Ebwt constructor
+Headers:
+    len: 455
+    bwtLen: 456
+    sz: 114
+    bwtSz: 114
+    lineRate: 6
+    offRate: 4
+    offMask: 0xfffffff0
+    ftabChars: 10
+    eftabLen: 20
+    eftabSz: 80
+    ftabLen: 1048577
+    ftabSz: 4194308
+    offsLen: 29
+    offsSz: 116
+    lineSz: 64
+    sideSz: 64
+    sideBwtSz: 48
+    sideBwtLen: 192
+    numSides: 3
+    numLines: 3
+    ebwtTotLen: 192
+    ebwtTotSz: 192
+    color: 0
+    reverse: 0
+Total time for call to driver() for forward index: 00:00:00
+Reading reference sizes
+  Time reading reference sizes: 00:00:00
+Calculating joined length
+Writing header
+Reserving space for joined string
+Joining reference sequences
+  Time to join reference sequences: 00:00:00
+  Time to reverse reference sequence: 00:00:00
+bmax according to bmaxDivN setting: 113
+Using parameters --bmax 85 --dcv 1024
+  Doing ahead-of-time memory usage test
+  Passed!  Constructing with these parameters: --bmax 85 --dcv 1024
+Constructing suffix-array element generator
+Building DifferenceCoverSample
+  Building sPrime
+  Building sPrimeOrder
+  V-Sorting samples
+  V-Sorting samples time: 00:00:00
+  Allocating rank array
+  Ranking v-sort output
+  Ranking v-sort output time: 00:00:00
+  Invoking Larsson-Sadakane on ranks
+  Invoking Larsson-Sadakane on ranks time: 00:00:00
+  Sanity-checking and returning
+Building samples
+Reserving space for 12 sample suffixes
+Generating random suffixes
+QSorting 12 sample offsets, eliminating duplicates
+QSorting sample offsets, eliminating duplicates time: 00:00:00
+Multikey QSorting 12 samples
+  (Using difference cover)
+  Multikey QSorting samples time: 00:00:00
+Calculating bucket sizes
+Splitting and merging
+  Splitting and merging time: 00:00:00
+Avg bucket size: 455 (target: 84)
+Converting suffix-array elements to index image
+Allocating ftab, absorbFtab
+Entering Ebwt loop
+Getting block 1 of 1
+  No samples; assembling all-inclusive block
+  Sorting block of length 455 for bucket 1
+  (Using difference cover)
+  Sorting block time: 00:00:00
+Returning block of 456 for bucket 1
+Exited Ebwt loop
+fchr[A]: 0
+fchr[C]: 86
+fchr[G]: 221
+fchr[T]: 351
+fchr[$]: 455
+Exiting Ebwt::buildToDisk()
+Returning from initFromVector
+Wrote 4194693 bytes to primary EBWT file: CRISPRessoPooled_on_Both.Cas9/CUSTOM_BOWTIE2_INDEX.rev.1.bt2
+Wrote 120 bytes to secondary EBWT file: CRISPRessoPooled_on_Both.Cas9/CUSTOM_BOWTIE2_INDEX.rev.2.bt2
+Re-opening _in1 and _in2 as input streams
+Returning from Ebwt constructor
+Headers:
+    len: 455
+    bwtLen: 456
+    sz: 114
+    bwtSz: 114
+    lineRate: 6
+    offRate: 4
+    offMask: 0xfffffff0
+    ftabChars: 10
+    eftabLen: 20
+    eftabSz: 80
+    ftabLen: 1048577
+    ftabSz: 4194308
+    offsLen: 29
+    offsSz: 116
+    lineSz: 64
+    sideSz: 64
+    sideBwtSz: 48
+    sideBwtLen: 192
+    numSides: 3
+    numLines: 3
+    ebwtTotLen: 192
+    ebwtTotSz: 192
+    color: 0
+    reverse: 1
+Total time for backward call to driver() for mirror index: 00:00:00
+Align reads to the amplicons...
+Alignment command: bowtie2 -x CRISPRessoPooled_on_Both.Cas9/CUSTOM_BOWTIE2_INDEX -p 4  --end-to-end -N 0 --np 0 --mp 3,2 --score-min L,-5,-1.2000000000000002  -U CRISPRessoPooled_on_Both.Cas9/Both.Cas9.fastq 2>>CRISPRessoPooled_on_Both.Cas9/CRISPRessoPooled_RUNNING_LOG.txt | samtools view -bS - > CRISPRessoPooled_on_Both.Cas9/CRISPResso_AMPLICONS_ALIGNED.bam
+500 reads; of these:
+  500 (100.00%) were unpaired; of these:
+    8 (1.60%) aligned 0 times
+    482 (96.40%) aligned exactly 1 time
+    10 (2.00%) aligned >1 times
+98.40% overall alignment rate
+Demultiplex reads and run CRISPResso on each amplicon...
+
+ Processing:FANC with 242 reads
+
+ Processing:HEK3 with 250 reads
+All Done!

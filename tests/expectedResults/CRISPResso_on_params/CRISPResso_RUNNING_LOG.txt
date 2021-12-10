@@ -1,0 +1,32 @@
+CRISPResso version 2.2.7
+[Command used]:
+/Users/cole/miniconda3/envs/crispresso/bin/CRISPResso -r1 FANC.Cas9.fastq -a CGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCCGCCACCGTGCGCCGGGCCTTGCAGTGGGCGCGCTACCTGCGCCACATCCATCGGCGCTTTGGTCGG -g GGAATCCCTTCTGCAGCACC -e CGGCCGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCTGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCCGCCACCGTGCGCCGGGCCTTGCAGTGGGCGCGCTACCTGCGCCACATCCATCGGCGCTTTGGTCGG -c GGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTT --dump -qwc 20-30_45-50 -q 30 --default_min_aln_score 80 -an FANC -n params --base_edit -fg AGCCTTGCAGTGGGCGCGCTA,CCCACTGAAGGCCC --dsODN GCTAGATTTCCCAAGAAGA -gn hi -fgn dear --debug
+
+[Execution log]:
+Added 2 guides with flexible matching
+	Original flexiguides: ['AGCCTTGCAGTGGGCGCGCTA', 'CCCACTGAAGGCCC']
+	Found guides: ['GGCCTTGCAGTGGGCGCGCTA', 'CCCACTGCAAGGCCC']
+	Mismatch locations: [[0], [7]]
+Added 2 guides with flexible matching
+	Original flexiguides: ['AGCCTTGCAGTGGGCGCGCTA', 'CCCACTGAAGGCCC']
+	Found guides: ['GGCCTTGCAGTGGGCGCGCTA', 'CCCACTGCAAGGCCC']
+	Mismatch locations: [[0], [7]]
+Using cut points from FANC as template for other references
+Reference 'HDR' has NO cut points or sgRNA intervals idxs defined. Inferring from 'FANC'.
+Reference 'HDR' has NO exon_positions defined. Inferring from 'FANC'.
+Filtering reads with average bp quality < 30 and single bp quality < 0 and replacing bases with quality < 0 with N ...
+Aligning sequences...
+Processing reads; N_TOT_READS: 0 N_COMPUTED_ALN: 0 N_CACHED_ALN: 0 N_COMPUTED_NOTALN: 0 N_CACHED_NOTALN: 0
+Finished reads; N_TOT_READS: 231 N_COMPUTED_ALN: 171 N_CACHED_ALN: 37 N_COMPUTED_NOTALN: 23 N_CACHED_NOTALN: 0
+Done!
+Quantifying indels/substitutions...
+Done!
+Calculating allele frequencies...
+Done!
+Saving processed data...
+Writing file for alleles with dsODN
+Dumping all the processed data...
+Making Plots...
+Done!
+Removing Intermediate files...
+Analysis Complete!

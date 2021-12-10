@@ -1,0 +1,5 @@
+[Command used]:
+CRISPRessoCompare /Users/cole/miniconda3/envs/crispresso/bin/CRISPRessoCompare CRISPRessoBatch_on_FANC/CRISPResso_on_Cas9/ CRISPRessoBatch_on_FANC/CRISPResso_on_Untreated/ --debug
+
+[Execution log]:
+Analysis Complete!

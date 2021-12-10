@@ -1,0 +1,3 @@
+Splice sites analysis:
+	Unmodified:16 reads
+	Potential splice sites modified:0 reads

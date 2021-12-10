@@ -1,0 +1,17 @@
+CRISPResso version 2.2.7
+[Command used]:
+/Users/cole/miniconda3/envs/crispresso/bin/CRISPResso -r1 CRISPRessoPooled_on_Both.Cas9/AMPL_FANC.fastq.gz -a CGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCCGCCACCGTGCGCCGGGCCTTGCAGTGGGCGCGCTACCTGCGCCACATCCATCGGCGCTTTGGTCGG -o CRISPRessoPooled_on_Both.Cas9 --name FANC -g GGAATCCCTTCTGCAGCACC --n_processes 1 --quantification_window_size 1 --exclude_bp_from_right 15 --min_single_bp_quality 0 --max_rows_alleles_around_cut_to_plot 50 --aln_seed_min 2 --min_frequency_alleles_around_cut_to_plot 0.2 --aln_seed_len 10 --min_bp_quality_or_N 0 --quantification_window_center -3 --debug --prime_editing_pegRNA_extension_quantification_window_size 5 --default_min_aln_score 60 --trimmomatic_command trimmomatic --exclude_bp_from_left 15 --conversion_nuc_to T --needleman_wunsch_aln_matrix_loc EDNAFULL --needleman_wunsch_gap_extend -2 --aln_seed_count 5 --flexiguide_homology 80 --needleman_wunsch_gap_open -20 --min_average_read_quality 0 --conversion_nuc_from C --max_paired_end_reads_overlap 100 --flash_command flash --min_paired_end_reads_overlap 10 --needleman_wunsch_gap_incentive 1 --plot_window_size 20 --keep_intermediate --prime_editing_pegRNA_scaffold_min_match_length 1
+
+[Execution log]:
+Aligning sequences...
+Processing reads; N_TOT_READS: 0 N_COMPUTED_ALN: 0 N_CACHED_ALN: 0 N_COMPUTED_NOTALN: 0 N_CACHED_NOTALN: 0
+Finished reads; N_TOT_READS: 242 N_COMPUTED_ALN: 198 N_CACHED_ALN: 37 N_COMPUTED_NOTALN: 7 N_CACHED_NOTALN: 0
+Done!
+Quantifying indels/substitutions...
+Done!
+Calculating allele frequencies...
+Done!
+Saving processed data...
+Making Plots...
+Done!
+Analysis Complete!

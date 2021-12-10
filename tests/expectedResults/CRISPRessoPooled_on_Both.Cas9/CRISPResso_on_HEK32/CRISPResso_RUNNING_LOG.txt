@@ -1,0 +1,17 @@
+CRISPResso version 2.2.7
+[Command used]:
+/Users/cole/miniconda3/envs/crispresso/bin/CRISPResso -r1 CRISPRessoPooled_on_Both.Cas9/AMPL_HEK32.fastq.gz -a GGAAACGCCCATGCAATTAGTCTATTTCTGCTGCAAGTAAGCATGCATTTGTAGGCTTGATGCTTTTTTTCTGCTTCTCCAGCCCTGGCCTGGGTCAATCCTTGGGGCCCAGACTGAGCACGTGATGGCAGAGGAAAGGAAGCCCTGCTTCCTCCAGAGGGCGTCGCAGGACAGCTTTTCCTAGACAGGGGCTAGTATGTGCAGCTCCTGCACCGGGATACTGGTTGACAAG -o CRISPRessoPooled_on_Both.Cas9 --name HEK32 -g CGCCCAGACTGAGCACGTGA --quantification_window_size 1 --needleman_wunsch_gap_extend -2 --plot_window_size 20 --flexiguide_homology 80 --aln_seed_len 10 --prime_editing_pegRNA_scaffold_min_match_length 1 --conversion_nuc_to T --max_paired_end_reads_overlap 100 --min_bp_quality_or_N 0 --needleman_wunsch_aln_matrix_loc EDNAFULL --max_rows_alleles_around_cut_to_plot 50 --default_min_aln_score 60 --prime_editing_pegRNA_extension_quantification_window_size 5 --trimmomatic_command trimmomatic --min_single_bp_quality 0 --aln_seed_count 5 --quantification_window_center -3 --needleman_wunsch_gap_open -20 --flash_command flash --min_paired_end_reads_overlap 10 --needleman_wunsch_gap_incentive 1 --min_frequency_alleles_around_cut_to_plot 0.2 --exclude_bp_from_right 15 --min_average_read_quality 0 --n_processes 1 --conversion_nuc_from C --keep_intermediate --exclude_bp_from_left 15 --aln_seed_min 2 --debug
+
+[Execution log]:
+Traceback (most recent call last):
+  File "/Users/cole/code/edylitics/CRISPResso/CRISPResso2/CRISPRessoCORE.py", line 1491, in main
+    raise CRISPRessoShared.SgRNASequenceException('The guide sequence %d (%s) provided is not present in the amplicon sequences!\n\nPlease check your input!' % (idx, guides[idx]))
+CRISPResso2.CRISPRessoShared.SgRNASequenceException: The guide sequence 0 (CGCCCAGACTGAGCACGTGA) provided is not present in the amplicon sequences!
+
+Please check your input!
+
+sgRNA error, please check your input.
+
+ERROR: The guide sequence 0 (CGCCCAGACTGAGCACGTGA) provided is not present in the amplicon sequences!
+
+Please check your input!
