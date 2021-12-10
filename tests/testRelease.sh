@@ -2,33 +2,31 @@ set -e
 echo Running CRISPResso
 CRISPResso -r1 FANC.Cas9.fastq -a CGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCCGCCACCGTGCGCCGGGCCTTGCAGTGGGCGCGCTACCTGCGCCACATCCATCGGCGCTTTGGTCGG -g GGAATCCCTTCTGCAGCACC --debug &> CRISPResso_on_FANC.Cas9.log
 
+echo TESTING CRISPRESSO2
+python diff.py CRISPResso_on_FANC.Cas9
+
 echo Running CRISPResso with parameters
 CRISPResso -r1 FANC.Cas9.fastq -a CGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCCGCCACCGTGCGCCGGGCCTTGCAGTGGGCGCGCTACCTGCGCCACATCCATCGGCGCTTTGGTCGG -g GGAATCCCTTCTGCAGCACC -e CGGCCGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCTGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCCGCCACCGTGCGCCGGGCCTTGCAGTGGGCGCGCTACCTGCGCCACATCCATCGGCGCTTTGGTCGG -c GGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTT --dump -qwc 20-30_45-50 -q 30 --default_min_aln_score 80 -an FANC -n params --base_edit -fg AGCCTTGCAGTGGGCGCGCTA,CCCACTGAAGGCCC --dsODN GCTAGATTTCCCAAGAAGA -gn hi -fgn dear --debug &> CRISPResso_on_params.log
+
+echo TESTING CRISPRESSO2 PARAMS
+python diff.py CRISPResso_on_params
 
 echo Running CRISPRessoBatch
 CRISPRessoBatch -bs FANC.batch -a CGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCCGCCACCGTGCGCCGGGCCTTGCAGTGGGCGCGCTACCTGCGCCACATCCATCGGCGCTTTGGTCGG -g GGAATCCCTTCTGCAGCACC -p 2 --debug --base_editor --debug &> CRISPRessoBatch_on_FANC.log
 
+echo TESTING BATCH
+python diff.py CRISPRessoBatch_on_FANC
+
 echo Running CRISPRessoPooled
 CRISPRessoPooled -r1 Both.Cas9.fastq -f Cas9.amplicons.txt -p 2 --keep_intermediate --min_reads_to_use_region 100 --debug &> CRISPRessoPooled_on_Both.Cas9.log
+
+echo TESTING POOLED
+python diff.py CRISPRessoPooled_on_Both.Cas9
 
 echo Running CRISPRessoWGS
 CRISPRessoWGS -b Both.Cas9.fastq.smallGenome.bam -r smallGenome/smallGenome.fa -f Cas9.regions.txt --debug &> CRISPRessoWGS_on_Both.Cas9.fastq.smallGenome.log
 
-echo TESTING CRISPRESSO2
-diff CRISPResso_on_FANC.Cas9/Reference.nucleotide_frequency_table.txt expectedResults/CRISPResso_on_FANC.Cas9/Reference.nucleotide_frequency_table.txt
-diff CRISPResso_on_FANC.Cas9/CRISPResso_quantification_of_editing_frequency.txt tests/expectedResults/CRISPResso_on_FANC.Cas9/CRISPResso_quantification_of_editing_frequency.txt
-
-echo TESTING CRISPRESSO2 PARAMS
-diff CRISPResso_on_params/FANC.nucleotide_frequency_table.txt expectedResults/CRISPResso_on_params/FANC.nucleotide_frequency_table.txt
-diff CRISPResso_on_params/CRISPResso_quantification_of_editing_frequency.txt tests/expectedResults/CRISPResso_on_params/CRISPResso_quantification_of_editing_frequency.txt
-
-echo TESTING BATCH
-diff CRISPRessoBatch_on_FANC/Reference.MODIFICATION_FREQUENCY_SUMMARY.txt tests/expectedResults/CRISPRessoBatch_on_FANC/Reference.MODIFICATION_FREQUENCY_SUMMARY.txt
-
-echo TESTING POOLED
-diff CRISPRessoPooled_on_Both.Cas9/SAMPLES_QUANTIFICATION_SUMMARY.txt tests/expectedResults/CRISPRessoPooled_on_Both.Cas9/SAMPLES_QUANTIFICATION_SUMMARY.txt
-
 echo TESTING WGS
-diff CRISPRessoWGS_on_Both.Cas9.fastq.smallGenome/SAMPLES_QUANTIFICATION_SUMMARY.txt tests/expectedResults/CRISPRessoWGS_on_Both.Cas9.fastq.smallGenome/SAMPLES_QUANTIFICATION_SUMMARY.txt
+python diff.py CRISPRessoWGS_on_Both.Cas9.fastq.smallGenome
 
 echo Finished
