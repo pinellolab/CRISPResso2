@@ -567,7 +567,13 @@ def process_bam(bam_filename, bam_chr_loc, output_bam, variantCache, ref_names, 
                         payload=new_variant['variant_'+best_match_name]
 
                         del_inds.append([str(x[0][0])+"("+str(x[1])+")" for x in zip(payload['deletion_coordinates'], payload['deletion_sizes'])])
-                        ins_inds.append([str(x[0][0])+"("+str(x[1])+")" for x in zip(payload['insertion_coordinates'], payload['insertion_sizes'])])
+
+                        ins_vals = []
+                        for ins_coord,ins_size in zip(payload['insertion_coordinates'],payload['insertion_sizes']):
+                            ins_start = payload['ref_positions'].index(ins_coord[0])
+                            ins_vals.append(payload['aln_seq'][ins_start+1:ins_start+1+ins_size])
+                        ins_inds.append([str(x[0][0])+"("+str(x[1])+"+"+x[2]+")" for x in zip(payload['insertion_coordinates'], payload['insertion_sizes'], ins_vals)])
+
                         sub_inds.append(payload['substitution_positions'])
                         edit_strings.append('D'+str(int(payload['deletion_n']))+';I'+str(int(payload['insertion_n']))+';S'+str(int(payload['substitution_n'])))
 
@@ -678,8 +684,6 @@ def process_fastq_write_out(fastq_input, fastq_output, variantCache, ref_names, 
                 fastq_out_handle.write(fastq_id+fastq_seq+"\n"+fastq_plus+crispresso2_annotation+"\n"+fastq_qual)
             else:
                 N_COMPUTED_ALN+=1
-
-                class_names = []
                 ins_inds = []
                 del_inds = []
                 sub_inds = []
@@ -694,8 +698,9 @@ def process_fastq_write_out(fastq_input, fastq_output, variantCache, ref_names, 
                     ins_vals = []
                     for ins_coord,ins_size in zip(payload['insertion_coordinates'],payload['insertion_sizes']):
                         ins_start = payload['ref_positions'].index(ins_coord[0])
-                        ins_vals.append(payload['aln_seq'][ins_start:ins_start+ins_size])
+                        ins_vals.append(payload['aln_seq'][ins_start+1:ins_start+1+ins_size])
                     ins_inds.append([str(x[0][0])+"("+str(x[1])+"+"+x[2]+")" for x in zip(payload['insertion_coordinates'], payload['insertion_sizes'], ins_vals)])
+
                     sub_inds.append(payload['substitution_positions'])
                     edit_strings.append('D'+str(int(payload['deletion_n']))+';I'+str(int(payload['insertion_n']))+';S'+str(int(payload['substitution_n'])))
 
