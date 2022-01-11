@@ -21,14 +21,6 @@ re_find_indels = re.compile("(-*-)")
 @cython.wraparound(False)
 def find_indels_substitutions(read_seq_al, ref_seq_al, _include_indx):
 
-    cdef char* sub_seq=''
-
-    cdef int st
-    cdef int en
-
-    cdef int idx_c
-    cdef int idx
-
     #ref_positions holds the indices for which positions map back to the original reference
     # for example,
     #     1 2 3 4 5 6 7 8
@@ -44,6 +36,21 @@ def find_indels_substitutions(read_seq_al, ref_seq_al, _include_indx):
     all_substitution_values=[]
     substitution_values=[]
 
+    all_deletion_positions = []
+    deletion_positions = []
+    deletion_coordinates = []
+    deletion_sizes = []
+    cdef int start_deletion = -1  # the -1 value indicates that there currently isn't a deletion
+
+    all_insertion_positions = []
+    all_insertion_left_positions = []
+    insertion_positions = []
+    insertion_coordinates = []
+    insertion_sizes = []
+    cdef int start_insertion = -1  # the -1 value indicates that there currently isn't an insertion
+
+    cdef size_t seq_len = len(ref_seq_al)
+    include_indx_set = set(_include_indx)
     nucSet = set(['A', 'T', 'C', 'G', 'N'])
     cdef int idx = 0
     cdef int idx_c
@@ -127,53 +134,6 @@ def find_indels_substitutions(read_seq_al, ref_seq_al, _include_indx):
         'ref_positions': ref_positions,
     }
 
-    deletion_n = np.sum(deletion_sizes)
-
-    for p in re_find_indels.finditer(ref_seq_al):
-        st,en=p.span()
-        #sometimes insertions run off the end of the reference
-        if st == 0: # if insertion happened before ref
-          continue
-        if en == len(ref_seq_al): # if insertion happened after ref
-          continue
-        ref_st = ref_positions[st-1]
-        ref_en = ref_positions[en]
-
-        all_insertion_left_positions.append(ref_st)
-        all_insertion_positions.append(ref_st)
-        all_insertion_positions.append(ref_en)
-        if(ref_st in _include_indx and ref_en in _include_indx):
-          insertion_coordinates.append((ref_st,ref_en))
-          insertion_positions.append(ref_st)
-          insertion_positions.append(ref_en)
-          insertion_sizes.append(en-st)
-
-    insertion_n = np.sum(insertion_sizes)
-
-
-    retDict = {
-	    'all_insertion_positions':all_insertion_positions,
-	    'all_insertion_left_positions':all_insertion_left_positions,
-	    'insertion_positions':insertion_positions,
-	    'insertion_coordinates':insertion_coordinates,
-	    'insertion_sizes':insertion_sizes,
-	    'insertion_n':insertion_n,
-
-	    'all_deletion_positions':all_deletion_positions,
-	    'deletion_positions':deletion_positions,
-	    'deletion_coordinates':deletion_coordinates,
-	    'deletion_sizes':deletion_sizes,
-	    'deletion_n':deletion_n,
-
-	    'all_substitution_positions':all_substitution_positions,
-	    'substitution_positions':substitution_positions,
-	    'all_substitution_values':np.array(all_substitution_values),
-	    'substitution_values':np.array(substitution_values),
-	    'substitution_n':substitution_n,
-
-	    'ref_positions':ref_positions,
-    }
-    return retDict
 
 @cython.boundscheck(False)
 @cython.nonecheck(False)
