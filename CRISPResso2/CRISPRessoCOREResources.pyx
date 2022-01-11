@@ -135,7 +135,6 @@ def find_indels_substitutions(read_seq_al, ref_seq_al, _include_indx):
     }
 
 
-
 @cython.boundscheck(False)
 @cython.nonecheck(False)
 @cython.wraparound(False)
