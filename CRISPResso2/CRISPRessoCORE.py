@@ -341,13 +341,14 @@ def get_greater_qual_nuc(nuc1,qual1,nuc2,qual2):
 
     returns
     nuc: the nucleotide with the greater quality if nuc1 != nuc2
+    nucs_diff: whether the nucleotides were different
     """
     if nuc1 == nuc2:
-        return nuc1
+        return nuc1, False
     elif ord(qual1) >= ord(qual2):
-        return nuc1
+        return nuc1, True
     else:
-        return nuc2
+        return nuc2, True
 
 def get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2):
     """
@@ -365,6 +366,9 @@ def get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2
     aln_seq: consensus read alignment
     ref_seq: consensus ref alignment
     score: alignment homology score
+    caching_is_ok: boolean whether this merged alignment can be cached based on unmerged R1/R2 sequences
+                   If the merged alignment had to choose between R1 or R2 bases at a position based on quality, the merged alignment can't be cached
+                   because R1/R2 pair with the same sequence may have different qualities resulting in different alignments
     """
 
     # three sets of indices
@@ -384,6 +388,7 @@ def get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2
     final_aln = ""
     final_ref = ""
 
+    caching_is_ok = True # if I have to choose a final consensus base based on read quality, it's not ok to cache on raw R1/R2 sequences
 
     # iterate over all positions
     # aln1_seq and aln1_ref have the same length, so it doesn't matter which one we choose
@@ -398,12 +403,15 @@ def get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2
         if ind_r1_start <= seq_ind_in_r1 <= ind_r1_stop:
             if ind_r2_start <= seq_ind_in_r2 <= ind_r2_stop:
                 # both are in range
-                this_nuc = get_greater_qual_nuc(
+                this_nuc, nucs_diff = get_greater_qual_nuc(
                     aln1_seq[seq_ind_in_r1],
                     qual1[qual_ind_in_r1],
                     aln2_seq[seq_ind_in_r2],
                     qual2[qual_ind_in_r2],
                 )
+                if nucs_diff:
+                    caching_is_ok = False
+
                 final_aln += this_nuc
                 final_ref += aln1_ref[ref_ind_in_r1]
             else:
@@ -462,7 +470,7 @@ def get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2
         if final_ref[i] == final_aln[i]:
             final_homology_score += 1
 
-    return final_aln, final_ref, int(100*final_homology_score/float(len(final_ref)))
+    return final_aln, final_ref, int(100*final_homology_score/float(len(final_ref))), caching_is_ok
 
 
 def get_new_variant_object_from_paired(args, fastq1_seq, fastq2_seq, fastq1_qual, fastq2_qual, refs, ref_names, aln_matrix, pe_scaffold_dna_info):
@@ -508,21 +516,21 @@ def get_new_variant_object_from_paired(args, fastq1_seq, fastq2_seq, fastq1_qual
         if found_forward_count > args.aln_seed_min and found_reverse_count == 0:
             r1_fws1, r1_fws2, r1_fwscore = CRISPResso2Align.global_align(fastq1_seq, refs[ref_name]['sequence'], matrix=aln_matrix, gap_incentive=refs[ref_name]['gap_incentive'], gap_open=args.needleman_wunsch_gap_open, gap_extend=args.needleman_wunsch_gap_extend,)
             r2_fws1, r2_fws2, r2_fwscore = CRISPResso2Align.global_align(fastq2_seq, refs[ref_name]['sequence'], matrix=aln_matrix, gap_incentive=refs[ref_name]['gap_incentive'], gap_open=args.needleman_wunsch_gap_open, gap_extend=args.needleman_wunsch_gap_extend,)
-            s1, s2, score = get_consensus_alignment_from_pairs(r1_fws1, r1_fws2, fastq1_qual, r2_fws1, r2_fws2, fastq2_qual)
+            s1, s2, score, caching_is_ok = get_consensus_alignment_from_pairs(r1_fws1, r1_fws2, fastq1_qual, r2_fws1, r2_fws2, fastq2_qual)
         elif found_forward_count == 0 and found_reverse_count > args.aln_seed_min:
             r1_rvs1, r1_rvs2, r1_rvscore = CRISPResso2Align.global_align(CRISPRessoShared.reverse_complement(fastq1_seq), refs[ref_name]['sequence'], matrix=aln_matrix, gap_incentive=refs[ref_name]['gap_incentive'], gap_open=args.needleman_wunsch_gap_open, gap_extend=args.needleman_wunsch_gap_extend,)
             r2_rvs1, r2_rvs2, r2_rvscore = CRISPResso2Align.global_align(CRISPRessoShared.reverse_complement(fastq2_seq), refs[ref_name]['sequence'], matrix=aln_matrix, gap_incentive=refs[ref_name]['gap_incentive'], gap_open=args.needleman_wunsch_gap_open, gap_extend=args.needleman_wunsch_gap_extend,)
-            s1, s2, score = get_consensus_alignment_from_pairs(r1_rvs1, r1_rvs2, fastq1_qual, r2_rvs1, r2_rvs2, fastq2_qual)
+            rvs1, rvs2, rvscore, caching_is_ok = get_consensus_alignment_from_pairs(r1_rvs1, r1_rvs2, fastq1_qual, r2_rvs1, r2_rvs2, fastq2_qual)
             s1 = rvs1
             s2 = rvs2
             score = rvscore
         else:
             r1_fws1, r1_fws2, r1_fwscore = CRISPResso2Align.global_align(fastq1_seq, refs[ref_name]['sequence'], matrix=aln_matrix, gap_incentive=refs[ref_name]['gap_incentive'], gap_open=args.needleman_wunsch_gap_open, gap_extend=args.needleman_wunsch_gap_extend,)
             r2_fws1, r2_fws2, r2_fwscore = CRISPResso2Align.global_align(fastq2_seq, refs[ref_name]['sequence'], matrix=aln_matrix, gap_incentive=refs[ref_name]['gap_incentive'], gap_open=args.needleman_wunsch_gap_open, gap_extend=args.needleman_wunsch_gap_extend,)
-            fws1, fws2, fwscore = get_consensus_alignment_from_pairs(r1_fws1, r1_fws2, fastq1_qual, r2_fws1, r2_fws2, fastq2_qual)
+            fws1, fws2, fwscore, caching_is_ok = get_consensus_alignment_from_pairs(r1_fws1, r1_fws2, fastq1_qual, r2_fws1, r2_fws2, fastq2_qual)
             r1_rvs1, r1_rvs2, r1_rvscore = CRISPResso2Align.global_align(CRISPRessoShared.reverse_complement(fastq1_seq), refs[ref_name]['sequence'], matrix=aln_matrix, gap_incentive=refs[ref_name]['gap_incentive'], gap_open=args.needleman_wunsch_gap_open, gap_extend=args.needleman_wunsch_gap_extend,)
             r2_rvs1, r2_rvs2, r2_rvscore = CRISPResso2Align.global_align(CRISPRessoShared.reverse_complement(fastq2_seq), refs[ref_name]['sequence'], matrix=aln_matrix, gap_incentive=refs[ref_name]['gap_incentive'], gap_open=args.needleman_wunsch_gap_open, gap_extend=args.needleman_wunsch_gap_extend,)
-            rvs1, rvs2, rvscore = get_consensus_alignment_from_pairs(r1_rvs1, r1_rvs2, fastq1_qual, r2_rvs1, r2_rvs2, fastq2_qual)
+            rvs1, rvs2, rvscore, caching_is_ok = get_consensus_alignment_from_pairs(r1_rvs1, r1_rvs2, fastq1_qual, r2_rvs1, r2_rvs2, fastq2_qual)
 
             s1 = fws1
             s2 = fws2
@@ -554,6 +562,7 @@ def get_new_variant_object_from_paired(args, fastq1_seq, fastq2_seq, fastq1_qual
         new_variant['aln_scores'] = aln_scores
         new_variant['ref_aln_details'] = ref_aln_details
         new_variant['best_match_score'] = best_match_score
+        new_variant['caching_is_ok'] = caching_is_ok
         class_names = []
 
         for idx in range(len(best_match_names)):
@@ -595,6 +604,7 @@ def get_new_variant_object_from_paired(args, fastq1_seq, fastq2_seq, fastq1_qual
         new_variant['aln_scores'] = aln_scores
         new_variant['ref_aln_details'] = ref_aln_details
         new_variant['best_match_score'] = best_match_score
+        new_variant['caching_is_ok'] = caching_is_ok
         return new_variant #return new variant with best match score of 0, but include the scores of insufficient alignments
 
     #handle ambiguous alignments
@@ -810,22 +820,40 @@ def process_paired_fastq(fastq1_filename, fastq2_filename, variantCache, ref_nam
         #if the sequence has been seen and can't be aligned, skip it
         #cache the sequence of both r1 and r2 sequences as lookup_fastq_seq
         lookup_fastq_seq = fastq1_seq + "+" + fastq2_seq
-        if (lookup_fastq_seq in not_aln):
+        if lookup_fastq_seq in not_aln:
             N_CACHED_NOTALN += 1
             continue
-        #if the sequence is already associated with a variant in the variant cache, pull it out
-        if (lookup_fastq_seq in variantCache):
-            N_CACHED_ALN+=1
+        # if the sequence is already associated with a variant in the variant cache, pull it out
+        if lookup_fastq_seq in variantCache:
+            N_CACHED_ALN += 1
             variantCache[lookup_fastq_seq]['count'] += 1
 
-        #otherwise, create a new variant object, and put it in the cache
+        # otherwise, create a new variant object, and put it in the cache
         else:
             new_variant = get_new_variant_object_from_paired(args, fastq1_seq, fastq2_seq, fastq1_qual, fastq2_qual, refs, ref_names, aln_matrix, pe_scaffold_dna_info)
+            # Edge case where merged alignments are different because of differences in base quality that prefer t
+            #    R1                  R1
+            # ------A--         --G----------           ----A----
+            #qual   HI            Lo
+            # ------A--         --G----------  =>       ----G----
+            #qual   Lo            Hi
+            # but we wouldn't be able to see which alignment outcome would be produces without aligning every single read (no caching?)
+            # Solutions:
+            # 1) (bad) align everything (no cache)
+            # 2) get_new_variant_object_from_paired returns a bool if it had to choose between two bases based on quality - meaning that we couldn't cache future alignements?
+
+            # if we shouldn't cache it, change the lookup from the R1 + R2 seqs to "R1 R2 num" where num makes the key unique
+            if not new_variant['caching_is_ok']:
+                inc_counter = 0
+                orig_lookup_fastq_seq = lookup_fastq_seq
+                while lookup_fastq_seq in not_aln or lookup_fastq_seq in variantCache:
+                    lookup_fastq_seq = orig_lookup_fastq_seq + " " + str(inc_counter)
+                    inc_counter += 1
             if new_variant['best_match_score'] <= 0:
-                N_COMPUTED_NOTALN+=1
+                N_COMPUTED_NOTALN += 1
                 not_aln[lookup_fastq_seq] = 1
             else:
-                N_COMPUTED_ALN+=1
+                N_COMPUTED_ALN += 1
                 variantCache[lookup_fastq_seq] = new_variant
 
     fastq1_handle.close()
