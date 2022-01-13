@@ -2446,14 +2446,43 @@ def main():
                 TRIMMOMATIC_STATUS=sb.call(cmd, shell=True)
 
                 if TRIMMOMATIC_STATUS:
-                        raise CRISPRessoShared.TrimmomaticException('TRIMMOMATIC failed to run, please check the log file.')
+                    raise CRISPRessoShared.TrimmomaticException('TRIMMOMATIC failed to run, please check the log file.')
                 crispresso2_info['trimmomatic_command'] = cmd
 
                 files_to_remove += [output_forward_filename]
 
-            processed_output_filename=output_forward_filename
+            processed_output_filename = output_forward_filename
 
-        elif args.fastq_r1 != '' and args.fastq_r2 != '':#paired end reads
+        elif args.process_paired_fastq:  # if reads are to be processed without merging
+            if args.fastq_output:
+                raise CRISPRessoShared.BadParameterException('The parameter --fastq_output cannot be used with the --process_paired_fastq parameter.')
+            if not args.trim_sequences:
+                output_forward_paired_filename = args.fastq_r1
+                output_reverse_paired_filename = args.fastq_r2
+            else:
+                info('Trimming sequences with Trimmomatic...')
+                output_forward_paired_filename = _jp('output_forward_paired.fq.gz')
+                output_forward_unpaired_filename = _jp('output_forward_unpaired.fq.gz')
+                output_reverse_paired_filename = _jp('output_reverse_paired.fq.gz')
+                output_reverse_unpaired_filename = _jp('output_reverse_unpaired.fq.gz')
+
+                #Trimming with trimmomatic
+                cmd='%s PE -phred33 %s  %s %s  %s  %s  %s %s >>%s 2>&1'\
+                    % (args.trimmomatic_command,
+                        args.fastq_r1, args.fastq_r2, output_forward_paired_filename,
+                        output_forward_unpaired_filename, output_reverse_paired_filename,
+                        output_reverse_unpaired_filename, args.trimmomatic_options_string, log_filename)
+                #print cmd
+                TRIMMOMATIC_STATUS=sb.call(cmd, shell=True)
+                if TRIMMOMATIC_STATUS:
+                    raise CRISPRessoShared.TrimmomaticException('TRIMMOMATIC failed to run, please check the log file.')
+                crispresso2_info['trimmomatic_command'] = cmd
+
+                files_to_remove += [output_forward_paired_filename]
+                files_to_remove += [output_reverse_paired_filename]
+
+                info('Done!')
+        elif args.fastq_r1 != '' and args.fastq_r2 != '':# paired end reads with merging
             if not args.trim_sequences:
                 output_forward_paired_filename=args.fastq_r1
                 output_reverse_paired_filename=args.fastq_r2
@@ -2585,8 +2614,10 @@ def main():
         variantCache[cache_fastq_seq] = {}
         variantCache[cache_fastq_seq]['count'] = 0
 
-        #operates on variantCache
-        if args.bam_input:
+        # operates on variantCache
+        if args.process_paired_fastq:
+            aln_stats = process_paired_fastq(output_forward_paired_filename, output_reverse_paired_filename, variantCache, ref_names, refs, args)
+        elif args.bam_input:
             aln_stats = process_bam(args.bam_input, args.bam_chr_loc, crispresso2_info['bam_output'], variantCache, ref_names, refs, args)
         elif args.fastq_output:
             aln_stats = process_fastq_write_out(processed_output_filename, crispresso2_info['fastq_output'], variantCache, ref_names, refs, args)

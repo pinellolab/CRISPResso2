@@ -185,6 +185,9 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('-p', '--n_processes', type=str, help='Specify the number of processes to use for analysis.\
     Please use with caution since increasing this parameter will significantly increase the memory required to run CRISPResso. Can be set to \'max\'.', default='1')
 
+    #processing of paired fastq files (without flash merging)
+    parser.add_argument('--process_paired_fastq',  help='If true, paired ends reads are aligned to the reference sequence and then merged (instead of merging before alignment by flash)', action='store_true')
+
     #processing of aligned bam files
     parser.add_argument('--bam_input', type=str,  help='Aligned reads for processing in bam format', default='')
     parser.add_argument('--bam_chr_loc', type=str,  help='Chromosome location in bam for reads to process. For example: "chr1:50-100" or "chrX".', default='')
