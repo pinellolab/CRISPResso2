@@ -159,9 +159,12 @@
               <div class='card-header'>
                 <h5>Summary Plots</h5>
               </div>
-              <div class='card-body'>
-            <a href="{{crispresso_data_path}}{{href}}"><img src="{{crispresso_data_path}}{{img}}" width='80%' ></a>
-            {% endfor %}
+              <div class='card-body p-0'>
+                <div class="list-group list-group-flush" style='max-height:80vh;overflow-y:auto'>
+							  {% for compact_plot in compact_plots_to_show %}
+	      <a href="{{crispresso_data_path}}{{compact_plots_to_show[compact_plot]['href']}}" data-toggle="tooltip" title="{{compact_plot}}" class="list-group-item list-group-item-action p-0"><img src="{{crispresso_data_path}}{{compact_plots_to_show[compact_plot]['img']}}" width='100%' ></a>
+                {% endfor %}
+              </div>
               </div>
             </div>
           {% endif %}

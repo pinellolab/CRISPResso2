@@ -394,6 +394,12 @@ def make_aggregate_report(crispresso2_info,report_name,crispresso_report_file,cr
         sub_html_file = os.path.relpath(crispresso_html_reports[folder], crispresso_report_folder)
         sub_html_files[display_name] = sub_html_file
 
+    for compact_plot in compact_plots_to_show:
+        old_href = compact_plots_to_show[compact_plot]['href']
+        compact_plots_to_show[compact_plot]['href'] = os.path.relpath(old_href, crispresso_report_folder)
+        old_img = compact_plots_to_show[compact_plot]['img']
+        compact_plots_to_show[compact_plot]['img'] = os.path.relpath(old_img, crispresso_report_folder)
+
     make_multi_report(run_names, sub_html_files, crispresso_report_file, crispresso_report_folder, _ROOT, report_name,
             window_nuc_pct_quilts=window_nuc_pct_quilts,
             nuc_pct_quilts=nuc_pct_quilts,
