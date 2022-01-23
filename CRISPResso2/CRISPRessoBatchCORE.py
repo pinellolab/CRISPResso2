@@ -40,41 +40,41 @@ def propagate_options(cmd, options, params, paramInd):
 # params - df from excel parser e.g. params['amplicon_name'] = ['name1','name2','name3'] where each item corresponds to a different run in the batch
 # paramInd - index in dict - this is the run number in the batch
 
-    for option in options :
+    for option in options:
         if option:
             if option in params:
                 val = params.loc[paramInd, option]
                 if val is None:
                     pass
                 elif str(val) == "True":
-                    cmd+=' --%s' % option
-                elif str(val) =="False":
+                    cmd += ' --%s' % option
+                elif str(val) == "False":
                     pass
                 elif isinstance(val, str):
                     if val != "":
                         if " " in val or "-" in val:
-                            cmd+=' --%s "%s"' % (option, str(val)) # quotes for options with spaces
+                            cmd += ' --%s "%s"' % (option, str(val))  # quotes for options with spaces
                         else:
-                            cmd+=' --%s %s' % (option, str(val))
+                            cmd += ' --%s %s' % (option, str(val))
                 elif isinstance(val, bool):
                     if val:
-                        cmd+=' --%s' % option
+                        cmd += ' --%s' % option
                 else:
-                    cmd+=' --%s %s' % (option, str(val))
+                    cmd += ' --%s %s' % (option, str(val))
 #    print("cmd is " + str(cmd))
     return cmd
 
 def check_library(library_name):
-        try:
-                return __import__(library_name)
-        except:
-                error('You need to install %s module to use CRISPRessoBatch!' % library_name)
-                sys.exit(1)
+    try:
+        return __import__(library_name)
+    except:
+        error('You need to install %s module to use CRISPRessoBatch!' % library_name)
+        sys.exit(1)
 
 
+pd = check_library('pandas')
+np = check_library('numpy')
 
-pd=check_library('pandas')
-np=check_library('numpy')
 
 def main():
     try:
@@ -111,7 +111,6 @@ def main():
 
         CRISPRessoShared.check_file(args.batch_settings)
 
-
         batch_folder_name = os.path.splitext(os.path.basename(args.batch_settings))[0]
         if args.name and args.name != "":
             clean_name = CRISPRessoShared.slugify(args.name)
@@ -123,13 +122,13 @@ def main():
                 )
             batch_folder_name = clean_name
 
-        output_folder_name='CRISPRessoBatch_on_%s' % batch_folder_name
-        OUTPUT_DIRECTORY=os.path.abspath(output_folder_name)
+        output_folder_name = 'CRISPRessoBatch_on_%s' % batch_folder_name
+        OUTPUT_DIRECTORY = os.path.abspath(output_folder_name)
 
         if args.batch_output_folder:
-                 OUTPUT_DIRECTORY=os.path.join(os.path.abspath(args.batch_output_folder), output_folder_name)
+                 OUTPUT_DIRECTORY = os.path.join(os.path.abspath(args.batch_output_folder), output_folder_name)
 
-        _jp=lambda filename: os.path.join(OUTPUT_DIRECTORY, filename) #handy function to put a file in the output directory
+        _jp = lambda filename: os.path.join(OUTPUT_DIRECTORY, filename) #handy function to put a file in the output directory
 
         try:
                  info('Creating Folder %s' % OUTPUT_DIRECTORY)
@@ -137,7 +136,7 @@ def main():
         except:
                  warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
 
-        log_filename=_jp('CRISPRessoBatch_RUNNING_LOG.txt')
+        log_filename = _jp('CRISPRessoBatch_RUNNING_LOG.txt')
         logger.addHandler(logging.FileHandler(log_filename))
 
         with open(log_filename, 'w+') as outfile:
@@ -156,7 +155,7 @@ def main():
         else:
             n_processes_for_batch = int(args.n_processes)
 
-        #this value will be propagated to sub-commands, so set it as 1 here
+        # this value will be propagated to sub-commands, so set it as 1 here
         args.n_processes = 1
 
         crispresso_cmd_to_write = ' '.join(sys.argv)
@@ -167,16 +166,16 @@ def main():
                 if os.sep in cmd_copy[i]:
                     cmd_copy[i] = os.path.basename(cmd_copy[i])
 
-            crispresso_cmd_to_write = ' '.join(cmd_copy) #clean command doesn't show the absolute path to the executable or other files
+            crispresso_cmd_to_write = ' '.join(cmd_copy) # clean command doesn't show the absolute path to the executable or other files
         crispresso2_info['running_info']['command_used'] = crispresso_cmd_to_write
 
         ##parse excel sheet
-        batch_params=pd.read_csv(args.batch_settings, comment='#', sep='\t')
-        #pandas either allows for auto-detect sep or for comment. not both
+        batch_params = pd.read_csv(args.batch_settings, comment='#', sep='\t')
+        # pandas either allows for auto-detect sep or for comment. not both
 #        batch_params=pd.read_csv(args.batch_settings,sep=None,engine='python',error_bad_lines=False)
         batch_params.columns = batch_params.columns.str.strip(' -\xd0')
 
-        #rename column "a" to "amplicon_seq", etc
+        # rename column "a" to "amplicon_seq", etc
         batch_params.rename(index=str, columns=CRISPRessoShared.get_crispresso_options_lookup(), inplace=True)
         batch_count = batch_params.shape[0]
         batch_params.index = range(batch_count)
@@ -185,7 +184,7 @@ def main():
             raise CRISPRessoShared.BadParameterException("fastq_r1 must be specified in the batch settings file. Current headings are: "
                     + str(batch_params.columns.values))
 
-        #add args from the command line to batch_params_df
+        # add args from the command line to batch_params_df
         for arg in vars(args):
             if arg not in batch_params:
                 batch_params[arg] = getattr(args, arg)
@@ -193,8 +192,8 @@ def main():
                 if (getattr(args, arg) is not None):
                     batch_params[arg].fillna(value=getattr(args, arg), inplace=True)
 
-        #assert that all names are unique
-        #and clean names
+        # assert that all names are unique
+        # and clean names
 
         for i in range(batch_count):
             if batch_params.loc[i, 'name'] == '':
@@ -204,10 +203,10 @@ def main():
         if batch_params.drop_duplicates('name').shape[0] != batch_params.shape[0]:
             raise CRISPRessoShared.BadParameterException('Batch input names must be unique. The given names are not unique: ' + str(batch_params.loc[:, 'name']))
 
-        #Check files
-        batch_params["sgRNA_intervals"] = '' #create empty array for sgRNA intervals
+        # Check files
+        batch_params["sgRNA_intervals"] = '' # create empty array for sgRNA intervals
         batch_params["sgRNA_intervals"] = batch_params["sgRNA_intervals"].apply(list)
-        batch_params["cut_point_include_idx"] = '' #create empty array for cut point intervals for each batch based on sgRNA
+        batch_params["cut_point_include_idx"] = '' # create empty array for cut point intervals for each batch based on sgRNA
         batch_params["cut_point_include_idx"] = batch_params["cut_point_include_idx"].apply(list)
         for idx, row in batch_params.iterrows():
             if 'fastq_r1' in row:
@@ -233,20 +232,20 @@ def main():
                 raise CRISPRessoShared.BadParameterException("Amplicon sequence must be given as a command line parameter or be specified in the batch settings file with the heading 'amplicon_seq' (Amplicon seq on row %s '%s' is invalid)"%(int(idx)+1, curr_amplicon_seq_str))
 
             guides_are_in_amplicon = {} #dict of whether a guide is in at least one amplicon sequence
-            #iterate through amplicons
+            # iterate through amplicons
             for curr_amplicon_seq in str(curr_amplicon_seq_str).split(','):
-                this_include_idxs=[] #mask for bp to include for this amplicon seq, as specified by sgRNA cut points
+                this_include_idxs=[] # mask for bp to include for this amplicon seq, as specified by sgRNA cut points
                 this_sgRNA_intervals = []
-                wrong_nt=CRISPRessoShared.find_wrong_nt(curr_amplicon_seq)
+                wrong_nt = CRISPRessoShared.find_wrong_nt(curr_amplicon_seq)
                 if wrong_nt:
                     raise CRISPRessoShared.NTException('The amplicon sequence in row %d (%s) contains incorrect characters:%s' % (idx+1, curr_amplicon_seq_str, ' '.join(wrong_nt)))
 
-                #iterate through guides
+                # iterate through guides
                 curr_guide_seq_string = row.guide_seq
                 if curr_guide_seq_string is not None and curr_guide_seq_string != "":
                     guides = str(curr_guide_seq_string).strip().upper().split(',')
                     for curr_guide_seq in guides:
-                        wrong_nt=CRISPRessoShared.find_wrong_nt(curr_guide_seq)
+                        wrong_nt = CRISPRessoShared.find_wrong_nt(curr_guide_seq)
                         if wrong_nt:
                             raise CRISPRessoShared.NTException('The sgRNA sequence in row %d (%s) contains incorrect characters:%s'  % (idx+1, curr_guide_seq, ' '.join(wrong_nt)))
                     guide_mismatches = [[]]*len(guides)
@@ -290,7 +289,7 @@ def main():
 
         CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_batch, 'batch', args.skip_failed)
 
-        run_datas = [] #crispresso2 info from each row
+        run_datas = [] # crispresso2 info from each row
 
         all_amplicons = set()
         amplicon_names = {}
@@ -310,25 +309,25 @@ def main():
             for ref_name in run_data['results']['ref_names']:
                 ref_seq = run_data['results']['refs'][ref_name]['sequence']
                 all_amplicons.add(ref_seq)
-                #if this amplicon is called something else in another sample, just call it the amplicon
+                # if this amplicon is called something else in another sample, just call it the amplicon
                 if ref_name in amplicon_names and amplicon_names[ref_seq] != ref_name:
                     amplicon_names[ref_seq] = ref_seq
                 else:
                     amplicon_names[ref_seq] = ref_name
                 if ref_seq not in amplicon_counts:
                     amplicon_counts[ref_seq] = 0
-                amplicon_counts[ref_seq]+= 1
+                amplicon_counts[ref_seq] += 1
 
             completed_batch_arr.append(batch_name)
 
         crispresso2_info['results']['completed_batch_arr'] = completed_batch_arr
 
-        #make sure amplicon names aren't super long
+        # make sure amplicon names aren't super long
         for amplicon in all_amplicons:
             if len(amplicon_names[amplicon]) > 21:
                 amplicon_names[amplicon] = amplicon_names[amplicon][0:21]
 
-        #make sure no duplicate names (same name for the different amplicons)
+        # make sure no duplicate names (same name for the different amplicons)
         seen_names = {}
         for amplicon in all_amplicons:
             suffix_counter = 2
@@ -337,7 +336,6 @@ def main():
                 amplicon_names[amplicon] = orig_name+"_"+str(suffix_counter)
                 suffix_counter += 1
             seen_names[amplicon_names[amplicon]] = 1
-
 
         save_png = True
         if args.suppress_report:
@@ -352,9 +350,9 @@ def main():
         crispresso2_info['results']['general_plots']['summary_plot_labels'] = {}
         crispresso2_info['results']['general_plots']['summary_plot_datas'] = {}
 
-        #report for amplicons
+        # report for amplicons
         for amplicon_index, amplicon_seq in enumerate(all_amplicons):
-            #only perform comparison if amplicon seen in more than one sample
+            # only perform comparison if amplicon seen in more than one sample
             if amplicon_counts[amplicon_seq] < 1:
                 continue
 
@@ -502,15 +500,13 @@ def main():
                 crispresso2_info['results']['modification_frequency_summary_filename'] = os.path.basename(modification_frequency_summary_filename)
                 crispresso2_info['results']['modification_percentage_summary_filename'] = os.path.basename(modification_percentage_summary_filename)
 
-
-                #if guides are all the same, merge substitutions and perform base editor comparison at guide quantification window
+                # if guides are all the same, merge substitutions and perform base editor comparison at guide quantification window
                 if guides_all_same and consensus_guides != []:
                     info("All guides are equal. Performing comparison of batches for amplicon '%s'"% amplicon_name)
-                    include_idxs = consensus_include_idxs #include indexes are the same for all guides
+                    include_idxs = consensus_include_idxs  # include indexes are the same for all guides
                     for idx, sgRNA in enumerate(consensus_guides):
-                        sgRNA_intervals = consensus_sgRNA_intervals[idx]
                         sgRNA_plot_idxs = consensus_sgRNA_plot_idxs[idx]
-                        plot_idxs_flat = [0, 1] # guide, nucleotide
+                        plot_idxs_flat = [0, 1]  # guide, nucleotide
                         plot_idxs_flat.extend([plot_idx + 2 for plot_idx in sgRNA_plot_idxs])
 
                         sub_nucleotide_frequency_summary_df = nucleotide_frequency_summary_df.iloc[:, plot_idxs_flat]
@@ -582,7 +578,7 @@ def main():
                                                                                 ]
                         # done with per-amplicon plots
 
-                    if not args.suppress_plots and not args.suppress_batch_summary_plots: # plot the whole region
+                    if not args.suppress_plots and not args.suppress_batch_summary_plots:  # plot the whole region
                         this_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt')
                         CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df, modification_percentage_summary_df, this_nuc_pct_quilt_plot_name, save_png, sgRNA_intervals=consensus_sgRNA_intervals, quantification_window_idxs=include_idxs)
                         plot_name = os.path.basename(this_nuc_pct_quilt_plot_name)
@@ -604,7 +600,7 @@ def main():
                             crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = args.conversion_nuc_from + '->' + args.conversion_nuc_to +' conversion rates for the amplicon ' + amplicon_name
                             crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), ('Modification frequencies', os.path.basename(modification_frequency_summary_filename))]
 
-                else: #guides are not the same
+                else:  # guides are not the same
                     if not args.suppress_plots and not args.suppress_batch_summary_plots:
                         this_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt')
                         CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df, modification_percentage_summary_df, this_nuc_pct_quilt_plot_name, save_png)
@@ -620,13 +616,12 @@ def main():
                             crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = args.conversion_nuc_from + '->' + args.conversion_nuc_to +' conversion rates for the amplicon ' + amplicon_name
                             crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), ('Modification frequencies', os.path.basename(modification_frequency_summary_filename))]
 
-
         crispresso2_info['results']['general_plots']['window_nuc_pct_quilt_plot_names'] = window_nuc_pct_quilt_plot_names
         crispresso2_info['results']['general_plots']['nuc_pct_quilt_plot_names'] = nuc_pct_quilt_plot_names
         crispresso2_info['results']['general_plots']['window_nuc_conv_plot_names'] = window_nuc_conv_plot_names
         crispresso2_info['results']['general_plots']['nuc_conv_plot_names'] = nuc_conv_plot_names
 
-        #summarize amplicon modifications
+        # summarize amplicon modifications
         with open(_jp('CRISPRessoBatch_quantification_of_editing_frequency.txt'), 'w') as outfile:
             wrote_header = False
             for idx, row in batch_params.iterrows():
@@ -646,7 +641,7 @@ def main():
                         outfile.write(batch_name + "\t" + line)
 
 
-        #summarize frameshift and splicing site mods
+        # summarize frameshift and splicing site mods
         with open(_jp('CRISPRessoBatch_quantification_of_frameshift_splicing.txt'), 'w') as outfile:
             outfile.write("\t".join(['Batch','Reference','total_reads','modified_frameshift','modified_non_frameshift','non_modified_non_frameshift','splicing_sites_modified','splice_sites_unmodified'])+"\n")
             for idx, row in batch_params.iterrows():
@@ -665,7 +660,7 @@ def main():
                     count_splicing_sites_unmodified = count_total - count_splicing_sites_modified
                     outfile.write("\t".join([str(x) for x in [batch_name,ref_name,count_total,count_modified_frameshift,count_modified_non_frameshift,count_non_modified_non_frameshift,count_splicing_sites_modified,count_splicing_sites_unmodified]])+"\n")
 
-        #summarize alignment
+        # summarize alignment
         with open(_jp('CRISPRessoBatch_mapping_statistics.txt'), 'w') as outfile:
             wrote_header = False
             for idx, row in batch_params.iterrows():
@@ -693,11 +688,13 @@ def main():
             crispresso2_info['running_info']['report_location'] = report_name
             crispresso2_info['running_info']['report_filename'] = os.path.basename(report_name)
 
-        end_time =  datetime.now()
-        end_time_string =  end_time.strftime('%Y-%m-%d %H:%M:%S')
+        end_time = datetime.now()
+        end_time_string = end_time.strftime('%Y-%m-%d %H:%M:%S')
         running_time = end_time - start_time
-        running_time_string =  str(running_time)
+        running_time_string = str(running_time)
 
+        crispresso2_info['running_info']['start_time'] = start_time
+        crispresso2_info['running_info']['start_time_string'] = start_time_string
         crispresso2_info['running_info']['end_time'] = end_time
         crispresso2_info['running_info']['end_time_string'] = end_time_string
         crispresso2_info['running_info']['running_time'] = running_time
