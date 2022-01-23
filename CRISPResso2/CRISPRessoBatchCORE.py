@@ -576,7 +576,7 @@ def main():
                                 crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Nucleotide frequencies around sgRNA', os.path.basename(sub_nucleotide_frequency_summary_filename)),
                                                                                     ('Nucleotide percentages around sgRNA', os.path.basename(sub_nucleotide_percentage_summary_filename))
                                                                                 ]
-                        # done with per-amplicon plots
+                        # done with per-sgRNA plots
 
                     if not args.suppress_plots and not args.suppress_batch_summary_plots:  # plot the whole region
                         this_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt')
