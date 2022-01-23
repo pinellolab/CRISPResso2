@@ -56,7 +56,7 @@
                 <h5>{{report_name}}</h5>
               </div>
               <div class='card-body p-0'>
-                <div class="list-group list-group-flush">
+                <div class="list-group list-group-flush" style='max-height:80vh;overflow-y:auto'>
               {% for run_name in run_names %}
 	      <a href="{{crispresso_data_path}}{{sub_html_files[run_name]}}" class="list-group-item list-group-item-action">{{run_name}}</a>
                 {% endfor %}
@@ -152,6 +152,18 @@
               </div>
             </div>
             {% endfor %}
+          {% endif %}
+
+          {% if compact_plots_to_show|length > 0 %}
+            <div class='card text-center mb-2'>
+              <div class='card-header'>
+                <h5>Summary Plots</h5>
+              </div>
+              <div class='card-body'>
+            <a href="{{crispresso_data_path}}{{href}}"><img src="{{crispresso_data_path}}{{img}}" width='80%' ></a>
+            {% endfor %}
+              </div>
+            </div>
           {% endif %}
 
 

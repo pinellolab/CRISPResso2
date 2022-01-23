@@ -5,12 +5,9 @@ Software pipeline for the analysis of genome editing outcomes from deep sequenci
 '''
 
 import os
-import sys
 from jinja2 import Environment, FileSystemLoader
-import shutil
-import pandas as pd
-import re
 from CRISPResso2 import CRISPRessoShared
+
 
 def make_report_from_folder(crispresso_report_file, crispresso_folder, _ROOT):
     """
@@ -306,7 +303,8 @@ def make_multi_report(run_names,sub_html_files,crispresso_multi_report_file,cris
     summary_plot_names=[],
     summary_plot_titles={},
     summary_plot_labels={},
-    summary_plot_datas={}
+    summary_plot_datas={},
+    compact_plots_to_show={}
 ):
         """
         Makes an HTML report for a run containing multiple crispresso runs
@@ -323,6 +321,7 @@ def make_multi_report(run_names,sub_html_files,crispresso_multi_report_file,cris
         summary_plot_titles (dict): dict of plot_name->plot_title
         summary_plot_labels (dict): dict of plot_name->plot_label
         summary_plot_datas (dict): dict of plot_name->(datafile_description, data_filename)
+        compact_plots_to_show (dict): name=>{'href': path to target(report) when user clicks on image, 'img': path to png image to show}
 
         """
 
@@ -342,10 +341,10 @@ def make_multi_report(run_names,sub_html_files,crispresso_multi_report_file,cris
         outfile.write(template.render(window_nuc_pct_quilts=window_nuc_pct_quilts, nuc_pct_quilts=nuc_pct_quilts,
             window_nuc_conv_plots=window_nuc_conv_plots, nuc_conv_plots=nuc_conv_plots, crispresso_data_path=crispresso_data_path,
             summary_plot_names=summary_plot_names, summary_plot_titles=summary_plot_titles, summary_plot_labels=summary_plot_labels, summary_plot_datas=summary_plot_datas,
-            run_names=run_names, sub_html_files=sub_html_files, report_name=report_name))
+            run_names=run_names, sub_html_files=sub_html_files, report_name=report_name, compact_plots_to_show=compact_plots_to_show))
         outfile.close()
 
-def make_aggregate_report(crispresso2_info,report_name,crispresso_report_file,crispresso_report_folder,_ROOT,folder_arr,crispresso_html_reports,display_names=None):
+def make_aggregate_report(crispresso2_info,report_name,crispresso_report_file,crispresso_report_folder,_ROOT,folder_arr,crispresso_html_reports,compact_plots_to_show={},display_names=None):
     """
     Prepares information to make a report of a CRISPRessoAggregate run
 
@@ -357,6 +356,7 @@ def make_aggregate_report(crispresso2_info,report_name,crispresso_report_file,cr
     _ROOT (string): location of crispresso assets (images, templates, etc)
     folder_arr (arr of strings): paths to the aggregated crispresso folders
     crispresso_html_reports (dict): folder->html_path; Paths to the aggregated crispresso run html reports
+    compact_plots_to_show (dict): name=>{'href': path to target(report) when user clicks on image, 'img': path to png image to show}
     display_names (dict): folder->display_name; Titles to be shown for crispresso runs (if different from names_arr, e.g. if display_names have spaces or bad chars, they won't be the same as names_arr)
 
     Returns:
@@ -397,4 +397,6 @@ def make_aggregate_report(crispresso2_info,report_name,crispresso_report_file,cr
     make_multi_report(run_names, sub_html_files, crispresso_report_file, crispresso_report_folder, _ROOT, report_name,
             window_nuc_pct_quilts=window_nuc_pct_quilts,
             nuc_pct_quilts=nuc_pct_quilts,
-            summary_plot_names=summary_plot_names, summary_plot_titles=summary_plot_titles, summary_plot_labels=summary_plot_labels, summary_plot_datas=summary_plot_datas)
+            summary_plot_names=summary_plot_names, summary_plot_titles=summary_plot_titles,
+            summary_plot_labels=summary_plot_labels, summary_plot_datas=summary_plot_datas,
+            compact_plots_to_show=compact_plots_to_show)

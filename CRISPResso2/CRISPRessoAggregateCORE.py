@@ -10,7 +10,6 @@ import glob
 from copy import deepcopy
 import sys
 import argparse
-import re
 import numpy as np
 import pandas as pd
 import traceback
@@ -192,24 +191,32 @@ ___________________________________
             crispresso2_folders = crispresso2_folder_infos.keys()
             crispresso2_folder_names = {}
             crispresso2_folder_htmls = {}#file_loc->html folder loc
+            quilt_plots_to_show = {}  # name->{'href':path to report, 'img': png}
             for crispresso2_folder in crispresso2_folders:
-                crispresso2_folder_names[crispresso2_folder] = CRISPRessoShared.slugify(crispresso2_folder)
+                this_folder_name = CRISPRessoShared.slugify(crispresso2_folder)
+                crispresso2_folder_names[crispresso2_folder] = this_folder_name
                 this_sub_html_file = crispresso2_folder+".html"
                 if crispresso2_folder_infos[crispresso2_folder]['running_info']['args'].place_report_in_output_folder:
                     this_sub_html_file = os.path.join(crispresso2_folder, crispresso2_folder_infos[crispresso2_folder]['running_info']['report_filename'])
                 crispresso2_folder_htmls[crispresso2_folder] = os.path.abspath(this_sub_html_file)
 
+                run_data = crispresso2_folder_infos[crispresso2_folder]
+                for ref_name in run_data['results']['ref_names']:
+                    if 'plot_2b_roots' in run_data['results']['refs'][ref_name]:
+                        for plot_root in run_data['results']['refs'][ref_name]['plot_2b_roots']:
+                            quilt_plots_to_show[this_folder_name+" "+ref_name] = {'href': this_sub_html_file,
+                                    'img': os.path.abspath(os.path.join(crispresso2_folder,plot_root+".png"))}
+
             all_amplicons = set()
-            amplicon_names = {} #sequence -> ref name (to check for amplicons with the same name but different sequences)
+            amplicon_names = {}  # sequence -> ref name (to check for amplicons with the same name but different sequences)
             amplicon_counts = {}
             amplicon_sources = {}
-            completed_batch_arr = []
             for crispresso2_folder in crispresso2_folders:
                 run_data = crispresso2_folder_infos[crispresso2_folder]
                 for ref_name in run_data['results']['ref_names']:
                     ref_seq = run_data['results']['refs'][ref_name]['sequence']
                     all_amplicons.add(ref_seq)
-                    #if this amplicon is called something else in another sample, just call it the amplicon
+                    # if this amplicon is called something else in another sample, just call it the amplicon
                     if ref_name in amplicon_names and amplicon_names[ref_seq] != ref_name:
                         amplicon_names[ref_seq] = ref_seq
                     else:
@@ -220,7 +227,7 @@ ___________________________________
                     amplicon_counts[ref_seq]+= 1
                     amplicon_sources[ref_seq].append(crispresso2_folder+'(' + ref_name + ')')
 
-            #make sure amplicon names aren't super long
+            # make sure amplicon names aren't super long
             for amplicon in all_amplicons:
                 if len(amplicon_names[amplicon]) > 21:
                     amplicon_names[amplicon] = amplicon_names[amplicon][0:21]
@@ -596,15 +603,21 @@ ___________________________________
                 report_filename = OUTPUT_DIRECTORY+'.html'
                 if (args.place_report_in_output_folder):
                     report_filename = _jp("CRISPResso2Aggregate_report.html")
-                CRISPRessoReport.make_aggregate_report(crispresso2_info, args.name, report_filename, OUTPUT_DIRECTORY, _ROOT, crispresso2_folders, crispresso2_folder_htmls)
+                CRISPRessoReport.make_aggregate_report(crispresso2_info, args.name,
+                                                       report_filename, OUTPUT_DIRECTORY,
+                                                       _ROOT, crispresso2_folders,
+                                                       crispresso2_folder_htmls,
+                                                       quilt_plots_to_show)
                 crispresso2_info['running_info']['report_location'] = report_filename
                 crispresso2_info['running_info']['report_filename'] = os.path.basename(report_filename)
 
-        end_time =  datetime.now()
-        end_time_string =  end_time.strftime('%Y-%m-%d %H:%M:%S')
+        end_time = datetime.now()
+        end_time_string = end_time.strftime('%Y-%m-%d %H:%M:%S')
         running_time = end_time - start_time
-        running_time_string =  str(running_time)
+        running_time_string = str(running_time)
 
+        crispresso2_info['running_info']['start_time'] = start_time
+        crispresso2_info['running_info']['start_time_string'] = start_time_string
         crispresso2_info['running_info']['end_time'] = end_time
         crispresso2_info['running_info']['end_time_string'] = end_time_string
         crispresso2_info['running_info']['running_time'] = running_time
