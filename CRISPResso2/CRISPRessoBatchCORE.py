@@ -98,6 +98,7 @@ def main():
         parser.add_argument('--skip_failed',  help='Continue with batch analysis even if one sample fails', action='store_true')
         parser.add_argument('--min_reads_for_inclusion',  help='Minimum number of reads for a batch to be included in the batch summary', type=int, default=0)
         parser.add_argument('-bo', '--batch_output_folder',  help='Directory where batch analysis output will be stored')
+        parser.add_argument('--suppress_batch_summary_plots',  help='Suppress batch summary plots - e.g. if many samples are run at once, the summary plots of all sub-runs may be too large. This parameter suppresses the production of these plots.')
         parser.add_argument('--crispresso_command', help='CRISPResso command to call', default='CRISPResso')
 
         args = parser.parse_args()
@@ -511,37 +512,52 @@ def main():
                         sgRNA_plot_idxs = consensus_sgRNA_plot_idxs[idx]
                         plot_idxs_flat = [0, 1] # guide, nucleotide
                         plot_idxs_flat.extend([plot_idx + 2 for plot_idx in sgRNA_plot_idxs])
+
                         sub_nucleotide_frequency_summary_df = nucleotide_frequency_summary_df.iloc[:, plot_idxs_flat]
+                        sub_nucleotide_frequency_summary_df = pd.concat([sub_nucleotide_frequency_summary_df.iloc[:, 0:2],
+                                                                    sub_nucleotide_frequency_summary_df.iloc[:, 2:].apply(pd.to_numeric)], axis=1)
+                        sub_nucleotide_frequency_summary_filename = _jp(amplicon_plot_name + 'Nucleotide_frequency_summary_around_sgRNA_'+sgRNA+'.txt')
+                        sub_nucleotide_frequency_summary_df.to_csv(sub_nucleotide_frequency_summary_filename, sep='\t', index=None)
+
                         sub_nucleotide_percentage_summary_df = nucleotide_percentage_summary_df.iloc[:, plot_idxs_flat]
+                        sub_nucleotide_percentage_summary_df = pd.concat([sub_nucleotide_percentage_summary_df.iloc[:, 0:2],
+                                                                    sub_nucleotide_percentage_summary_df.iloc[:, 2:].apply(pd.to_numeric)], axis=1)
+                        sub_nucleotide_percentage_summary_filename = _jp(amplicon_plot_name + 'Nucleotide_percentage_summary_around_sgRNA_'+sgRNA+'.txt')
+                        sub_nucleotide_percentage_summary_df.to_csv(sub_nucleotide_percentage_summary_filename, sep='\t', index=None)
+
                         sub_modification_percentage_summary_df = modification_percentage_summary_df.iloc[:, plot_idxs_flat]
+                        sub_modification_percentage_summary_df = pd.concat([sub_modification_percentage_summary_df.iloc[:, 0:2],
+                                                                    sub_modification_percentage_summary_df.iloc[:, 2:].apply(pd.to_numeric)], axis=1)
+                        sub_modification_percentage_summary_filename = _jp(amplicon_plot_name + 'Modification_percentage_summary_around_sgRNA_'+sgRNA+'.txt')
+                        sub_modification_percentage_summary_df.to_csv(sub_modification_percentage_summary_filename, sep='\t', index=None)
 
-                        #show all sgRNA's on the plot
-                        sub_sgRNA_intervals = []
-                        for sgRNA_interval in consensus_sgRNA_intervals:
-                            newstart = None
-                            newend = None
-                            for idx, i in enumerate(sgRNA_plot_idxs):
-                                if i <= sgRNA_interval[0]:
-                                    newstart = idx
-                                if newend is None and i >= sgRNA_interval[1]:
-                                    newend = idx
+                        if not args.suppress_plots and not args.suppress_batch_summary_plots:
+                            # plot for each guide
+                            # show all sgRNA's on the plot
+                            sub_sgRNA_intervals = []
+                            for sgRNA_interval in consensus_sgRNA_intervals:
+                                newstart = None
+                                newend = None
+                                for idx, i in enumerate(sgRNA_plot_idxs):
+                                    if i <= sgRNA_interval[0]:
+                                        newstart = idx
+                                    if newend is None and i >= sgRNA_interval[1]:
+                                        newend = idx
 
-                            #if guide doesn't overlap with plot idxs
-                            if newend == 0 or newstart == len(sgRNA_plot_idxs):
-                                continue
-                            #otherwise, correct partial overlaps
-                            elif newstart == None and newend == None:
-                                newstart = 0
-                                newend = len(include_idxs) -1
-                            elif newstart == None:
-                                newstart = 0
-                            elif newend == None:
-                                newend = len(include_idxs) -1
-                            #and add it to the list
-                            sub_sgRNA_intervals.append((newstart, newend))
+                                # if guide doesn't overlap with plot idxs
+                                if newend == 0 or newstart == len(sgRNA_plot_idxs):
+                                    continue
+                                # otherwise, correct partial overlaps
+                                elif newstart is None and newend is None:
+                                    newstart = 0
+                                    newend = len(include_idxs) - 1
+                                elif newstart is None:
+                                    newstart = 0
+                                elif newend is None:
+                                    newend = len(include_idxs) - 1
+                                # and add it to the list
+                                sub_sgRNA_intervals.append((newstart, newend))
 
-                        if not args.suppress_plots:
-                            #plot for each guide
                             this_window_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt_around_sgRNA_'+sgRNA)
                             CRISPRessoPlot.plot_nucleotide_quilt(sub_nucleotide_percentage_summary_df, sub_modification_percentage_summary_df, this_window_nuc_pct_quilt_plot_name, save_png, sgRNA_intervals=sub_sgRNA_intervals, quantification_window_idxs=include_idxs)
                             plot_name = os.path.basename(this_window_nuc_pct_quilt_plot_name)
@@ -551,16 +567,6 @@ def main():
                                 crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = ''
                             crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Composition of each base around the guide ' + sgRNA + ' for the amplicon ' + amplicon_name
                             crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), ('Modification frequencies', os.path.basename(modification_frequency_summary_filename))]
-
-                            sub_nucleotide_frequency_summary_df = pd.concat([sub_nucleotide_frequency_summary_df.iloc[:, 0:2],
-                                                                        sub_nucleotide_frequency_summary_df.iloc[:, 2:].apply(pd.to_numeric)], axis=1)
-                            sub_nucleotide_frequency_summary_filename = _jp(amplicon_plot_name + 'Nucleotide_frequency_summary_around_sgRNA_'+sgRNA+'.txt')
-                            sub_nucleotide_frequency_summary_df.to_csv(sub_nucleotide_frequency_summary_filename, sep='\t', index=None)
-
-                            sub_nucleotide_percentage_summary_df = pd.concat([sub_nucleotide_percentage_summary_df.iloc[:, 0:2],
-                                                                        sub_nucleotide_percentage_summary_df.iloc[:, 2:].apply(pd.to_numeric)], axis=1)
-                            sub_nucleotide_percentage_summary_filename = _jp(amplicon_plot_name + 'Nucleotide_percentage_summary_around_sgRNA_'+sgRNA+'.txt')
-                            sub_nucleotide_percentage_summary_df.to_csv(sub_nucleotide_percentage_summary_filename, sep='\t', index=None)
 
                             if args.base_editor_output:
                                 this_window_nuc_conv_plot_name = _jp(amplicon_plot_name + 'Nucleotide_conversion_map_around_sgRNA_'+sgRNA)
@@ -574,8 +580,9 @@ def main():
                                 crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Nucleotide frequencies around sgRNA', os.path.basename(sub_nucleotide_frequency_summary_filename)),
                                                                                     ('Nucleotide percentages around sgRNA', os.path.basename(sub_nucleotide_percentage_summary_filename))
                                                                                 ]
+                        # done with per-amplicon plots
 
-                    if not args.suppress_plots: # plot the whole region
+                    if not args.suppress_plots and not args.suppress_batch_summary_plots: # plot the whole region
                         this_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt')
                         CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df, modification_percentage_summary_df, this_nuc_pct_quilt_plot_name, save_png, sgRNA_intervals=consensus_sgRNA_intervals, quantification_window_idxs=include_idxs)
                         plot_name = os.path.basename(this_nuc_pct_quilt_plot_name)
@@ -598,7 +605,7 @@ def main():
                             crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), ('Modification frequencies', os.path.basename(modification_frequency_summary_filename))]
 
                 else: #guides are not the same
-                    if not args.suppress_plots:
+                    if not args.suppress_plots and not args.suppress_batch_summary_plots:
                         this_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt')
                         CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df, modification_percentage_summary_df, this_nuc_pct_quilt_plot_name, save_png)
                         plot_name = os.path.basename(this_nuc_pct_quilt_plot_name)
