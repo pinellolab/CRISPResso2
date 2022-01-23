@@ -474,7 +474,7 @@ ___________________________________
                         # done with per-sgRNA plots
 
                         this_number_samples = len(pd.unique(nucleotide_percentage_summary_df['Folder']))
-                        if not args.suppress_plots and this_number_samples < 150: # plot the whole region
+                        if not args.suppress_plots: # and this_number_samples < 500: # plot the whole region
                             this_plot_suffix = "" # in case we have a lot of regions, split them up and add a suffix here
                             this_plot_suffix_int = 1
                             samples_per_plot = 150 # plot 150 samples per plot
@@ -502,7 +502,7 @@ ___________________________________
 
                     else: # guides are not the same
                         this_number_samples = len(pd.unique(nucleotide_percentage_summary_df['Folder']))
-                        if not args.suppress_plots and this_number_samples < 150:
+                        if not args.suppress_plots: # and this_number_samples < 150:
                             this_plot_suffix = "" # in case we have a lot of regions, split them up and add a suffix here
                             this_plot_suffix_int = 1
                             samples_per_plot = 150 # plot 150 samples per plot
