@@ -61,6 +61,7 @@ ___________________________________
         parser.add_argument('--place_report_in_output_folder',  help='If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output.', action='store_true')
         parser.add_argument('--suppress_report',  help='Suppress output report', action='store_true')
         parser.add_argument('--suppress_plots',  help='Suppress output plots', action='store_true')
+        parser.add_argument('--max_samples_per_summary_plot', type=int, help="Maximum number of samples on each page of the pdf report plots. If this number gets above ~150, they will be too big for matplotlib." default=250)
 
         parser.add_argument('--debug', help='Show debug messages', action='store_true')
 
@@ -477,12 +478,11 @@ ___________________________________
                         if not args.suppress_plots: # and this_number_samples < 500: # plot the whole region
                             this_plot_suffix = "" # in case we have a lot of regions, split them up and add a suffix here
                             this_plot_suffix_int = 1
-                            samples_per_plot = 150 # plot 150 samples per plot
                             this_number_samples = len(pd.unique(nucleotide_percentage_summary_df['Folder']))
                             nrow_per_sample_nucs = nucleotide_percentage_summary_df.shape[0] / this_number_samples # calculate number of rows per sample for subsetting the tables
                             nrow_per_sample_mods = modification_percentage_summary_df.shape[0] / this_number_samples
-                            for sample_start_ind in range(0,this_number_samples,samples_per_plot):
-                                sample_end_ind = min(sample_start_ind + samples_per_plot, this_number_samples)
+                            for sample_start_ind in range(0, this_number_samples, args.max_samples_per_summary_plot):
+                                sample_end_ind = min(sample_start_ind + args.max_samples_per_summary_plot, this_number_samples)
                                 this_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt' + this_plot_suffix)
                                 this_nuc_start_ind = int(sample_start_ind*nrow_per_sample_nucs)
                                 this_nuc_end_ind = int((sample_end_ind+1)*nrow_per_sample_nucs - 1)
@@ -505,12 +505,11 @@ ___________________________________
                         if not args.suppress_plots: # and this_number_samples < 150:
                             this_plot_suffix = "" # in case we have a lot of regions, split them up and add a suffix here
                             this_plot_suffix_int = 1
-                            samples_per_plot = 150 # plot 150 samples per plot
                             this_number_samples = len(pd.unique(nucleotide_percentage_summary_df['Folder']))
                             nrow_per_sample_nucs = nucleotide_percentage_summary_df.shape[0] / this_number_samples # calculate number of rows per sample for subsetting the tables
                             nrow_per_sample_mods = modification_percentage_summary_df.shape[0] / this_number_samples
-                            for sample_start_ind in range(0,this_number_samples,samples_per_plot):
-                                sample_end_ind = min(sample_start_ind + samples_per_plot, this_number_samples)
+                            for sample_start_ind in range(0,this_number_samples,args.max_samples_per_summary_plot):
+                                sample_end_ind = min(sample_start_ind + args.max_samples_per_summary_plot, this_number_samples)
                                 this_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt' + this_plot_suffix)
                                 this_nuc_start_ind = int(sample_start_ind*nrow_per_sample_nucs)
                                 this_nuc_end_ind = int((sample_end_ind+1)*nrow_per_sample_nucs - 1)
