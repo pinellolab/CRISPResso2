@@ -36,6 +36,7 @@ info    = logger.info
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
+
 def main():
     try:
         start_time =  datetime.now()
@@ -61,7 +62,7 @@ ___________________________________
         parser.add_argument('--place_report_in_output_folder',  help='If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output.', action='store_true')
         parser.add_argument('--suppress_report',  help='Suppress output report', action='store_true')
         parser.add_argument('--suppress_plots',  help='Suppress output plots', action='store_true')
-        parser.add_argument('--max_samples_per_summary_plot', type=int, help="Maximum number of samples on each page of the pdf report plots. If this number gets above ~150, they will be too big for matplotlib." default=250)
+        parser.add_argument('--max_samples_per_summary_plot', type=int, help="Maximum number of samples on each page of the pdf report plots. If this number gets above ~150, they will be too big for matplotlib.", default=250)
 
         parser.add_argument('--debug', help='Show debug messages', action='store_true')
 
@@ -528,6 +529,48 @@ ___________________________________
 
                                 this_plot_suffix_int += 1
                                 this_plot_suffix = "_" + str(this_plot_suffix_int)
+
+                    if not args.suppress_plots:
+                        crispresso2_info['results']['general_plots']['heatmap_plot_names'] = []
+                        crispresso2_info['results']['general_plots']['heatmap_plot_paths'] = {}
+                        crispresso2_info['results']['general_plots']['heatmap_plot_titles'] = {}
+                        crispresso2_info['results']['general_plots']['heatmap_plot_labels'] = {}
+                        crispresso2_info['results']['general_plots']['heatmap_plot_datas'] = {}
+                        if guides_all_same:
+                            sgRNA_intervals = [consensus_sgRNA_intervals] * modification_frequency_summary_df.shape[0]
+                        else:
+                            sgRNA_intervals = consensus_sgRNA_intervals
+                        for modification_type in ['Insertions', 'Deletions', 'Substitutions']:
+                            modification_df = modification_frequency_summary_df[
+                                modification_frequency_summary_df['Modification'] == modification_type
+                            ]
+                            modification_df.index = modification_df['Folder']
+                            modification_df = modification_df.drop(
+                                ['Modification', 'Folder'], axis=1,
+                            )
+                            plot_name = 'CRISPRessoAggregate_percentage_of_{0}_across_alleles_{1}'.format(modification_type.lower(), amplicon_name)
+                            plot_path = '{0}.html'.format(_jp(plot_name))
+                            CRISPRessoPlot.plot_allele_modification_heatmap(
+                                modification_df,
+                                sgRNA_intervals,
+                                plot_path,
+                                modification_type,
+                            )
+                            crispresso2_info['results']['general_plots']['heatmap_plot_names'].append(plot_name)
+                            crispresso2_info['results']['general_plots']['heatmap_plot_paths'][plot_name] = plot_path
+                            crispresso2_info['results']['general_plots']['heatmap_plot_titles'][plot_name] = 'CRISPRessoAggregate {0} Across Alleles for {1}'.format(
+                                modification_type,
+                                amplicon_name,
+                            )
+                            crispresso2_info['results']['general_plots']['heatmap_plot_labels'][plot_name] = 'Each row is an allele and each column is a position in the amplicon sequence. Each cell shows the percentage of {0} for the allele at that position relative to the amplicon. Guides for each sample are identified by a black rectangle.'.format(modification_type.lower())
+                            crispresso2_info['results']['general_plots']['heatmap_plot_datas'][plot_name] = [
+                                (
+                                    'CRISPRessoAggregate Modification Frequency Summary',
+                                    os.path.basename(
+                                        modification_frequency_summary_filename,
+                                    ),
+                                ),
+                            ]
 
             crispresso2_info['results']['general_plots']['window_nuc_pct_quilt_plot_names'] = window_nuc_pct_quilt_plot_names
             crispresso2_info['results']['general_plots']['nuc_pct_quilt_plot_names'] = nuc_pct_quilt_plot_names
