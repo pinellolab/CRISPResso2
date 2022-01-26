@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.cm as cm
 import matplotlib.gridspec as gridspec
+import plotly.express as px
 from collections import defaultdict
 from copy import deepcopy
 import re
@@ -3710,3 +3711,45 @@ def plot_quantification_positions(
         )
 
     plt.close(fig)
+
+
+def plot_allele_modification_heatmap(
+    sample_values, sample_sgRNA_intervals, plot_path, title,
+):
+    sample_values.columns = [
+        '{0} ({1})'.format(column, position)
+        for position, column in
+        enumerate(sample_values.columns, 1)
+    ]
+    sample_values.index = [
+        '{0} ({1})'.format(folder, folder_index)
+        for folder_index, folder in
+        enumerate(sample_values.index, 1)
+    ]
+    fig = px.imshow(
+        sample_values,
+        labels={
+            'x': 'Position',
+            'y': 'Sample',
+            'color': '{0} (%)'.format(title),
+        },
+    )
+    for sample_id, sgRNA_intervals in zip(
+        range(sample_values.shape[0]), sample_sgRNA_intervals,
+    ):
+        for sgRNA_interval in sgRNA_intervals:
+            fig.add_shape(
+                type='rect',
+                x0=sgRNA_interval[0],
+                y0=sample_id - 0.5,
+                x1=sgRNA_interval[1],
+                y1=sample_id + 0.5,
+                line={'color': 'Black'},
+            )
+
+    return fig.write_html(
+        plot_path,
+        include_plotlyjs='cdn',
+        full_html=False,
+        div_id='allele-modification-heatmap-{0}'.format(title.lower()),
+    )
