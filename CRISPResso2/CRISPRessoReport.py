@@ -295,7 +295,14 @@ def make_multi_report_from_folder(crispresso2_info,names_arr,report_name,crispre
     make_multi_report(run_names, sub_html_files, crispresso_report_file, folder, _ROOT, report_name,
             summary_plot_names=summary_plot_names, summary_plot_titles=summary_plot_titles, summary_plot_labels=summary_plot_labels, summary_plot_datas=summary_plot_datas)
 
-def make_multi_report(run_names,sub_html_files,crispresso_multi_report_file,crispresso_folder,_ROOT,report_name,
+
+def make_multi_report(
+    run_names,
+    sub_html_files,
+    crispresso_multi_report_file,
+    crispresso_folder,
+    _ROOT,
+    report_name,
     window_nuc_pct_quilts=[],
     nuc_pct_quilts=[],
     window_nuc_conv_plots=[],
@@ -304,47 +311,86 @@ def make_multi_report(run_names,sub_html_files,crispresso_multi_report_file,cris
     summary_plot_titles={},
     summary_plot_labels={},
     summary_plot_datas={},
-    compact_plots_to_show={}
+    compact_plots_to_show={},
+    heatmap_plot_names={},
+    heatmap_plot_htmls={},
+    heatmap_plot_titles={},
+    heatmap_plot_labels={},
+    heatmap_plot_datas={},
 ):
-        """
-        Makes an HTML report for a run containing multiple crispresso runs
+    """
+    Makes an HTML report for a run containing multiple crispresso runs
 
-        Parameters:
-        run_names (arr of strings): names of runs
-        sub_html_files (dict): dict of run_name->file_loc
-        crispresso_multi_report_file (string): path of file to write to
-        report_name (string): description of report type to be shown at top of report
-        crispresso_folder (string): absolute path to the crispresso output
-        _ROOT (string): absolute path to the crispresso executable
+    Parameters:
+    run_names (arr of strings): names of runs
+    sub_html_files (dict): dict of run_name->file_loc
+    crispresso_multi_report_file (string): path of file to write to
+    report_name (string): description of report type to be shown at top of report
+    crispresso_folder (string): absolute path to the crispresso output
+    _ROOT (string): absolute path to the crispresso executable
 
-        summary_plot_names (list): list of plot names - keys for following dicts
-        summary_plot_titles (dict): dict of plot_name->plot_title
-        summary_plot_labels (dict): dict of plot_name->plot_label
-        summary_plot_datas (dict): dict of plot_name->(datafile_description, data_filename)
-        compact_plots_to_show (dict): name=>{'href': path to target(report) when user clicks on image, 'img': path to png image to show}
+    summary_plot_names (list): list of plot names - keys for following dicts
+    summary_plot_titles (dict): dict of plot_name->plot_title
+    summary_plot_labels (dict): dict of plot_name->plot_label
+    summary_plot_datas (dict): dict of plot_name->[(datafile_description, data_filename), ...]
+    compact_plots_to_show (dict): name=>{'href': path to target(report) when user clicks on image, 'img': path to png image to show}
+    heatmap_plot_names (list): list of plot names for heatmaps, keys for dicts below
+    heatmap_plot_htmls (dict): dict of plot_name->HTML for the plot
+    heatmap_plot_titles (dict): dict of plot_name->plot_title
+    heatmap_plot_labels (dict): dict of plot_name->plot_label
+    heatmap_plot_datas (dict): dict of plot_name->[(datafile_description, data_filename), ...]
+    """
 
-        """
+    def dirname(path):
+        return os.path.basename(os.path.dirname(path))
+    j2_env = Environment(
+        loader=FileSystemLoader(os.path.join(_ROOT, 'templates')),
+    )
+    j2_env.filters['dirname'] = dirname
+    template = j2_env.get_template('multiReport.html')
 
-        def dirname(path):
-            return os.path.basename(os.path.dirname(path))
-        j2_env = Environment(loader=FileSystemLoader(os.path.join(_ROOT, 'templates')))
-        j2_env.filters['dirname'] = dirname
-        template = j2_env.get_template('multiReport.html')
+    crispresso_data_path = os.path.relpath(
+        crispresso_folder, os.path.dirname(crispresso_multi_report_file),
+    )
+    if crispresso_data_path == ".":
+        crispresso_data_path = ""
+    else:
+        crispresso_data_path += "/"
 
-        crispresso_data_path = os.path.relpath(crispresso_folder, os.path.dirname(crispresso_multi_report_file))
-        if crispresso_data_path == ".":
-            crispresso_data_path = ""
-        else:
-            crispresso_data_path += "/";
+    with open(crispresso_multi_report_file, 'w') as outfile:
+        outfile.write(template.render(
+            window_nuc_pct_quilts=window_nuc_pct_quilts,
+            nuc_pct_quilts=nuc_pct_quilts,
+            window_nuc_conv_plots=window_nuc_conv_plots,
+            nuc_conv_plots=nuc_conv_plots,
+            crispresso_data_path=crispresso_data_path,
+            summary_plot_names=summary_plot_names,
+            summary_plot_titles=summary_plot_titles,
+            summary_plot_labels=summary_plot_labels,
+            summary_plot_datas=summary_plot_datas,
+            run_names=run_names,
+            sub_html_files=sub_html_files,
+            report_name=report_name,
+            compact_plots_to_show=compact_plots_to_show,
+            heatmap_plot_names=heatmap_plot_names,
+            heatmap_plot_htmls=heatmap_plot_htmls,
+            heatmap_plot_titles=heatmap_plot_titles,
+            heatmap_plot_labels=heatmap_plot_labels,
+            heatmap_plot_datas=heatmap_plot_datas,
+        ))
 
-        outfile = open(crispresso_multi_report_file, 'w')
-        outfile.write(template.render(window_nuc_pct_quilts=window_nuc_pct_quilts, nuc_pct_quilts=nuc_pct_quilts,
-            window_nuc_conv_plots=window_nuc_conv_plots, nuc_conv_plots=nuc_conv_plots, crispresso_data_path=crispresso_data_path,
-            summary_plot_names=summary_plot_names, summary_plot_titles=summary_plot_titles, summary_plot_labels=summary_plot_labels, summary_plot_datas=summary_plot_datas,
-            run_names=run_names, sub_html_files=sub_html_files, report_name=report_name, compact_plots_to_show=compact_plots_to_show))
-        outfile.close()
 
-def make_aggregate_report(crispresso2_info,report_name,crispresso_report_file,crispresso_report_folder,_ROOT,folder_arr,crispresso_html_reports,compact_plots_to_show={},display_names=None):
+def make_aggregate_report(
+    crispresso2_info,
+    report_name,
+    crispresso_report_file,
+    crispresso_report_folder,
+    _ROOT,
+    folder_arr,
+    crispresso_html_reports,
+    compact_plots_to_show={},
+    display_names=None,
+):
     """
     Prepares information to make a report of a CRISPRessoAggregate run
 
@@ -374,6 +420,21 @@ def make_aggregate_report(crispresso2_info,report_name,crispresso_report_file,cr
     summary_plot_datas = {}
     if 'summary_plot_datas' in crispresso2_info['results']['general_plots']:
         summary_plot_datas = crispresso2_info['results']['general_plots']['summary_plot_datas']
+    heatmap_plot_names = []
+    if 'heatmap_plot_names' in crispresso2_info['results']['general_plots']:
+        heatmap_plot_names = crispresso2_info['results']['general_plots']['heatmap_plot_names']
+    heatmap_plot_paths = {}
+    if 'heatmap_plot_paths' in crispresso2_info['results']['general_plots']:
+        heatmap_plot_paths = crispresso2_info['results']['general_plots']['heatmap_plot_paths']
+    heatmap_plot_titles = {}
+    if 'heatmap_plot_titles' in crispresso2_info['results']['general_plots']:
+        heatmap_plot_titles = crispresso2_info['results']['general_plots']['heatmap_plot_titles']
+    heatmap_plot_labels = {}
+    if 'heatmap_plot_labels' in crispresso2_info['results']['general_plots']:
+        heatmap_plot_labels = crispresso2_info['results']['general_plots']['heatmap_plot_labels']
+    heatmap_plot_datas = {}
+    if 'heatmap_plot_datas' in crispresso2_info['results']['general_plots']:
+        heatmap_plot_datas = crispresso2_info['results']['general_plots']['heatmap_plot_datas']
 
     window_nuc_pct_quilts = []
     if 'window_nuc_pct_quilt_plot_names' in crispresso2_info['results']['general_plots']:
@@ -400,9 +461,28 @@ def make_aggregate_report(crispresso2_info,report_name,crispresso_report_file,cr
         old_img = compact_plots_to_show[compact_plot]['img']
         compact_plots_to_show[compact_plot]['img'] = os.path.relpath(old_img, crispresso_report_folder)
 
-    make_multi_report(run_names, sub_html_files, crispresso_report_file, crispresso_report_folder, _ROOT, report_name,
-            window_nuc_pct_quilts=window_nuc_pct_quilts,
-            nuc_pct_quilts=nuc_pct_quilts,
-            summary_plot_names=summary_plot_names, summary_plot_titles=summary_plot_titles,
-            summary_plot_labels=summary_plot_labels, summary_plot_datas=summary_plot_datas,
-            compact_plots_to_show=compact_plots_to_show)
+    heatmap_plot_htmls = {}
+    for heatmap_plot_name, heatmap_plot_path in heatmap_plot_paths.items():
+        with open(heatmap_plot_path) as fh:
+            heatmap_plot_htmls[heatmap_plot_name] = fh.read()
+
+    make_multi_report(
+        run_names,
+        sub_html_files,
+        crispresso_report_file,
+        crispresso_report_folder,
+        _ROOT,
+        report_name,
+        window_nuc_pct_quilts=window_nuc_pct_quilts,
+        nuc_pct_quilts=nuc_pct_quilts,
+        summary_plot_names=summary_plot_names,
+        summary_plot_titles=summary_plot_titles,
+        summary_plot_labels=summary_plot_labels,
+        summary_plot_datas=summary_plot_datas,
+        compact_plots_to_show=compact_plots_to_show,
+        heatmap_plot_names=heatmap_plot_names,
+        heatmap_plot_htmls=heatmap_plot_htmls,
+        heatmap_plot_titles=heatmap_plot_titles,
+        heatmap_plot_labels=heatmap_plot_labels,
+        heatmap_plot_datas=heatmap_plot_datas,
+    )

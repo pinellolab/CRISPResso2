@@ -154,6 +154,23 @@
             {% endfor %}
           {% endif %}
 
+          {% if heatmap_plot_names|length > 0 %}
+            {% for plot_name in heatmap_plot_names %}
+              <div class="card text-center mb-2">
+                <div class="card-header">
+                    <h5>{{heatmap_plot_titles[plot_name]}}</h5>
+                </div>
+                <div class="card-body">
+                    {{heatmap_plot_htmls[plot_name]}}
+                    <label class="labelpadding">{{heatmap_plot_labels[plot_name]}}</label>
+                    {% for (data_label, data_path) in heatmap_plot_datas[plot_name] %}
+                        <p class="m-0"><small>Data: <a href="{{crispresso_data_path}}{{data_path}}">{{data_label}}</a></small></p>
+                    {% endfor %}
+                </div>
+              </div>
+            {% endfor %}
+          {% endif %}
+
           {% if compact_plots_to_show|length > 0 %}
             <div class='card text-center mb-2'>
               <div class='card-header'>
