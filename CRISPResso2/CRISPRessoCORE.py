@@ -2487,6 +2487,7 @@ def main():
             if not args.trim_sequences:
                 output_forward_paired_filename = args.fastq_r1
                 output_reverse_paired_filename = args.fastq_r2
+                processed_output_filename = output_forward_paired_filename
             else:
                 info('Trimming sequences with Trimmomatic...')
                 output_forward_paired_filename = _jp('output_forward_paired.fq.gz')
@@ -2495,16 +2496,17 @@ def main():
                 output_reverse_unpaired_filename = _jp('output_reverse_unpaired.fq.gz')
 
                 #Trimming with trimmomatic
-                cmd='%s PE -phred33 %s  %s %s  %s  %s  %s %s >>%s 2>&1'\
+                cmd = '%s PE -phred33 %s  %s %s  %s  %s  %s %s >>%s 2>&1'\
                     % (args.trimmomatic_command,
                         args.fastq_r1, args.fastq_r2, output_forward_paired_filename,
                         output_forward_unpaired_filename, output_reverse_paired_filename,
                         output_reverse_unpaired_filename, args.trimmomatic_options_string, log_filename)
                 #print cmd
-                TRIMMOMATIC_STATUS=sb.call(cmd, shell=True)
+                TRIMMOMATIC_STATUS = sb.call(cmd, shell=True)
                 if TRIMMOMATIC_STATUS:
                     raise CRISPRessoShared.TrimmomaticException('TRIMMOMATIC failed to run, please check the log file.')
                 crispresso2_info['trimmomatic_command'] = cmd
+                processed_output_filename = output_forward_paired_filename
 
                 files_to_remove += [output_forward_paired_filename]
                 files_to_remove += [output_reverse_paired_filename]
@@ -2532,6 +2534,7 @@ def main():
                 if TRIMMOMATIC_STATUS:
                     raise CRISPRessoShared.TrimmomaticException('TRIMMOMATIC failed to run, please check the log file.')
                 crispresso2_info['trimmomatic_command'] = cmd
+                processed_output_filename = output_forward_paired_filename
 
                 files_to_remove += [output_forward_paired_filename]
                 files_to_remove += [output_reverse_paired_filename]
@@ -2605,31 +2608,30 @@ def main():
             files_to_remove+=[processed_output_filename, flash_hist_filename, flash_histogram_filename,\
                     flash_not_combined_1_filename, flash_not_combined_2_filename, _jp('out.hist.innie'), _jp('out.histogram.innie'), _jp('out.histogram.outie'), _jp('out.hist.outie')]
 
-            if (args.force_merge_pairs):
-                 old_flashed_filename = processed_output_filename
-                 new_merged_filename=_jp('out.forcemerged_uncombined.fastq.gz')
-                 num_reads_force_merged = CRISPRessoShared.force_merge_pairs(flash_not_combined_1_filename, flash_not_combined_2_filename, new_merged_filename)
-                 new_output_filename=_jp('out.forcemerged.fastq.gz')
-                 merge_command = "cat %s %s > %s"%(processed_output_filename, new_merged_filename, new_output_filename)
-                 MERGE_STATUS=sb.call(merge_command, shell=True)
-                 if MERGE_STATUS:
-                     raise FlashException('Force-merging read pairs failed to run, please check the log file.')
-                 processed_output_filename = new_output_filename
+            if args.force_merge_pairs:
+                old_flashed_filename = processed_output_filename
+                new_merged_filename=_jp('out.forcemerged_uncombined.fastq.gz')
+                num_reads_force_merged = CRISPRessoShared.force_merge_pairs(flash_not_combined_1_filename, flash_not_combined_2_filename, new_merged_filename)
+                new_output_filename=_jp('out.forcemerged.fastq.gz')
+                merge_command = "cat %s %s > %s"%(processed_output_filename, new_merged_filename, new_output_filename)
+                MERGE_STATUS=sb.call(merge_command, shell=True)
+                if MERGE_STATUS:
+                    raise FlashException('Force-merging read pairs failed to run, please check the log file.')
+                processed_output_filename = new_output_filename
 
-                 files_to_remove+=[new_merged_filename]
-                 files_to_remove+=[new_output_filename]
-                 if args.debug:
-                     info('Wrote force-merged reads to ' + new_merged_filename)
+                files_to_remove+=[new_merged_filename]
+                files_to_remove+=[new_output_filename]
+                if args.debug:
+                    info('Wrote force-merged reads to ' + new_merged_filename)
 
             info('Done!')
-
 
         #count reads
         N_READS_AFTER_PREPROCESSING = 0
         if args.bam_input:
             N_READS_AFTER_PREPROCESSING = N_READS_INPUT
         else:
-            N_READS_AFTER_PREPROCESSING=get_n_reads_fastq(processed_output_filename)
+            N_READS_AFTER_PREPROCESSING = get_n_reads_fastq(processed_output_filename)
         if N_READS_AFTER_PREPROCESSING == 0:
             raise CRISPRessoShared.NoReadsAfterQualityFilteringException('No reads in input or no reads survived the average or single bp quality filtering.')
 
