@@ -805,12 +805,12 @@ def process_paired_fastq(fastq1_filename, fastq2_filename, variantCache, ref_nam
         #read through fastq in sets of 4
         fastq1_seq = fastq1_handle.readline().strip()
         fastq1_plus = fastq1_handle.readline()
-        fastq1_qual = fastq1_handle.readline()
+        fastq1_qual = fastq1_handle.readline().strip()
 
         fastq2_id = fastq2_handle.readline()
         fastq2_seq = fastq2_handle.readline().strip()
         fastq2_plus = fastq2_handle.readline()
-        fastq2_qual = fastq2_handle.readline()
+        fastq2_qual = fastq2_handle.readline().strip()
 
         if (N_TOT_READS % 10000 == 0):
             info("Processing reads; N_TOT_READS: %d N_COMPUTED_ALN: %d N_CACHED_ALN: %d N_COMPUTED_NOTALN: %d N_CACHED_NOTALN: %d"%(N_TOT_READS, N_COMPUTED_ALN, N_CACHED_ALN, N_COMPUTED_NOTALN, N_CACHED_NOTALN))
