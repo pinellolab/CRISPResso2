@@ -161,11 +161,30 @@
                     <h5>{{heatmap_plot_titles[plot_name]}}</h5>
                 </div>
                 <div class="card-body">
-                    {{heatmap_plot_htmls[plot_name]}}
+                    <!-- {{heatmap_plot_htmls[plot_name]}} -->
                     <label class="labelpadding">{{heatmap_plot_labels[plot_name]}}</label>
                     {% for (data_label, data_path) in heatmap_plot_datas[plot_name] %}
                         <p class="m-0"><small>Data: <a href="{{crispresso_data_path}}{{data_path}}">{{data_label}}</a></small></p>
                     {% endfor %}
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#{{plot_name}}Modal">
+                            Show Plot
+                        </button>
+                        <div class="modal fade" id="{{plot_name}}Modal" tabindex="-1" aria-labelledby="{{plot_name}}ModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-fullscreen">
+                                <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="{{plot_name}}ModalLabel">{{heatmap_plot_titles[plot_name]}}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    {{heatmap_plot_htmls[plot_name]}}
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                </div>
+                                </div>
+                            </div>
+                        </div>
                 </div>
               </div>
             {% endfor %}
