@@ -4436,15 +4436,6 @@ def main():
                     crispresso2_info['results']['refs'][ref_names_for_pe[0]]['plot_11b_datas'].append([('Nucleotide frequency in quantification window for ' + ref_name, os.path.basename(crispresso2_info['results']['refs'][ref_name]['quant_window_nuc_freq_filename'])) for ref_name in ref_names_for_pe])
 
                 if args.prime_editing_pegRNA_scaffold_seq != "" and df_scaffold_insertion_sizes.shape[0] > 0 and df_scaffold_insertion_sizes['Num_match_scaffold'].max() > 0 and df_scaffold_insertion_sizes['Num_gaps'].max() > 0:
-                    colors = 'b', 'g'
-                    fig=plt.figure(figsize=(12, 6))
-                    ax1 = plt.subplot(111)
-                    ax1.hist([df_scaffold_insertion_sizes['Num_match_scaffold'],df_scaffold_insertion_sizes['Num_gaps']],color=colors,bins=range(0,max(df_scaffold_insertion_sizes['Num_match_scaffold'].max(),df_scaffold_insertion_sizes['Num_gaps'].max(),1)))
-                    ax1.set_ylabel('Count')
-                    ax1.set_xlabel('Length (basepairs)')
-                    plt.tight_layout()
-                    plt.legend(['Length matching scaffold', 'Insertion length'], loc='center', bbox_to_anchor=(0.5, -0.35), ncol=1, fancybox=True, shadow=True)
-                    plt.tick_params(left=True, bottom=True)
                     plot_root = _jp('11c.Prime_editing_scaffold_insertion_sizes')
                     plot_11c_input = {
                         'df_scaffold_insertion_sizes': df_scaffold_insertion_sizes,
