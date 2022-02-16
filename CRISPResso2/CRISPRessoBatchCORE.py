@@ -174,11 +174,6 @@ def main():
         #pandas either allows for auto-detect sep or for comment. not both
 #        batch_params=pd.read_csv(args.batch_settings,sep=None,engine='python',error_bad_lines=False)
         batch_params.columns = batch_params.columns.str.strip(' -\xd0')
-        int_columns = ['default_min_aln_score', 'min_average_read_quality', 'min_single_bp_quality', 'min_bp_quality_or_N',
-                       'quantification_window_size', 'quantification_window_center', 'exclude_bp_from_left', 'exclude_bp_from_right',
-                       'plot_window_size', 'max_rows_alleles_around_cut_to_plot']
-        for int_col in int_columns:
-            batch_params[int_col]=batch_params[int_col].astype(int)
 
         #rename column "a" to "amplicon_seq", etc
         batch_params.rename(index=str, columns=CRISPRessoShared.get_crispresso_options_lookup(), inplace=True)
@@ -220,7 +215,7 @@ def main():
                 else:
                     CRISPRessoShared.check_file(row.fastq_r1)
 
-            if 'fastq_r2' in row and row.fastq_r2 != "" and row.fastq_r2 != "nan":
+            if 'fastq_r2' in row and row.fastq_r2 != "":
                 CRISPRessoShared.check_file(row.fastq_r2)
 
             if 'input_bam' in row:
