@@ -916,9 +916,9 @@ def main():
                     files_to_remove.append(bam_input_file)
                     files_to_remove.append(bam_input_file+".bai")
                     args.bam_input = bam_input_file
-            crispresso2_info['bam_input'] = args.bam_input
+            crispresso2_info['running_info']['bam_input'] = args.bam_input
             bam_output = _jp('CRISPResso_output.bam')
-            crispresso2_info['bam_output'] = bam_output
+            crispresso2_info['running_info']['bam_output'] = bam_output
             output_sam = bam_output+".sam"
             files_to_remove.append(output_sam)
 
