@@ -3749,6 +3749,10 @@ def plot_allele_modification_heatmap(
 
     return fig.write_html(
         plot_path,
+        config={
+            'responsive': True,
+            'displaylogo': False,
+        },
         include_plotlyjs='cdn',
         full_html=False,
         div_id='allele-modification-heatmap-{0}'.format(title.lower()),

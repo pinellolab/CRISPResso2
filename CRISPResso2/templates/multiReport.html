@@ -161,7 +161,6 @@
                     <h5>{{heatmap_plot_titles[plot_name]}}</h5>
                 </div>
                 <div class="card-body">
-                    <!-- {{heatmap_plot_htmls[plot_name]}} -->
                     <label class="labelpadding">{{heatmap_plot_labels[plot_name]}}</label>
                     {% for (data_label, data_path) in heatmap_plot_datas[plot_name] %}
                         <p class="m-0"><small>Data: <a href="{{crispresso_data_path}}{{data_path}}">{{data_label}}</a></small></p>
@@ -187,6 +186,15 @@
                         </div>
                 </div>
               </div>
+              <script type="application/javascript">
+                document.addEventListener("DOMContentLoaded", () => {
+                  $("#{{plot_name}}Modal").on("show.bs.modal", (e) => {
+                      let plot = document.getElementById("allele-modification-heatmap-{{plot_name.split('_')[3].lower()}}");
+                      Plotly.Plots.resize(plot);
+                      window.dispatchEvent(new Event("resize"));
+                  });
+                });
+              </script>
             {% endfor %}
           {% endif %}
 
