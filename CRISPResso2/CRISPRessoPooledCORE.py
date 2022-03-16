@@ -4,8 +4,8 @@ CRISPResso2 - Kendell Clement and Luca Pinello 2020
 Software pipeline for the analysis of genome editing outcomes from deep sequencing data
 (c) 2020 The General Hospital Corporation. All Rights Reserved.
 '''
-
-
+import csv
+import difflib
 import os
 import sys
 from copy import deepcopy
@@ -613,10 +613,31 @@ def main():
 
         if RUNNING_MODE=='ONLY_AMPLICONS' or  RUNNING_MODE=='AMPLICONS_AND_GENOME':
 
+            with open(args.amplicons_file, 'rb') as amplicons:
+                sniffer = csv.Sniffer()
+                has_header = sniffer.has_header(amplicons.read(2048))
+                amplicons.seek(0)
+                reader = csv.reader(amplicons)
+                header = next(reader)
+
+            names = ['Name', 'Amplicon_Sequence', 'sgRNA', 'Expected_HDR', 'Coding_sequence',
+                     'prime_editing_pegRNA_spacer_seq', 'prime_editing_nicking_guide_seq',
+                     'prime_editing_pegRNA_extension_seq', 'prime_editing_pegRNA_scaffold_seq',
+                     'prime_editing_pegRNA_scaffold_min_match_length', 'prime_editing_override_prime_edited_ref_seq',
+                     'qwc']
+            headers = []
+            if has_header:
+                for head in header:
+                    # Header based on header provided
+                    match = difflib.get_close_matches(head, names, n=1)[0]
+                    headers.append(match)
+            else:
+                # Default header
+                for i in range(len(header)):
+                    headers.append(names[i])
+
             #load and validate template file
-            df_template=pd.read_csv(args.amplicons_file, names=[
-                    'Name', 'Amplicon_Sequence', 'sgRNA',
-                    'Expected_HDR', 'Coding_sequence'], comment='#', sep='\t', dtype={'Name':str})
+            df_template=pd.read_csv(args.amplicons_file, names=headers, comment='#', sep='\t', dtype={'Name':str})
 
             if str(df_template.iloc[0, 1]).lower() == "amplicon_sequence":
                 df_template.drop(0, axis=0, inplace=True)
