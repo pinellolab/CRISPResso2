@@ -3729,8 +3729,8 @@ def plot_allele_modification_heatmap(
     fig = px.imshow(
         sample_values,
         labels={
-            'x': 'Position',
-            'y': 'Sample',
+            'x': 'Amplicon Nucleotide (Position)',
+            'y': 'Sample (Index)',
             'color': '{0} (%)'.format(title),
         },
     )
@@ -3747,6 +3747,9 @@ def plot_allele_modification_heatmap(
                 line={'color': 'Black'},
             )
 
+    fig.update_layout(
+        autosize=True,
+    )
     return fig.write_html(
         plot_path,
         config={
