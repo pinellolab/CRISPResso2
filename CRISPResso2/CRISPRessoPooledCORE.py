@@ -639,9 +639,10 @@ def main():
             #load and validate template file
             df_template=pd.read_csv(args.amplicons_file, names=headers, comment='#', sep='\t', dtype={'Name':str})
 
-            if str(df_template.iloc[0, 1]).lower() == "amplicon_sequence":
-                df_template.drop(0, axis=0, inplace=True)
-                info('Detected header in amplicon file.')
+            # TODO: Should now be unnecessary.
+            # if str(df_template.iloc[0, 1]).lower() == "amplicon_sequence":
+            #     df_template.drop(0, axis=0, inplace=True)
+            #     info('Detected header in amplicon file.')
 
 
             #remove empty amplicons/lines
