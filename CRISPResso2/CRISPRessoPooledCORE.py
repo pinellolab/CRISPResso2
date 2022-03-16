@@ -812,6 +812,35 @@ def main():
                     if row['Coding_sequence'] and not pd.isnull(row['Coding_sequence']):
                         crispresso_cmd+=' -c %s' % row['Coding_sequence']
 
+                    if row['prime_editing_pegRNA_spacer_seq'] and not pd.isnull(row['prime_editing_pegRNA_spacer_seq']):
+                        crispresso_cmd+=' --prime_editing_pegRNA_spacer_seq %s' % row['prime_editing_pegRNA_spacer_seq']
+
+                    if row['prime_editing_nicking_guide_seq'] and not pd.isnull(row['prime_editing_nicking_guide_seq']):
+                        crispresso_cmd+=' --prime_editing_nicking_guide_seq %s' % row['prime_editing_nicking_guide_seq']
+
+                    if row['prime_editing_pegRNA_extension_seq'] and not pd.isnull(row[
+                            'prime_editing_pegRNA_extension_seq']):
+                        crispresso_cmd+=' --prime_editing_pegRNA_extension_seq %s' % row[
+                            'prime_editing_pegRNA_extension_seq']
+
+                    if row['prime_editing_pegRNA_scaffold_seq'] and not pd.isnull(row[
+                            'prime_editing_pegRNA_scaffold_seq']):
+                        crispresso_cmd+=' --prime_editing_pegRNA_scaffold_seq %s' % row[
+                            'prime_editing_pegRNA_scaffold_seq']
+
+                    if row['prime_editing_pegRNA_scaffold_min_match_length'] and not pd.isnull(row[
+                            'prime_editing_pegRNA_scaffold_min_match_length']):
+                        crispresso_cmd+=' --prime_editing_pegRNA_scaffold_min_match_length %s' % row[
+                            'prime_editing_pegRNA_scaffold_min_match_length']
+
+                    if row['prime_editing_override_prime_edited_ref_seq'] and not pd.isnull(row[
+                            'prime_editing_override_prime_edited_ref_seq']):
+                        crispresso_cmd+=' --prime_editing_override_prime_edited_ref_seq %s' % row[
+                            'prime_editing_override_prime_edited_ref_seq']
+
+                    if row['qwc'] and not pd.isnull(row['qwc']):
+                        crispresso_cmd+=' --qwc %s' % row['qwc']
+
                     crispresso_cmd=CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, args)
                     crispresso_cmds.append(crispresso_cmd)
 
@@ -1187,6 +1216,39 @@ def main():
 
                             if row['Coding_sequence'] and not pd.isnull(row['Coding_sequence']):
                                 crispresso_cmd+=' -c %s' % row['Coding_sequence']
+
+                            if row['prime_editing_pegRNA_spacer_seq'] and not pd.isnull(
+                                    row['prime_editing_pegRNA_spacer_seq']):
+                                crispresso_cmd += ' --prime_editing_pegRNA_spacer_seq %s' % row[
+                                    'prime_editing_pegRNA_spacer_seq']
+
+                            if row['prime_editing_nicking_guide_seq'] and not pd.isnull(
+                                    row['prime_editing_nicking_guide_seq']):
+                                crispresso_cmd += ' --prime_editing_nicking_guide_seq %s' % row[
+                                    'prime_editing_nicking_guide_seq']
+
+                            if row['prime_editing_pegRNA_extension_seq'] and not pd.isnull(
+                                    row['prime_editing_pegRNA_extension_seq']):
+                                crispresso_cmd += ' --prime_editing_pegRNA_extension_seq %s' % row[
+                                    'prime_editing_pegRNA_extension_seq']
+
+                            if row['prime_editing_pegRNA_scaffold_seq'] and not pd.isnull(
+                                    row['prime_editing_pegRNA_scaffold_seq']):
+                                crispresso_cmd += ' --prime_editing_pegRNA_scaffold_seq %s' % row[
+                                    'prime_editing_pegRNA_scaffold_seq']
+
+                            if row['prime_editing_pegRNA_scaffold_min_match_length'] and not pd.isnull(
+                                    row['prime_editing_pegRNA_scaffold_min_match_length']):
+                                crispresso_cmd += ' --prime_editing_pegRNA_scaffold_min_match_length %s' % row[
+                                    'prime_editing_pegRNA_scaffold_min_match_length']
+
+                            if row['prime_editing_override_prime_edited_ref_seq'] and not pd.isnull(
+                                    row['prime_editing_override_prime_edited_ref_seq']):
+                                crispresso_cmd += ' --prime_editing_override_prime_edited_ref_seq %s' % row[
+                                    'prime_editing_override_prime_edited_ref_seq']
+
+                            if row['qwc'] and not pd.isnull(row['qwc']):
+                                crispresso_cmd += ' --qwc %s' % row['qwc']
 
                             crispresso_cmd=CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, args)
                             info('Running CRISPResso:%s' % crispresso_cmd)
