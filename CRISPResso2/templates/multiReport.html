@@ -161,41 +161,61 @@
                     <h5>{{heatmap_plot_titles[plot_name]}}</h5>
                 </div>
                 <div class="card-body">
+                    {{heatmap_plot_htmls[plot_name]}}
                     <label class="labelpadding">{{heatmap_plot_labels[plot_name]}}</label>
                     {% for (data_label, data_path) in heatmap_plot_datas[plot_name] %}
                         <p class="m-0"><small>Data: <a href="{{crispresso_data_path}}{{data_path}}">{{data_label}}</a></small></p>
                     {% endfor %}
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#{{plot_name}}Modal">
-                            Show Plot
-                        </button>
-                        <div class="modal fade" id="{{plot_name}}Modal" tabindex="-1" aria-labelledby="{{plot_name}}ModalLabel" aria-hidden="true">
-                            <div class="modal-dialog modal-fullscreen">
-                                <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="{{plot_name}}ModalLabel">{{heatmap_plot_titles[plot_name]}}</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    {{heatmap_plot_htmls[plot_name]}}
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                </div>
-                                </div>
-                            </div>
-                        </div>
                 </div>
               </div>
-              <script type="application/javascript">
-                document.addEventListener("DOMContentLoaded", () => {
-                  $("#{{plot_name}}Modal").on("show.bs.modal", (e) => {
-                      let plot = document.getElementById("allele-modification-heatmap-{{plot_name.split('_')[3].lower()}}");
-                      Plotly.Plots.resize(plot);
-                      window.dispatchEvent(new Event("resize"));
-                  });
-                });
-              </script>
             {% endfor %}
+              <!-- The below code is another failed attempt to make the heatmaps go fullscreen.
+                   To implement this behavior, wrap the `heatmap_plot_htmls[plot_name]` in a `div`
+                   of class `plotly-full-screen`. -->
+              <!-- <style>
+                   .plot-zoom {
+                   position: absolute;
+                   border: none;
+                   background-color: transparent;
+                   bottom: 0;
+                   right: 0;
+                   }
+                   .full-screen {
+                   position: fixed;
+                   height: 98vh !important;
+                   width: 98vw !important;
+                   left: 0;
+                   top: 0;
+                   z-index: 9999;
+                   overflow: hidden;
+                   }
+                   </style> -->
+              <!-- <script type="application/javascript">
+                   const plotZoom = (el) => {
+                   el = $(el);
+                   let parent = el.parent().parent();
+                   if (el.attr("data-full_screen") === "false") {
+                   parent.addClass("full-screen").trigger("resize").fadeOut().fadeIn();
+                   el.attr("data-full_screen", "true");
+                   Plotly.Plots.resize(parent.find(".plotly-graph-div")[0]);
+                   } else {
+                   parent.removeClass("full-screen").trigger("resize").fadeOut().fadeIn();
+                   el.attr("data-full_screen", "false");
+                   Plotly.Plots.resize(parent.find(".plotly-graph-div")[0]);
+                   }
+                   }
+                   document.addEventListener("DOMContentLoaded", () => {
+                   $(function() {
+                   $(".plotly-full-screen").append(`
+                   <div style="position: relative;">
+                   <button onclick=plotZoom(this) class="plot-zoom" data-full_screen="false" title="Full Screen">
+                   <i class="fa fa-expand-arrows-alt"></i>
+                   </button>
+                   </div>
+                   `);
+                   });
+                   });
+                   </script> -->
           {% endif %}
 
           {% if compact_plots_to_show|length > 0 %}
