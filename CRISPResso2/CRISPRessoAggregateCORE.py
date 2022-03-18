@@ -531,11 +531,11 @@ ___________________________________
                                 this_plot_suffix = "_" + str(this_plot_suffix_int)
 
                     if not args.suppress_plots:
-                        crispresso2_info['results']['general_plots']['heatmap_plot_names'] = []
-                        crispresso2_info['results']['general_plots']['heatmap_plot_paths'] = {}
-                        crispresso2_info['results']['general_plots']['heatmap_plot_titles'] = {}
-                        crispresso2_info['results']['general_plots']['heatmap_plot_labels'] = {}
-                        crispresso2_info['results']['general_plots']['heatmap_plot_datas'] = {}
+                        crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_names'] = []
+                        crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_paths'] = {}
+                        crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_titles'] = {}
+                        crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_labels'] = {}
+                        crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_datas'] = {}
                         if guides_all_same:
                             sgRNA_intervals = [consensus_sgRNA_intervals] * modification_frequency_summary_df.shape[0]
                         else:
@@ -556,14 +556,14 @@ ___________________________________
                                 plot_path,
                                 modification_type,
                             )
-                            crispresso2_info['results']['general_plots']['heatmap_plot_names'].append(plot_name)
-                            crispresso2_info['results']['general_plots']['heatmap_plot_paths'][plot_name] = plot_path
-                            crispresso2_info['results']['general_plots']['heatmap_plot_titles'][plot_name] = 'CRISPRessoAggregate {0} Across Alleles for {1}'.format(
+                            crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_names'].append(plot_name)
+                            crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_paths'][plot_name] = plot_path
+                            crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_titles'][plot_name] = 'CRISPRessoAggregate {0} Across Alleles for {1}'.format(
                                 modification_type,
                                 amplicon_name,
                             )
-                            crispresso2_info['results']['general_plots']['heatmap_plot_labels'][plot_name] = 'Each row is an allele and each column is a position in the amplicon sequence. Each cell shows the percentage of {0} for the allele at that position relative to the amplicon. Guides for each sample are identified by a black rectangle.'.format(modification_type.lower())
-                            crispresso2_info['results']['general_plots']['heatmap_plot_datas'][plot_name] = [
+                            crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_labels'][plot_name] = 'Each row is an allele and each column is a position in the amplicon sequence. Each cell shows the percentage of {0} for the allele at that position relative to the amplicon. Guides for each sample are identified by a black rectangle.'.format(modification_type.lower())
+                            crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_datas'][plot_name] = [
                                 (
                                     'CRISPRessoAggregate Modification Frequency Summary',
                                     os.path.basename(

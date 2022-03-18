@@ -307,16 +307,9 @@ def make_multi_report(
     nuc_pct_quilts=[],
     window_nuc_conv_plots=[],
     nuc_conv_plots=[],
-    summary_plot_names=[],
-    summary_plot_titles={},
-    summary_plot_labels={},
-    summary_plot_datas={},
+    summary_plot={},
     compact_plots_to_show={},
-    heatmap_plot_names={},
-    heatmap_plot_htmls={},
-    heatmap_plot_titles={},
-    heatmap_plot_labels={},
-    heatmap_plot_datas={},
+    allele_modification_heatmap_plot={},
 ):
     """
     Makes an HTML report for a run containing multiple crispresso runs
@@ -329,16 +322,18 @@ def make_multi_report(
     crispresso_folder (string): absolute path to the crispresso output
     _ROOT (string): absolute path to the crispresso executable
 
-    summary_plot_names (list): list of plot names - keys for following dicts
-    summary_plot_titles (dict): dict of plot_name->plot_title
-    summary_plot_labels (dict): dict of plot_name->plot_label
-    summary_plot_datas (dict): dict of plot_name->[(datafile_description, data_filename), ...]
+    summary_plot (dict): a dict with the following keys:
+        names (list): list of plot names - keys for following dicts
+        titles (dict): dict of plot_name->plot_title
+        labels (dict): dict of plot_name->plot_label
+        datas (dict): dict of plot_name->[(datafile_description, data_filename), ...]
     compact_plots_to_show (dict): name=>{'href': path to target(report) when user clicks on image, 'img': path to png image to show}
-    heatmap_plot_names (list): list of plot names for heatmaps, keys for dicts below
-    heatmap_plot_htmls (dict): dict of plot_name->HTML for the plot
-    heatmap_plot_titles (dict): dict of plot_name->plot_title
-    heatmap_plot_labels (dict): dict of plot_name->plot_label
-    heatmap_plot_datas (dict): dict of plot_name->[(datafile_description, data_filename), ...]
+    allele_modification_heatmap_plot (dict): a dict with the following keys:
+        names (list): list of plot names for heatmaps, keys for dicts below
+        htmls (dict): dict of plot_name->HTML for the plot
+        titles (dict): dict of plot_name->plot_title
+        labels (dict): dict of plot_name->plot_label
+        datas (dict): dict of plot_name->[(datafile_description, data_filename), ...]
     """
 
     def dirname(path):
@@ -364,19 +359,19 @@ def make_multi_report(
             window_nuc_conv_plots=window_nuc_conv_plots,
             nuc_conv_plots=nuc_conv_plots,
             crispresso_data_path=crispresso_data_path,
-            summary_plot_names=summary_plot_names,
-            summary_plot_titles=summary_plot_titles,
-            summary_plot_labels=summary_plot_labels,
-            summary_plot_datas=summary_plot_datas,
+            summary_plot_names=summary_plot['names'],
+            summary_plot_titles=summary_plot['titles'],
+            summary_plot_labels=summary_plot['labels'],
+            summary_plot_datas=summary_plot['datas'],
             run_names=run_names,
             sub_html_files=sub_html_files,
             report_name=report_name,
             compact_plots_to_show=compact_plots_to_show,
-            heatmap_plot_names=heatmap_plot_names,
-            heatmap_plot_htmls=heatmap_plot_htmls,
-            heatmap_plot_titles=heatmap_plot_titles,
-            heatmap_plot_labels=heatmap_plot_labels,
-            heatmap_plot_datas=heatmap_plot_datas,
+            allele_modification_heatmap_plot_names=allele_modification_heatmap_plot['names'],
+            allele_modification_heatmap_plot_htmls=allele_modification_heatmap_plot['htmls'],
+            allele_modification_heatmap_plot_titles=allele_modification_heatmap_plot['titles'],
+            allele_modification_heatmap_plot_labels=allele_modification_heatmap_plot['labels'],
+            allele_modification_heatmap_plot_datas=allele_modification_heatmap_plot['datas'],
         ))
 
 
@@ -408,33 +403,44 @@ def make_aggregate_report(
     Returns:
     Nothin
     """
-    summary_plot_names = []
+    summary_plot = {}
     if 'summary_plot_names' in crispresso2_info['results']['general_plots']:
-        summary_plot_names = crispresso2_info['results']['general_plots']['summary_plot_names']
-    summary_plot_titles = {}
+        summary_plot['names'] = crispresso2_info['results']['general_plots']['summary_plot_names']
+    else:
+        summary_plot['names'] = []
     if 'summary_plot_titles' in crispresso2_info['results']['general_plots']:
-        summary_plot_titles = crispresso2_info['results']['general_plots']['summary_plot_titles']
-    summary_plot_labels = {}
+        summary_plot['titles'] = crispresso2_info['results']['general_plots']['summary_plot_titles']
+    else:
+        summary_plot['titles'] = {}
     if 'summary_plot_labels' in crispresso2_info['results']['general_plots']:
-        summary_plot_labels = crispresso2_info['results']['general_plots']['summary_plot_labels']
-    summary_plot_datas = {}
+        summary_plot['labels'] = crispresso2_info['results']['general_plots']['summary_plot_labels']
+    else:
+        summary_plot['labels'] = {}
     if 'summary_plot_datas' in crispresso2_info['results']['general_plots']:
-        summary_plot_datas = crispresso2_info['results']['general_plots']['summary_plot_datas']
-    heatmap_plot_names = []
-    if 'heatmap_plot_names' in crispresso2_info['results']['general_plots']:
-        heatmap_plot_names = crispresso2_info['results']['general_plots']['heatmap_plot_names']
-    heatmap_plot_paths = {}
-    if 'heatmap_plot_paths' in crispresso2_info['results']['general_plots']:
-        heatmap_plot_paths = crispresso2_info['results']['general_plots']['heatmap_plot_paths']
-    heatmap_plot_titles = {}
-    if 'heatmap_plot_titles' in crispresso2_info['results']['general_plots']:
-        heatmap_plot_titles = crispresso2_info['results']['general_plots']['heatmap_plot_titles']
-    heatmap_plot_labels = {}
-    if 'heatmap_plot_labels' in crispresso2_info['results']['general_plots']:
-        heatmap_plot_labels = crispresso2_info['results']['general_plots']['heatmap_plot_labels']
-    heatmap_plot_datas = {}
-    if 'heatmap_plot_datas' in crispresso2_info['results']['general_plots']:
-        heatmap_plot_datas = crispresso2_info['results']['general_plots']['heatmap_plot_datas']
+        summary_plot['datas'] = crispresso2_info['results']['general_plots']['summary_plot_datas']
+    else:
+        summary_plot['datas'] = {}
+    allele_modification_heatmap_plot = {}
+    if 'allele_modification_heatmap_plot_names' in crispresso2_info['results']['general_plots']:
+        allele_modification_heatmap_plot['names'] = crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_names']
+    else:
+        allele_modification_heatmap_plot['names'] = []
+    if 'allele_modification_heatmap_plot_paths' in crispresso2_info['results']['general_plots']:
+        allele_modification_heatmap_plot['paths'] = crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_paths']
+    else:
+        allele_modification_heatmap_plot['paths'] = {}
+    if 'allele_modification_heatmap_plot_titles' in crispresso2_info['results']['general_plots']:
+        allele_modification_heatmap_plot['titles'] = crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_titles']
+    else:
+        allele_modification_heatmap_plot['titles'] = {}
+    if 'allele_modification_heatmap_plot_labels' in crispresso2_info['results']['general_plots']:
+        allele_modification_heatmap_plot['labels'] = crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_labels']
+    else:
+        allele_modification_heatmap_plot['labels'] = {}
+    if 'allele_modification_heatmap_plot_datas' in crispresso2_info['results']['general_plots']:
+        allele_modification_heatmap_plot['datas'] = crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_datas']
+    else:
+        allele_modification_heatmap_plot['datas'] = {}
 
     window_nuc_pct_quilts = []
     if 'window_nuc_pct_quilt_plot_names' in crispresso2_info['results']['general_plots']:
@@ -461,10 +467,10 @@ def make_aggregate_report(
         old_img = compact_plots_to_show[compact_plot]['img']
         compact_plots_to_show[compact_plot]['img'] = os.path.relpath(old_img, crispresso_report_folder)
 
-    heatmap_plot_htmls = {}
-    for heatmap_plot_name, heatmap_plot_path in heatmap_plot_paths.items():
+    allele_modification_heatmap_plot['htmls'] = {}
+    for heatmap_plot_name, heatmap_plot_path in allele_modification_heatmap_plot['paths'].items():
         with open(heatmap_plot_path) as fh:
-            heatmap_plot_htmls[heatmap_plot_name] = fh.read()
+            allele_modification_heatmap_plot['htmls'][heatmap_plot_name] = fh.read()
 
     make_multi_report(
         run_names,
@@ -475,14 +481,7 @@ def make_aggregate_report(
         report_name,
         window_nuc_pct_quilts=window_nuc_pct_quilts,
         nuc_pct_quilts=nuc_pct_quilts,
-        summary_plot_names=summary_plot_names,
-        summary_plot_titles=summary_plot_titles,
-        summary_plot_labels=summary_plot_labels,
-        summary_plot_datas=summary_plot_datas,
+        summary_plot=summary_plot,
         compact_plots_to_show=compact_plots_to_show,
-        heatmap_plot_names=heatmap_plot_names,
-        heatmap_plot_htmls=heatmap_plot_htmls,
-        heatmap_plot_titles=heatmap_plot_titles,
-        heatmap_plot_labels=heatmap_plot_labels,
-        heatmap_plot_datas=heatmap_plot_datas,
+        allele_modification_heatmap_plot=allele_modification_heatmap_plot,
     )
