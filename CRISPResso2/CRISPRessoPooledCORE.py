@@ -613,9 +613,9 @@ def main():
 
         if RUNNING_MODE=='ONLY_AMPLICONS' or  RUNNING_MODE=='AMPLICONS_AND_GENOME':
 
-            with open(args.amplicons_file, 'rb') as amplicons:
+            with open(args.amplicons_file, 'r') as amplicons:
                 sniffer = csv.Sniffer()
-                has_header = sniffer.has_header(amplicons.read(2048))
+                has_header = sniffer.has_header(amplicons.read(100))
                 amplicons.seek(0)
                 reader = csv.reader(amplicons)
                 header = next(reader)
