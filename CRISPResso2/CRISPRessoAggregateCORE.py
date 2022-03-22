@@ -536,19 +536,36 @@ ___________________________________
                         crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_titles'] = {}
                         crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_labels'] = {}
                         crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_datas'] = {}
+
+                        crispresso2_info['results']['general_plots']['allele_modification_line_plot_names'] = []
+                        crispresso2_info['results']['general_plots']['allele_modification_line_plot_paths'] = {}
+                        crispresso2_info['results']['general_plots']['allele_modification_line_plot_titles'] = {}
+                        crispresso2_info['results']['general_plots']['allele_modification_line_plot_labels'] = {}
+                        crispresso2_info['results']['general_plots']['allele_modification_line_plot_datas'] = {}
                         if guides_all_same:
                             sgRNA_intervals = [consensus_sgRNA_intervals] * modification_frequency_summary_df.shape[0]
                         else:
                             sgRNA_intervals = consensus_sgRNA_intervals
+                        modification_frequency_summary_df.index = [
+                            '{0} ({1})'.format(folder, folder_index)
+                            for folder_index, folder in
+                            enumerate(
+                                modification_frequency_summary_df['Folder'], 1,
+                            )
+                        ]
                         for modification_type in ['Insertions', 'Deletions', 'Substitutions']:
                             modification_df = modification_frequency_summary_df[
                                 modification_frequency_summary_df['Modification'] == modification_type
                             ]
-                            modification_df.index = modification_df['Folder']
                             modification_df = modification_df.drop(
                                 ['Modification', 'Folder'], axis=1,
                             )
-                            plot_name = 'CRISPRessoAggregate_percentage_of_{0}_across_alleles_{1}'.format(modification_type.lower(), amplicon_name)
+                            modification_df.columns = [
+                                '{0} ({1})'.format(column, position)
+                                for position, column in
+                                enumerate(modification_df.columns, 1)
+                            ]
+                            plot_name = 'CRISPRessoAggregate_percentage_of_{0}_across_alleles_{1}_heatmap'.format(modification_type.lower(), amplicon_name)
                             plot_path = '{0}.html'.format(_jp(plot_name))
                             CRISPRessoPlot.plot_allele_modification_heatmap(
                                 modification_df,
@@ -558,12 +575,36 @@ ___________________________________
                             )
                             crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_names'].append(plot_name)
                             crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_paths'][plot_name] = plot_path
-                            crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_titles'][plot_name] = 'CRISPRessoAggregate {0} Across Alleles for {1}'.format(
+                            crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_titles'][plot_name] = 'CRISPRessoAggregate {0} Across Samples for {1}'.format(
                                 modification_type,
                                 amplicon_name,
                             )
-                            crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_labels'][plot_name] = 'Each row is an allele and each column is a position in the amplicon sequence. Each cell shows the percentage of {0} for the allele at that position relative to the amplicon. Guides for each sample are identified by a black rectangle.'.format(modification_type.lower())
+                            crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_labels'][plot_name] = 'Each row is a sample and each column is a position in the amplicon sequence. Each cell shows the percentage of {0} for the sample at that position relative to the amplicon. Guides for each sample are identified by a black rectangle.'.format(modification_type.lower())
                             crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_datas'][plot_name] = [
+                                (
+                                    'CRISPRessoAggregate Modification Frequency Summary',
+                                    os.path.basename(
+                                        modification_frequency_summary_filename,
+                                    ),
+                                ),
+                            ]
+
+                            plot_name = 'CRISPRessoAggregate_percentage_of_{0}_across_alleles_{1}_line'.format(modification_type.lower(), amplicon_name)
+                            plot_path = '{0}.html'.format(_jp(plot_name))
+                            CRISPRessoPlot.plot_allele_modification_line(
+                                modification_df,
+                                sgRNA_intervals,
+                                plot_path,
+                                modification_type,
+                            )
+                            crispresso2_info['results']['general_plots']['allele_modification_line_plot_names'].append(plot_name)
+                            crispresso2_info['results']['general_plots']['allele_modification_line_plot_paths'][plot_name] = plot_path
+                            crispresso2_info['results']['general_plots']['allele_modification_line_plot_titles'][plot_name] = 'CRISPRessoAggregate {0} Across Samples for {1}'.format(
+                                modification_type,
+                                amplicon_name,
+                            )
+                            crispresso2_info['results']['general_plots']['allele_modification_line_plot_labels'][plot_name] = 'Each line is a sample that indicates the percentage of {0} for the sample at that position relative to the amplicon. Guides are shown by a grey rectangle.'.format(modification_type.lower())
+                            crispresso2_info['results']['general_plots']['allele_modification_line_plot_datas'][plot_name] = [
                                 (
                                     'CRISPRessoAggregate Modification Frequency Summary',
                                     os.path.basename(

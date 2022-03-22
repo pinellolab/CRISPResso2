@@ -3716,16 +3716,6 @@ def plot_quantification_positions(
 def plot_allele_modification_heatmap(
     sample_values, sample_sgRNA_intervals, plot_path, title,
 ):
-    sample_values.columns = [
-        '{0} ({1})'.format(column, position)
-        for position, column in
-        enumerate(sample_values.columns, 1)
-    ]
-    sample_values.index = [
-        '{0} ({1})'.format(folder, folder_index)
-        for folder_index, folder in
-        enumerate(sample_values.index, 1)
-    ]
     fig = px.imshow(
         sample_values,
         labels={
@@ -3759,4 +3749,43 @@ def plot_allele_modification_heatmap(
         include_plotlyjs='cdn',
         full_html=False,
         div_id='allele-modification-heatmap-{0}'.format(title.lower()),
+    )
+
+
+def plot_allele_modification_line(
+    sample_values, sample_sgRNA_intervals, plot_path, title,
+):
+    fig = px.line(sample_values.transpose())
+    sgRNA_intervals = set(
+        tuple(sgRNA_interval)
+        for sample_sgRNA_interval in sample_sgRNA_intervals
+        for sgRNA_interval in sample_sgRNA_interval
+    )
+    for sgRNA_interval in sgRNA_intervals:
+        fig.add_shape(
+            type='rect',
+            x0=sgRNA_interval[0],
+            y0=0,
+            x1=sgRNA_interval[1],
+            y1=0.5,
+            fillcolor='Gray',
+            opacity=0.2,
+            line={'color': 'gray'},
+        )
+
+    fig.update_layout(
+        autosize=True,
+        xaxis_title='Amplicon Nucleotide (Position)',
+        yaxis_title='{0} (%)'.format(title),
+        legend_title='Samples',
+    )
+    return fig.write_html(
+        plot_path,
+        config={
+            'responsive': True,
+            'displaylogo': False,
+        },
+        include_plotlyjs='cdn',
+        full_html=False,
+        div_id='allele-modification-line-{0}'.format(title.lower()),
     )

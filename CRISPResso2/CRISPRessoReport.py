@@ -310,6 +310,7 @@ def make_multi_report(
     summary_plot={},
     compact_plots_to_show={},
     allele_modification_heatmap_plot={},
+    allele_modification_line_plot={},
 ):
     """
     Makes an HTML report for a run containing multiple crispresso runs
@@ -372,6 +373,11 @@ def make_multi_report(
             allele_modification_heatmap_plot_titles=allele_modification_heatmap_plot['titles'],
             allele_modification_heatmap_plot_labels=allele_modification_heatmap_plot['labels'],
             allele_modification_heatmap_plot_datas=allele_modification_heatmap_plot['datas'],
+            allele_modification_line_plot_names=allele_modification_line_plot['names'],
+            allele_modification_line_plot_htmls=allele_modification_line_plot['htmls'],
+            allele_modification_line_plot_titles=allele_modification_line_plot['titles'],
+            allele_modification_line_plot_labels=allele_modification_line_plot['labels'],
+            allele_modification_line_plot_datas=allele_modification_line_plot['datas'],
         ))
 
 
@@ -420,6 +426,7 @@ def make_aggregate_report(
         summary_plot['datas'] = crispresso2_info['results']['general_plots']['summary_plot_datas']
     else:
         summary_plot['datas'] = {}
+
     allele_modification_heatmap_plot = {}
     if 'allele_modification_heatmap_plot_names' in crispresso2_info['results']['general_plots']:
         allele_modification_heatmap_plot['names'] = crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_names']
@@ -441,6 +448,28 @@ def make_aggregate_report(
         allele_modification_heatmap_plot['datas'] = crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_datas']
     else:
         allele_modification_heatmap_plot['datas'] = {}
+
+    allele_modification_line_plot = {}
+    if 'allele_modification_line_plot_names' in crispresso2_info['results']['general_plots']:
+        allele_modification_line_plot['names'] = crispresso2_info['results']['general_plots']['allele_modification_line_plot_names']
+    else:
+        allele_modification_line_plot['names'] = []
+    if 'allele_modification_line_plot_paths' in crispresso2_info['results']['general_plots']:
+        allele_modification_line_plot['paths'] = crispresso2_info['results']['general_plots']['allele_modification_line_plot_paths']
+    else:
+        allele_modification_line_plot['paths'] = {}
+    if 'allele_modification_line_plot_titles' in crispresso2_info['results']['general_plots']:
+        allele_modification_line_plot['titles'] = crispresso2_info['results']['general_plots']['allele_modification_line_plot_titles']
+    else:
+        allele_modification_line_plot['titles'] = {}
+    if 'allele_modification_line_plot_labels' in crispresso2_info['results']['general_plots']:
+        allele_modification_line_plot['labels'] = crispresso2_info['results']['general_plots']['allele_modification_line_plot_labels']
+    else:
+        allele_modification_line_plot['labels'] = {}
+    if 'allele_modification_line_plot_datas' in crispresso2_info['results']['general_plots']:
+        allele_modification_line_plot['datas'] = crispresso2_info['results']['general_plots']['allele_modification_line_plot_datas']
+    else:
+        allele_modification_line_plot['datas'] = {}
 
     window_nuc_pct_quilts = []
     if 'window_nuc_pct_quilt_plot_names' in crispresso2_info['results']['general_plots']:
@@ -472,6 +501,11 @@ def make_aggregate_report(
         with open(heatmap_plot_path) as fh:
             allele_modification_heatmap_plot['htmls'][heatmap_plot_name] = fh.read()
 
+    allele_modification_line_plot['htmls'] = {}
+    for line_plot_name, line_plot_path in allele_modification_line_plot['paths'].items():
+        with open(line_plot_path) as fh:
+            allele_modification_line_plot['htmls'][line_plot_name] = fh.read()
+
     make_multi_report(
         run_names,
         sub_html_files,
@@ -484,4 +518,5 @@ def make_aggregate_report(
         summary_plot=summary_plot,
         compact_plots_to_show=compact_plots_to_show,
         allele_modification_heatmap_plot=allele_modification_heatmap_plot,
+        allele_modification_line_plot=allele_modification_line_plot,
     )

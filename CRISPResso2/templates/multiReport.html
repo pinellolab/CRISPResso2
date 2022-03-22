@@ -155,19 +155,54 @@
           {% endif %}
 
           {% if allele_modification_heatmap_plot_names|length > 0 %}
-            {% for plot_name in allele_modification_heatmap_plot_names %}
+            {% for heatmap_plot_name in allele_modification_heatmap_plot_names %}
+              {% set line_plot_name = allele_modification_line_plot_names[loop.index - 1] %}
+              {% set modification_type = heatmap_plot_name.split('_')[3] %}
               <div class="card text-center mb-2">
                 <div class="card-header">
-                    <h5>{{allele_modification_heatmap_plot_titles[plot_name]}}</h5>
+                    <h5>{{allele_modification_heatmap_plot_titles[heatmap_plot_name]}}</h5>
+                    <ul class="nav nav-tabs justify-content-center card-header-tabs" id="aln-tab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" data-bs-toggle="tab" id="{{modification_type}}-heatmap-tab" data-bs-target="#{{heatmap_plot_name}}" role="tab" aria-controls="{{heatmap_plot_name}}" aria-selected="true">Heatmap</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" data-bs-toggle="tab" id="{{modification_type}}-line-tab" data-bs-target="#{{line_plot_name}}" role="tab" aria-controls="{{line_plot_name}}" aria-selected="false">Line</a>
+                        </li>
+                    </ul>
                 </div>
                 <div class="card-body">
-                    {{allele_modification_heatmap_plot_htmls[plot_name]}}
-                    <label class="labelpadding">{{allele_modification_heatmap_plot_labels[plot_name]}}</label>
-                    {% for (data_label, data_path) in allele_modification_heatmap_plot_datas[plot_name] %}
-                        <p class="m-0"><small>Data: <a href="{{crispresso_data_path}}{{data_path}}">{{data_label}}</a></small></p>
-                    {% endfor %}
+                    <div class="tab-content" id="allele-modification-{{modification_type}}-tabs">
+                        <div class="tab-pane fade show active" id="{{heatmap_plot_name}}" role="tabpanel" aria-labelledby="{{modification_type}}-heatmap-tab">
+                            {{allele_modification_heatmap_plot_htmls[heatmap_plot_name]}}
+                            <label class="labelpadding">{{allele_modification_heatmap_plot_labels[heatmap_plot_name]}}</label>
+                            {% for (data_label, data_path) in allele_modification_heatmap_plot_datas[heatmap_plot_name] %}
+                                <p class="m-0"><small>Data: <a href="{{crispresso_data_path}}{{data_path}}">{{data_label}}</a></small></p>
+                            {% endfor %}
+                        </div>
+                        <div class="tab-pane fade" id="{{line_plot_name}}" role="tabpanel" aria-labelledby="{{modification_type}}-line-tab">
+                            {{allele_modification_line_plot_htmls[line_plot_name]}}
+                            <label class="labelpadding">{{allele_modification_line_plot_labels[line_plot_name]}}</label>
+                            {% for (data_label, data_path) in allele_modification_line_plot_datas[line_plot_name] %}
+                                <p class="m-0"><small>Data: <a href="{{crispresso_data_path}}{{data_path}}">{{data_label}}</a></small></p>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
               </div>
+              <script type="application/javascript">
+               document.addEventListener("DOMContentLoaded", () => {
+                   $("#{{modification_type}}-heatmap-tab").on("shown.bs.tab", (e) => {
+                       let plot = document.getElementById("allele-modification-heatmap-{{modification_type}}");
+                       Plotly.Plots.resize(plot);
+                       window.dispatchEvent(new Event("resize"));
+                   });
+                   $("#{{modification_type}}-line-tab").on("shown.bs.tab", (e) => {
+                       let plot = document.getElementById("allele-modification-line-{{modification_type}}");
+                       Plotly.Plots.resize(plot);
+                       window.dispatchEvent(new Event("resize"));
+                   });
+               });
+              </script>
             {% endfor %}
               <!-- The below code is another failed attempt to make the heatmaps go fullscreen.
                    To implement this behavior, wrap the `allele_modification_heatmap_plot_htmls[plot_name]` in a `div`
