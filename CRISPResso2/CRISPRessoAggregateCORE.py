@@ -412,6 +412,8 @@ ___________________________________
                     crispresso2_info['results']['refs'][amplicon_name]['modification_frequency_summary_filename'] = os.path.basename(modification_frequency_summary_filename)
                     crispresso2_info['results']['refs'][amplicon_name]['modification_percentage_summary_filename'] = os.path.basename(modification_percentage_summary_filename)
 
+                    this_number_samples = len(pd.unique(nucleotide_percentage_summary_df['Folder']))
+
                     #if guides are all the same, merge substitutions and perform base editor comparison at guide quantification window
                     if guides_all_same and consensus_guides != []:
                         info("All guides are equal. Performing comparison of runs for amplicon '%s'"% amplicon_name)
@@ -439,7 +441,7 @@ ___________________________________
                             sub_modification_percentage_summary_filename = _jp(amplicon_plot_name + 'Modification_percentage_summary_around_sgRNA_'+sgRNA+'.txt')
                             sub_modification_percentage_summary_df.to_csv(sub_modification_percentage_summary_filename, sep='\t', index=None)
 
-                            if not args.suppress_plots:
+                            if not args.suppress_plots and this_number_samples < args.max_samples_per_summary_plot:
                                 # plot for each guide
                                 # show all sgRNA's on the plot
                                 sub_sgRNA_intervals = []
@@ -477,11 +479,9 @@ ___________________________________
                                 crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [(amplicon_name + ' nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), (amplicon_name + ' modification frequencies', os.path.basename(modification_frequency_summary_filename))]
                         # done with per-sgRNA plots
 
-                        this_number_samples = len(pd.unique(nucleotide_percentage_summary_df['Folder']))
                         if not args.suppress_plots: # and this_number_samples < 500: # plot the whole region
                             this_plot_suffix = "" # in case we have a lot of regions, split them up and add a suffix here
                             this_plot_suffix_int = 1
-                            this_number_samples = len(pd.unique(nucleotide_percentage_summary_df['Folder']))
                             nrow_per_sample_nucs = nucleotide_percentage_summary_df.shape[0] / this_number_samples # calculate number of rows per sample for subsetting the tables
                             nrow_per_sample_mods = modification_percentage_summary_df.shape[0] / this_number_samples
                             for sample_start_ind in range(0, this_number_samples, args.max_samples_per_summary_plot):
@@ -504,11 +504,9 @@ ___________________________________
                                 this_plot_suffix = "_" + str(this_plot_suffix_int)
 
                     else: # guides are not the same
-                        this_number_samples = len(pd.unique(nucleotide_percentage_summary_df['Folder']))
                         if not args.suppress_plots: # and this_number_samples < 150:
                             this_plot_suffix = "" # in case we have a lot of regions, split them up and add a suffix here
                             this_plot_suffix_int = 1
-                            this_number_samples = len(pd.unique(nucleotide_percentage_summary_df['Folder']))
                             nrow_per_sample_nucs = nucleotide_percentage_summary_df.shape[0] / this_number_samples # calculate number of rows per sample for subsetting the tables
                             nrow_per_sample_mods = modification_percentage_summary_df.shape[0] / this_number_samples
                             for sample_start_ind in range(0,this_number_samples,args.max_samples_per_summary_plot):
