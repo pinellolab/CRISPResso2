@@ -62,7 +62,7 @@ ___________________________________
         parser.add_argument('--place_report_in_output_folder',  help='If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output.', action='store_true')
         parser.add_argument('--suppress_report',  help='Suppress output report', action='store_true')
         parser.add_argument('--suppress_plots',  help='Suppress output plots', action='store_true')
-        parser.add_argument('--max_samples_per_summary_plot', type=int, help="Maximum number of samples on each page of the pdf report plots. If this number gets above ~150, they will be too big for matplotlib.", default=250)
+        parser.add_argument('--max_samples_per_summary_plot', type=int, help="Maximum number of samples on each page of the pdf report plots. If this number gets above ~150, they will be too big for matplotlib.", default=150)
 
         parser.add_argument('--debug', help='Show debug messages', action='store_true')
 
