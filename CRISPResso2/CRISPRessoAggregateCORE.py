@@ -606,16 +606,15 @@ ___________________________________
                             sgRNA_intervals = [consensus_sgRNA_intervals] * modification_frequency_summary_df.shape[0]
                         else:
                             sgRNA_intervals = consensus_sgRNA_intervals
-                        modification_frequency_summary_df.index = [
-                            '{0} ({1})'.format(folder, folder_index)
-                            for folder_index, folder in
-                            enumerate(
-                                modification_frequency_summary_df['Folder'], 1,
-                            )
-                        ]
                         for modification_type in ['Insertions', 'Deletions', 'Substitutions']:
                             modification_df = modification_frequency_summary_df[
                                 modification_frequency_summary_df['Modification'] == modification_type
+                            ]
+                            modification_df.index = [
+                                '{0} ({1})'.format(folder, folder_index)
+                                for folder_index, folder in enumerate(
+                                    modification_df['Folder'], 1,
+                                )
                             ]
                             modification_df = modification_df.drop(
                                 ['Modification', 'Folder'], axis=1,
