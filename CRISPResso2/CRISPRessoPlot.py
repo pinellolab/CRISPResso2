@@ -3723,6 +3723,7 @@ def plot_allele_modification_heatmap(
             'y': 'Sample (Index)',
             'color': '{0} (%)'.format(title),
         },
+        aspect='auto',
     )
     for sample_id, sgRNA_intervals in zip(
         range(sample_values.shape[0]), sample_sgRNA_intervals,
@@ -3740,6 +3741,9 @@ def plot_allele_modification_heatmap(
     fig.update_layout(
         autosize=True,
     )
+    fig['layout']['yaxis']['scaleanchor'] = 'x'
+    fig['layout']['yaxis']['gridcolor'] = 'rgba(0, 0, 0, 0)'
+    fig['layout']['xaxis']['gridcolor'] = 'rgba(0, 0, 0, 0)'
     return fig.write_html(
         plot_path,
         config={
