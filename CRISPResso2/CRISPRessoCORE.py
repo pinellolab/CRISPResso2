@@ -400,6 +400,16 @@ def get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2
         # print('qual_ind_in_r1: ' + str(qual_ind_in_r1) + ' qual_ind_in_r2: ' + str(qual_ind_in_r2))
         # print('final_aln: ' + final_aln + ' final_ref: ' + final_ref)
         # print('---------------')
+        # print('aln1_seq: {aln1_seq} aln1_ref: {aln1_ref} aln2_seq: {aln2_seq} aln2_ref: {aln2_ref} seq_ind_in_r1: {seq_ind_in_r1: <3} qual_ind_in_r1: {qual_ind_in_r1: <3} seq_ind_in_r2: {seq_ind_in_r2: <3} qual_ind_in_r2: {qual_ind_in_r2: <3}'.format(
+        #     aln1_seq=aln1_seq[seq_ind_in_r1] if seq_ind_in_r1 < len(aln1_seq) else 'Z',
+        #     aln1_ref=aln1_ref[ref_ind_in_r1] if ref_ind_in_r1 < len(aln1_ref) else 'Z',
+        #     aln2_seq=aln2_seq[seq_ind_in_r2] if seq_ind_in_r2 < len(aln2_seq) else 'Z',
+        #     aln2_ref=aln2_ref[ref_ind_in_r2] if ref_ind_in_r2 < len(aln2_ref) else 'Z',
+        #     seq_ind_in_r1=seq_ind_in_r1,
+        #     qual_ind_in_r1=qual_ind_in_r1,
+        #     seq_ind_in_r2=seq_ind_in_r2,
+        #     qual_ind_in_r2=qual_ind_in_r2,
+        # ))
         if ind_r1_start <= seq_ind_in_r1 <= ind_r1_stop:
             if ind_r2_start <= seq_ind_in_r2 <= ind_r2_stop:
                 # both are in range
