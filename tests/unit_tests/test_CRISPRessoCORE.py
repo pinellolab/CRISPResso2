@@ -20,10 +20,11 @@ def test_get_consensus_alignment_from_pairs():
     aln2_ref             = "ATCGATCGAT"
     qual2                =      "AAAAA"
 
-    aln_seq, ref_seq, score = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
+    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
     assert aln_seq ==      "NNCGATCGAT"
     assert ref_seq ==      "ATCGATCGAT"
     assert score == 80
+    assert caching_ok
 
     #test quality difference
     qual1                =   "AAAB"
@@ -33,10 +34,11 @@ def test_get_consensus_alignment_from_pairs():
     aln2_ref             = "ATCGATCGAT"
     qual2                =      "AAAAA"
 
-    aln_seq, ref_seq, score = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
+    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
     assert aln_seq ==      "NNCGATCGAT"
     assert ref_seq ==      "ATCGATCGAT"
     assert score == 80
+    assert not caching_ok
 
     #test quality difference
     qual1                =   "AAAA"
@@ -46,11 +48,12 @@ def test_get_consensus_alignment_from_pairs():
     aln2_ref             = "ATCGATCGAT"
     qual2                =      "BAAAA"
 
-    aln_seq, ref_seq, score = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
+    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
     print('got aln_seq ' + str(aln_seq))
     assert aln_seq ==      "NNCGAGCGAT"
     assert ref_seq ==      "ATCGATCGAT"
     assert score == 70
+    assert not caching_ok
 
     #gaps between r1 and r2
     qual1                = "AAAAAAAAAA"
@@ -60,10 +63,11 @@ def test_get_consensus_alignment_from_pairs():
     aln2_ref             = "ATCGATCGAT"
     qual2                = "AAAAAAAAAA"
 
-    aln_seq, ref_seq, score = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
+    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
     assert aln_seq ==      "NNCGANNGAN"
     assert ref_seq ==      "ATCGATCGAT"
     assert score == 50
+    assert caching_ok
 
     print('Finished easy tests... now for the hard stuff')
 
@@ -75,10 +79,11 @@ def test_get_consensus_alignment_from_pairs():
     aln2_ref             = "ATC GATCGAT".replace(" ","")
     qual2                =         "AA"
 
-    aln_seq, ref_seq, score = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
+    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
     assert aln_seq ==      "NNCCGANNGAN"
     assert ref_seq ==      "ATC-GATCGAT"
-    assert score == 45 #double check this score... should be 5/11
+    assert score == 45
+    assert caching_ok
 
     #deletion in r1
     qual1                =   "AA"
@@ -88,10 +93,11 @@ def test_get_consensus_alignment_from_pairs():
     aln2_ref             = "ATCGATCGAT".replace(" ","")
     qual2                =        "AA"
 
-    aln_seq, ref_seq, score = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
+    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
     assert aln_seq ==      "NNC-ANNGAN"
     assert ref_seq ==      "ATCGATCGAT"
-    assert score == 40 #double check this score... should be 4/10
+    assert score == 40
+    assert caching_ok
 
     # deletion in r2
     qual1                =   "AAA"
@@ -101,24 +107,26 @@ def test_get_consensus_alignment_from_pairs():
     aln2_ref             = "ATCGATCGAT".replace(" ","")
     qual2                =      "AAA"
 
-    aln_seq, ref_seq, score = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
+    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
     assert aln_seq ==      "NNCGAT-GAN"
     assert ref_seq ==      "ATCGATCGAT"
-    assert score == 60 #double check this score... should be 6/10
+    assert score == 60
+    assert caching_ok
 
     # insertion at beginning of r1
-    qual1                = "AAAA"
+    qual1                = "AAAAA"
     aln1_seq             = "TA-CGA----- ".replace(" ","")
     aln1_ref             = "-ATCGATCGAT ".replace(" ","")
     aln2_seq             = " --------AT ".replace(" ","")
     aln2_ref             = " ATCGATCGAT".replace(" ","")
-    qual2                =      "AAA"
+    qual2                =          "AA"
 
-    aln_seq, ref_seq, score = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
+    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
     assert aln_seq ==      "TA-CGANNNAT"
     assert ref_seq ==      "-ATCGATCGAT"
-    assert score == 54 #double check this score... should be 6/11
+    assert score == 54
+    assert caching_ok
+
 
 if __name__ == "__main__":
-# execute only if run as a script
     test_get_consensus_alignment_from_pairs()
