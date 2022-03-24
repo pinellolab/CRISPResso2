@@ -433,7 +433,7 @@ def get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2
             # only r2 is in range
             this_nuc = aln2_seq[seq_ind_in_r2]
             final_aln += this_nuc
-            final_ref += aln1_ref[ref_ind_in_r1]
+            final_ref += aln2_ref[ref_ind_in_r2]
         else:
             # neither are in range
             final_aln += "N"
@@ -442,38 +442,42 @@ def get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2
         if seq_ind_in_r1 < len(aln1_ref):
             if seq_ind_in_r2 < len(aln2_ref):
                 # both are in range
-                if aln1_seq[seq_ind_in_r1] != '-':
-                    qual_ind_in_r1 += 1
-                if aln2_seq[seq_ind_in_r2] != '-':
-                    qual_ind_in_r2 += 1
                 if aln1_ref[seq_ind_in_r1] == '-' and aln2_ref[seq_ind_in_r2] != '-':
                     # gap in r2 ref, but not r1 ref
+                    if aln1_seq[seq_ind_in_r1] != '-':
+                        qual_ind_in_r1 += 1
                     ref_ind_in_r1 += 1
                     seq_ind_in_r1 += 1
                 elif aln1_ref[seq_ind_in_r1] != '-' and aln2_ref[seq_ind_in_r2] == '-':
                     # gap in r1 ref, but not r2 ref
+                    if aln2_seq[seq_ind_in_r2] != '-':
+                        qual_ind_in_r2 += 1
                     ref_ind_in_r2 += 1
                     seq_ind_in_r2 += 1
                 else:
                     # either both refs have gaps or neither have a gap
+                    if aln1_seq[seq_ind_in_r1] != '-':
+                        qual_ind_in_r1 += 1
+                    if aln2_seq[seq_ind_in_r2] != '-':
+                        qual_ind_in_r2 += 1
                     ref_ind_in_r1 += 1
                     ref_ind_in_r2 += 1
                     seq_ind_in_r1 += 1
                     seq_ind_in_r2 += 1
             else:
                 # only r1 is in range
-                if aln1_seq[seq_ind_in_r2] != '-':
+                if aln1_seq[seq_ind_in_r1] != '-':
                     qual_ind_in_r2 += 1
                 if aln1_ref[seq_ind_in_r1] != '-':
                     ref_ind_in_r1 += 1
-                    seq_ind_in_r1 += 1
+                seq_ind_in_r1 += 1
         elif seq_ind_in_r2 < len(aln2_ref):
             # only r2 is in range
             if aln2_seq[seq_ind_in_r2] != '-':
                 qual_ind_in_r2 += 1
             if aln2_ref[seq_ind_in_r2] != '-':
                 ref_ind_in_r2 += 1
-                seq_ind_in_r2 += 1
+            seq_ind_in_r2 += 1
 
     final_homology_score = 0
     for i in range(len(final_ref)):
