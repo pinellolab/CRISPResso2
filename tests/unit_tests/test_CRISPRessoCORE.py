@@ -127,6 +127,20 @@ def test_get_consensus_alignment_from_pairs():
     assert score == 54
     assert caching_ok
 
+    # insertion at end of r2 and beginning of r1
+    qual1                = "AAAAA"
+    aln1_seq             = "TA-CGA-----   ".replace(" ","")
+    aln1_ref             = "-ATCGATCGAT   ".replace(" ","")
+    aln2_seq             = " -----TCGATCCA".replace(" ","")
+    aln2_ref             = " ATCGATCGAT---".replace(" ","")
+    qual2                =       "AAAAAAAA"
+
+    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
+    assert aln_seq ==      "TA-CGATCGATCCA"
+    assert ref_seq ==      "-ATCGATCGAT---"
+    # assert score == 54
+    assert caching_ok
+
 
 if __name__ == "__main__":
     test_get_consensus_alignment_from_pairs()
