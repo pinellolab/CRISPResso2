@@ -631,20 +631,21 @@ def main():
                 if not match:
                     has_header = False
                     break
-                headers.append(match)
+                headers.append(match[0])
             if not has_header:
                 # Default header
                 headers = []
                 for i in range(len(header)):
                     headers.append(names[i])
 
+            print(headers)
+
             #load and validate template file
             df_template=pd.read_csv(args.amplicons_file, names=headers, comment='#', sep='\t', dtype={'Name':str})
 
-            # TODO: Should now be unnecessary.
-            # if str(df_template.iloc[0, 1]).lower() == "amplicon_sequence":
-            #     df_template.drop(0, axis=0, inplace=True)
-            #     info('Detected header in amplicon file.')
+            if str(df_template.iloc[0, 1]).lower() == "amplicon_sequence":
+                df_template.drop(0, axis=0, inplace=True)
+                info('Detected header in amplicon file.')
 
 
             #remove empty amplicons/lines
@@ -652,9 +653,12 @@ def main():
             df_template.dropna(subset=['Name'], inplace=True)
 
             df_template.Amplicon_Sequence=df_template.Amplicon_Sequence.apply(CRISPRessoShared.capitalize_sequence)
-            df_template.Expected_HDR=df_template.Expected_HDR.apply(CRISPRessoShared.capitalize_sequence)
-            df_template.sgRNA=df_template.sgRNA.apply(CRISPRessoShared.capitalize_sequence)
-            df_template.Coding_sequence=df_template.Coding_sequence.apply(CRISPRessoShared.capitalize_sequence)
+            if 'Expected_HDR' in df_template.columns:
+                df_template.Expected_HDR=df_template.Expected_HDR.apply(CRISPRessoShared.capitalize_sequence)
+            if 'sgRNA' in df_template.columns:
+                df_template.sgRNA=df_template.sgRNA.apply(CRISPRessoShared.capitalize_sequence)
+            if 'Coding_sequence' in df_template.columns:
+                df_template.Coding_sequence=df_template.Coding_sequence.apply(CRISPRessoShared.capitalize_sequence)
 
             if not len(df_template.Amplicon_Sequence.unique())==df_template.shape[0]:
                 duplicated_entries = df_template.Amplicon_Sequence[df_template.Amplicon_Sequence.duplicated()]
@@ -670,10 +674,11 @@ def main():
             for idx, row in df_template.iterrows():
 
                 wrong_nt=CRISPRessoShared.find_wrong_nt(row.Amplicon_Sequence)
+
                 if wrong_nt:
                      raise NTException('The amplicon sequence %s contains wrong characters:%s' % (idx, ' '.join(wrong_nt)))
 
-                if not pd.isnull(row.sgRNA):
+                if 'sgRNA' in df_template.columns and not pd.isnull(row.sgRNA):
 
                     cut_points=[]
 
@@ -809,43 +814,51 @@ def main():
                     if 'sgRNA' in df_template.columns and ['sgRNA'] and not pd.isnull(row['sgRNA']):
                         crispresso_cmd += ' -g %s' % row['sgRNA']
 
-                    if row['Expected_HDR'] and not pd.isnull(row['Expected_HDR']):
+                    if 'Expected_HDR' in df_template.columns and row['Expected_HDR'] and not pd.isnull(
+                            row['Expected_HDR']):
                         crispresso_cmd += ' -e %s' % row['Expected_HDR']
 
-                    if row['Coding_sequence'] and not pd.isnull(row['Coding_sequence']):
+                    if 'Coding_sequence' in df_template.columns and row['Coding_sequence'] and not pd.isnull(
+                            row['Coding_sequence']):
                         crispresso_cmd += ' -c %s' % row['Coding_sequence']
 
-                    if row['prime_editing_pegRNA_spacer_seq'] and not pd.isnull(
+                    if 'prime_editing_pegRNA_spacer_seq' in df_template.columns and row[
+                        'prime_editing_pegRNA_spacer_seq'] and not pd.isnull(
                             row['prime_editing_pegRNA_spacer_seq']):
                         crispresso_cmd += ' --prime_editing_pegRNA_spacer_seq %s' % row[
                             'prime_editing_pegRNA_spacer_seq']
 
-                    if row['prime_editing_nicking_guide_seq'] and not pd.isnull(
+                    if 'prime_editing_nicking_guide_seq' in df_template.columns and row[
+                        'prime_editing_nicking_guide_seq'] and not pd.isnull(
                             row['prime_editing_nicking_guide_seq']):
                         crispresso_cmd += ' --prime_editing_nicking_guide_seq %s' % row[
                             'prime_editing_nicking_guide_seq']
 
-                    if row['prime_editing_pegRNA_extension_seq'] and not pd.isnull(row[
-                                                                                       'prime_editing_pegRNA_extension_seq']):
+                    if 'prime_editing_pegRNA_extension_seq' in df_template.columns and row[
+                        'prime_editing_pegRNA_extension_seq'] and not pd.isnull(row[
+                                                                                    'prime_editing_pegRNA_extension_seq']):
                         crispresso_cmd += ' --prime_editing_pegRNA_extension_seq %s' % row[
                             'prime_editing_pegRNA_extension_seq']
 
-                    if row['prime_editing_pegRNA_scaffold_seq'] and not pd.isnull(row[
-                                                                                      'prime_editing_pegRNA_scaffold_seq']):
+                    if 'prime_editing_pegRNA_scaffold_seq' in df_template.columns and row[
+                        'prime_editing_pegRNA_scaffold_seq'] and not pd.isnull(row[
+                                                                                   'prime_editing_pegRNA_scaffold_seq']):
                         crispresso_cmd += ' --prime_editing_pegRNA_scaffold_seq %s' % row[
                             'prime_editing_pegRNA_scaffold_seq']
 
-                    if row['prime_editing_pegRNA_scaffold_min_match_length'] and not pd.isnull(row[
-                                                                                                   'prime_editing_pegRNA_scaffold_min_match_length']):
+                    if 'prime_editing_pegRNA_scaffold_min_match_length' in df_template.columns and row[
+                        'prime_editing_pegRNA_scaffold_min_match_length'] and not pd.isnull(row[
+                                                                                                'prime_editing_pegRNA_scaffold_min_match_length']):
                         crispresso_cmd += ' --prime_editing_pegRNA_scaffold_min_match_length %s' % row[
                             'prime_editing_pegRNA_scaffold_min_match_length']
 
-                    if row['prime_editing_override_prime_edited_ref_seq'] and not pd.isnull(row[
-                                                                                                'prime_editing_override_prime_edited_ref_seq']):
+                    if 'prime_editing_override_prime_edited_ref_seq' in df_template.columns and row[
+                        'prime_editing_override_prime_edited_ref_seq'] and not pd.isnull(row[
+                                                                                             'prime_editing_override_prime_edited_ref_seq']):
                         crispresso_cmd += ' --prime_editing_override_prime_edited_ref_seq %s' % row[
                             'prime_editing_override_prime_edited_ref_seq']
 
-                    if row['qwc'] and not pd.isnull(row['qwc']):
+                    if 'qwc' in df_template.columns and row['qwc'] and not pd.isnull(row['qwc']):
                         crispresso_cmd += ' --qwc %s' % row['qwc']
 
                     crispresso_cmd=CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, args)
@@ -1218,43 +1231,51 @@ def main():
                             if 'sgRNA' in df_template.columns and ['sgRNA'] and not pd.isnull(row['sgRNA']):
                                 crispresso_cmd += ' -g %s' % row['sgRNA']
 
-                            if row['Expected_HDR'] and not pd.isnull(row['Expected_HDR']):
+                            if 'Expected_HDR' in df_template.columns and row['Expected_HDR'] and not pd.isnull(
+                                    row['Expected_HDR']):
                                 crispresso_cmd += ' -e %s' % row['Expected_HDR']
 
-                            if row['Coding_sequence'] and not pd.isnull(row['Coding_sequence']):
+                            if 'Coding_sequence' in df_template.columns and row['Coding_sequence'] and not pd.isnull(
+                                    row['Coding_sequence']):
                                 crispresso_cmd += ' -c %s' % row['Coding_sequence']
 
-                            if row['prime_editing_pegRNA_spacer_seq'] and not pd.isnull(
+                            if 'prime_editing_pegRNA_spacer_seq' in df_template.columns and row[
+                                'prime_editing_pegRNA_spacer_seq'] and not pd.isnull(
                                     row['prime_editing_pegRNA_spacer_seq']):
                                 crispresso_cmd += ' --prime_editing_pegRNA_spacer_seq %s' % row[
                                     'prime_editing_pegRNA_spacer_seq']
 
-                            if row['prime_editing_nicking_guide_seq'] and not pd.isnull(
+                            if 'prime_editing_nicking_guide_seq' in df_template.columns and row[
+                                'prime_editing_nicking_guide_seq'] and not pd.isnull(
                                     row['prime_editing_nicking_guide_seq']):
                                 crispresso_cmd += ' --prime_editing_nicking_guide_seq %s' % row[
                                     'prime_editing_nicking_guide_seq']
 
-                            if row['prime_editing_pegRNA_extension_seq'] and not pd.isnull(row[
-                                                                                               'prime_editing_pegRNA_extension_seq']):
+                            if 'prime_editing_pegRNA_extension_seq' in df_template.columns and row[
+                                'prime_editing_pegRNA_extension_seq'] and not pd.isnull(row[
+                                                                                            'prime_editing_pegRNA_extension_seq']):
                                 crispresso_cmd += ' --prime_editing_pegRNA_extension_seq %s' % row[
                                     'prime_editing_pegRNA_extension_seq']
 
-                            if row['prime_editing_pegRNA_scaffold_seq'] and not pd.isnull(row[
+                            if 'prime_editing_pegRNA_scaffold_seq' in df_template.columns and row[
+                                'prime_editing_pegRNA_scaffold_seq'] and not pd.isnull(row[
                                                                                            'prime_editing_pegRNA_scaffold_seq']):
                                 crispresso_cmd += ' --prime_editing_pegRNA_scaffold_seq %s' % row[
                                     'prime_editing_pegRNA_scaffold_seq']
 
-                            if row['prime_editing_pegRNA_scaffold_min_match_length'] and not pd.isnull(row[
+                            if 'prime_editing_pegRNA_scaffold_min_match_length' in df_template.columns and row[
+                                'prime_editing_pegRNA_scaffold_min_match_length'] and not pd.isnull(row[
                                                                                                         'prime_editing_pegRNA_scaffold_min_match_length']):
                                 crispresso_cmd += ' --prime_editing_pegRNA_scaffold_min_match_length %s' % row[
                                     'prime_editing_pegRNA_scaffold_min_match_length']
 
-                            if row['prime_editing_override_prime_edited_ref_seq'] and not pd.isnull(row[
+                            if 'prime_editing_override_prime_edited_ref_seq' in df_template.columns and row[
+                                'prime_editing_override_prime_edited_ref_seq'] and not pd.isnull(row[
                                                                                                      'prime_editing_override_prime_edited_ref_seq']):
                                 crispresso_cmd += ' --prime_editing_override_prime_edited_ref_seq %s' % row[
                                     'prime_editing_override_prime_edited_ref_seq']
 
-                            if row['qwc'] and not pd.isnull(row['qwc']):
+                            if 'qwc' in df_template.columns and row['qwc'] and not pd.isnull(row['qwc']):
                                 crispresso_cmd += ' --qwc %s' % row['qwc']
 
                             crispresso_cmd=CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, args)
