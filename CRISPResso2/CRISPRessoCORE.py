@@ -2893,7 +2893,15 @@ def main():
                 continue
 
             #check to see if this sequence's reverse complement is in the variant
-            rc_variant = CRISPRessoShared.reverse_complement(variant)
+            if variant.count('+'):
+                rc_variant = '{0}+{1}'.format(
+                    *[
+                        CRISPRessoShared.reverse_complement(v)
+                        for v in reversed(variant.split('+'))
+                    ],
+                )
+            else:
+                rc_variant = CRISPRessoShared.reverse_complement(variant)
             if rc_variant in variantCache and variantCache[rc_variant]['count'] > 0:
                 variant_count += variantCache[rc_variant]['count']
                 variantCache[rc_variant]['count'] = 0
@@ -2907,7 +2915,7 @@ def main():
             class_name = variantCache[variant]['class_name'] #for classifying read e.g. 'HDR_MODIFIED' for pie chart
 
             if class_name not in class_counts:
-                    class_counts[class_name] = 0
+                class_counts[class_name] = 0
             class_counts[class_name]+=variant_count
 
             #if class is AMBIGUOUS (set above if the args.expand_ambiguous_alignments param is false) don't add the modifications in this allele to the allele summaries
