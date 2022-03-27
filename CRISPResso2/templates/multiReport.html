@@ -143,7 +143,7 @@
               <div class='card-header'>
                 <h5>{{summary_plot_titles[plot_name]}}</h5>
               </div>
-              <div class='card-body'>
+              <div class='card-body' style='max-height:80vh;overflow-y:auto'>
 		      <a href="{{crispresso_data_path}}{{plot_name}}.pdf"><img src="{{crispresso_data_path}}{{plot_name}}.png" width='80%' ></a>
                 <label class="labelpadding">{{summary_plot_labels[plot_name]}}</label>
 							  {% for (data_label,data_path) in summary_plot_datas[plot_name] %}
