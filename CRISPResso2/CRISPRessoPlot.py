@@ -3262,6 +3262,7 @@ def plot_unmod_mod_pcts(fig_filename_root,df_summary_quantification,save_png,cut
 
     #if there are rows..
     if df.shape[0] > 0:
+        ax.set_ylim(-0.5, df.shape[0]-0.5)
         max_val = max(df['Reads_total'])
         space_val = max_val*0.02
         pct_labels = []
@@ -3301,6 +3302,8 @@ def plot_reads_total(fig_filename_root,df_summary_quantification,save_png,cutoff
     names = [((name[:20] + "..") if len(name) > 18 else name) for name in df['Name'].values]
     ax.set_yticks(xs)
     ax.set_yticklabels(names)
+    if df.shape[0] > 0:
+        ax.set_ylim(-0.5, df.shape[0]-0.5)
     if df['Reads_total'].max() > 100000:
         ax.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
     if cutoff is not None:
