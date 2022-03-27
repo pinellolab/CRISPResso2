@@ -916,9 +916,9 @@ def main():
                     files_to_remove.append(bam_input_file)
                     files_to_remove.append(bam_input_file+".bai")
                     args.bam_input = bam_input_file
-            crispresso2_info['bam_input'] = args.bam_input
+            crispresso2_info['running_info']['bam_input'] = args.bam_input
             bam_output = _jp('CRISPResso_output.bam')
-            crispresso2_info['bam_output'] = bam_output
+            crispresso2_info['running_info']['bam_output'] = bam_output
             output_sam = bam_output+".sam"
             files_to_remove.append(output_sam)
 
@@ -1117,6 +1117,8 @@ def main():
             #we're going to consider the first reference only (so if multiple alleles exist at the editing position, this may get messy)
             best_aln_seq, best_aln_score, best_aln_mismatches, best_aln_start, best_aln_end, s1, s2 = CRISPRessoShared.get_best_aln_pos_and_mismatches(prime_editing_extension_seq_dna, amplicon_seq_arr[0],aln_matrix,args.needleman_wunsch_gap_open,0)
             new_ref = s2[0:best_aln_start] + prime_editing_extension_seq_dna + s2[best_aln_end:]
+            if args.debug:
+                info('Alignment between extension sequence and reference sequence: \n' + s1 + '\n' + s2)
 
             if args.prime_editing_override_prime_edited_ref_seq != "":
                 if args.debug:
@@ -4371,10 +4373,22 @@ def main():
                 crispresso2_info['results']['refs'][ref_names_for_pe[0]]['plot_11b_roots'] = []
                 crispresso2_info['results']['refs'][ref_names_for_pe[0]]['plot_11b_captions'] = []
                 crispresso2_info['results']['refs'][ref_names_for_pe[0]]['plot_11b_datas'] = []
-                for i in range(len(cut_points)):
-                    cut_point = cut_points[i]
-                    sgRNA = sgRNA_orig_sequences[i]
-                    sgRNA_name = sgRNA_names[i]
+
+                pe_sgRNA_sequences = refs[ref_names_for_pe[0]]['sgRNA_sequences']
+                pe_sgRNA_orig_sequences = refs[ref_names_for_pe[0]]['sgRNA_orig_sequences']
+                pe_sgRNA_cut_points = refs[ref_names_for_pe[0]]['sgRNA_cut_points']
+                pe_sgRNA_plot_cut_points = refs[ref_names_for_pe[0]]['sgRNA_plot_cut_points']
+                pe_sgRNA_intervals = refs[ref_names_for_pe[0]]['sgRNA_intervals']
+                pe_sgRNA_names = refs[ref_names_for_pe[0]]['sgRNA_names']
+                pe_sgRNA_plot_idxs = refs[ref_names_for_pe[0]]['sgRNA_plot_idxs']
+                pe_sgRNA_mismatches = refs[ref_names_for_pe[0]]['sgRNA_mismatches']
+                pe_ref_len = refs[ref_names_for_pe[0]]['sequence_length']
+                pe_include_idxs_list = refs[ref_names_for_pe[0]]['include_idxs']
+
+                for i in range(len(pe_sgRNA_cut_points)):
+                    cut_point = pe_sgRNA_cut_points[i]
+                    sgRNA = pe_sgRNA_orig_sequences[i]
+                    sgRNA_name = pe_sgRNA_names[i]
 
                     sgRNA_label = "sgRNA_"+sgRNA # for file names
                     sgRNA_legend = "sgRNA " + sgRNA # for legends
@@ -4387,7 +4401,7 @@ def main():
                     sel_cols = [0, 1]
                     plot_half_window = max(1, args.plot_window_size)
                     new_sel_cols_start = max(2, cut_point-plot_half_window+1)
-                    new_sel_cols_end = min(ref_len, cut_point+plot_half_window+1)
+                    new_sel_cols_end = min(pe_ref_len, cut_point+plot_half_window+1)
                     sel_cols.extend(list(range(new_sel_cols_start+2, new_sel_cols_end+2))) #+2 because the first two columns are Batch and Nucleotide
                     #get new intervals
                     new_sgRNA_intervals = []
@@ -4395,7 +4409,7 @@ def main():
                     for (int_start, int_end) in refs[ref_names_for_pe[0]]['sgRNA_intervals']:
                         new_sgRNA_intervals += [(int_start - new_sel_cols_start, int_end - new_sel_cols_start)]
                     new_include_idx = []
-                    for x in include_idxs_list:
+                    for x in pe_include_idxs_list:
                         new_include_idx += [x - new_sel_cols_start]
                     plot_root = _jp('11b.Nucleotide_percentage_quilt_around_' + sgRNA_label)
                     plot_11b_input = {
@@ -4422,15 +4436,6 @@ def main():
                     crispresso2_info['results']['refs'][ref_names_for_pe[0]]['plot_11b_datas'].append([('Nucleotide frequency in quantification window for ' + ref_name, os.path.basename(crispresso2_info['results']['refs'][ref_name]['quant_window_nuc_freq_filename'])) for ref_name in ref_names_for_pe])
 
                 if args.prime_editing_pegRNA_scaffold_seq != "" and df_scaffold_insertion_sizes.shape[0] > 0 and df_scaffold_insertion_sizes['Num_match_scaffold'].max() > 0 and df_scaffold_insertion_sizes['Num_gaps'].max() > 0:
-                    colors = 'b', 'g'
-                    fig=plt.figure(figsize=(12, 6))
-                    ax1 = plt.subplot(111)
-                    ax1.hist([df_scaffold_insertion_sizes['Num_match_scaffold'],df_scaffold_insertion_sizes['Num_gaps']],color=colors,bins=range(0,max(df_scaffold_insertion_sizes['Num_match_scaffold'].max(),df_scaffold_insertion_sizes['Num_gaps'].max(),1)))
-                    ax1.set_ylabel('Count')
-                    ax1.set_xlabel('Length (basepairs)')
-                    plt.tight_layout()
-                    plt.legend(['Length matching scaffold', 'Insertion length'], loc='center', bbox_to_anchor=(0.5, -0.35), ncol=1, fancybox=True, shadow=True)
-                    plt.tick_params(left=True, bottom=True)
                     plot_root = _jp('11c.Prime_editing_scaffold_insertion_sizes')
                     plot_11c_input = {
                         'df_scaffold_insertion_sizes': df_scaffold_insertion_sizes,

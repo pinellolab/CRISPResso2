@@ -1844,7 +1844,7 @@ def plot_scaffold_indel_lengths(
             max(
                 df_scaffold_insertion_sizes['Num_match_scaffold'].max(),
                 df_scaffold_insertion_sizes['Num_gaps'].max(),
-            ),
+            ) + 1,
         ),
     )
     ax.set_ylabel('Count')

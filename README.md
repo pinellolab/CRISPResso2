@@ -789,7 +789,7 @@ To run CRISPRessoWGS you must provide:
 
     -   *CODING\_SEQUENCE (OPTIONAL)*: Subsequence(s) of the genomic segment corresponding to coding sequences. If more than one, separate by commas *and not spaces*. If not available, enter *NA.*
 
-A file in the correct format should look like this:
+A file in the correct format should look like this (column entries must be separated by tabs):
 
 ```
 chr1 65118211 65118261 R1 CTACAGAGCCCCAGTCCTGG NA NA

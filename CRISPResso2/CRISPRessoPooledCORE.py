@@ -888,19 +888,18 @@ def main():
                 #!samtools faidx {uncompressed_reference}
                 sb.call('samtools faidx %s 2>>%s ' % (uncompressed_reference, log_filename), shell=True)
 
-
-        #align in unbiased way the reads to the genome
+        # align reads to the genome in an unbiased way
         if RUNNING_MODE=='ONLY_GENOME' or RUNNING_MODE=='AMPLICONS_AND_GENOME':
             bam_filename_genome = _jp('%s_GENOME_ALIGNED.bam' % database_id)
+            # if input bam is provided, don't align reads to the genome and use that bam
             if args.aligned_pooled_bam is not None:
                 bam_filename_genome = args.aligned_pooled_bam
 
             if can_finish_incomplete_run and 'n_reads_aligned_genome' in crispresso2_info['running_info']['finished_steps']:
                 info('Using previously-computed alignment of reads to genome')
                 N_READS_ALIGNED = crispresso2_info['running_info']['finished_steps']['n_reads_aligned_genome']
-
-            # if input bam is provided, don't align reads to the genome
-            if args.aligned_pooled_bam is not None:
+            # if aligned bam is provided, count reads aligned to genome
+            elif args.aligned_pooled_bam is not None:
                 def rreplace(s, old, new):
                     li = s.rsplit(old)
                     return new.join(li)
@@ -911,11 +910,12 @@ def main():
                     sb.call('samtools index %s' % bam_filename_genome, shell=True)
 
                 N_READS_ALIGNED = get_n_aligned_bam(bam_filename_genome)
-                #save progress up to this point
+                # save progress up to this point
                 crispresso2_info['running_info']['finished_steps']['n_reads_aligned_genome'] = N_READS_ALIGNED
                 CRISPRessoShared.write_crispresso_info(
                     crispresso2_info_file, crispresso2_info,
                 )
+            # otherwise, align reads to the genome and count reads
             else:
                 info('Aligning reads to the provided genome index...')
                 aligner_command = 'bowtie2 -x %s -p %s %s -U %s 2>>%s| samtools view -bS - | samtools sort -@ %d - -o %s' %(args.bowtie2_index, n_processes_for_pooled,
@@ -928,15 +928,14 @@ def main():
 
                 N_READS_ALIGNED = get_n_aligned_bam(bam_filename_genome)
 
-                #save progress up to this point
+                # save progress up to this point
                 crispresso2_info['running_info']['finished_steps']['n_reads_aligned_genome'] = N_READS_ALIGNED
                 CRISPRessoShared.write_crispresso_info(
                     crispresso2_info_file, crispresso2_info,
                 )
 
-
-            MAPPED_REGIONS=_jp('MAPPED_REGIONS/')
-            REPORT_ALL_DEPTH=_jp('REPORT_READS_ALIGNED_TO_GENOME_ALL_DEPTHS.txt')
+            MAPPED_REGIONS = _jp('MAPPED_REGIONS/')
+            REPORT_ALL_DEPTH = _jp('REPORT_READS_ALIGNED_TO_GENOME_ALL_DEPTHS.txt')
 
             if can_finish_incomplete_run and 'genome_demultiplexing' in crispresso2_info['running_info']['finished_steps'] and os.path.isfile(REPORT_ALL_DEPTH):
                 info('Using previously-computed demultiplexing of genomic reads')
@@ -946,18 +945,18 @@ def main():
             else:
                 #REDISCOVER LOCATIONS and DEMULTIPLEX READS
 
-                #first get rid of all files in the output directory
+                # first get rid of all files in the output directory
                 if os.path.exists(MAPPED_REGIONS):
                     info('Deleting partially-completed demultiplexing in %s...'%MAPPED_REGIONS)
                     cmd = "rm -rf %s" % MAPPED_REGIONS
                     p = sb.call(cmd, shell=True)
 
-                #make the output directory
+                # make the output directory
                 os.mkdir(MAPPED_REGIONS)
 
                 # if we should only demultiplex where amplicons aligned... (as opposed to the whole genome)
                 if RUNNING_MODE=='AMPLICONS_AND_GENOME' and args.demultiplex_only_at_amplicons:
-                    s1=r'''samtools view -F 0x0004 %s __REGIONCHR__:__REGIONSTART__-__REGIONEND__ 2>>%s |''' % (bam_filename_genome, log_filename)+\
+                    s1 = r'''samtools view -F 0x0004 %s __REGIONCHR__:__REGIONSTART__-__REGIONEND__ 2>>%s |''' % (bam_filename_genome, log_filename)+\
                     r'''awk 'BEGIN{OFS="\t";num_records=0;fastq_filename="__OUTPUTPATH__REGION___REGIONCHR_____REGIONSTART_____REGIONEND__.fastq";} \
                         { \
                             print "@"$1"\n"$10"\n+\n"$11 > fastq_filename; \
@@ -970,7 +969,7 @@ def main():
                         print(record_log_str); \
                     } \
                     ' >> __DEMUX_LOGFILENAME__ '''
-                    cmd=(s1).replace('__OUTPUTPATH__', MAPPED_REGIONS)
+                    cmd = (s1).replace('__OUTPUTPATH__', MAPPED_REGIONS)
                     cmd = cmd.replace("__MIN_READS__", str(args.min_reads_to_use_region))
                     with open(REPORT_ALL_DEPTH, 'w') as f:
                         f.write('chr_id\tstart\tend\tnumber of reads\toutput filename\n')
@@ -985,9 +984,9 @@ def main():
 
                 # if we should demultiplex everwhere (not just where amplicons aligned)
                 else:
-                    #next, create the general demux command
-                    #variables like __CHR__ will be subbed out below for each iteration
-                    s1=r'''samtools view -F 0x0004 %s __CHR____REGION__ 2>>%s |''' % (bam_filename_genome, log_filename)+\
+                    # next, create the general demux command
+                    # variables like __CHR__ will be subbed out below for each iteration
+                    s1 = r'''samtools view -F 0x0004 %s __CHR____REGION__ 2>>%s |''' % (bam_filename_genome, log_filename) + \
                     r'''awk 'BEGIN {OFS="\t"} {bpstart=$4;  bpend=bpstart; split ($6,a,"[MIDNSHP]"); n=0;\
                     for (i=1; i in a; i++){\
                         n+=1+length(a[i]);\
@@ -1005,7 +1004,7 @@ def main():
                         else\
                             print $3,bpstart,bpend,"+",$1,$10,$11;}' | '''
 
-                    s2=r'''  sort -k1,1 -k2,2n  | awk \
+                    s2 = r'''  sort -k1,1 -k2,2n  | awk \
                      'BEGIN{chr_id="NA";bpstart=-1;bpend=-1; fastq_filename="NA";num_records=0;fastq_records="";fastq_record_sep="";record_log_str = ""}\
                     { if ( (chr_id!=$1) || (bpstart!=$2) || (bpend!=$3) )\
                         {\
@@ -1031,14 +1030,14 @@ def main():
                         print(record_log_str) \
                     }\
                     ' >> __DEMUX_LOGFILENAME__ '''
-                    cmd=(s1+s2).replace('__OUTPUTPATH__', MAPPED_REGIONS)
+                    cmd = (s1+s2).replace('__OUTPUTPATH__', MAPPED_REGIONS)
                     cmd = cmd.replace("__MIN_READS__", str(args.min_reads_to_use_region))
                     with open(REPORT_ALL_DEPTH, 'w') as f:
                         f.write('chr_id\tstart\tend\tnumber of reads\toutput filename\n')
                     cmd = cmd.replace("__DEMUX_LOGFILENAME__", REPORT_ALL_DEPTH)
 
                     info('Preparing to demultiplex reads aligned to the genome...')
-                    #next, get all of the chromosome names (for parallelization)
+                    # next, get all of the chromosome names (for parallelization)
                     enumerate_chr_cmd = "samtools view -H %s" % bam_filename_genome
                     p = sb.Popen(enumerate_chr_cmd, shell=True, stdout=sb.PIPE)
                     chr_lines = p.communicate()[0].decode('utf-8').split("\n")
@@ -1052,20 +1051,20 @@ def main():
 
                     chr_commands = []
                     for chr_str in chrs:
-                        chr_cmd=cmd.replace('__CHR__', chr_str)
-                        #if we have a lot of reads, split up the chrs too
-                        #with a step size of 10M, there are about 220 regions in hg19
-                        #with a step size of 5M, there are about 368 regions in hg19
+                        chr_cmd = cmd.replace('__CHR__', chr_str)
+                        # if we have a lot of reads, split up the chrs too
+                        # with a step size of 10M, there are about 220 regions in hg19
+                        # with a step size of 5M, there are about 368 regions in hg19
                         chr_step_size = 5000000 #step size for splitting up chrs
                         chr_len = chr_lens[chr_str]
                         if N_READS_ALIGNED > 10000000 and chr_len > chr_step_size*2:
                             curr_pos = 0
                             curr_end = curr_pos + chr_step_size
                             while curr_end < chr_len:
-                                #make sure there aren't any reads at this breakpoint
+                                # make sure there aren't any reads at this breakpoint
                                 n_reads_at_end = get_n_aligned_bam_region(bam_filename_genome, chr_str, curr_end-5, curr_end+5)
                                 while n_reads_at_end > 0:
-                                    curr_end += 500 #look for another place with no reads
+                                    curr_end += 500  # look for another place with no reads
                                     if curr_end >= curr_pos:
                                         curr_end = chr_len
                                         break
@@ -1078,32 +1077,28 @@ def main():
                                 chr_commands.append(chr_cmd.replace("__REGION__", ":%d-%d "%(curr_pos, chr_len)))
 
                         else:
-                            #otherwise do the whole chromosome
+                            # otherwise do the whole chromosome
                             chr_commands.append(chr_cmd.replace("__REGION__", ""))
 
                 if args.debug:
                     demux_file = _jp('DEMUX_COMMANDS.txt')
-                    with open(demux_file,'w') as fout:
+                    with open(demux_file, 'w') as fout:
                         fout.write("\n\n\n".join(chr_commands))
                     info('Wrote demultiplexing commands to ' + demux_file)
 
                 info('Demultiplexing reads by location (%d genomic regions)...'%len(chr_commands))
                 CRISPRessoMultiProcessing.run_parallel_commands(chr_commands, n_processes=n_processes_for_pooled, descriptor='Demultiplexing reads by location', continue_on_fail=args.skip_failed)
 
-
-
                 df_all_demux = pd.read_csv(REPORT_ALL_DEPTH, sep='\t')
                 df_all_demux.sort_values(by=['chr_id', 'start'], inplace=True)
                 sum_aligned_reads = df_all_demux["number of reads"].sum()
-                #write the sorted file
+                # write the sorted file
                 df_all_demux.to_csv(REPORT_ALL_DEPTH, sep="\t", index=False, na_rep="NA")
                 df_all_demux['loc'] = df_all_demux['chr_id']+' ' + df_all_demux['start'].apply(str) + ' '+df_all_demux['end'].apply(str)
                 df_all_demux.set_index(['loc'], inplace=True)
 
-
                 if sum_aligned_reads == 0:
                     raise NoReadsAlignedException("No reads aligned to the specified genome")
-
 
                 crispresso2_info['running_info']['finished_steps']['genome_demultiplexing'] = True
                 CRISPRessoShared.write_crispresso_info(
@@ -1121,11 +1116,10 @@ def main():
         those that do not map to the expected genomic location, but is non-trivial for an end-user to implement.
         '''
 
-
-        if RUNNING_MODE=='AMPLICONS_AND_GENOME':
+        if RUNNING_MODE == 'AMPLICONS_AND_GENOME':
             files_to_match = list(df_all_demux['output filename'].dropna())
-            n_reads_aligned_genome=[]
-            fastq_region_filenames=[]
+            n_reads_aligned_genome = []
+            fastq_region_filenames = []
 
             if can_finish_incomplete_run and 'crispresso_amplicons_and_genome' in crispresso2_info['running_info']['finished_steps']:
                 info('Using previously-computed crispresso runs')
@@ -1136,7 +1130,7 @@ def main():
 
                     info('Processing amplicon: %s' % idx )
 
-                    #check if we have reads
+                    # check if we have reads
                     demux_key = row['chr_id'] + ' ' + str(row['bpstart']) + ' ' + str(row['bpend'])
                     if demux_key in df_all_demux.index:
                         demux_row = df_all_demux.loc[demux_key]
@@ -1152,21 +1146,21 @@ def main():
                         #else:
                              #info('Warning: Fastq filename ' + fastq_filename_region + ' is not in ' + str(files_to_match))
                              #debug here??
-                        if N_READS>=args.min_reads_to_use_region and fastq_filename_region != "":
+                        if N_READS >= args.min_reads_to_use_region and fastq_filename_region != "":
                             info('\nThe amplicon [%s] has enough reads (%d) mapped to it! Running CRISPResso!\n' % (idx, N_READS))
 
-                            crispresso_cmd= args.crispresso_command + ' -r1 %s -a %s -o %s --name %s' % (fastq_filename_region, row['Amplicon_Sequence'], OUTPUT_DIRECTORY, idx)
+                            crispresso_cmd = args.crispresso_command + ' -r1 %s -a %s -o %s --name %s' % (fastq_filename_region, row['Amplicon_Sequence'], OUTPUT_DIRECTORY, idx)
 
                             if row['sgRNA'] and not pd.isnull(row['sgRNA']):
-                                crispresso_cmd+=' -g %s' % row['sgRNA']
+                                crispresso_cmd += ' -g %s' % row['sgRNA']
 
                             if row['Expected_HDR'] and not pd.isnull(row['Expected_HDR']):
-                                crispresso_cmd+=' -e %s' % row['Expected_HDR']
+                                crispresso_cmd += ' -e %s' % row['Expected_HDR']
 
                             if row['Coding_sequence'] and not pd.isnull(row['Coding_sequence']):
-                                crispresso_cmd+=' -c %s' % row['Coding_sequence']
+                                crispresso_cmd += ' -c %s' % row['Coding_sequence']
 
-                            crispresso_cmd=CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, args)
+                            crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, args)
                             info('Running CRISPResso:%s' % crispresso_cmd)
                             crispresso_cmds.append(crispresso_cmd)
 
@@ -1184,19 +1178,19 @@ def main():
                     crispresso2_info_file, crispresso2_info,
                 )
 
-            df_template['Amplicon_Specific_fastq.gz_filename']=fastq_region_filenames
-            df_template['n_reads']=n_reads_aligned_genome
-            df_template['n_reads_aligned_%']=df_template['n_reads']/float(N_READS_ALIGNED)*100
+            df_template['Amplicon_Specific_fastq.gz_filename'] = fastq_region_filenames
+            df_template['n_reads'] = n_reads_aligned_genome
+            df_template['n_reads_aligned_%'] = df_template['n_reads']/float(N_READS_ALIGNED)*100
 
             if args.gene_annotations:
-                df_template=df_template.apply(lambda row: find_overlapping_genes(row, df_genes), axis=1)
+                df_template = df_template.apply(lambda row: find_overlapping_genes(row, df_genes), axis=1)
 
             df_template.fillna('NA').to_csv(_jp('REPORT_READS_ALIGNED_TO_GENOME_AND_AMPLICONS.txt'), sep='\t')
 
             #write another file with the not amplicon regions
 
             if args.skip_reporting_problematic_regions:
-                df_regions=pd.DataFrame(columns=['chr_id', 'bpstart', 'bpend', 'fastq_file', 'n_reads', 'Reference_sequence'])
+                df_regions = pd.DataFrame(columns=['chr_id', 'bpstart', 'bpend', 'fastq_file', 'n_reads', 'Reference_sequence'])
             else:
                 filename_problematic_regions = _jp('REPORTS_READS_ALIGNED_TO_GENOME_NOT_MATCHING_AMPLICONS.txt')
                 if can_finish_incomplete_run and 'reporting_problematic_regions' in crispresso2_info['running_info']['finished_steps']:
@@ -1206,21 +1200,21 @@ def main():
                     info('Reporting problematic regions...')
                     summarize_region_fastq_input = [f+" "+uncompressed_reference for f in files_to_match] #pass both params to parallel function
                     coordinates = CRISPRessoMultiProcessing.run_function_on_array_chunk_parallel(summarize_region_fastq_input, summarize_region_fastq_chunk, n_processes=n_processes_for_pooled)
-                    df_regions=pd.DataFrame(coordinates, columns=['chr_id', 'bpstart', 'bpend', 'fastq_file', 'n_reads', 'Reference_sequence'])
+                    df_regions = pd.DataFrame(coordinates, columns=['chr_id', 'bpstart', 'bpend', 'fastq_file', 'n_reads', 'Reference_sequence'])
                     df_regions.dropna(inplace=True) #remove regions in chrUn
 
                     df_regions['bpstart'] = pd.to_numeric(df_regions['bpstart'])
                     df_regions['bpend'] = pd.to_numeric(df_regions['bpend'])
                     df_regions['n_reads'] = pd.to_numeric(df_regions['n_reads'])
 
-                    df_regions.bpstart=df_regions.bpstart.astype(int)
-                    df_regions.bpend=df_regions.bpend.astype(int)
+                    df_regions.bpstart = df_regions.bpstart.astype(int)
+                    df_regions.bpend = df_regions.bpend.astype(int)
 
-                    df_regions['n_reads_aligned_%']=df_regions['n_reads']/float(N_READS_ALIGNED)*100
+                    df_regions['n_reads_aligned_%'] = df_regions['n_reads']/float(N_READS_ALIGNED)*100
 
                     if args.gene_annotations:
                         info('Checking overlapping genes...')
-                        df_regions=df_regions.apply(lambda row: find_overlapping_genes(row, df_genes), axis=1)
+                        df_regions = df_regions.apply(lambda row: find_overlapping_genes(row, df_genes), axis=1)
 
                     df_regions.sort_values(by='n_reads', ascending=False, inplace=True)
 
@@ -1231,9 +1225,8 @@ def main():
                         crispresso2_info_file, crispresso2_info,
                     )
 
-
         if RUNNING_MODE=='ONLY_GENOME' :
-            #Load regions and build REFERENCE TABLES
+            # Load regions and build REFERENCE TABLES
             filename_reads_aligned_to_genome_only = _jp('REPORT_READS_ALIGNED_TO_GENOME_ONLY.txt')
             if can_finish_incomplete_run and 'demultiplexing_genome_only_regions' in crispresso2_info['running_info']['finished_steps'] and os.path.exists(filename_reads_aligned_to_genome_only):
                 info('Using previously-computed extraction of aligned regions')
@@ -1243,22 +1236,22 @@ def main():
                 files_to_match = list(df_all_demux['output filename'].dropna())
                 summarize_region_fastq_input = [f+" "+uncompressed_reference for f in files_to_match] #pass both params to parallel function
                 coordinates = CRISPRessoMultiProcessing.run_function_on_array_chunk_parallel(summarize_region_fastq_input, summarize_region_fastq_chunk, n_processes=n_processes_for_pooled)
-                df_regions=pd.DataFrame(coordinates, columns=['chr_id', 'bpstart', 'bpend', 'fastq_file', 'n_reads', 'sequence'])
+                df_regions = pd.DataFrame(coordinates, columns=['chr_id', 'bpstart', 'bpend', 'fastq_file', 'n_reads', 'sequence'])
 
-                df_regions.dropna(inplace=True) #remove regions in chrUn
+                df_regions.dropna(inplace=True)  #remove regions in chrUn
 
                 df_regions['bpstart'] = pd.to_numeric(df_regions['bpstart'])
                 df_regions['bpend'] = pd.to_numeric(df_regions['bpend'])
                 df_regions['n_reads'] = pd.to_numeric(df_regions['n_reads'])
 
-                df_regions.bpstart=df_regions.bpstart.astype(int)
-                df_regions.bpend=df_regions.bpend.astype(int)
+                df_regions.bpstart = df_regions.bpstart.astype(int)
+                df_regions.bpend = df_regions.bpend.astype(int)
 
-                df_regions['n_reads_aligned_%']=df_regions['n_reads']/float(N_READS_ALIGNED)*100
+                df_regions['n_reads_aligned_%'] = df_regions['n_reads']/float(N_READS_ALIGNED)*100
 
                 if args.gene_annotations:
                     info('Checking overlapping genes...')
-                    df_regions=df_regions.apply(lambda row: find_overlapping_genes(row, df_genes), axis=1)
+                    df_regions = df_regions.apply(lambda row: find_overlapping_genes(row, df_genes), axis=1)
 
                 df_regions.sort_values(by='n_reads', ascending=False, inplace=True)
 
@@ -1269,7 +1262,7 @@ def main():
                     crispresso2_info_file, crispresso2_info,
                 )
 
-            #run CRISPResso (last step of genome-only mode)
+            # run CRISPResso (last step of genome-only mode)
             if can_finish_incomplete_run and 'crispresso_genome_only' in crispresso2_info['running_info']['finished_steps']:
                 info('Using previously-computed crispresso runs')
             else:
@@ -1278,11 +1271,11 @@ def main():
                 for idx, row in df_regions.iterrows():
 
                     if row.n_reads > args.min_reads_to_use_region:
-                        info('\nRunning CRISPResso on: %s-%d-%d...'%(row.chr_id, row.bpstart, row.bpend ))
+                        info('\nRunning CRISPResso on: %s-%d-%d...'%(row.chr_id, row.bpstart, row.bpend))
                         if pd.isna(row.sequence):
                             raise Exception('Cannot extract sequence from input reference ' + uncompressed_reference)
-                        crispresso_cmd= args.crispresso_command + ' -r1 %s -a %s -o %s' %(row.fastq_file, row.sequence, OUTPUT_DIRECTORY)
-                        crispresso_cmd=CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, args)
+                        crispresso_cmd = args.crispresso_command + ' -r1 %s -a %s -o %s' %(row.fastq_file, row.sequence, OUTPUT_DIRECTORY)
+                        crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, args)
                         crispresso_cmds.append(crispresso_cmd)
                     else:
                         info('Skipping region: %s-%d-%d , not enough reads (%d)' %(row.chr_id, row.bpstart, row.bpend, row.n_reads))
@@ -1293,16 +1286,16 @@ def main():
                     crispresso2_info_file, crispresso2_info,
                 )
 
-        #write alignment statistics
+        # write alignment statistics
         with open(_jp('MAPPING_STATISTICS.txt'), 'w+') as outfile:
             outfile.write('READS IN INPUTS:%d\nREADS AFTER PREPROCESSING:%d\nREADS ALIGNED:%d' % (N_READS_INPUT, N_READS_AFTER_PREPROCESSING, N_READS_ALIGNED))
 
-        quantification_summary=[]
+        quantification_summary = []
 
-        if RUNNING_MODE=='ONLY_AMPLICONS' or RUNNING_MODE=='AMPLICONS_AND_GENOME':
-            df_final_data=df_template
+        if RUNNING_MODE == 'ONLY_AMPLICONS' or RUNNING_MODE == 'AMPLICONS_AND_GENOME':
+            df_final_data = df_template
         else:
-            df_final_data=df_regions
+            df_final_data = df_regions
 
         all_region_names = []
         all_region_read_counts = {}
