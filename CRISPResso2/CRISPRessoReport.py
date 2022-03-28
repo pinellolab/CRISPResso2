@@ -339,6 +339,11 @@ def make_multi_report(
 
     def dirname(path):
         return os.path.basename(os.path.dirname(path))
+
+    def fill_default(dictionary, key, default_type=list):
+        if key not in dictionary:
+            dictionary[key] = default_type()
+
     j2_env = Environment(
         loader=FileSystemLoader(os.path.join(_ROOT, 'templates')),
     )
@@ -352,6 +357,24 @@ def make_multi_report(
         crispresso_data_path = ""
     else:
         crispresso_data_path += "/"
+
+    dictionaries = [
+        allele_modification_heatmap_plot, allele_modification_line_plot,
+    ]
+    keys_and_default_types = [
+        ('names', list),
+        ('htmls', dict),
+        ('titles', list),
+        ('labels', dict),
+        ('datas', dict),
+    ]
+    for dictionary in dictionaries:
+        for key, default_type in keys_and_default_types:
+            fill_default(
+                dictionary,
+                key,
+                default_type,
+            )
 
     with open(crispresso_multi_report_file, 'w') as outfile:
         outfile.write(template.render(
