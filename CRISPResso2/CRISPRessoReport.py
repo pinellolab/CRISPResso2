@@ -189,12 +189,24 @@ def make_batch_report_from_folder(crispressoBatch_report_file, crispresso2_info,
     if crispresso2_info['running_info']['args'].name != '':
         output_title += '<br/>{0}'.format(crispresso2_info['running_info']['args'].name)
 
-    make_multi_report(run_names, sub_html_files, crispressoBatch_report_file, batch_folder, _ROOT, output_title,
-        summary_plot_names=summary_plot_names, summary_plot_titles=summary_plot_titles, summary_plot_labels=summary_plot_labels, summary_plot_datas=summary_plot_datas,
+    make_multi_report(
+        run_names,
+        sub_html_files,
+        crispressoBatch_report_file,
+        batch_folder,
+        _ROOT,
+        output_title,
+        summary_plot={
+            'names': summary_plot_names,
+            'titles': summary_plot_titles,
+            'labels': summary_plot_labels,
+            'datas': summary_plot_datas,
+        },
         window_nuc_pct_quilts=window_nuc_pct_quilts,
         nuc_pct_quilts=nuc_pct_quilts,
         window_nuc_conv_plots=window_nuc_conv_plots,
-        nuc_conv_plots=nuc_conv_plots)
+        nuc_conv_plots=nuc_conv_plots,
+    )
 
 
 def make_pooled_report_from_folder(crispresso_report_file, crispresso2_info, folder, _ROOT):
