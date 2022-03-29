@@ -630,7 +630,9 @@ def main():
                 match = difflib.get_close_matches(head, names, n=1)
                 if not match:
                     has_header = False
+                    warn('Unable to find matches for header values. Using the default header values and order.')
                     break
+                info(f'Matching {head} with {match[0]}.')
                 headers.append(match[0])
             if not has_header:
                 # Default header
@@ -638,7 +640,7 @@ def main():
                 for i in range(len(header)):
                     headers.append(names[i])
 
-            print(headers)
+            info(f'Header variable names in order: {headers}')
 
             #load and validate template file
             df_template=pd.read_csv(args.amplicons_file, names=headers, comment='#', sep='\t', dtype={'Name':str})
