@@ -618,7 +618,7 @@ def main():
                 header = next(reader)
                 header = header[0].split('\t')
 
-            names = ['Name', 'Amplicon_Sequence', 'sgRNA', 'Expected_HDR', 'Coding_sequence',
+            names = ['Amplicon_Name', 'Amplicon_Sequence', 'sgRNA', 'Expected_HDR', 'Coding_sequence',
                      'prime_editing_pegRNA_spacer_seq', 'prime_editing_nicking_guide_seq',
                      'prime_editing_pegRNA_extension_seq', 'prime_editing_pegRNA_scaffold_seq',
                      'prime_editing_pegRNA_scaffold_min_match_length', 'prime_editing_override_prime_edited_ref_seq',
@@ -640,10 +640,12 @@ def main():
                 for i in range(len(header)):
                     headers.append(names[i])
 
+            print(headers)
+
             info(f'Header variable names in order: {headers}')
 
             #load and validate template file
-            df_template=pd.read_csv(args.amplicons_file, names=headers, comment='#', sep='\t', dtype={'Name':str})
+            df_template=pd.read_csv(args.amplicons_file, names=headers, comment='#', sep='\t', dtype={'Amplicon_Name':str})
 
             if str(df_template.iloc[0, 1]).lower() == "amplicon_sequence":
                 df_template.drop(0, axis=0, inplace=True)
@@ -652,7 +654,7 @@ def main():
 
             #remove empty amplicons/lines
             df_template.dropna(subset=['Amplicon_Sequence'], inplace=True)
-            df_template.dropna(subset=['Name'], inplace=True)
+            df_template.dropna(subset=['Amplicon_Name'], inplace=True)
 
             df_template.Amplicon_Sequence=df_template.Amplicon_Sequence.apply(CRISPRessoShared.capitalize_sequence)
             if 'Expected_HDR' in df_template.columns:
@@ -666,11 +668,11 @@ def main():
                 duplicated_entries = df_template.Amplicon_Sequence[df_template.Amplicon_Sequence.duplicated()]
                 raise Exception('The amplicon sequences must be distinct! (Duplicated entries: ' + str(duplicated_entries.values) + ')')
 
-            if not len(df_template.Name.unique())==df_template.shape[0]:
-                duplicated_entries = df_template.Name[df_template.Name.duplicated()]
+            if not len(df_template.Amplicon_Name.unique())==df_template.shape[0]:
+                duplicated_entries = df_template.Amplicon_Name[df_template.Name.duplicated()]
                 raise Exception('The amplicon names must be distinct! (Duplicated names: ' + str(duplicated_entries.values) + ')')
 
-            df_template=df_template.set_index('Name')
+            df_template=df_template.set_index('Amplicon_Name')
             df_template.index=df_template.index.to_series().str.replace(' ', '_')
 
             for idx, row in df_template.iterrows():
@@ -798,7 +800,6 @@ def main():
             info('Demultiplex reads and run CRISPResso on each amplicon...')
             n_reads_aligned_amplicons=[]
             crispresso_cmds = []
-            print("LOOP")
             for idx, row in df_template.iterrows():
                 this_n_reads = get_n_reads_fastq(row['Demultiplexed_fastq.gz_filename'])
                 n_reads_aligned_amplicons.append(this_n_reads)
@@ -888,7 +889,7 @@ def main():
             if can_finish_incomplete_run and 'mapping_amplicons_to_reference_genome' in crispresso2_info['running_info']['finished_steps']:
                 info('Reading previously-computed alignment of amplicons to genome')
                 additional_columns_df = pd.read_csv(filename_amplicon_aligned_locations, sep="\t")
-                additional_columns_df.set_index('Name', inplace=True)
+                additional_columns_df.set_index('Amplicon_Name', inplace=True)
             else:
                 #write amplicons as fastq for alignment
                 with open(filename_amplicon_seqs_fasta, 'w') as fastas:
@@ -915,8 +916,8 @@ def main():
                             strand = "-" if (int(line_els[1]) & 0x10) else "+"
                             additional_columns.append([line_els[0], line_els[2], seq_start, seq_stop, strand, line_els[9]])
                             info('The amplicon [%s] was mapped to: %s:%d-%d ' % (line_els[0], line_els[2], seq_start, seq_stop))
-                additional_columns_df = pd.DataFrame(additional_columns, columns=['Name', 'chr_id', 'bpstart', 'bpend', 'strand', 'Reference_Sequence']).set_index('Name')
-                additional_columns_df.to_csv(filename_amplicon_aligned_locations, sep="\t", index_label='Name')
+                additional_columns_df = pd.DataFrame(additional_columns, columns=['Amplicon_Name', 'chr_id', 'bpstart', 'bpend', 'strand', 'Reference_Sequence']).set_index('Amplicon_Name')
+                additional_columns_df.to_csv(filename_amplicon_aligned_locations, sep="\t", index_label='Amplicon_Name')
 
                 crispresso2_info['running_info']['finished_steps']['mapping_amplicons_to_reference_genome'] = True
                 CRISPRessoShared.write_crispresso_info(
@@ -1502,7 +1503,7 @@ def main():
 
         df_summary_quantification=pd.DataFrame(quantification_summary, columns=header_els)
         if args.crispresso1_mode:
-            crispresso1_columns=['Name', 'Unmodified%', 'Modified%', 'Reads_aligned', 'Reads_total']
+            crispresso1_columns=['Amplicon_Name', 'Unmodified%', 'Modified%', 'Reads_aligned', 'Reads_total']
             df_summary_quantification.fillna('NA').to_csv(samples_quantification_summary_filename, sep='\t', index=None, columns=crispresso1_columns)
         else:
             df_summary_quantification.fillna('NA').to_csv(samples_quantification_summary_filename, sep='\t', index=None)
