@@ -3,6 +3,15 @@ import pytest
 
 from CRISPResso2 import CRISPRessoCORE
 
+
+def calc_score(seq, ref):
+    score = 0
+    for seq_i, ref_i in zip(seq, ref):
+        if seq_i == ref_i:
+            score += 1
+    return int(100 * score / float(len(seq)))
+
+
 def test_get_consensus_alignment_from_pairs():
     """Tests for generating consensus alignments from paired reads."""
     try:
@@ -20,7 +29,16 @@ def test_get_consensus_alignment_from_pairs():
     aln2_ref             = "ATCGATCGAT"
     qual2                =      "AAAAA"
 
-    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
+    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(
+        aln1_seq,
+        aln1_ref,
+        calc_score(aln1_seq, aln1_ref),
+        qual1,
+        aln2_seq,
+        aln2_ref,
+        calc_score(aln2_seq, aln2_ref),
+        qual2,
+    )
     assert aln_seq ==      "NNCGATCGAT"
     assert ref_seq ==      "ATCGATCGAT"
     assert score == 80
@@ -34,7 +52,16 @@ def test_get_consensus_alignment_from_pairs():
     aln2_ref             = "ATCGATCGAT"
     qual2                =      "AAAAA"
 
-    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
+    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(
+        aln1_seq,
+        aln1_ref,
+        calc_score(aln1_seq, aln1_ref),
+        qual1,
+        aln2_seq,
+        aln2_ref,
+        calc_score(aln2_seq, aln2_ref),
+        qual2,
+    )
     assert aln_seq ==      "NNCGATCGAT"
     assert ref_seq ==      "ATCGATCGAT"
     assert score == 80
@@ -48,8 +75,16 @@ def test_get_consensus_alignment_from_pairs():
     aln2_ref             = "ATCGATCGAT"
     qual2                =      "BAAAA"
 
-    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
-    print('got aln_seq ' + str(aln_seq))
+    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(
+        aln1_seq,
+        aln1_ref,
+        calc_score(aln1_seq, aln1_ref),
+        qual1,
+        aln2_seq,
+        aln2_ref,
+        calc_score(aln2_seq, aln2_ref),
+        qual2,
+    )
     assert aln_seq ==      "NNCGAGCGAT"
     assert ref_seq ==      "ATCGATCGAT"
     assert score == 70
@@ -63,7 +98,16 @@ def test_get_consensus_alignment_from_pairs():
     aln2_ref             = "ATCGATCGAT"
     qual2                = "AAAAAAAAAA"
 
-    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
+    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(
+        aln1_seq,
+        aln1_ref,
+        calc_score(aln1_seq, aln1_ref),
+        qual1,
+        aln2_seq,
+        aln2_ref,
+        calc_score(aln2_seq, aln2_ref),
+        qual2,
+    )
     assert aln_seq ==      "NNCGANNGAN"
     assert ref_seq ==      "ATCGATCGAT"
     assert score == 50
@@ -79,7 +123,16 @@ def test_get_consensus_alignment_from_pairs():
     aln2_ref             = "ATC GATCGAT".replace(" ","")
     qual2                =         "AA"
 
-    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
+    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(
+        aln1_seq,
+        aln1_ref,
+        calc_score(aln1_seq, aln1_ref),
+        qual1,
+        aln2_seq,
+        aln2_ref,
+        calc_score(aln2_seq, aln2_ref),
+        qual2,
+    )
     assert aln_seq ==      "NNCCGANNGAN"
     assert ref_seq ==      "ATC-GATCGAT"
     assert score == 45
@@ -93,13 +146,22 @@ def test_get_consensus_alignment_from_pairs():
     aln2_ref             = "ATCGATCGAT".replace(" ","")
     qual2                =        "AA"
 
-    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
+    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(
+        aln1_seq,
+        aln1_ref,
+        calc_score(aln1_seq, aln1_ref),
+        qual1,
+        aln2_seq,
+        aln2_ref,
+        calc_score(aln2_seq, aln2_ref),
+        qual2,
+    )
     assert aln_seq ==      "NNC-ANNGAN"
     assert ref_seq ==      "ATCGATCGAT"
     assert score == 40
     assert caching_ok
 
-        #insertion in r1
+    #insertion in r2
     qual1                =   "AAAA"
     aln1_seq             = "--CCGA-----".replace(" ","") #added replace for vertical alignment
     aln1_ref             = "ATCCGATCGAT".replace(" ","")
@@ -107,11 +169,19 @@ def test_get_consensus_alignment_from_pairs():
     aln2_ref             = "ATCCGATC-AT".replace(" ","")
     qual2                =         "AA"
 
-    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
-    breakpoint()
+    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(
+        aln1_seq,
+        aln1_ref,
+        calc_score(aln1_seq, aln1_ref),
+        qual1,
+        aln2_seq,
+        aln2_ref,
+        calc_score(aln2_seq, aln2_ref),
+        qual2,
+    )
     assert aln_seq ==      "NNCCGANNGAN"
     assert ref_seq ==      "ATCCGATC-AT"
-    # assert score == 45
+    assert score == 45
     assert caching_ok
 
     # deletion in r2
@@ -122,7 +192,16 @@ def test_get_consensus_alignment_from_pairs():
     aln2_ref             = "ATCGATCGAT".replace(" ","")
     qual2                =      "AAA"
 
-    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
+    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(
+        aln1_seq,
+        aln1_ref,
+        calc_score(aln1_seq, aln1_ref),
+        qual1,
+        aln2_seq,
+        aln2_ref,
+        calc_score(aln2_seq, aln2_ref),
+        qual2,
+    )
     assert aln_seq ==      "NNCGAT-GAN"
     assert ref_seq ==      "ATCGATCGAT"
     assert score == 60
@@ -136,7 +215,16 @@ def test_get_consensus_alignment_from_pairs():
     aln2_ref             = " ATCGATCGAT".replace(" ","")
     qual2                =          "AA"
 
-    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
+    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(
+        aln1_seq,
+        aln1_ref,
+        calc_score(aln1_seq, aln1_ref),
+        qual1,
+        aln2_seq,
+        aln2_ref,
+        calc_score(aln2_seq, aln2_ref),
+        qual2,
+    )
     assert aln_seq ==      "TA-CGANNNAT"
     assert ref_seq ==      "-ATCGATCGAT"
     assert score == 54
@@ -150,7 +238,16 @@ def test_get_consensus_alignment_from_pairs():
     aln2_ref             = " ATCGATCGAT---".replace(" ","")
     qual2                =       "AAAAAAAA"
 
-    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
+    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(
+        aln1_seq,
+        aln1_ref,
+        calc_score(aln1_seq, aln1_ref),
+        qual1,
+        aln2_seq,
+        aln2_ref,
+        calc_score(aln2_seq, aln2_ref),
+        qual2,
+    )
     assert aln_seq ==      "TA-CGATCGATCCA"
     assert ref_seq ==      "-ATCGATCGAT---"
     assert score == 64
@@ -162,7 +259,17 @@ def test_get_consensus_alignment_from_pairs():
     aln2_seq = 'AACCACAGCC-----GAGCCTCTTGAAGCCATTCTTACAGATGATGAAC-CAGG--CCGCGTTGGGAGCTCCAGAAGGGGATCATGACCT----CCTCACCTGTGGGCAGTGCCAGATGAACTTCCCATTGGGGGACATT'
     aln2_ref = 'AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGC--CGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT-----'
     qual2    = 'BCCDCCDFDDDDGGGGGGGGGGHHHHHHHHHHHHHHHHHHHHHHHHHGHGGGGGGGHGHGGHHHHHHHHHGGGGGHHHHHHHHHHHHHHHHHHHGGHGHHHHHHHHHHHHHHHHHHHHHHHGGGGGHH'
-    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(aln1_seq, aln1_ref, qual1, aln2_seq, aln2_ref, qual2)
+
+    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(
+        aln1_seq,
+        aln1_ref,
+        calc_score(aln1_seq, aln1_ref),
+        qual1,
+        aln2_seq,
+        aln2_ref,
+        calc_score(aln2_seq, aln2_ref),
+        qual2,
+    )
     assert ref_seq == 'AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT-----'
 
 

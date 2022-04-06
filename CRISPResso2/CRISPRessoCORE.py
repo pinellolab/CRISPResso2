@@ -329,37 +329,53 @@ def get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaf
 
     return new_variant
 
-def get_greater_qual_nuc(nuc1, qual1, nuc2, qual2):
+def get_greater_qual_nuc(nuc1, qual1, nuc2, qual2, is_best_aln_r1):
     """
-    Gets the base with the higher quality if nuc1 != nuc2, otherwise nuc1 if they are the same
+    Gets the base with the higher quality if nuc1 != nuc2, otherwise the base with the higher alignment score if qual1 == qual2
 
     params:
     nuc1: nucleotide 1
-    quality1: quality of nuc1 in phred score
+    qual1: quality of nuc1 in phred score
     nuc2: nucleotide 2
-    quality2: quality of nuc2 in phred score
+    qual2: quality of nuc2 in phred score
+    is_best_aln_r1: a Boolean, if True read1 has an alignment score that is >=
+        the alignment score for read2
 
     returns
-    nuc: the nucleotide with the greater quality if nuc1 != nuc2
+    nuc: the nucleotide with the greater quality if nuc1 != nuc2, or alignment
+        score if qual1 == qual2
     nucs_diff: whether the nucleotides were different
     """
     if nuc1 == nuc2:
         return nuc1, False
-    elif ord(qual1) >= ord(qual2):
+    elif ord(qual1) == ord(qual2):
+        return nuc1 if is_best_aln_r1 else nuc2, True
+    elif ord(qual1) > ord(qual2):
         return nuc1, True
     else:
         return nuc2, True
 
-def get_consensus_alignment_from_pairs(aln_seq_r1, aln_ref_r1, qual_r1, aln_seq_r2, aln_ref_r2, qual_r2):
+def get_consensus_alignment_from_pairs(
+    aln_seq_r1,
+    aln_ref_r1,
+    score_r1,
+    qual_r1,
+    aln_seq_r2,
+    aln_ref_r2,
+    score_r2,
+    qual_r2,
+):
     """
-    Creates a consensus alignment from alignments of two reads
+    Creates a consensus alignment from alignments of two paired-end reads
 
     params:
     aln_seq_r1: read alignment of r1
     aln_ref_r1: ref alignment of r1
+    score_r1: alignment score of r1
     qual_r1: quality scores of bases in r1
     aln_seq_r2: read alignment of r2
     aln_ref_r2: ref alignment of r2
+    score_r2: alignment score of r2
     qual_r2: quality scores of bases in r2
 
     returns:
@@ -387,6 +403,8 @@ def get_consensus_alignment_from_pairs(aln_seq_r1, aln_ref_r1, qual_r1, aln_seq_
 
     final_aln = ""
     final_ref = ""
+
+    is_best_aln_r1 = score_r1 >= score_r2
 
     caching_is_ok = True # if I have to choose a final consensus base based on read quality, it's not ok to cache on raw R1/R2 sequences
 
@@ -418,6 +436,7 @@ def get_consensus_alignment_from_pairs(aln_seq_r1, aln_ref_r1, qual_r1, aln_seq_
                     qual_r1[qual_ind_r1],
                     aln_seq_r2[seq_ind_r2],
                     qual_r2[qual_ind_r2],
+                    is_best_aln_r1,
                 )
                 if nucs_diff:
                     caching_is_ok = False
@@ -530,21 +549,21 @@ def get_new_variant_object_from_paired(args, fastq1_seq, fastq2_seq, fastq1_qual
         if found_forward_count > args.aln_seed_min and found_reverse_count == 0:
             r1_fws1, r1_fws2, r1_fwscore = CRISPResso2Align.global_align(fastq1_seq, refs[ref_name]['sequence'], matrix=aln_matrix, gap_incentive=refs[ref_name]['gap_incentive'], gap_open=args.needleman_wunsch_gap_open, gap_extend=args.needleman_wunsch_gap_extend,)
             r2_fws1, r2_fws2, r2_fwscore = CRISPResso2Align.global_align(fastq2_seq, refs[ref_name]['sequence'], matrix=aln_matrix, gap_incentive=refs[ref_name]['gap_incentive'], gap_open=args.needleman_wunsch_gap_open, gap_extend=args.needleman_wunsch_gap_extend,)
-            s1, s2, score, caching_is_ok = get_consensus_alignment_from_pairs(r1_fws1, r1_fws2, fastq1_qual, r2_fws1, r2_fws2, fastq2_qual)
+            s1, s2, score, caching_is_ok = get_consensus_alignment_from_pairs(r1_fws1, r1_fws2, r1_fwscore, fastq1_qual, r2_fws1, r2_fws2, r2_fwscore, fastq2_qual)
         elif found_forward_count == 0 and found_reverse_count > args.aln_seed_min:
             r1_rvs1, r1_rvs2, r1_rvscore = CRISPResso2Align.global_align(CRISPRessoShared.reverse_complement(fastq1_seq), refs[ref_name]['sequence'], matrix=aln_matrix, gap_incentive=refs[ref_name]['gap_incentive'], gap_open=args.needleman_wunsch_gap_open, gap_extend=args.needleman_wunsch_gap_extend,)
             r2_rvs1, r2_rvs2, r2_rvscore = CRISPResso2Align.global_align(CRISPRessoShared.reverse_complement(fastq2_seq), refs[ref_name]['sequence'], matrix=aln_matrix, gap_incentive=refs[ref_name]['gap_incentive'], gap_open=args.needleman_wunsch_gap_open, gap_extend=args.needleman_wunsch_gap_extend,)
-            rvs1, rvs2, rvscore, caching_is_ok = get_consensus_alignment_from_pairs(r1_rvs1, r1_rvs2, fastq1_qual, r2_rvs1, r2_rvs2, fastq2_qual)
+            rvs1, rvs2, rvscore, caching_is_ok = get_consensus_alignment_from_pairs(r1_rvs1, r1_rvs2, r1_rvscore, fastq1_qual, r2_rvs1, r2_rvs2, r2_rvscore, fastq2_qual)
             s1 = rvs1
             s2 = rvs2
             score = rvscore
         else:
             r1_fws1, r1_fws2, r1_fwscore = CRISPResso2Align.global_align(fastq1_seq, refs[ref_name]['sequence'], matrix=aln_matrix, gap_incentive=refs[ref_name]['gap_incentive'], gap_open=args.needleman_wunsch_gap_open, gap_extend=args.needleman_wunsch_gap_extend,)
             r2_fws1, r2_fws2, r2_fwscore = CRISPResso2Align.global_align(fastq2_seq, refs[ref_name]['sequence'], matrix=aln_matrix, gap_incentive=refs[ref_name]['gap_incentive'], gap_open=args.needleman_wunsch_gap_open, gap_extend=args.needleman_wunsch_gap_extend,)
-            fws1, fws2, fwscore, caching_is_ok = get_consensus_alignment_from_pairs(r1_fws1, r1_fws2, fastq1_qual, r2_fws1, r2_fws2, fastq2_qual)
+            fws1, fws2, fwscore, caching_is_ok = get_consensus_alignment_from_pairs(r1_fws1, r1_fws2, r1_fwscore, fastq1_qual, r2_fws1, r2_fws2, r2_fwscore, fastq2_qual)
             r1_rvs1, r1_rvs2, r1_rvscore = CRISPResso2Align.global_align(CRISPRessoShared.reverse_complement(fastq1_seq), refs[ref_name]['sequence'], matrix=aln_matrix, gap_incentive=refs[ref_name]['gap_incentive'], gap_open=args.needleman_wunsch_gap_open, gap_extend=args.needleman_wunsch_gap_extend,)
             r2_rvs1, r2_rvs2, r2_rvscore = CRISPResso2Align.global_align(CRISPRessoShared.reverse_complement(fastq2_seq), refs[ref_name]['sequence'], matrix=aln_matrix, gap_incentive=refs[ref_name]['gap_incentive'], gap_open=args.needleman_wunsch_gap_open, gap_extend=args.needleman_wunsch_gap_extend,)
-            rvs1, rvs2, rvscore, caching_is_ok = get_consensus_alignment_from_pairs(r1_rvs1, r1_rvs2, fastq1_qual, r2_rvs1, r2_rvs2, fastq2_qual)
+            rvs1, rvs2, rvscore, caching_is_ok = get_consensus_alignment_from_pairs(r1_rvs1, r1_rvs2, r1_rvscore, fastq1_qual, r2_rvs1, r2_rvs2, r2_rvscore, fastq2_qual)
 
             s1 = fws1
             s2 = fws2
