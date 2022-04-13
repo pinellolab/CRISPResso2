@@ -407,85 +407,82 @@ def get_consensus_alignment_from_pairs(
     caching_is_ok = True # if I have to choose a final consensus base based on read quality, it's not ok to cache on raw R1/R2 sequences
 
     # iterate over all positions
-    # aln_seq_r1 and aln_ref_r1 have the same length, so it doesn't matter which one we choose
     while aln_ind_r1 < len(aln_ref_r1) or aln_ind_r2 < len(aln_ref_r2):
-        # print('aln_ind_r1: ' + str(aln_ind_r1) + ' aln_ind_r2: ' + str(aln_ind_r2))
-        # print('r1 in range: ' + str(ind_start_r1 <= aln_ind_r1 <= ind_stop_r1))
-        # print('r2 in range: ' + str(ind_start_r2 <= aln_ind_r2 <= ind_stop_r2))
-        # print('qual_ind_r1: ' + str(qual_ind_r1) + ' qual_ind_r2: ' + str(qual_ind_r2))
-        # print('final_aln: ' + final_aln + ' final_ref: ' + final_ref)
-        # print('---------------')
-        # print('aln_ref_r1: {aln_ref_r1} aln_ref_r2: {aln_ref_r2} final_ref: {final_ref} aln_ind_r1: {aln_ind_r1: <3} qual_ind_r1: {qual_ind_r1: <3} aln_ind_r2: {aln_ind_r2: <3} qual_ind_r2: {qual_ind_r2: <3}'.format(
-        #     aln_seq_r1=aln_seq_r1[aln_ind_r1] if aln_ind_r1 < len(aln_seq_r1) else 'Z',
-        #     aln_ref_r1=aln_ref_r1[aln_ind_r1] if aln_ind_r1 < len(aln_ref_r1) else 'Z',
-        #     aln_seq_r2=aln_seq_r2[aln_ind_r2] if aln_ind_r2 < len(aln_seq_r2) else 'Z',
-        #     aln_ref_r2=aln_ref_r2[aln_ind_r2] if aln_ind_r2 < len(aln_ref_r2) else 'Z',
-        #     final_ref=final_ref[-1],
-        #     aln_ind_r1=aln_ind_r1,
-        #     qual_ind_r1=qual_ind_r1,
-        #     aln_ind_r2=aln_ind_r2,
-        #     qual_ind_r2=qual_ind_r2,
-        # ))
-        if ind_start_r1 <= aln_ind_r1 <= ind_stop_r1:
-            if ind_start_r2 <= aln_ind_r2 <= ind_stop_r2:
-                # both are in range
-                if aln_ref_r1[aln_ind_r1] == '-' or aln_ref_r2[aln_ind_r2] == '-':
-                    this_nuc, nucs_diff = get_greater_qual_nuc(
-                        aln_seq_r1[aln_ind_r1],
-                        qual_r1[qual_ind_r1],
-                        aln_seq_r2[aln_ind_r2],
-                        qual_r2[qual_ind_r2],
-                        is_best_aln_r1,
-                    )
-                    if nucs_diff:
-                        caching_is_ok = False
-
-                    final_aln += this_nuc
-                    final_ref += '-'
-                else:
-                    this_nuc, nucs_diff = get_greater_qual_nuc(
-                        aln_seq_r1[aln_ind_r1],
-                        qual_r1[qual_ind_r1],
-                        aln_seq_r2[aln_ind_r2],
-                        qual_r2[qual_ind_r2],
-                        is_best_aln_r1,
-                    )
-                    if nucs_diff:
-                        caching_is_ok = False
-
-                    final_aln += this_nuc
-                    final_ref += aln_ref_r1[aln_ind_r1]
-
-                if aln_seq_r1[aln_ind_r1] != '-':
-                    qual_ind_r1 += 1
-                if aln_seq_r2[aln_ind_r2] != '-':
-                    qual_ind_r2 += 1
-            else:
-                # only r1 is in range
-                if aln_seq_r1[aln_ind_r1] != '-':
-                    qual_ind_r1 += 1
-                this_nuc = aln_seq_r1[aln_ind_r1]
-                final_aln += this_nuc
-                final_ref += aln_ref_r1[aln_ind_r1]
-        elif ind_start_r2 <= aln_ind_r2 <= ind_stop_r2:
-            # only r2 is in range
-            if aln_seq_r2[aln_ind_r2] != '-':
-                qual_ind_r2 += 1
-            this_nuc = aln_seq_r2[aln_ind_r2]
+        r1_in_range = aln_ind_r1 < len(aln_ref_r1)
+        r2_in_range = aln_ind_r2 < len(aln_ref_r2)
+        if r1_in_range and aln_ref_r1[aln_ind_r1] == '-' and r2_in_range and aln_ref_r2[aln_ind_r2] == '-':
+            this_nuc, nucs_diff = get_greater_qual_nuc(
+                aln_seq_r1[aln_ind_r1],
+                qual_r1[qual_ind_r1],
+                aln_seq_r2[aln_ind_r2],
+                qual_r2[qual_ind_r2],
+                is_best_aln_r1,
+            )
+            if nucs_diff:
+                caching_is_ok = False
             final_aln += this_nuc
+            final_ref += '-'
+            qual_ind_r1 += 1
+            qual_ind_r2 += 1
+            aln_ind_r1 += 1
+            aln_ind_r2 += 1
+            continue
+        elif r1_in_range and aln_ref_r1[aln_ind_r1] == '-':
+            final_aln += aln_seq_r1[aln_ind_r1]
+            final_ref += '-'
+            qual_ind_r1 += 1
+            aln_ind_r1 += 1
+            continue
+        elif r2_in_range and aln_ref_r2[aln_ind_r2] == '-':
+            final_aln += aln_seq_r2[aln_ind_r2]
+            final_ref += '-'
+            qual_ind_r2 += 1
+            aln_ind_r2 += 1
+            continue
+        if r1_in_range and aln_seq_r1[aln_ind_r1] == '-' and r2_in_range and aln_seq_r2[aln_ind_r2] == '-':
+            if aln_ref_r1[aln_ind_r1] != aln_ref_r2[aln_ind_r2]:
+                print(f'{aln_ref_r1[aln_ind_r1] = } {aln_ref_r2[aln_ind_r2] = }')
+            final_aln += '-' if ind_start_r1 <= aln_ind_r1 <= ind_stop_r1 or ind_start_r2 <= aln_ind_r2 <= ind_stop_r2 else 'N'
+            final_ref += aln_ref_r1[aln_ind_r1]
+        elif r1_in_range and aln_seq_r1[aln_ind_r1] == '-' and r2_in_range and aln_seq_r2[aln_ind_r2] != '-':
+            final_aln += aln_seq_r2[aln_ind_r2]
             final_ref += aln_ref_r2[aln_ind_r2]
-        else:
-            # neither are in range
-            final_aln += "N"
-            final_ref += aln_ref_r1[aln_ind_r1] # TODO make this dependent on the alignment score
+            qual_ind_r2 += 1
+        elif r1_in_range and aln_seq_r1[aln_ind_r1] != '-' and r2_in_range and aln_seq_r2[aln_ind_r2] == '-':
+            final_aln += aln_seq_r1[aln_ind_r1]
+            final_ref += aln_ref_r1[aln_ind_r1]
+            qual_ind_r1 += 1
+        elif r1_in_range and r2_in_range:
+            this_nuc, nucs_diff = get_greater_qual_nuc(
+                aln_seq_r1[aln_ind_r1],
+                qual_r1[qual_ind_r1],
+                aln_seq_r2[aln_ind_r2],
+                qual_r2[qual_ind_r2],
+                is_best_aln_r1,
+            )
+            if nucs_diff:
+                caching_is_ok = False
+            final_aln += this_nuc
+            final_ref += aln_ref_r1[aln_ind_r1] # TODO check this
+            qual_ind_r1 += 1
+            qual_ind_r2 += 1
+        elif r1_in_range:
+            if aln_seq_r1[aln_ind_r1] == '-' and ind_start_r1 <= aln_ind_r1 <= ind_stop_r1:
+                final_aln += 'N'
+            else:
+                final_aln += aln_seq_r1[aln_ind_r1]
+            final_ref += aln_ref_r1[aln_ind_r1]
+            qual_ind_r1 += 1
+        elif r2_in_range:
+            if aln_seq_r2[aln_ind_r2] == '-' and ind_start_r2 <= aln_ind_r2 <= ind_stop_r2:
+                final_aln += 'N'
+            else:
+                final_aln += aln_seq_r2[aln_ind_r2]
+            final_ref += aln_ref_r2[aln_ind_r2]
+            qual_ind_r2 += 1
 
-        if aln_ref_r1[aln_ind_r1] == '-' and aln_ref_r2[aln_ind_r2] != '-':
-            aln_ind_r1 += 1
-        elif aln_ref_r1[aln_ind_r1] != '-' and aln_ref_r2[aln_ind_r2] == '-':
-            aln_ind_r2 += 1
-        else:
-            aln_ind_r1 += 1
-            aln_ind_r2 += 1
+        aln_ind_r1 += 1
+        aln_ind_r2 += 1
 
     final_homology_score = 0
     for i in range(len(final_ref)):

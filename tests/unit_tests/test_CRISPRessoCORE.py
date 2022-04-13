@@ -164,7 +164,7 @@ def test_get_consensus_alignment_from_pairs():
     #insertion in r2
     qual1                =   "AAAA"
     aln1_seq             = "--CCGA-----".replace(" ","") #added replace for vertical alignment
-    aln1_ref             = "ATCCGATCGAT".replace(" ","")
+    aln1_ref             = "ATCCGATC AT".replace(" ","")
     aln2_seq             = "--------GA-".replace(" ","")
     aln2_ref             = "ATCCGATC-AT".replace(" ","")
     qual2                =         "AA"
@@ -206,6 +206,54 @@ def test_get_consensus_alignment_from_pairs():
     assert ref_seq ==      "ATCGATCGAT"
     assert score == 60
     assert caching_ok
+
+    # insertion in r1 and r2
+    qual1                =   "AAAAAA"
+    aln1_seq             = "--CGATCC---".replace(" ","")
+    aln1_ref             = "ATCGAT-CGAT".replace(" ","")
+    aln2_seq             = "----ATACGA-".replace(" ","")
+    aln2_ref             = "ATCGAT-CGAT".replace(" ","")
+    qual2                =     "AAAAAA ".replace(" ", "")
+
+    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(
+        aln1_seq,
+        aln1_ref,
+        calc_score(aln1_seq, aln1_ref),
+        qual1,
+        aln2_seq,
+        aln2_ref,
+        calc_score(aln2_seq, aln2_ref),
+        qual2,
+    )
+    assert aln_seq ==      "NNCGATCCGAN"
+    assert ref_seq ==      "ATCGAT-CGAT"
+    assert score == 63
+    assert not caching_ok
+
+    # insertion in r1 and r2, different positions
+    qual1                =   "AAAAAA"
+    aln1_seq             = "--CGATCC---".replace(" ","")
+    aln1_ref             = "ATCGAT-CGAT".replace(" ","")
+    aln2_seq             = "----ATATGA-".replace(" ","")
+    aln2_ref             = "ATCGATC-GAT".replace(" ","")
+    qual2                =     "AAAAAA ".replace(" ", "")
+
+    print('------')
+    aln_seq, ref_seq, score, caching_ok = CRISPRessoCORE.get_consensus_alignment_from_pairs(
+        aln1_seq,
+        aln1_ref,
+        calc_score(aln1_seq, aln1_ref),
+        qual1,
+        aln2_seq,
+        aln2_ref,
+        calc_score(aln2_seq, aln2_ref),
+        qual2,
+    )
+    # breakpoint()
+    assert aln_seq ==      "NNCGATCCTGAN"
+    assert ref_seq ==      "ATCGAT-C-GAT"
+    assert score == 58
+    assert not caching_ok
 
     # insertion at beginning of r1
     qual1                = "AAAAA"
@@ -270,7 +318,10 @@ def test_get_consensus_alignment_from_pairs():
         calc_score(aln2_seq, aln2_ref),
         qual2,
     )
-    assert ref_seq == 'AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT-----'
+    assert aln_seq == 'AACCACCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAACTCATGATCCCCTTCTGGAGCTCCAAAAGGGGATCATGACCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGTTCCCATTTGGTTACATT'
+    assert ref_seq == 'AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGC--CGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT-----'
+    assert score == 83
+    assert not caching_ok
 
 
 if __name__ == "__main__":
