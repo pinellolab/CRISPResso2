@@ -211,26 +211,25 @@ def main():
         if batch_params.drop_duplicates('name').shape[0] != batch_params.shape[0]:
             raise CRISPRessoShared.BadParameterException('Batch input names must be unique. The given names are not unique: ' + str(batch_params.loc[:, 'name']))
 
-        #Check files
-        batch_params["sgRNA_intervals"] = '' #create empty array for sgRNA intervals
-        batch_params["sgRNA_intervals"] = batch_params["sgRNA_intervals"].apply(list)
-        batch_params["cut_point_include_idx"] = '' #create empty array for cut point intervals for each batch based on sgRNA
-        batch_params["cut_point_include_idx"] = batch_params["cut_point_include_idx"].apply(list)
+        # for each row, check to make sure that run's parameters are correct
         for idx, row in batch_params.iterrows():
-            if 'fastq_r1' in row:
-                if row.fastq_r1 is None:
-                    raise CRISPRessoShared.BadParameterException("At least one fastq file must be given as a command line parameter or be specified in the batch settings file with the heading 'fastq_r1' (fastq_r1 on row %s '%s' is invalid)"%(int(idx)+1, row.fastq_r1))
-                else:
-                    CRISPRessoShared.check_file(row.fastq_r1)
+            # check parameters for batch input for each batch
+            # Check presence of input fastq/bam files
+            has_input = False
+            if 'fastq_r1' in row and row.fastq_r1 != '':
+                CRISPRessoShared.check_file(row.fastq_r1)
+                has_input = True
 
-            if 'fastq_r2' in row and row.fastq_r2 != "":
+            if 'fastq_r2' in row and row.fastq_r2 != '':
                 CRISPRessoShared.check_file(row.fastq_r2)
+                has_input = True
 
-            if 'input_bam' in row:
-                if row.input_bam is None:
-                    raise CRISPRessoShared.BadParameterException("At least one input file must be given as a command line parameter or be specified in the batch settings file with the heading 'fastq_r1' or 'input_bam' (input_bam on row %s '%s' is invalid)"%(int(idx)+1, row.input_bam))
-                else:
-                    CRISPRessoShared.check_file(row.input_bam)
+            if 'input_bam' in row and row.input_bam != '':
+                CRISPRessoShared.check_file(row.input_bam)
+                has_input = True
+
+            if not has_input:
+                raise CRISPRessoShared.BadParameterException("At least one fastq file must be given as a command line parameter or be specified in the batch settings file with the heading 'fastq_r1' (fastq_r1 on row %s '%s' is invalid)"%(int(idx)+1, row.fastq_r1))
 
             if args.auto:
                 continue
@@ -239,21 +238,33 @@ def main():
             if curr_amplicon_seq_str is None:
                 raise CRISPRessoShared.BadParameterException("Amplicon sequence must be given as a command line parameter or be specified in the batch settings file with the heading 'amplicon_seq' (Amplicon seq on row %s '%s' is invalid)"%(int(idx)+1, curr_amplicon_seq_str))
 
-            guides_are_in_amplicon = {} #dict of whether a guide is in at least one amplicon sequence
-            #iterate through amplicons
-            for curr_amplicon_seq in str(curr_amplicon_seq_str).split(','):
-                this_include_idxs=[] #mask for bp to include for this amplicon seq, as specified by sgRNA cut points
+            # set quantification windows for each amplicon (needed to tell whether to discard a guide below)
+            curr_amplicon_seq_arr = str(curr_amplicon_seq_str).split(',')
+            curr_amplicon_quant_window_coordinates_arr = [None]*len(curr_amplicon_seq_arr)
+            if row.quantification_window_coordinates is not None:
+                print(f'{row.quantification_window_coordinates =}')
+                print(f'{row =}')
+                for idx, coords in enumerate(row.quantification_window_coordinates.strip("'").strip('"').split(",")):
+                    if coords != "":
+                        curr_amplicon_quant_window_coordinates_arr[idx] = coords
+
+            # assert that guides are in the amplicon sequences and that quantification windows are within the amplicon sequences
+            guides_are_in_amplicon = {} # dict of whether a guide is in at least one amplicon sequence
+            # iterate through amplicons for this run
+            for amp_idx, curr_amplicon_seq in enumerate(curr_amplicon_seq_arr):
+                this_include_idxs = [] #mask for bp to include for this amplicon seq, as specified by sgRNA cut points
                 this_sgRNA_intervals = []
-                wrong_nt=CRISPRessoShared.find_wrong_nt(curr_amplicon_seq)
+                curr_amplicon_quant_window_coordinates = curr_amplicon_quant_window_coordinates_arr[amp_idx]
+                wrong_nt = CRISPRessoShared.find_wrong_nt(curr_amplicon_seq)
                 if wrong_nt:
                     raise CRISPRessoShared.NTException('The amplicon sequence in row %d (%s) contains incorrect characters:%s' % (idx+1, curr_amplicon_seq_str, ' '.join(wrong_nt)))
 
-                #iterate through guides
+                # iterate through guides
                 curr_guide_seq_string = row.guide_seq
                 if curr_guide_seq_string is not None and curr_guide_seq_string != "":
                     guides = str(curr_guide_seq_string).strip().upper().split(',')
                     for curr_guide_seq in guides:
-                        wrong_nt=CRISPRessoShared.find_wrong_nt(curr_guide_seq)
+                        wrong_nt = CRISPRessoShared.find_wrong_nt(curr_guide_seq)
                         if wrong_nt:
                             raise CRISPRessoShared.NTException('The sgRNA sequence in row %d (%s) contains incorrect characters:%s'  % (idx+1, curr_guide_seq, ' '.join(wrong_nt)))
                     guide_mismatches = [[]]*len(guides)
@@ -266,16 +277,13 @@ def main():
                         discard_guide_positions_overhanging_amplicon_edge = row.discard_guide_positions_overhanging_amplicon_edge
                     (this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_cut_points, this_sgRNA_plot_cut_points, this_sgRNA_plot_idxs, this_sgRNA_mismatches, this_sgRNA_names, this_include_idxs,
                         this_exclude_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(curr_amplicon_seq, guides, guide_mismatches, guide_names, guide_qw_centers,
-                        guide_qw_sizes, row.quantification_window_coordinates, row.exclude_bp_from_left, row.exclude_bp_from_right, row.plot_window_size, guide_plot_cut_points, discard_guide_positions_overhanging_amplicon_edge)
+                        guide_qw_sizes, curr_amplicon_quant_window_coordinates, row.exclude_bp_from_left, row.exclude_bp_from_right, row.plot_window_size, guide_plot_cut_points, discard_guide_positions_overhanging_amplicon_edge)
                     for guide_seq in this_sgRNA_sequences:
                         guides_are_in_amplicon[guide_seq] = 1
 
-                batch_params.loc[idx, "cut_point_include_idx"].append(this_include_idxs)
-                batch_params.loc[idx, "sgRNA_intervals"].append(this_sgRNA_intervals)
-
             for guide_seq in guides_are_in_amplicon:
                 if guides_are_in_amplicon[guide_seq] != 1:
-                    warn('\nThe guide sequence provided on row %d (%s) is not present in any amplicon sequence:%s! \nNOTE: The guide will be ignored for the analysis. Please check your input!' % (idx+1, row.guide_seq, curr_amplicon_seq))
+                    raise CRISPRessoShared.BadParameterException('The guide sequence provided on row %d (%s) is not present in any amplicon sequence:%s! \nNOTE: The guide will be ignored for the analysis. Please check your input!' % (idx+1, row.guide_seq, curr_amplicon_seq))
 
         crispresso_cmds = []
         batch_names_arr = []
