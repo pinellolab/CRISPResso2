@@ -181,7 +181,8 @@ def main():
                        'exclude_bp_from_right',
                        'plot_window_size', 'max_rows_alleles_around_cut_to_plot']
         for int_col in int_columns:
-            batch_params[int_col] = batch_params[int_col].astype(int)
+            if int_col in batch_params.columns:
+                batch_params[int_col] = batch_params[int_col].astype(int)
 
         #rename column "a" to "amplicon_seq", etc
         batch_params.rename(index=str, columns=CRISPRessoShared.get_crispresso_options_lookup(), inplace=True)
