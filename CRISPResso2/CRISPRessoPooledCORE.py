@@ -490,131 +490,129 @@ def main():
 
         # perform read trimming if necessary
         if args.aligned_pooled_bam is not None:
-            #don't trim reads in aligned bams
+            # don't trim reads in aligned bams
             pass
-        #read filtering (for quality) is done at the individual crispresso run
-        elif args.fastq_r2 == '': #single end reads
-             # check if we need to trim
-             if not args.trim_sequences:
-                 #create a symbolic link
-                 symlink_filename=_jp(os.path.basename(args.fastq_r1))
-                 CRISPRessoShared.force_symlink(os.path.abspath(args.fastq_r1), symlink_filename)
-                 output_forward_filename=symlink_filename
-             else:
-                 output_forward_filename=_jp('reads.trimmed.fq.gz')
-                 #Trimming with trimmomatic
-                 cmd='%s SE -phred33 %s %s %s >>%s 2>&1'\
-                 % (args.trimmomatic_command, args.fastq_r1,
-                    output_forward_filename,
-                    args.trimmomatic_options_string,
-                    log_filename)
-                 #print cmd
-                 TRIMMOMATIC_STATUS=sb.call(cmd, shell=True)
+        # read filtering (for quality) is done at the individual crispresso run
+        elif args.fastq_r2 == '':  # single end reads
+            # check if we need to trim
+            if not args.trim_sequences:
+                # create a symbolic link
+                symlink_filename = _jp(os.path.basename(args.fastq_r1))
+                CRISPRessoShared.force_symlink(os.path.abspath(args.fastq_r1), symlink_filename)
+                output_forward_filename = symlink_filename
+            else:
+                output_forward_filename = _jp('reads.trimmed.fq.gz')
+                # Trimming with trimmomatic
+                cmd = '%s SE -phred33 %s %s %s >>%s 2>&1'\
+                    % (args.trimmomatic_command, args.fastq_r1,
+                        output_forward_filename,
+                        args.trimmomatic_options_string,
+                        log_filename)
+                # print cmd
+                TRIMMOMATIC_STATUS = sb.call(cmd, shell=True)
 
-                 if TRIMMOMATIC_STATUS:
-                         raise TrimmomaticException('TRIMMOMATIC failed to run, please check the log file.')
+                if TRIMMOMATIC_STATUS:
+                    raise TrimmomaticException('TRIMMOMATIC failed to run, please check the log file.')
 
-
-             processed_output_filename=output_forward_filename
+            processed_output_filename = output_forward_filename
 
         else:  # paired end reads case
+            if not args.trim_sequences:
+                output_forward_paired_filename = args.fastq_r1
+                output_reverse_paired_filename = args.fastq_r2
+            else:
+                info('Trimming sequences with Trimmomatic...')
+                output_forward_paired_filename = _jp('output_forward_paired.fq.gz')
+                output_forward_unpaired_filename = _jp('output_forward_unpaired.fq.gz')
+                output_reverse_paired_filename = _jp('output_reverse_paired.fq.gz')
+                output_reverse_unpaired_filename = _jp('output_reverse_unpaired.fq.gz')
 
-             if not args.trim_sequences:
-                 output_forward_paired_filename=args.fastq_r1
-                 output_reverse_paired_filename=args.fastq_r2
-             else:
-                 info('Trimming sequences with Trimmomatic...')
-                 output_forward_paired_filename=_jp('output_forward_paired.fq.gz')
-                 output_forward_unpaired_filename=_jp('output_forward_unpaired.fq.gz')
-                 output_reverse_paired_filename=_jp('output_reverse_paired.fq.gz')
-                 output_reverse_unpaired_filename=_jp('output_reverse_unpaired.fq.gz')
+                # Trimming with trimmomatic
+                cmd = '%s PE -phred33 %s  %s %s  %s  %s  %s %s >>%s 2>&1'\
+                    % (args.trimmomatic_command,
+                        args.fastq_r1, args.fastq_r2, output_forward_paired_filename,
+                        output_forward_unpaired_filename, output_reverse_paired_filename,
+                        output_reverse_unpaired_filename, args.trimmomatic_options_string, log_filename)
+                # print cmd
+                TRIMMOMATIC_STATUS = sb.call(cmd, shell=True)
+                if TRIMMOMATIC_STATUS:
+                    raise TrimmomaticException('TRIMMOMATIC failed to run, please check the log file.')
 
-                 #Trimming with trimmomatic
-                 cmd='%s PE -phred33 %s  %s %s  %s  %s  %s %s >>%s 2>&1'\
-                 % (args.trimmomatic_command,
-                         args.fastq_r1, args.fastq_r2, output_forward_paired_filename,
-                         output_forward_unpaired_filename, output_reverse_paired_filename,
-                         output_reverse_unpaired_filename, args.trimmomatic_options_string, log_filename)
-                 #print cmd
-                 TRIMMOMATIC_STATUS=sb.call(cmd, shell=True)
-                 if TRIMMOMATIC_STATUS:
-                         raise TrimmomaticException('TRIMMOMATIC failed to run, please check the log file.')
+                info('Done!')
 
-                 info('Done!')
+            max_overlap_string = ""
+            min_overlap_string = ""
+            if args.max_paired_end_reads_overlap:
+                max_overlap_string = "--max-overlap " + str(args.max_paired_end_reads_overlap)
+            if args.min_paired_end_reads_overlap:
+                min_overlap_string = "--min-overlap " + str(args.min_paired_end_reads_overlap)
+            # Merging with Flash
+            info('Merging paired sequences with Flash...')
+            cmd = args.flash_command+' --allow-outies %s %s %s %s -z -d %s >>%s 2>&1' %\
+                (output_forward_paired_filename,
+                 output_reverse_paired_filename,
+                 max_overlap_string,
+                 min_overlap_string,
+                 OUTPUT_DIRECTORY, log_filename)
 
+            if args.debug:
+                info('Flash command: %s'%cmd)
 
-             max_overlap_string = ""
-             min_overlap_string = ""
-             if args.max_paired_end_reads_overlap:
-                 max_overlap_string = "--max-overlap " + str(args.max_paired_end_reads_overlap)
-             if args.min_paired_end_reads_overlap:
-                 min_overlap_string = "--min-overlap " + str(args.min_paired_end_reads_overlap)
-             #Merging with Flash
-             info('Merging paired sequences with Flash...')
-             cmd=args.flash_command+' --allow-outies %s %s %s %s -z -d %s >>%s 2>&1' %\
-             (output_forward_paired_filename,
-              output_reverse_paired_filename,
-              max_overlap_string,
-              min_overlap_string,
-              OUTPUT_DIRECTORY, log_filename)
+            FLASH_STATUS = sb.call(cmd, shell=True)
+            if FLASH_STATUS:
+                raise FlashException('Flash failed to run, please check the log file.')
 
-             FLASH_STATUS=sb.call(cmd, shell=True)
-             if FLASH_STATUS:
-                 raise FlashException('Flash failed to run, please check the log file.')
+            flash_hist_filename = _jp('out.hist')
+            flash_histogram_filename = _jp('out.histogram')
+            flash_not_combined_1_filename = _jp('out.notCombined_1.fastq.gz')
+            flash_not_combined_2_filename = _jp('out.notCombined_2.fastq.gz')
 
-             flash_hist_filename=_jp('out.hist')
-             flash_histogram_filename=_jp('out.histogram')
-             flash_not_combined_1_filename=_jp('out.notCombined_1.fastq.gz')
-             flash_not_combined_2_filename=_jp('out.notCombined_2.fastq.gz')
+            processed_output_filename = _jp('out.extendedFrags.fastq.gz')
 
-             processed_output_filename=_jp('out.extendedFrags.fastq.gz')
+            if args.force_merge_pairs:
+                old_flashed_filename = processed_output_filename
+                new_merged_filename = _jp('out.forcemerged_uncombined.fastq.gz')
+                num_reads_force_merged = CRISPRessoShared.force_merge_pairs(flash_not_combined_1_filename, flash_not_combined_2_filename, new_merged_filename)
+                new_output_filename = _jp('out.forcemerged.fastq.gz')
+                merge_command = "cat %s %s > %s"%(processed_output_filename, new_merged_filename, new_output_filename)
+                MERGE_STATUS = sb.call(merge_command, shell=True)
+                if MERGE_STATUS:
+                    raise FlashException('Force-merging read pairs failed to run, please check the log file.')
+                processed_output_filename = new_output_filename
 
-             if args.force_merge_pairs:
-                 old_flashed_filename = processed_output_filename
-                 new_merged_filename=_jp('out.forcemerged_uncombined.fastq.gz')
-                 num_reads_force_merged = CRISPRessoShared.force_merge_pairs(flash_not_combined_1_filename, flash_not_combined_2_filename, new_merged_filename)
-                 new_output_filename=_jp('out.forcemerged.fastq.gz')
-                 merge_command = "cat %s %s > %s"%(processed_output_filename, new_merged_filename, new_output_filename)
-                 MERGE_STATUS=sb.call(merge_command, shell=True)
-                 if MERGE_STATUS:
-                     raise FlashException('Force-merging read pairs failed to run, please check the log file.')
-                 processed_output_filename = new_output_filename
-
-             info('Done!')
-
+            info('Done!')
 
         if can_finish_incomplete_run and 'count_input_reads' in crispresso2_info['running_info']['finished_steps']:
             (N_READS_INPUT, N_READS_AFTER_PREPROCESSING) = crispresso2_info['running_info']['finished_steps']['count_input_reads']
-        #count reads
+        # count reads
         else:
             if args.aligned_pooled_bam is not None:
                 N_READS_INPUT = get_n_reads_bam(args.aligned_pooled_bam)
                 N_READS_AFTER_PREPROCESSING = N_READS_INPUT
             else:
-                N_READS_INPUT=get_n_reads_fastq(args.fastq_r1)
-                N_READS_AFTER_PREPROCESSING=get_n_reads_fastq(processed_output_filename)
+                N_READS_INPUT = get_n_reads_fastq(args.fastq_r1)
+                N_READS_AFTER_PREPROCESSING = get_n_reads_fastq(processed_output_filename)
 
             crispresso2_info['running_info']['finished_steps']['count_input_reads'] = (N_READS_INPUT, N_READS_AFTER_PREPROCESSING)
             CRISPRessoShared.write_crispresso_info(
                 crispresso2_info_file, crispresso2_info
             )
 
-        #load gene annotation
+        # load gene annotation
         if args.gene_annotations:
             info('Loading gene coordinates from annotation file: %s...' % args.gene_annotations)
             try:
-                df_genes=pd.read_csv(args.gene_annotations, compression='gzip', sep="\t")
-                df_genes.txEnd=df_genes.txEnd.astype(int)
-                df_genes.txStart=df_genes.txStart.astype(int)
+                df_genes = pd.read_csv(args.gene_annotations, compression='gzip', sep="\t")
+                df_genes.txEnd = df_genes.txEnd.astype(int)
+                df_genes.txStart = df_genes.txStart.astype(int)
                 df_genes.head()
-            except:
-               info('Failed to load the gene annotations file.')
-
+            except Exception:
+                info('Failed to load the gene annotations file.')
 
         if RUNNING_MODE=='ONLY_AMPLICONS' or  RUNNING_MODE=='AMPLICONS_AND_GENOME':
 
-            #load and validate template file
-            df_template=pd.read_csv(args.amplicons_file, names=[
+            # load and validate template file
+            df_template = pd.read_csv(args.amplicons_file, names=[
                     'Name', 'Amplicon_Sequence', 'sgRNA',
                     'Expected_HDR', 'Coding_sequence'], comment='#', sep='\t', dtype={'Name':str})
 
