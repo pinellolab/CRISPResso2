@@ -163,26 +163,46 @@ def make_batch_report_from_folder(crispressoBatch_report_file, crispresso2_info,
     allele_modification_heatmap_plot = {}
     if 'allele_modification_heatmap_plot_names' in crispresso2_info['results']['general_plots']:
         allele_modification_heatmap_plot['names'] = crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_names']
+    else:
+        allele_modification_heatmap_plot['names'] = []
     if 'allele_modification_heatmap_plot_paths' in crispresso2_info['results']['general_plots']:
         allele_modification_heatmap_plot['paths'] = crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_paths']
+    else:
+        allele_modification_heatmap_plot['paths'] = {}
     if 'allele_modification_heatmap_plot_titles' in crispresso2_info['results']['general_plots']:
         allele_modification_heatmap_plot['titles'] = crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_titles']
+    else:
+        allele_modification_heatmap_plot['titles'] = []
     if 'allele_modification_heatmap_plot_labels' in crispresso2_info['results']['general_plots']:
         allele_modification_heatmap_plot['labels'] = crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_labels']
+    else:
+        allele_modification_heatmap_plot['labels'] = {}
     if 'allele_modification_heatmap_plot_datas' in crispresso2_info['results']['general_plots']:
         allele_modification_heatmap_plot['datas'] = crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_datas']
+    else:
+        allele_modification_heatmap_plot['datas'] = {}
 
     allele_modification_line_plot = {}
     if 'allele_modification_line_plot_names' in crispresso2_info['results']['general_plots']:
         allele_modification_line_plot['names'] = crispresso2_info['results']['general_plots']['allele_modification_line_plot_names']
+    else:
+        allele_modification_line_plot['names'] = []
     if 'allele_modification_line_plot_paths' in crispresso2_info['results']['general_plots']:
         allele_modification_line_plot['paths'] = crispresso2_info['results']['general_plots']['allele_modification_line_plot_paths']
+    else:
+        allele_modification_line_plot['paths'] = {}
     if 'allele_modification_line_plot_titles' in crispresso2_info['results']['general_plots']:
         allele_modification_line_plot['titles'] = crispresso2_info['results']['general_plots']['allele_modification_line_plot_titles']
+    else:
+        allele_modification_line_plot['titles'] = []
     if 'allele_modification_line_plot_labels' in crispresso2_info['results']['general_plots']:
         allele_modification_line_plot['labels'] = crispresso2_info['results']['general_plots']['allele_modification_line_plot_labels']
+    else:
+        allele_modification_line_plot['labels'] = {}
     if 'allele_modification_line_plot_datas' in crispresso2_info['results']['general_plots']:
         allele_modification_line_plot['datas'] = crispresso2_info['results']['general_plots']['allele_modification_line_plot_datas']
+    else:
+        allele_modification_line_plot['datas'] = {}
 
     allele_modification_heatmap_plot['htmls'] = {}
     for heatmap_plot_name, heatmap_plot_path in allele_modification_heatmap_plot['paths'].items():
