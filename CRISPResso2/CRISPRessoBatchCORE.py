@@ -638,6 +638,99 @@ def main():
         crispresso2_info['results']['general_plots']['window_nuc_conv_plot_names'] = window_nuc_conv_plot_names
         crispresso2_info['results']['general_plots']['nuc_conv_plot_names'] = nuc_conv_plot_names
 
+        # allele modification frequency heatmap and line plots
+        if not args.suppress_plots:
+            crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_names'] = []
+            crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_paths'] = {}
+            crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_titles'] = {}
+            crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_labels'] = {}
+            crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_datas'] = {}
+
+            crispresso2_info['results']['general_plots']['allele_modification_line_plot_names'] = []
+            crispresso2_info['results']['general_plots']['allele_modification_line_plot_paths'] = {}
+            crispresso2_info['results']['general_plots']['allele_modification_line_plot_titles'] = {}
+            crispresso2_info['results']['general_plots']['allele_modification_line_plot_labels'] = {}
+            crispresso2_info['results']['general_plots']['allele_modification_line_plot_datas'] = {}
+            if guides_all_same:
+                sgRNA_intervals = [consensus_sgRNA_intervals] * modification_frequency_summary_df.shape[0]
+            else:
+                sgRNA_intervals = consensus_sgRNA_intervals
+            for modification_type in ['Insertions', 'Deletions', 'Substitutions']:
+                modification_df = modification_frequency_summary_df[
+                    modification_frequency_summary_df['Modification'] == modification_type
+                ]
+                modification_df.index = [
+                    '{0} ({1})'.format(batch, batch_index)
+                    for batch_index, batch in enumerate(
+                        modification_df['Batch'], 1,
+                    )
+                ]
+                modification_df = modification_df.drop(
+                    ['Modification', 'Batch'], axis=1,
+                )
+                modification_df.columns = [
+                    '{0} ({1})'.format(column, position)
+                    for position, column in
+                    enumerate(modification_df.columns, 1)
+                ]
+                plot_name = 'CRISPRessoBatch_percentage_of_{0}_across_alleles_{1}_heatmap'.format(modification_type.lower(), amplicon_name)
+                plot_path = '{0}.html'.format(_jp(plot_name))
+
+                allele_modification_heatmap_input = {
+                    'sample_values': modification_df,
+                    'sample_sgRNA_intervals': sgRNA_intervals,
+                    'plot_path': plot_path,
+                    'title': modification_type,
+                }
+                CRISPRessoPlot.plot_allele_modification_heatmap(
+                    **allele_modification_heatmap_input,
+                )
+
+                crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_names'].append(plot_name)
+                crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_paths'][plot_name] = plot_path
+                crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_titles'][plot_name] = 'CRISPRessoBatch {0} Across Samples for {1}'.format(
+                    modification_type,
+                    amplicon_name,
+                )
+                crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_labels'][plot_name] = 'Each row is a sample and each column is a position in the amplicon sequence. Each cell shows the percentage of {0} for the sample at that position relative to the amplicon. Guides for each sample are identified by a black rectangle.'.format(modification_type.lower())
+                crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_datas'][plot_name] = [
+                    (
+                        'CRISPRessoBatch Modification Frequency Summary',
+                        os.path.basename(
+                            modification_frequency_summary_filename,
+                        ),
+                    ),
+                ]
+
+                plot_name = 'CRISPRessoBatch_percentage_of_{0}_across_alleles_{1}_line'.format(modification_type.lower(), amplicon_name)
+                plot_path = '{0}.html'.format(_jp(plot_name))
+
+                allele_modification_line_input = {
+                    'sample_values': modification_df,
+                    'sample_sgRNA_intervals': sgRNA_intervals,
+                    'plot_path': plot_path,
+                    'title': modification_type,
+                }
+                CRISPRessoPlot.plot_allele_modification_line(
+                    **allele_modification_line_input
+                )
+
+                crispresso2_info['results']['general_plots']['allele_modification_line_plot_names'].append(plot_name)
+                crispresso2_info['results']['general_plots']['allele_modification_line_plot_paths'][plot_name] = plot_path
+                crispresso2_info['results']['general_plots']['allele_modification_line_plot_titles'][plot_name] = 'CRISPRessoBatch {0} Across Samples for {1}'.format(
+                    modification_type,
+                    amplicon_name,
+                )
+                crispresso2_info['results']['general_plots']['allele_modification_line_plot_labels'][plot_name] = 'Each line is a sample that indicates the percentage of {0} for the sample at that position relative to the amplicon. Guides are shown by a grey rectangle.'.format(modification_type.lower())
+                crispresso2_info['results']['general_plots']['allele_modification_line_plot_datas'][plot_name] = [
+                    (
+                        'CRISPRessoBatch Modification Frequency Summary',
+                        os.path.basename(
+                            modification_frequency_summary_filename,
+                        ),
+                    ),
+                ]
+
         # summarize amplicon modifications
         with open(_jp('CRISPRessoBatch_quantification_of_editing_frequency.txt'), 'w') as outfile:
             wrote_header = False
