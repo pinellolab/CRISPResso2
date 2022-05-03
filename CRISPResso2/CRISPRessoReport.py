@@ -160,6 +160,40 @@ def make_batch_report_from_folder(crispressoBatch_report_file, crispresso2_info,
     if 'summary_plot_datas' in crispresso2_info['results']['general_plots']:
         summary_plot_datas = crispresso2_info['results']['general_plots']['summary_plot_datas']
 
+    allele_modification_heatmap_plot = {}
+    if 'allele_modification_heatmap_plot_names' in crispresso2_info['results']['general_plots']:
+        allele_modification_heatmap_plot['names'] = crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_names']
+    if 'allele_modification_heatmap_plot_paths' in crispresso2_info['results']['general_plots']:
+        allele_modification_heatmap_plot['paths'] = crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_paths']
+    if 'allele_modification_heatmap_plot_titles' in crispresso2_info['results']['general_plots']:
+        allele_modification_heatmap_plot['titles'] = crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_titles']
+    if 'allele_modification_heatmap_plot_labels' in crispresso2_info['results']['general_plots']:
+        allele_modification_heatmap_plot['labels'] = crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_labels']
+    if 'allele_modification_heatmap_plot_datas' in crispresso2_info['results']['general_plots']:
+        allele_modification_heatmap_plot['datas'] = crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_datas']
+
+    allele_modification_line_plot = {}
+    if 'allele_modification_line_plot_names' in crispresso2_info['results']['general_plots']:
+        allele_modification_line_plot['names'] = crispresso2_info['results']['general_plots']['allele_modification_line_plot_names']
+    if 'allele_modification_line_plot_paths' in crispresso2_info['results']['general_plots']:
+        allele_modification_line_plot['paths'] = crispresso2_info['results']['general_plots']['allele_modification_line_plot_paths']
+    if 'allele_modification_line_plot_titles' in crispresso2_info['results']['general_plots']:
+        allele_modification_line_plot['titles'] = crispresso2_info['results']['general_plots']['allele_modification_line_plot_titles']
+    if 'allele_modification_line_plot_labels' in crispresso2_info['results']['general_plots']:
+        allele_modification_line_plot['labels'] = crispresso2_info['results']['general_plots']['allele_modification_line_plot_labels']
+    if 'allele_modification_line_plot_datas' in crispresso2_info['results']['general_plots']:
+        allele_modification_line_plot['datas'] = crispresso2_info['results']['general_plots']['allele_modification_line_plot_datas']
+
+    allele_modification_heatmap_plot['htmls'] = {}
+    for heatmap_plot_name, heatmap_plot_path in allele_modification_heatmap_plot['paths'].items():
+        with open(heatmap_plot_path) as fh:
+            allele_modification_heatmap_plot['htmls'][heatmap_plot_name] = fh.read()
+
+    allele_modification_line_plot['htmls'] = {}
+    for line_plot_name, line_plot_path in allele_modification_line_plot['paths'].items():
+        with open(line_plot_path) as fh:
+            allele_modification_line_plot['htmls'][line_plot_name] = fh.read()
+
     #find path between the report and the data (if the report is in another directory vs in the same directory as the data)
     crispresso_data_path = os.path.relpath(batch_folder, os.path.dirname(crispressoBatch_report_file))
     if crispresso_data_path == ".":
@@ -206,6 +240,8 @@ def make_batch_report_from_folder(crispressoBatch_report_file, crispresso2_info,
         nuc_pct_quilts=nuc_pct_quilts,
         window_nuc_conv_plots=window_nuc_conv_plots,
         nuc_conv_plots=nuc_conv_plots,
+        allele_modification_heatmap_plot=allele_modification_heatmap_plot,
+        allele_modification_line_plot=allele_modification_line_plot,
     )
 
 
