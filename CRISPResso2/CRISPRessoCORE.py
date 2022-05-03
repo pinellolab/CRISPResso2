@@ -1073,11 +1073,10 @@ def main():
 
         amplicon_quant_window_coordinates_arr = ['']*len(amplicon_seq_arr)
         if args.quantification_window_coordinates is not None:
-             tmp_arr = args.quantification_window_coordinates.split(",")
-             #fill in quant window coordinates if they are given for each amplicon, because we're about to add some amplicons
-             for idx, coords in enumerate(args.quantification_window_coordinates.split(",")):
-                 if coords != "":
-                     amplicon_quant_window_coordinates_arr[idx] = coords
+            #fill in quant window coordinates if they are given for each amplicon, because we're about to add some amplicons
+            for idx, coords in enumerate(args.quantification_window_coordinates.strip("'").strip('"').split(",")):
+                if coords != "":
+                    amplicon_quant_window_coordinates_arr[idx] = coords
 
 
         #Prime editing
