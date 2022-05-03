@@ -99,7 +99,7 @@ def main():
         parser.add_argument('--skip_failed',  help='Continue with batch analysis even if one sample fails', action='store_true')
         parser.add_argument('--min_reads_for_inclusion',  help='Minimum number of reads for a batch to be included in the batch summary', type=int, default=0)
         parser.add_argument('-bo', '--batch_output_folder',  help='Directory where batch analysis output will be stored')
-        parser.add_argument('--suppress_batch_summary_plots',  help='Suppress batch summary plots - e.g. if many samples are run at once, the summary plots of all sub-runs may be too large. This parameter suppresses the production of these plots.')
+        parser.add_argument('--suppress_batch_summary_plots',  help='Suppress batch summary plots - e.g. if many samples are run at once, the summary plots of all sub-runs may be too large. This parameter suppresses the production of these plots.', action='store_true')
         parser.add_argument('--crispresso_command', help='CRISPResso command to call', default='CRISPResso')
 
         args = parser.parse_args()
@@ -739,7 +739,7 @@ def main():
         crispresso2_info['results']['general_plots']['nuc_conv_plot_names'] = nuc_conv_plot_names
 
         # allele modification frequency heatmap and line plots
-        if not args.suppress_plots:
+        if not args.suppress_plots and not args.suppress_batch_summary_plots:
             crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_names'] = []
             crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_paths'] = {}
             crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_titles'] = {}
@@ -900,8 +900,9 @@ def main():
                     for line in infile:
                         outfile.write(batch_name + "\t" + line)
 
-        wait(process_results)
-        process_pool.shutdown()
+        if not args.suppress_batch_summary_plots:
+            wait(process_results)
+            process_pool.shutdown()
 
         if not args.suppress_report:
             if (args.place_report_in_output_folder):
