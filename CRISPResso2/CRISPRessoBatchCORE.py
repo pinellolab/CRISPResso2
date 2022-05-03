@@ -7,6 +7,7 @@ Software pipeline for the analysis of genome editing outcomes from deep sequenci
 
 import os
 from copy import deepcopy
+from concurrent.futures import ProcessPoolExecutor, wait
 import sys
 import traceback
 from datetime import datetime
@@ -358,6 +359,10 @@ def main():
         if args.suppress_report:
             save_png = False
 
+        if not args.suppress_batch_summary_plots:
+            process_results = []
+            process_pool = ProcessPoolExecutor(n_processes_for_batch)
+
         window_nuc_pct_quilt_plot_names = []
         nuc_pct_quilt_plot_names = []
         window_nuc_conv_plot_names = []
@@ -572,7 +577,23 @@ def main():
                                 sub_sgRNA_intervals.append((newstart, newend))
 
                             this_window_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt_around_sgRNA_'+sgRNA)
-                            CRISPRessoPlot.plot_nucleotide_quilt(sub_nucleotide_percentage_summary_df, sub_modification_percentage_summary_df, this_window_nuc_pct_quilt_plot_name, save_png, sgRNA_intervals=sub_sgRNA_intervals, quantification_window_idxs=include_idxs)
+                            nucleotide_quilt_input = {
+                                'nuc_pct_df': sub_nucleotide_percentage_summary_df,
+                                'mod_pct_df': sub_modification_percentage_summary_df,
+                                'fig_filename_root': this_window_nuc_pct_quilt_plot_name,
+                                'save_also_png': save_png,
+                                'sgRNA_intervals': sub_sgRNA_intervals,
+                                'quantification_window_idxs': include_idxs,
+                            }
+                            if n_processes_for_batch > 1:
+                                process_results.append(process_pool.submit(
+                                    CRISPRessoPlot.plot_nucleotide_quilt,
+                                    **nucleotide_quilt_input,
+                                ))
+                            else:
+                                CRISPRessoPlot.plot_nucleotide_quilt(
+                                    **nucleotide_quilt_input,
+                                )
                             plot_name = os.path.basename(this_window_nuc_pct_quilt_plot_name)
                             window_nuc_pct_quilt_plot_names.append(plot_name)
                             crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'sgRNA: ' + sgRNA + ' Amplicon: ' + amplicon_name
@@ -583,7 +604,24 @@ def main():
 
                             if args.base_editor_output:
                                 this_window_nuc_conv_plot_name = _jp(amplicon_plot_name + 'Nucleotide_conversion_map_around_sgRNA_'+sgRNA)
-                                CRISPRessoPlot.plot_conversion_map(sub_nucleotide_percentage_summary_df, this_window_nuc_conv_plot_name, args.conversion_nuc_from, args.conversion_nuc_to, save_png, sgRNA_intervals=sub_sgRNA_intervals, quantification_window_idxs=include_idxs)
+                                conversion_map_input = {
+                                    'nuc_pct_df': sub_nucleotide_percentage_summary_df,
+                                    'fig_filename_root': this_window_nuc_conv_plot_name,
+                                    'conversion_nuc_from': args.conversion_nuc_from,
+                                    'conversion_nuc_to': args.conversion_nuc_to,
+                                    'save_also_png': save_png,
+                                    'sgRNA_intervals': sub_sgRNA_intervals,
+                                    'quantification_window_idxs': include_idxs,
+                                }
+                                if n_processes_for_batch > 1:
+                                    process_results.append(process_pool.submit(
+                                        CRISPRessoPlot.plot_conversion_map,
+                                        **conversion_map_input,
+                                    ))
+                                else:
+                                    CRISPRessoPlot.plot_conversion_map(
+                                        **conversion_map_input,
+                                    )
                                 plot_name = os.path.basename(this_window_nuc_conv_plot_name)
                                 window_nuc_conv_plot_names.append(plot_name)
                                 crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'sgRNA: ' + sgRNA + ' Amplicon: ' + amplicon_name
@@ -597,7 +635,23 @@ def main():
 
                     if not args.suppress_plots and not args.suppress_batch_summary_plots:  # plot the whole region
                         this_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt')
-                        CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df, modification_percentage_summary_df, this_nuc_pct_quilt_plot_name, save_png, sgRNA_intervals=consensus_sgRNA_intervals, quantification_window_idxs=include_idxs)
+                        nucleotide_plot_input = {
+                            'nuc_pct_df': nucleotide_percentage_summary_df,
+                            'mod_pct_df': modification_percentage_summary_df,
+                            'fig_filename_root': this_nuc_pct_quilt_plot_name,
+                            'save_also_png': save_png,
+                            'sgRNA_intervals': consensus_sgRNA_intervals,
+                            'quantification_window_idxs': include_idxs,
+                        }
+                        if n_processes_for_batch > 1:
+                            process_results.append(process_pool.submit(
+                                CRISPRessoPlot.plot_nucleotide_quilt,
+                                **nucleotide_plot_input,
+                            ))
+                        else:
+                            CRISPRessoPlot.plot_nucleotide_quilt(
+                                **nucleotide_plot_input,
+                            )
                         plot_name = os.path.basename(this_nuc_pct_quilt_plot_name)
                         nuc_pct_quilt_plot_names.append(plot_name)
                         crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'Amplicon: ' + amplicon_name
@@ -607,7 +661,24 @@ def main():
                         crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), ('Modification frequencies', os.path.basename(modification_frequency_summary_filename))]
                         if args.base_editor_output:
                             this_nuc_conv_plot_name = _jp(amplicon_plot_name + 'Nucleotide_conversion_map')
-                            CRISPRessoPlot.plot_conversion_map(nucleotide_percentage_summary_df, this_nuc_conv_plot_name, args.conversion_nuc_from, args.conversion_nuc_to, save_png, sgRNA_intervals=consensus_sgRNA_intervals, quantification_window_idxs=include_idxs)
+                            conversion_map_input = {
+                                'nuc_pct_df': nucleotide_percentage_summary_df,
+                                'fig_filename_root': this_nuc_conv_plot_name,
+                                'conversion_nuc_from': args.conversion_nuc_from,
+                                'conversion_nuc_to': args.conversion_nuc_to,
+                                'save_also_png': save_png,
+                                'sgRNA_intervals': consensus_sgRNA_intervals,
+                                'quantification_window_idxs': include_idxs,
+                            }
+                            if n_processes_for_batch > 1:
+                                process_results.append(process_pool.submit(
+                                    CRISPRessoPlot.plot_conversion_map,
+                                    **conversion_map_input,
+                                ))
+                            else:
+                                CRISPRessoPlot.plot_conversion_map(
+                                    **conversion_map_input,
+                                )
                             plot_name = os.path.basename(this_nuc_conv_plot_name)
                             nuc_conv_plot_names.append(plot_name)
                             crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'Amplicon: ' + amplicon_name
@@ -620,14 +691,43 @@ def main():
                 else:  # guides are not the same
                     if not args.suppress_plots and not args.suppress_batch_summary_plots:
                         this_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt')
-                        CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df, modification_percentage_summary_df, this_nuc_pct_quilt_plot_name, save_png)
+                        nucleotide_quilt_input = {
+                            'nuc_pct_df': nucleotide_percentage_summary_df,
+                            'mod_pct_df': modification_percentage_summary_df,
+                            'fig_filename_root': this_nuc_pct_quilt_plot_name,
+                            'save_also_png': save_png,
+                        }
+                        if n_processes_for_batch > 1:
+                            process_results.append(process_pool.submit(
+                                CRISPRessoPlot.plot_nucleotide_quilt,
+                                **nucleotide_quilt_input,
+                            ))
+                        else:
+                            CRISPRessoPlot.plot_nucleotide_quilt(
+                                **nucleotide_quilt_input,
+                            )
                         plot_name = os.path.basename(this_nuc_pct_quilt_plot_name)
                         nuc_pct_quilt_plot_names.append(plot_name)
                         crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Composition of each base for the amplicon ' + amplicon_name
                         crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), ('Modification frequencies', os.path.basename(modification_frequency_summary_filename))]
                         if args.base_editor_output:
                             this_nuc_conv_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt')
-                            CRISPRessoPlot.plot_conversion_map(nucleotide_percentage_summary_df, this_nuc_conv_plot_name, args.conversion_nuc_from, args.conversion_nuc_to, save_png)
+                            conversion_map_input = {
+                                'nuc_pct_df': nucleotide_percentage_summary_df,
+                                'fig_filename_root': this_nuc_conv_plot_name,
+                                'conversion_nuc_from': args.conversion_nuc_from,
+                                'conversion_nuc_to': args.conversion_nuc_to,
+                                'save_also_png': save_png,
+                            }
+                            if n_processes_for_batch > 1:
+                                process_results.append(process_pool.submit(
+                                    CRISPRessoPlot.plot_conversion_map,
+                                    **conversion_map_input,
+                                ))
+                            else:
+                                CRISPRessoPlot.plot_conversion_map(
+                                    **conversion_map_input,
+                                )
                             plot_name = os.path.basename(this_nuc_conv_plot_name)
                             nuc_conv_plot_names.append(plot_name)
                             crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = args.conversion_nuc_from + '->' + args.conversion_nuc_to +' conversion rates for the amplicon ' + amplicon_name
@@ -682,9 +782,15 @@ def main():
                     'plot_path': plot_path,
                     'title': modification_type,
                 }
-                CRISPRessoPlot.plot_allele_modification_heatmap(
-                    **allele_modification_heatmap_input,
-                )
+                if n_processes_for_batch > 1:
+                    process_results.append(process_pool.submit(
+                        CRISPRessoPlot.plot_allele_modification_heatmap,
+                        **allele_modification_heatmap_input,
+                    ))
+                else:
+                    CRISPRessoPlot.plot_allele_modification_heatmap(
+                        **allele_modification_heatmap_input,
+                    )
 
                 crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_names'].append(plot_name)
                 crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_paths'][plot_name] = plot_path
@@ -711,8 +817,13 @@ def main():
                     'plot_path': plot_path,
                     'title': modification_type,
                 }
+                if n_processes_for_batch > 1:
+                    process_results.append(process_pool.submit(
+                        CRISPRessoPlot.plot_allele_modification_line,
+                        **allele_modification_line_input,
+                    ))
                 CRISPRessoPlot.plot_allele_modification_line(
-                    **allele_modification_line_input
+                    **allele_modification_line_input,
                 )
 
                 crispresso2_info['results']['general_plots']['allele_modification_line_plot_names'].append(plot_name)
@@ -788,6 +899,9 @@ def main():
                         wrote_header = True
                     for line in infile:
                         outfile.write(batch_name + "\t" + line)
+
+        wait(process_results)
+        process_pool.shutdown()
 
         if not args.suppress_report:
             if (args.place_report_in_output_folder):
