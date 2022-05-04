@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.cm as cm
 import matplotlib.gridspec as gridspec
+import plotly.express as px
 from collections import defaultdict
 from copy import deepcopy
 import re
@@ -3261,6 +3262,7 @@ def plot_unmod_mod_pcts(fig_filename_root,df_summary_quantification,save_png,cut
 
     #if there are rows..
     if df.shape[0] > 0:
+        ax.set_ylim(-0.5, df.shape[0]-0.5)
         max_val = max(df['Reads_total'])
         space_val = max_val*0.02
         pct_labels = []
@@ -3300,6 +3302,8 @@ def plot_reads_total(fig_filename_root,df_summary_quantification,save_png,cutoff
     names = [((name[:20] + "..") if len(name) > 18 else name) for name in df['Name'].values]
     ax.set_yticks(xs)
     ax.set_yticklabels(names)
+    if df.shape[0] > 0:
+        ax.set_ylim(-0.5, df.shape[0]-0.5)
     if df['Reads_total'].max() > 100000:
         ax.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
     if cutoff is not None:
@@ -3710,3 +3714,85 @@ def plot_quantification_positions(
         )
 
     plt.close(fig)
+
+
+def plot_allele_modification_heatmap(
+    sample_values, sample_sgRNA_intervals, plot_path, title,
+):
+    fig = px.imshow(
+        sample_values,
+        labels={
+            'x': 'Amplicon Nucleotide (Position)',
+            'y': 'Sample (Index)',
+            'color': '{0} (%)'.format(title),
+        },
+        aspect='auto',
+    )
+    for sample_id, sgRNA_intervals in zip(
+        range(sample_values.shape[0]), sample_sgRNA_intervals,
+    ):
+        for sgRNA_interval in sgRNA_intervals:
+            fig.add_shape(
+                type='rect',
+                x0=sgRNA_interval[0],
+                y0=sample_id - 0.5,
+                x1=sgRNA_interval[1],
+                y1=sample_id + 0.5,
+                line={'color': 'Black'},
+            )
+
+    fig.update_layout(
+        autosize=True,
+    )
+    fig['layout']['yaxis']['scaleanchor'] = 'x'
+    fig['layout']['yaxis']['gridcolor'] = 'rgba(0, 0, 0, 0)'
+    fig['layout']['xaxis']['gridcolor'] = 'rgba(0, 0, 0, 0)'
+    return fig.write_html(
+        plot_path,
+        config={
+            'responsive': True,
+            'displaylogo': False,
+        },
+        include_plotlyjs='cdn',
+        full_html=False,
+        div_id='allele-modification-heatmap-{0}'.format(title.lower()),
+    )
+
+
+def plot_allele_modification_line(
+    sample_values, sample_sgRNA_intervals, plot_path, title,
+):
+    fig = px.line(sample_values.transpose())
+    sgRNA_intervals = set(
+        tuple(sgRNA_interval)
+        for sample_sgRNA_interval in sample_sgRNA_intervals
+        for sgRNA_interval in sample_sgRNA_interval
+    )
+    for sgRNA_interval in sgRNA_intervals:
+        fig.add_shape(
+            type='rect',
+            x0=sgRNA_interval[0],
+            y0=0,
+            x1=sgRNA_interval[1],
+            y1=0.5,
+            fillcolor='Gray',
+            opacity=0.2,
+            line={'color': 'gray'},
+        )
+
+    fig.update_layout(
+        autosize=True,
+        xaxis_title='Amplicon Nucleotide (Position)',
+        yaxis_title='{0} (%)'.format(title),
+        legend_title='Samples',
+    )
+    return fig.write_html(
+        plot_path,
+        config={
+            'responsive': True,
+            'displaylogo': False,
+        },
+        include_plotlyjs='cdn',
+        full_html=False,
+        div_id='allele-modification-line-{0}'.format(title.lower()),
+    )
