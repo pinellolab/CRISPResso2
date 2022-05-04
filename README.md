@@ -460,7 +460,7 @@ docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoBatch -
 This should produce a folder called 'CRISPRessoBatch_on_batch'. Open the file called CRISPRessoBatch_on_batch/CRISPResso2Batch_report.html in a web browser, and you should see an output like this: [CRISPResso2Batch_report.html](https://crispresso.pinellolab.partners.org/static/demo/CRISPRessoBatch_on_batch/CRISPResso2Batch_report.html).
 
 ### CRISPRessoPooled
-CRISPRessoPooled is a utility to analyze and quantify targeted sequencing CRISPR/Cas9 experiments involving sequencing libraries with pooled amplicons. One common experimental strategy is to pool multiple amplicons (e.g. a single on-target site plus a set of potential off-target sites) into a single deep sequencing reaction (briefly, genomic DNA samples for pooled applications can be prepared by first amplifying the target regions for each gene/target of interest with
+CRISPRessoPooled is a utility to analyze and quantify targeted sequencing CRISPR/Cas9 experiments involving pooled amplicon sequencing libraries. One common experimental strategy is to pool multiple amplicons (e.g. a single on-target site plus a set of potential off-target sites) into a single deep sequencing reaction (briefly, genomic DNA samples for pooled applications can be prepared by first amplifying the target regions for each gene/target of interest with
 regions of 150-400bp depending on the desired coverage. In a second round of PCR, with minimized cycle numbers, barcode and adaptors are added. With optimization, these two rounds of PCR can be merged into a single reaction. These reactions are then quantified, normalized, pooled, and undergo quality control before being sequenced).
 CRISPRessoPooled demultiplexes reads from multiple amplicons and runs the CRISPResso utility with appropriate reads for each amplicon separately.
 
@@ -484,24 +484,63 @@ To run the tool in this mode the user must provide:
 
 2.  A description file containing the amplicon sequences used to enrich
     regions in the genome and some additional information. In
-    particular, this file, is a tab delimited text file with up to 5
+    particular, this file, is a tab delimited text file with up to 12
     columns (first 2 columns required):
 
--   *AMPLICON\_NAME*: an identifier for the amplicon (*must be unique*).
+- *AMPLICON\_NAME*: an identifier for the amplicon (*must be unique*).
 
--   *AMPLICON\_SEQUENCE*: amplicon sequence used in the design of
+- *AMPLICON\_SEQUENCE*: amplicon sequence used in the design of
     the experiment.
 
--   *sgRNA\_SEQUENCE (OPTIONAL)*: sgRNA sequence used for this amplicon
+- *sgRNA\_SEQUENCE (OPTIONAL)*: sgRNA sequence used for this amplicon
     *without the PAM sequence.* If not available, enter *NA.*
 
--   *EXPECTED\_AMPLICON\_AFTER\_HDR (OPTIONAL)*: expected amplicon
+- *EXPECTED\_AMPLICON\_AFTER\_HDR (OPTIONAL)*: expected amplicon
     sequence in case of HDR. If more than one, separate by commas *and
     not spaces*. If not available, enter *NA.*
 
--   *CODING\_SEQUENCE (OPTIONAL)*: Subsequence(s) of the amplicon
+- *CODING\_SEQUENCE (OPTIONAL)*: Subsequence(s) of the amplicon
     corresponding to coding sequences. If more than one, separate by
     commas *and not spaces*. If not available, enter *NA.*
+
+- *PRIME\_EDITING\_PEGRNA\_SPACER\_SEQ (OPTIONAL)*: pegRNA spacer sgRNA sequence 
+    used in prime editing. The spacer should not include the PAM sequence. 
+    The sequence should be given in the RNA 5'->3' order, so for Cas9, the 
+    PAM would be on the right side of the given sequence. 
+    If not available, enter *NA.*
+
+- *PRIME\_EDITING\_NICKING\_GUIDE\_SEQ (OPTIONAL)*: Nicking sgRNA sequence used in prime 
+    editing. The sgRNA should not include the PAM sequence. The sequence should be given 
+    in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the sequence. 
+    If not available, enter *NA.*
+
+- *PRIME\_EDITING\_PEGRNA\_EXTENSION\_SEQ (OPTIONAL)*: Extension sequence used in prime 
+    editing. The sequence should be given in the RNA 5'->3' order, such that the sequence 
+    starts with the RT template including the edit, followed by the Primer-binding site (PBS).
+    If not available, enter *NA.*
+
+- *PRIME\_EDITING\_PEGRNA\_SCAFFOLD\_SEQ (OPTIONAL)*: If given, reads containing any of this scaffold sequence 
+    before extension sequence (provided by --prime_editing_extension_seq) will be classified
+    as 'Scaffold-incorporated'. The sequence should be given in the 5'->3' order such that 
+    the RT template directly follows this sequence. A common value ends with 'GGCACCGAGUCGGUGC'.
+    If not available, enter *NA.*
+
+- *PRIME\_EDITING\_PEGRNA\_SCAFFOLD\_MIN\_MATCH\_LENGTH (OPTIONAL)*: Minimum number of bases matching
+    scaffold sequence for the read to be counted as 'Scaffold-incorporated'. If the scaffold 
+    sequence matches the reference sequence at the incorporation site, the minimum number of 
+    bases to match will be minimally increased (beyond this parameter) to disambiguate between 
+    prime-edited and scaffold-incorporated sequences. If not available, enter *NA.*
+
+- *PRIME\_EDITING\_OVERRIDE\_PRIME\_EDITED\_REF\_SEQ (OPTIONAL)*:If given, this sequence will be used
+    as the prime-edited reference sequence. This may be useful if the prime-edited reference 
+    sequence has large indels or the algorithm cannot otherwise infer the correct reference 
+    sequence. If not available, enter *NA.*
+
+- *QWC (OPTIONAL)*: Bp positions in the amplicon sequence specifying the quantification window. 
+    Any indels/substitutions outside this window are excluded. Indexes are 0-based, meaning that 
+    the first nucleotide is position 0. Ranges are separated by the dash sign like "start-stop", 
+    and multiple ranges can be separated by the underscore (_). A value of 0 disables this filter.
+    If not available, enter *NA.*
 
 A file in the correct format should look like this:
 
@@ -510,8 +549,6 @@ Site1 CACACTGTGGCCCCTGTGCCCAGCCCTGGGCTCTCTGTACATGAAGCAAC CCCTGTGCCCAGCCC NA NA
 Site2 GTCCTGGTTTTTGGTTTGGGAAATATAGTCATC NA GTCCTGGTTTTTGGTTTAAAAAAATATAGTCATC NA
 
 Site 3 TTTCTGGTTTTTGGTTTGGGAAATATAGTCATC NA NA GGAAATATA
-
-Note: *no column titles should be entered.* Also the colors here are used only for illustrative purposes and in a plain text file will be not be present and saved.
 
 The user can easily create this file with *any text editor* or with
 spreadsheet software like Excel (Microsoft), Numbers (Apple) or Sheets
