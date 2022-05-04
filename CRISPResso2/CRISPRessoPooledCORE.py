@@ -608,25 +608,35 @@ def main():
             except Exception:
                 info('Failed to load the gene annotations file.')
 
+        # possible column names accepted in amplicon input file
+        amplicon_input_column_names = ['amplicon_name', 'amplicon_seq', 'guide_seq', 'expected_hdr_amplicon_seq', 'coding_seq',
+                     'prime_editing_pegRNA_spacer_seq', 'prime_editing_nicking_guide_seq',
+                     'prime_editing_pegRNA_extension_seq', 'prime_editing_pegRNA_scaffold_seq',
+                     'prime_editing_pegRNA_scaffold_min_match_length', 'prime_editing_override_prime_edited_ref_seq',
+                     'quantification_window_coordinates', 'quantification_window_size', 'quantification_window_center']
         if RUNNING_MODE == 'ONLY_AMPLICONS' or RUNNING_MODE == 'AMPLICONS_AND_GENOME':
 
             # open amplicons file
             with open(args.amplicons_file, 'r') as amplicons_fin:
-                head_line = amplicons_fin.readline()
+                head_line = amplicons_fin.readline().strip()
                 while head_line[0] == "#":  # read past comments
                     head_line = amplicons_fin.readline()
                 header_els = head_line.split('\t')
 
-            names = ['Amplicon_Name', 'Amplicon_Sequence', 'sgRNA', 'Expected_HDR', 'Coding_sequence',
-                     'prime_editing_pegRNA_spacer_seq', 'prime_editing_nicking_guide_seq',
-                     'prime_editing_pegRNA_extension_seq', 'prime_editing_pegRNA_scaffold_seq',
-                     'prime_editing_pegRNA_scaffold_min_match_length', 'prime_editing_override_prime_edited_ref_seq',
-                     'qwc']
+            head_lookup = CRISPRessoShared.get_crispresso_options_lookup()  # dict of qwc -> quantification_window_coordinates
+            head_lookup['sgRNA'] = 'guide_seq'
+            head_lookup['Expected_HDR'] = 'expected_hdr_amplicon_seq'
+
             headers = []
             has_header = True
             for head in header_els:
                 # Header based on header provided
-                match = difflib.get_close_matches(head, names, n=1)
+                # Look up long name (e.g. qwc -> quantification_window_coordinates)
+                long_head = head
+                if head in head_lookup:
+                    long_head = head_lookup[head]
+
+                match = difflib.get_close_matches(long_head, amplicon_input_column_names, n=1)
                 if not match:
                     has_header = False
                     warn('Unable to find matches for header values. Using the default header values and order.')
@@ -638,13 +648,13 @@ def main():
                 # Default header
                 headers = []
                 for i in range(len(header_els)):
-                    headers.append(names[i])
+                    headers.append(amplicon_input_column_names[i])
 
             if args.debug:
                 info(f'Header variable names in order: {headers}')
 
             # load and validate template file
-            df_template = pd.read_csv(args.amplicons_file, names=headers, comment='#', sep='\t', dtype={'Amplicon_Name':str})
+            df_template = pd.read_csv(args.amplicons_file, names=headers, comment='#', sep='\t', dtype={'amplicon_name':str})
 
             if has_header or str(df_template.iloc[0, 1]).lower() == "amplicon_sequence":
                 df_template.drop(0, axis=0, inplace=True)
@@ -652,36 +662,36 @@ def main():
 
 
             #remove empty amplicons/lines
-            df_template.dropna(subset=['Amplicon_Sequence'], inplace=True)
-            df_template.dropna(subset=['Amplicon_Name'], inplace=True)
+            df_template.dropna(subset=['amplicon_seq'], inplace=True)
+            df_template.dropna(subset=['amplicon_name'], inplace=True)
 
-            df_template.Amplicon_Sequence=df_template.Amplicon_Sequence.apply(CRISPRessoShared.capitalize_sequence)
-            if 'Expected_HDR' in df_template.columns:
-                df_template.Expected_HDR=df_template.Expected_HDR.apply(CRISPRessoShared.capitalize_sequence)
-            if 'sgRNA' in df_template.columns:
-                df_template.sgRNA=df_template.sgRNA.apply(CRISPRessoShared.capitalize_sequence)
-            if 'Coding_sequence' in df_template.columns:
-                df_template.Coding_sequence=df_template.Coding_sequence.apply(CRISPRessoShared.capitalize_sequence)
+            df_template.amplicon_seq=df_template.amplicon_seq.apply(CRISPRessoShared.capitalize_sequence)
+            if 'expected_hdr_amplicon_seq' in df_template.columns:
+                df_template.expected_hdr_amplicon_seq=df_template.expected_hdr_amplicon_seq.apply(CRISPRessoShared.capitalize_sequence)
+            if 'guide_seq' in df_template.columns:
+                df_template.guide_seq=df_template.guide_seq.apply(CRISPRessoShared.capitalize_sequence)
+            if 'coding_seq' in df_template.columns:
+                df_template.coding_seq=df_template.coding_seq.apply(CRISPRessoShared.capitalize_sequence)
 
-            if not len(df_template.Amplicon_Sequence.unique())==df_template.shape[0]:
-                duplicated_entries = df_template.Amplicon_Sequence[df_template.Amplicon_Sequence.duplicated()]
+            if not len(df_template.amplicon_seq.unique())==df_template.shape[0]:
+                duplicated_entries = df_template.amplicon_seq[df_template.amplicon_seq.duplicated()]
                 raise Exception('The amplicon sequences must be distinct! (Duplicated entries: ' + str(duplicated_entries.values) + ')')
 
-            if not len(df_template.Amplicon_Name.unique())==df_template.shape[0]:
-                duplicated_entries = df_template.Amplicon_Name[df_template.Name.duplicated()]
+            if not len(df_template.amplicon_name.unique())==df_template.shape[0]:
+                duplicated_entries = df_template.amplicon_name[df_template.Name.duplicated()]
                 raise Exception('The amplicon names must be distinct! (Duplicated names: ' + str(duplicated_entries.values) + ')')
 
-            df_template=df_template.set_index('Amplicon_Name')
+            df_template=df_template.set_index('amplicon_name')
             df_template.index=df_template.index.to_series().str.replace(' ', '_')
 
             for idx, row in df_template.iterrows():
-                wrong_nt=CRISPRessoShared.find_wrong_nt(row.Amplicon_Sequence)
+                wrong_nt=CRISPRessoShared.find_wrong_nt(row.amplicon_seq)
                 if wrong_nt:
                     raise NTException('The amplicon sequence %s contains wrong characters:%s' % (idx, ' '.join(wrong_nt)))
 
-                if 'sgRNA' in df_template.columns and not pd.isnull(row.sgRNA):
+                if 'guide_seq' in df_template.columns and not pd.isnull(row.guide_seq):
                     cut_points = []
-                    guides = row.sgRNA.strip().upper().split(',')
+                    guides = row.guide_seq.strip().upper().split(',')
                     guide_qw_centers = CRISPRessoShared.set_guide_array(args.quantification_window_center, guides, 'guide quantification center')
                     for idx, current_guide_seq in enumerate(guides):
 
@@ -692,11 +702,11 @@ def main():
                         offset_fw=guide_qw_centers[idx]+len(current_guide_seq)-1
                         offset_rc=(-guide_qw_centers[idx])-1
                         cut_points+=[m.start() + offset_fw for \
-                                    m in re.finditer(current_guide_seq,  row.Amplicon_Sequence)]+[m.start() + offset_rc for m in re.finditer(CRISPRessoShared.reverse_complement(current_guide_seq),  row.Amplicon_Sequence)]
+                                    m in re.finditer(current_guide_seq,  row.amplicon_seq)]+[m.start() + offset_rc for m in re.finditer(CRISPRessoShared.reverse_complement(current_guide_seq),  row.amplicon_seq)]
 
                     if not cut_points:
-                        warn('\nThe guide sequence/s provided: %s is(are) not present in the amplicon sequence:%s! \nNOTE: The guide will be ignored for the analysis. Please check your input!' % (row.sgRNA, row.Amplicon_Sequence))
-                        df_template.iloc[idx,df_template.columns.get_loc('sgRNA')] = ''
+                        warn('\nThe guide sequence/s provided: %s is(are) not present in the amplicon sequence:%s! \nNOTE: The guide will be ignored for the analysis. Please check your input!' % (row.guide_seq, row.amplicon_seq))
+                        df_template.iloc[idx,df_template.columns.get_loc('guide_seq')] = ''
 
 
 
@@ -706,8 +716,8 @@ def main():
             fastq_gz_amplicon_filenames=[]
             with open(amplicon_fa_filename, 'w+') as outfile:
                 for idx, row in df_template.iterrows():
-                    if row['Amplicon_Sequence']:
-                        outfile.write('>%s\n%s\n' %(clean_filename('AMPL_'+idx), row['Amplicon_Sequence']))
+                    if row['amplicon_seq']:
+                        outfile.write('>%s\n%s\n' %(clean_filename('AMPL_'+idx), row['amplicon_seq']))
 
                         #create place-holder fastq files
                         fastq_gz_amplicon_filenames.append(_jp('%s.fastq.gz' % clean_filename('AMPL_'+idx)))
@@ -799,7 +809,7 @@ def main():
                 this_n_reads = get_n_reads_fastq(row['Demultiplexed_fastq.gz_filename'])
                 n_reads_aligned_amplicons.append(this_n_reads)
                 info('\n Processing:%s with %d reads'%(idx,this_n_reads))
-                this_amp_seq = row['Amplicon_Sequence']
+                this_amp_seq = row['amplicon_seq']
                 this_amp_name_string = ""
                 if idx in alternate_alleles:
                     new_refs, new_names = alternate_alleles[idx]
@@ -808,58 +818,13 @@ def main():
 
                 crispresso_cmd= args.crispresso_command + ' -r1 %s -a %s %s -o %s --name %s' % (row['Demultiplexed_fastq.gz_filename'], this_amp_seq, this_amp_name_string, OUTPUT_DIRECTORY, idx)
 
-                if n_reads_aligned_amplicons[-1]>args.min_reads_to_use_region:
-                    if 'sgRNA' in df_template.columns and ['sgRNA'] and not pd.isnull(row['sgRNA']):
-                        crispresso_cmd += ' -g %s' % row['sgRNA']
+                if n_reads_aligned_amplicons[-1] > args.min_reads_to_use_region:
+                    this_run_args = deepcopy(args)
+                    for column_name in amplicon_input_column_names:
+                        if column_name in df_template.columns and row[column_name] and not pd.isnull(row[column_name]):
+                            setattr(this_run_args, column_name, row[column_name])
 
-                    if 'Expected_HDR' in df_template.columns and row['Expected_HDR'] and not pd.isnull(
-                            row['Expected_HDR']):
-                        crispresso_cmd += ' -e %s' % row['Expected_HDR']
-
-                    if 'Coding_sequence' in df_template.columns and row['Coding_sequence'] and not pd.isnull(
-                            row['Coding_sequence']):
-                        crispresso_cmd += ' -c %s' % row['Coding_sequence']
-
-                    if 'prime_editing_pegRNA_spacer_seq' in df_template.columns and row[
-                        'prime_editing_pegRNA_spacer_seq'] and not pd.isnull(
-                            row['prime_editing_pegRNA_spacer_seq']):
-                        crispresso_cmd += ' --prime_editing_pegRNA_spacer_seq %s' % row[
-                            'prime_editing_pegRNA_spacer_seq']
-
-                    if 'prime_editing_nicking_guide_seq' in df_template.columns and row[
-                        'prime_editing_nicking_guide_seq'] and not pd.isnull(
-                            row['prime_editing_nicking_guide_seq']):
-                        crispresso_cmd += ' --prime_editing_nicking_guide_seq %s' % row[
-                            'prime_editing_nicking_guide_seq']
-
-                    if 'prime_editing_pegRNA_extension_seq' in df_template.columns and row[
-                        'prime_editing_pegRNA_extension_seq'] and not pd.isnull(row[
-                                                                                    'prime_editing_pegRNA_extension_seq']):
-                        crispresso_cmd += ' --prime_editing_pegRNA_extension_seq %s' % row[
-                            'prime_editing_pegRNA_extension_seq']
-
-                    if 'prime_editing_pegRNA_scaffold_seq' in df_template.columns and row[
-                        'prime_editing_pegRNA_scaffold_seq'] and not pd.isnull(row[
-                                                                                   'prime_editing_pegRNA_scaffold_seq']):
-                        crispresso_cmd += ' --prime_editing_pegRNA_scaffold_seq %s' % row[
-                            'prime_editing_pegRNA_scaffold_seq']
-
-                    if 'prime_editing_pegRNA_scaffold_min_match_length' in df_template.columns and row[
-                        'prime_editing_pegRNA_scaffold_min_match_length'] and not pd.isnull(row[
-                                                                                                'prime_editing_pegRNA_scaffold_min_match_length']):
-                        crispresso_cmd += ' --prime_editing_pegRNA_scaffold_min_match_length %s' % row[
-                            'prime_editing_pegRNA_scaffold_min_match_length']
-
-                    if 'prime_editing_override_prime_edited_ref_seq' in df_template.columns and row[
-                        'prime_editing_override_prime_edited_ref_seq'] and not pd.isnull(row[
-                                                                                             'prime_editing_override_prime_edited_ref_seq']):
-                        crispresso_cmd += ' --prime_editing_override_prime_edited_ref_seq %s' % row[
-                            'prime_editing_override_prime_edited_ref_seq']
-
-                    if 'qwc' in df_template.columns and row['qwc'] and not pd.isnull(row['qwc']):
-                        crispresso_cmd += ' --qwc %s' % row['qwc']
-
-                    crispresso_cmd=CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, args)
+                    crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, this_run_args)
                     crispresso_cmds.append(crispresso_cmd)
 
                 else:
@@ -884,12 +849,12 @@ def main():
             if can_finish_incomplete_run and 'mapping_amplicons_to_reference_genome' in crispresso2_info['running_info']['finished_steps']:
                 info('Reading previously-computed alignment of amplicons to genome')
                 additional_columns_df = pd.read_csv(filename_amplicon_aligned_locations, sep="\t")
-                additional_columns_df.set_index('Amplicon_Name', inplace=True)
+                additional_columns_df.set_index('amplicon_name', inplace=True)
             else:
                 #write amplicons as fastq for alignment
                 with open(filename_amplicon_seqs_fasta, 'w') as fastas:
                     for idx, row in df_template.iterrows():
-                        fastas.write('>%s\n%s\n'%(idx, row.Amplicon_Sequence))
+                        fastas.write('>%s\n%s\n'%(idx, row.amplicon_seq))
 
                 aligner_command= 'bowtie2 -x %s -p %s %s -f -U %s --no-hd --no-sq 2> %s > %s ' %(args.bowtie2_index, n_processes_for_pooled, bowtie2_options_string, \
                     filename_amplicon_seqs_fasta, filename_aligned_amplicons_sam_log, filename_aligned_amplicons_sam)
@@ -911,8 +876,8 @@ def main():
                             strand = "-" if (int(line_els[1]) & 0x10) else "+"
                             additional_columns.append([line_els[0], line_els[2], seq_start, seq_stop, strand, line_els[9]])
                             info('The amplicon [%s] was mapped to: %s:%d-%d ' % (line_els[0], line_els[2], seq_start, seq_stop))
-                additional_columns_df = pd.DataFrame(additional_columns, columns=['Amplicon_Name', 'chr_id', 'bpstart', 'bpend', 'strand', 'Reference_Sequence']).set_index('Amplicon_Name')
-                additional_columns_df.to_csv(filename_amplicon_aligned_locations, sep="\t", index_label='Amplicon_Name')
+                additional_columns_df = pd.DataFrame(additional_columns, columns=['amplicon_name', 'chr_id', 'bpstart', 'bpend', 'strand', 'reference_seq']).set_index('amplicon_name')
+                additional_columns_df.to_csv(filename_amplicon_aligned_locations, sep="\t", index_label='amplicon_name')
 
                 crispresso2_info['running_info']['finished_steps']['mapping_amplicons_to_reference_genome'] = True
                 CRISPRessoShared.write_crispresso_info(
@@ -929,8 +894,8 @@ def main():
 
             #Check reference is the same otherwise throw a warning
             for idx, row in df_template.iterrows():
-                if row.Amplicon_Sequence != row.Reference_Sequence and row.Amplicon_Sequence != CRISPRessoShared.reverse_complement(row.Reference_Sequence):
-                    warn('The amplicon sequence %s provided:\n%s\n\nis different from the reference sequence(both strands):\n\n%s\n\n%s\n' %(row.name, row.Amplicon_Sequence, row.Amplicon_Sequence, CRISPRessoShared.reverse_complement(row.Amplicon_Sequence)))
+                if row.amplicon_seq != row.reference_seq and row.amplicon_seq != CRISPRessoShared.reverse_complement(row.reference_seq):
+                    warn('The amplicon sequence %s provided:\n%s\n\nis different from the reference sequence(both strands):\n\n%s\n\n%s\n' %(row.name, row.amplicon_seq, row.amplicon_seq, CRISPRessoShared.reverse_complement(row.amplicon_seq)))
 
 
         if RUNNING_MODE=='ONLY_GENOME' or RUNNING_MODE=='AMPLICONS_AND_GENOME':
@@ -1218,59 +1183,14 @@ def main():
                         if N_READS >= args.min_reads_to_use_region and fastq_filename_region != "":
                             info('\nThe amplicon [%s] has enough reads (%d) mapped to it! Running CRISPResso!\n' % (idx, N_READS))
 
-                            crispresso_cmd = args.crispresso_command + ' -r1 %s -a %s -o %s --name %s' % (fastq_filename_region, row['Amplicon_Sequence'], OUTPUT_DIRECTORY, idx)
+                            crispresso_cmd = args.crispresso_command + ' -r1 %s -o %s --name %s' % (fastq_filename_region, OUTPUT_DIRECTORY, idx)
 
-                            if 'sgRNA' in df_template.columns and ['sgRNA'] and not pd.isnull(row['sgRNA']):
-                                crispresso_cmd += ' -g %s' % row['sgRNA']
+                            this_run_args = deepcopy(args)
+                            for column_name in amplicon_input_column_names:
+                                if column_name in df_template.columns and row[column_name] and not pd.isnull(row[column_name]):
+                                    setattr(this_run_args, column_name, row[column_name])
 
-                            if 'Expected_HDR' in df_template.columns and row['Expected_HDR'] and not pd.isnull(
-                                    row['Expected_HDR']):
-                                crispresso_cmd += ' -e %s' % row['Expected_HDR']
-
-                            if 'Coding_sequence' in df_template.columns and row['Coding_sequence'] and not pd.isnull(
-                                    row['Coding_sequence']):
-                                crispresso_cmd += ' -c %s' % row['Coding_sequence']
-
-                            if 'prime_editing_pegRNA_spacer_seq' in df_template.columns and row[
-                                'prime_editing_pegRNA_spacer_seq'] and not pd.isnull(
-                                    row['prime_editing_pegRNA_spacer_seq']):
-                                crispresso_cmd += ' --prime_editing_pegRNA_spacer_seq %s' % row[
-                                    'prime_editing_pegRNA_spacer_seq']
-
-                            if 'prime_editing_nicking_guide_seq' in df_template.columns and row[
-                                'prime_editing_nicking_guide_seq'] and not pd.isnull(
-                                    row['prime_editing_nicking_guide_seq']):
-                                crispresso_cmd += ' --prime_editing_nicking_guide_seq %s' % row[
-                                    'prime_editing_nicking_guide_seq']
-
-                            if 'prime_editing_pegRNA_extension_seq' in df_template.columns and row[
-                                'prime_editing_pegRNA_extension_seq'] and not pd.isnull(row[
-                                                                                            'prime_editing_pegRNA_extension_seq']):
-                                crispresso_cmd += ' --prime_editing_pegRNA_extension_seq %s' % row[
-                                    'prime_editing_pegRNA_extension_seq']
-
-                            if 'prime_editing_pegRNA_scaffold_seq' in df_template.columns and row[
-                                'prime_editing_pegRNA_scaffold_seq'] and not pd.isnull(row[
-                                                                                           'prime_editing_pegRNA_scaffold_seq']):
-                                crispresso_cmd += ' --prime_editing_pegRNA_scaffold_seq %s' % row[
-                                    'prime_editing_pegRNA_scaffold_seq']
-
-                            if 'prime_editing_pegRNA_scaffold_min_match_length' in df_template.columns and row[
-                                'prime_editing_pegRNA_scaffold_min_match_length'] and not pd.isnull(row[
-                                                                                                        'prime_editing_pegRNA_scaffold_min_match_length']):
-                                crispresso_cmd += ' --prime_editing_pegRNA_scaffold_min_match_length %s' % row[
-                                    'prime_editing_pegRNA_scaffold_min_match_length']
-
-                            if 'prime_editing_override_prime_edited_ref_seq' in df_template.columns and row[
-                                'prime_editing_override_prime_edited_ref_seq'] and not pd.isnull(row[
-                                                                                                     'prime_editing_override_prime_edited_ref_seq']):
-                                crispresso_cmd += ' --prime_editing_override_prime_edited_ref_seq %s' % row[
-                                    'prime_editing_override_prime_edited_ref_seq']
-
-                            if 'qwc' in df_template.columns and row['qwc'] and not pd.isnull(row['qwc']):
-                                crispresso_cmd += ' --qwc %s' % row['qwc']
-
-                            crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, args)
+                            crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, this_run_args)
                             info('Running CRISPResso:%s' % crispresso_cmd)
                             crispresso_cmds.append(crispresso_cmd)
 
@@ -1489,10 +1409,11 @@ def main():
 
         samples_quantification_summary_filename = _jp('SAMPLES_QUANTIFICATION_SUMMARY.txt')
 
-        df_summary_quantification=pd.DataFrame(quantification_summary, columns=header_els)
+        df_summary_quantification = pd.DataFrame(quantification_summary, columns=header_els)
         if args.crispresso1_mode:
-            crispresso1_columns=['Amplicon_Name', 'Unmodified%', 'Modified%', 'Reads_aligned', 'Reads_total']
-            df_summary_quantification.fillna('NA').to_csv(samples_quantification_summary_filename, sep='\t', index=None, columns=crispresso1_columns)
+            crispresso1_columns = ['amplicon_name', 'Unmodified%', 'Modified%', 'Reads_aligned', 'Reads_total']
+            crispresso1_print_columns = ['Amplicon_Name', 'Unmodified%', 'Modified%', 'Reads_aligned', 'Reads_total']
+            df_summary_quantification.fillna('NA').to_csv(samples_quantification_summary_filename, sep='\t', index=None, columns=crispresso1_columns, header=crispresso1_print_columns)
         else:
             df_summary_quantification.fillna('NA').to_csv(samples_quantification_summary_filename, sep='\t', index=None)
 

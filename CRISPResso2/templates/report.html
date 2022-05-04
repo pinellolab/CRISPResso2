@@ -13,6 +13,13 @@
   border-bottom:lightsteelblue;
 }
 
+.pre-scrollable {
+    max-height: 340px;
+    overflow-y: auto;
+    background-color: #f8f8f8;
+    text-align: left
+}
+
 .tab-content.amp-body {
   background-color:lightsteelblue;
 }
@@ -58,10 +65,10 @@
   						<h5>CRISPResso2 run information</h5>
 						<ul class="nav nav-tabs justify-content-center card-header-tabs" id="log-tab" role="tablist">
 						  <li class="nav-item">
-						    <a class="nav-link active" id="log_aln-tab" data-toggle="tab" href="#log_aln" role="tab" aria-controls="log_aln" aria-selected="true">Alignment statistics</a>
+						    <button class="nav-link active" id="log_aln-tab" data-bs-toggle="tab" data-bs-target="#log_aln" role="tab" aria-controls="log_aln" aria-selected="true">Alignment statistics</button>
 						  </li>
 						  <li class="nav-item">
-						    <a class="nav-link" id="log_params-tab" data-toggle="tab" href="#log_params" role="tab" aria-controls="log_params" aria-selected="false">Run Parameters</a>
+						    <button class="nav-link" id="log_params-tab" data-bs-toggle="tab" data-bs-target="#log_params" role="tab" aria-controls="log_params" aria-selected="false">Run Parameters</button>
 						  </li>
 						</ul>
 					</div>
@@ -74,7 +81,7 @@
 							  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                 {% endfor %}
   						</div>
-  					  <div class="tab-pane fade text-left" id="log_params" role="tabpanel">
+  					  <div class="tab-pane fade text-start" id="log_params" role="tabpanel">
                 <p>CRISPResso version: {{report_data['run_data']['running_info']['version']}}</p>
                 <p>Run completed: {{report_data['run_data']['running_info']['end_time_string']}}</p>
                 <p>Amplicon sequence: <pre class='pre-scrollable'>{{report_data['run_data']['running_info']['args']['amplicon_seq']}}</pre></p>
@@ -94,14 +101,14 @@
 						<h5>Allele assignments</h5>
 						<ul class="nav nav-tabs justify-content-center card-header-tabs" id="aln-tab" role="tablist">
 						  <li class="nav-item">
-						    <a class="nav-link active" id="aln_pie-tab" data-toggle="tab" href="#aln_pie" role="tab" aria-controls="aln_pie" aria-selected="true">Piechart</a>
+						    <button class="nav-link active" id="aln_pie-tab" data-bs-toggle="tab" data-bs-target="#aln_pie" role="tab" aria-controls="aln_pie" aria-selected="true">Piechart</button>
 						  </li>
 						  <li class="nav-item">
-						    <a class="nav-link" id="aln_bar-tab" data-toggle="tab" href="#aln_bar" role="tab" aria-controls="aln_bar" aria-selected="false">Barplot</a>
+						    <button class="nav-link" id="aln_bar-tab" data-bs-toggle="tab" data-bs-target="#aln_bar" role="tab" aria-controls="aln_bar" aria-selected="false">Barplot</button>
 						  </li>
     					{% if report_data['fig_locs']['plot_1d'] %}
 						  <li class="nav-item">
-						    <a class="nav-link" id="aln_dsODN-tab" data-toggle="tab" href="#aln_dsODN" role="tab" aria-controls="aln_dsODN" aria-selected="false">dsODN</a>
+						    <button class="nav-link" id="aln_dsODN-tab" data-bs-toggle="tab" data-bs-target="#aln_dsODN" role="tab" aria-controls="aln_dsODN" aria-selected="false">dsODN</button>
 						  </li>
               {% endif %}
 						</ul>
@@ -277,11 +284,11 @@
 							{% for amplicon_name in report_data.amplicons %}
 								{% if loop.index0 == 0 %}
 								  <li class="nav-item">
-								    <a class="nav-link active" id="pills_{{amplicon_name}}_tab" data-toggle="tab" href="#div_{{amplicon_name}}" role="tab" aria-controls="div_{{amplicon_name}}" aria-selected="true">{{amplicon_name}}</a>
+								    <button class="nav-link active" id="pills_{{amplicon_name}}_tab" data-bs-toggle="tab" data-bs-target="#div_{{amplicon_name}}" role="tab" aria-controls="div_{{amplicon_name}}" aria-selected="true">{{amplicon_name}}</button>
 								  </li>
 								{% else %}
 								<li class="nav-item">
-									<a class="nav-link" id="pills_{{amplicon_name}}_tab" data-toggle="tab" href="#div_{{amplicon_name}}" role="tab" aria-controls="div_{{amplicon_name}}" aria-selected="false">{{amplicon_name}}</a>
+									<button class="nav-link" id="pills_{{amplicon_name}}_tab" data-bs-toggle="tab" data-bs-target="#div_{{amplicon_name}}" role="tab" aria-controls="div_{{amplicon_name}}" aria-selected="false">{{amplicon_name}}</button>
 								</li>
 								{% endif%}
 							{% endfor %}
@@ -363,12 +370,12 @@
   						<ul class="nav nav-tabs justify-content-center card-header-tabs" id="aln-tab" role="tablist">
 						{% if report_data['fig_locs'][amplicon_name]['plot_3a'] %}
   						  <li class="nav-item">
-						  <a class="nav-link active" data-toggle="tab" href="#{{amplicon_name}}_3a" role="tab" aria-controls="{{amplicon_name}}_3a" aria-selected="true">Summary</a>
+						  <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#{{amplicon_name}}_3a" role="tab" aria-controls="{{amplicon_name}}_3a" aria-selected="true">Summary</button>
   						  </li>
             {% endif %}
 						{% if report_data['fig_locs'][amplicon_name]['plot_3b'] %}
   						  <li class="nav-item">
-						  <a class="nav-link" data-toggle="tab" href="#{{amplicon_name}}_3b" role="tab" aria-controls="{{amplicon_name}}_3b" aria-selected="false">Indels</a>
+						  <button class="nav-link" data-bs-toggle="tab" data-bs-target="#{{amplicon_name}}_3b" role="tab" aria-controls="{{amplicon_name}}_3b" aria-selected="false">Indels</button>
   						  </li>
             {% endif %}
   						</ul>
@@ -408,32 +415,32 @@
   						<ul class="nav nav-tabs justify-content-center card-header-tabs" id="aln-tab" role="tablist">
 						{% if report_data['fig_locs'][amplicon_name]['plot_4a'] %}
   						  <li class="nav-item">
-						  <a class="nav-link" data-toggle="tab" href="#{{amplicon_name}}_4a" role="tab" aria-controls="{{amplicon_name}}_4a" aria-selected="true">All Modifications Combined</a>
+						  <button class="nav-link" data-bs-toggle="tab" data-bs-target="#{{amplicon_name}}_4a" role="tab" aria-controls="{{amplicon_name}}_4a" aria-selected="true">All Modifications Combined</button>
   						  </li>
             {% endif %}
 						{% if report_data['fig_locs'][amplicon_name]['plot_4b'] %}
   						  <li class="nav-item">
-						  <a class="nav-link active" data-toggle="tab" href="#{{amplicon_name}}_4b" role="tab" aria-controls="{{amplicon_name}}_4b" aria-selected="false">All Modifications by Type</a>
+						  <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#{{amplicon_name}}_4b" role="tab" aria-controls="{{amplicon_name}}_4b" aria-selected="false">All Modifications by Type</button>
   						  </li>
             {% endif %}
 						{% if report_data['fig_locs'][amplicon_name]['plot_4c'] %}
   						  <li class="nav-item">
-						  <a class="nav-link" data-toggle="tab" href="#{{amplicon_name}}_4c" role="tab" aria-controls="{{amplicon_name}}_4c" aria-selected="false">Modifications in Quantification Window</a>
+						  <button class="nav-link" data-bs-toggle="tab" data-bs-target="#{{amplicon_name}}_4c" role="tab" aria-controls="{{amplicon_name}}_4c" aria-selected="false">Modifications in Quantification Window</button>
   						  </li>
             {% endif %}
 						{% if report_data['fig_locs'][amplicon_name]['plot_4d'] %}
   						  <li class="nav-item">
-						  <a class="nav-link" data-toggle="tab" href="#{{amplicon_name}}_4d" role="tab" aria-controls="{{amplicon_name}}_4d" aria-selected="false">Indel Lengths</a>
+						  <button class="nav-link" data-bs-toggle="tab" data-bs-target="#{{amplicon_name}}_4d" role="tab" aria-controls="{{amplicon_name}}_4d" aria-selected="false">Indel Lengths</button>
   						  </li>
             {% endif %}
 						{% if report_data['fig_locs'][amplicon_name]['plot_4e'] %}
   						  <li class="nav-item">
-						  <a class="nav-link" data-toggle="tab" href="#{{amplicon_name}}_4e" role="tab" aria-controls="{{amplicon_name}}_4e" aria-selected="false">All reads aligned to {{amplicon_name}}</a>
+						  <button class="nav-link" data-bs-toggle="tab" data-bs-target="#{{amplicon_name}}_4e" role="tab" aria-controls="{{amplicon_name}}_4e" aria-selected="false">All reads aligned to {{amplicon_name}}</button>
   						  </li>
             {% endif %}
 						{% if report_data['fig_locs'][amplicon_name]['plot_4f'] %}
   						  <li class="nav-item">
-						  <a class="nav-link" data-toggle="tab" href="#{{amplicon_name}}_4f" role="tab" aria-controls="{{amplicon_name}}_4f" aria-selected="false">HDR reads aligned to {{amplicon_name}}</a>
+						  <button class="nav-link" data-bs-toggle="tab" data-bs-target="#{{amplicon_name}}_4f" role="tab" aria-controls="{{amplicon_name}}_4f" aria-selected="false">HDR reads aligned to {{amplicon_name}}</button>
   						  </li>
             {% endif %}
   						</ul>
@@ -614,22 +621,22 @@
   						<ul class="nav nav-tabs justify-content-center card-header-tabs" id="aln-tab" role="tablist">
 						{% if report_data['fig_locs'][amplicon_name]['plot_10a'] %}
   						  <li class="nav-item">
-						  <a class="nav-link active" data-toggle="tab" href="#{{amplicon_name}}_10a" role="tab" aria-controls="{{amplicon_name}}_10a" aria-selected="true">Substitution Frequencies</a>
+						  <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#{{amplicon_name}}_10a" role="tab" aria-controls="{{amplicon_name}}_10a" aria-selected="true">Substitution Frequencies</button>
   						  </li>
             {% endif %}
 						{% if report_data['sgRNA_based_fig_names'][amplicon_name] and report_data['sgRNA_based_fig_names'][amplicon_name]['10d']%}
   						  <li class="nav-item">
-						  <a class="nav-link" data-toggle="tab" href="#{{amplicon_name}}_10d" role="tab" aria-controls="{{amplicon_name}}_10d" aria-selected="false">Nucleotide Frequencies</a>
+						  <button class="nav-link" data-bs-toggle="tab" data-bs-target="#{{amplicon_name}}_10d" role="tab" aria-controls="{{amplicon_name}}_10d" aria-selected="false">Nucleotide Frequencies</button>
   						  </li>
             {% endif %}
 						{% if report_data['sgRNA_based_fig_names'][amplicon_name] and report_data['sgRNA_based_fig_names'][amplicon_name]['10e']%}
   						  <li class="nav-item">
-						  <a class="nav-link" data-toggle="tab" href="#{{amplicon_name}}_10e" role="tab" aria-controls="{{amplicon_name}}_10e" aria-selected="false">Base Proportions</a>
+						  <button class="nav-link" data-bs-toggle="tab" data-bs-target="#{{amplicon_name}}_10e" role="tab" aria-controls="{{amplicon_name}}_10e" aria-selected="false">Base Proportions</button>
   						  </li>
             {% endif %}
 						{% if report_data['sgRNA_based_fig_names'][amplicon_name] and report_data['sgRNA_based_fig_names'][amplicon_name]['10f']%}
   						  <li class="nav-item">
-						  <a class="nav-link" data-toggle="tab" href="#{{amplicon_name}}_10f" role="tab" aria-controls="{{amplicon_name}}_10f" aria-selected="false">Non-reference Bases</a>
+						  <button class="nav-link" data-bs-toggle="tab" data-bs-target="#{{amplicon_name}}_10f" role="tab" aria-controls="{{amplicon_name}}_10f" aria-selected="false">Non-reference Bases</button>
   						  </li>
             {% endif %}
   						</ul>
