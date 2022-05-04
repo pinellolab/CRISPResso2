@@ -250,7 +250,7 @@ def make_batch_report_from_folder(crispressoBatch_report_file, crispresso2_info,
         batch_folder,
         _ROOT,
         output_title,
-        summary_plot={
+        summary_plots={
             'names': summary_plot_names,
             'titles': summary_plot_titles,
             'labels': summary_plot_labels,
@@ -359,9 +359,20 @@ def make_multi_report_from_folder(crispresso2_info,names_arr,report_name,crispre
         sub_2a_labels[display_name] = this_sub_2a_labels
         sub_2a_pdfs[display_name] = this_sub_2a_pdfs
 
-
-    make_multi_report(run_names, sub_html_files, crispresso_report_file, folder, _ROOT, report_name,
-            summary_plot_names=summary_plot_names, summary_plot_titles=summary_plot_titles, summary_plot_labels=summary_plot_labels, summary_plot_datas=summary_plot_datas)
+    make_multi_report(
+        run_names,
+        sub_html_files,
+        crispresso_report_file,
+        folder,
+        _ROOT,
+        report_name,
+        summary_plots={
+            'names': summary_plot_names,
+            'titles': summary_plot_titles,
+            'labels': summary_plot_labels,
+            'datas': summary_plot_datas,
+        },
+        )
 
 
 def make_multi_report(
@@ -375,7 +386,7 @@ def make_multi_report(
     nuc_pct_quilts=[],
     window_nuc_conv_plots=[],
     nuc_conv_plots=[],
-    summary_plot={},
+    summary_plots={},
     compact_plots_to_show={},
     allele_modification_heatmap_plot={},
     allele_modification_line_plot={},
@@ -391,7 +402,7 @@ def make_multi_report(
     crispresso_folder (string): absolute path to the crispresso output
     _ROOT (string): absolute path to the crispresso executable
 
-    summary_plot (dict): a dict with the following keys:
+    summary_plots (dict): a dict with the following keys:
         names (list): list of plot names - keys for following dicts
         titles (dict): dict of plot_name->plot_title
         labels (dict): dict of plot_name->plot_label
@@ -451,10 +462,10 @@ def make_multi_report(
             window_nuc_conv_plots=window_nuc_conv_plots,
             nuc_conv_plots=nuc_conv_plots,
             crispresso_data_path=crispresso_data_path,
-            summary_plot_names=summary_plot['names'],
-            summary_plot_titles=summary_plot['titles'],
-            summary_plot_labels=summary_plot['labels'],
-            summary_plot_datas=summary_plot['datas'],
+            summary_plot_names=summary_plots['names'],
+            summary_plot_titles=summary_plots['titles'],
+            summary_plot_labels=summary_plots['labels'],
+            summary_plot_datas=summary_plots['datas'],
             run_names=run_names,
             sub_html_files=sub_html_files,
             report_name=report_name,
@@ -500,23 +511,23 @@ def make_aggregate_report(
     Returns:
     Nothin
     """
-    summary_plot = {}
+    summary_plots = {}
     if 'summary_plot_names' in crispresso2_info['results']['general_plots']:
-        summary_plot['names'] = crispresso2_info['results']['general_plots']['summary_plot_names']
+        summary_plots['names'] = crispresso2_info['results']['general_plots']['summary_plot_names']
     else:
-        summary_plot['names'] = []
+        summary_plots['names'] = []
     if 'summary_plot_titles' in crispresso2_info['results']['general_plots']:
-        summary_plot['titles'] = crispresso2_info['results']['general_plots']['summary_plot_titles']
+        summary_plots['titles'] = crispresso2_info['results']['general_plots']['summary_plot_titles']
     else:
-        summary_plot['titles'] = {}
+        summary_plots['titles'] = {}
     if 'summary_plot_labels' in crispresso2_info['results']['general_plots']:
-        summary_plot['labels'] = crispresso2_info['results']['general_plots']['summary_plot_labels']
+        summary_plots['labels'] = crispresso2_info['results']['general_plots']['summary_plot_labels']
     else:
-        summary_plot['labels'] = {}
+        summary_plots['labels'] = {}
     if 'summary_plot_datas' in crispresso2_info['results']['general_plots']:
-        summary_plot['datas'] = crispresso2_info['results']['general_plots']['summary_plot_datas']
+        summary_plots['datas'] = crispresso2_info['results']['general_plots']['summary_plot_datas']
     else:
-        summary_plot['datas'] = {}
+        summary_plots['datas'] = {}
 
     allele_modification_heatmap_plot = {}
     if 'allele_modification_heatmap_plot_names' in crispresso2_info['results']['general_plots']:
@@ -606,7 +617,7 @@ def make_aggregate_report(
         report_name,
         window_nuc_pct_quilts=window_nuc_pct_quilts,
         nuc_pct_quilts=nuc_pct_quilts,
-        summary_plot=summary_plot,
+        summary_plots=summary_plots,
         compact_plots_to_show=compact_plots_to_show,
         allele_modification_heatmap_plot=allele_modification_heatmap_plot,
         allele_modification_line_plot=allele_modification_line_plot,
