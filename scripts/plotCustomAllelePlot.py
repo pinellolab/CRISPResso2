@@ -32,8 +32,7 @@ def main():
 
 
     args = parser.parse_args()
-
-    plot_alleles_tables_from_folder(args.CRISPResso2_folder,args.output_root,MIN_FREQUENCY=args.min_freq,MAX_N_ROWS=args.max_rows,SAVE_ALSO_PNG=args.save_png,plot_cut_point=args.plot_cut_point,plot_left=args.plot_left,plot_right=args.plot_right)
+    plot_alleles_tables_from_folder(args.CRISPResso2_folder,args.output_root,MIN_FREQUENCY=args.min_freq,MAX_N_ROWS=args.max_rows,SAVE_ALSO_PNG=args.save_png,plot_cut_point=args.plot_cut_point,plot_left=args.plot_left,plot_right=args.plot_right,plot_center=args.plot_center)
 
 def arrStr_to_arr(val):
     return [int(x) for x in val[1:-1].split(",")]
@@ -59,7 +58,7 @@ def get_dataframe_around_cut_assymetrical(df_alleles, cut_point,plot_left,plot_r
     df_alleles_around_cut['Unedited']=df_alleles_around_cut['Unedited']>0
     return df_alleles_around_cut
 
-def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,plot_left=20,plot_right=20,MIN_FREQUENCY=None,MAX_N_ROWS=None,SAVE_ALSO_PNG=False,custom_colors=None,plot_cut_point=True,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None):
+def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,plot_left=20,plot_right=20,plot_center=None,MIN_FREQUENCY=None,MAX_N_ROWS=None,SAVE_ALSO_PNG=False,custom_colors=None,plot_cut_point=True,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None):
     """
     Plots an allele table plot from a completed CRISPResso run but plots a specified number of bases left and right from the cut site
     This function is only used for one-off plotting purposes and not for the general CRISPResso analysis
@@ -105,11 +104,11 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,p
 
         reference_seq = refs[ref_name]['sequence']
 
-        if args.plot_center is not None:
+        if plot_center is not None:
             sgRNA_label = 'custom'
 
-            cut_point = args.plot_center
-            plot_cut_point = args.plot_center
+            cut_point = plot_center
+            plot_cut_point = plot_center
             ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_left+1:cut_point+plot_right+1]
 
             df_alleles_around_cut=get_dataframe_around_cut_assymetrical(df_alleles, cut_point, plot_left, plot_right)
@@ -315,7 +314,7 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
 
 
     #create boxes for ins
-    for idx,lss in insertion_dict.iteritems():
+    for idx,lss in insertion_dict.items():
         for ls in lss:
             ax_hm.add_patch(patches.Rectangle((ls[0],N_ROWS-idx-1),ls[1]-ls[0],1,linewidth=3,edgecolor='r',fill=False))
 
@@ -362,3 +361,4 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
 if __name__ == "__main__":
     # execute only if run as a script
     main()
+
