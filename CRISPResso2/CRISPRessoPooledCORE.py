@@ -4,7 +4,6 @@ CRISPResso2 - Kendell Clement and Luca Pinello 2020
 Software pipeline for the analysis of genome editing outcomes from deep sequencing data
 (c) 2020 The General Hospital Corporation. All Rights Reserved.
 '''
-import csv
 import difflib
 import os
 import sys
@@ -609,12 +608,14 @@ def main():
             except Exception:
                 info('Failed to load the gene annotations file.')
 
-        if RUNNING_MODE=='ONLY_AMPLICONS' or  RUNNING_MODE=='AMPLICONS_AND_GENOME':
+        if RUNNING_MODE == 'ONLY_AMPLICONS' or RUNNING_MODE == 'AMPLICONS_AND_GENOME':
 
-            with open(args.amplicons_file, 'r') as amplicons:
-                reader = csv.reader(amplicons)
-                header = next(reader)
-                header = header[0].split('\t')
+            # open amplicons file
+            with open(args.amplicons_file, 'r') as amplicons_fin:
+                head_line = amplicons_fin.readline()
+                while head_line[0] == "#":  # read past comments
+                    head_line = amplicons_fin.readline()
+                header_els = head_line.split('\t')
 
             names = ['Amplicon_Name', 'Amplicon_Sequence', 'sgRNA', 'Expected_HDR', 'Coding_sequence',
                      'prime_editing_pegRNA_spacer_seq', 'prime_editing_nicking_guide_seq',
@@ -623,7 +624,7 @@ def main():
                      'qwc']
             headers = []
             has_header = True
-            for head in header:
+            for head in header_els:
                 # Header based on header provided
                 match = difflib.get_close_matches(head, names, n=1)
                 if not match:
@@ -631,22 +632,21 @@ def main():
                     warn('Unable to find matches for header values. Using the default header values and order.')
                     break
                 if args.debug:
-                    info(f'Matching {head} with {match[0]}.')
+                    info(f'Matching header {head} with {match[0]}.')
                 headers.append(match[0])
             if not has_header:
                 # Default header
                 headers = []
-                for i in range(len(header)):
+                for i in range(len(header_els)):
                     headers.append(names[i])
 
             if args.debug:
                 info(f'Header variable names in order: {headers}')
 
-            #load and validate template file
-            df_template=pd.read_csv(args.amplicons_file, names=headers, comment='#', sep='\t', dtype={'Amplicon_Name':str})
+            # load and validate template file
+            df_template = pd.read_csv(args.amplicons_file, names=headers, comment='#', sep='\t', dtype={'Amplicon_Name':str})
 
-
-            if str(df_template.iloc[0, 1]).lower() == "amplicon_sequence":
+            if has_header or str(df_template.iloc[0, 1]).lower() == "amplicon_sequence":
                 df_template.drop(0, axis=0, inplace=True)
                 info('Detected header in amplicon file.')
 
@@ -675,21 +675,17 @@ def main():
             df_template.index=df_template.index.to_series().str.replace(' ', '_')
 
             for idx, row in df_template.iterrows():
-
                 wrong_nt=CRISPRessoShared.find_wrong_nt(row.Amplicon_Sequence)
-
                 if wrong_nt:
-                     raise NTException('The amplicon sequence %s contains wrong characters:%s' % (idx, ' '.join(wrong_nt)))
+                    raise NTException('The amplicon sequence %s contains wrong characters:%s' % (idx, ' '.join(wrong_nt)))
 
                 if 'sgRNA' in df_template.columns and not pd.isnull(row.sgRNA):
-
-                    cut_points=[]
-
+                    cut_points = []
                     guides = row.sgRNA.strip().upper().split(',')
                     guide_qw_centers = CRISPRessoShared.set_guide_array(args.quantification_window_center, guides, 'guide quantification center')
                     for idx, current_guide_seq in enumerate(guides):
 
-                        wrong_nt=CRISPRessoShared.find_wrong_nt(current_guide_seq)
+                        wrong_nt = CRISPRessoShared.find_wrong_nt(current_guide_seq)
                         if wrong_nt:
                             raise NTException('The sgRNA sequence %s contains wrong characters:%s'  % (current_guide_seq, ' '.join(wrong_nt)))
 
