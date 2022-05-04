@@ -8,9 +8,9 @@ Software pipeline for the analysis of genome editing outcomes from deep sequenci
 import os
 import glob
 from copy import deepcopy
+from concurrent.futures import ProcessPoolExecutor, wait
 import sys
 import argparse
-import re
 import numpy as np
 import pandas as pd
 import traceback
@@ -18,6 +18,7 @@ from datetime import datetime
 from CRISPResso2 import CRISPRessoShared
 from CRISPResso2 import CRISPRessoPlot
 from CRISPResso2 import CRISPRessoReport
+from CRISPResso2.CRISPRessoMultiProcessing import get_max_processes
 
 
 import logging
@@ -36,6 +37,7 @@ debug   = logger.debug
 info    = logger.info
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
+
 
 def main():
     try:
@@ -62,6 +64,9 @@ ___________________________________
         parser.add_argument('--place_report_in_output_folder',  help='If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output.', action='store_true')
         parser.add_argument('--suppress_report',  help='Suppress output report', action='store_true')
         parser.add_argument('--suppress_plots',  help='Suppress output plots', action='store_true')
+        parser.add_argument('--max_samples_per_summary_plot', type=int, help="Maximum number of samples on each page of the pdf report plots. If this number gets above ~150, they will be too big for matplotlib.", default=150)
+        parser.add_argument('--n_processes', type=str, help='Specify the number of processes to use for analysis.\
+        Please use with caution since increasing this parameter will significantly increase the memory required to run CRISPResso. Can be set to \'max\'.', default='1')
 
         parser.add_argument('--debug', help='Show debug messages', action='store_true')
 
@@ -93,6 +98,15 @@ ___________________________________
         crispresso2_info['running_info']['args'] = deepcopy(args)
 
         crispresso2_info['running_info']['log_filename'] = os.path.basename(log_filename)
+
+        n_processes = 1
+        if args.n_processes == 'max':
+            n_processes = get_max_processes()
+        else:
+            n_processes = int(args.n_processes)
+
+        process_pool = ProcessPoolExecutor(n_processes)
+        process_results = []
 
         #glob returns paths including the original prefix
         all_files = []
@@ -192,24 +206,32 @@ ___________________________________
             crispresso2_folders = crispresso2_folder_infos.keys()
             crispresso2_folder_names = {}
             crispresso2_folder_htmls = {}#file_loc->html folder loc
+            quilt_plots_to_show = {}  # name->{'href':path to report, 'img': png}
             for crispresso2_folder in crispresso2_folders:
-                crispresso2_folder_names[crispresso2_folder] = CRISPRessoShared.slugify(crispresso2_folder)
+                this_folder_name = CRISPRessoShared.slugify(crispresso2_folder)
+                crispresso2_folder_names[crispresso2_folder] = this_folder_name
                 this_sub_html_file = crispresso2_folder+".html"
                 if crispresso2_folder_infos[crispresso2_folder]['running_info']['args'].place_report_in_output_folder:
                     this_sub_html_file = os.path.join(crispresso2_folder, crispresso2_folder_infos[crispresso2_folder]['running_info']['report_filename'])
                 crispresso2_folder_htmls[crispresso2_folder] = os.path.abspath(this_sub_html_file)
 
+                run_data = crispresso2_folder_infos[crispresso2_folder]
+                for ref_name in run_data['results']['ref_names']:
+                    if 'plot_2a_root' in run_data['results']['refs'][ref_name]:
+                        plot_root = run_data['results']['refs'][ref_name]['plot_2a_root']
+                        quilt_plots_to_show[this_folder_name+" "+ref_name] = {'href': os.path.abspath(this_sub_html_file),
+                                'img': os.path.abspath(os.path.join(crispresso2_folder,plot_root+".png"))}
+
             all_amplicons = set()
-            amplicon_names = {} #sequence -> ref name (to check for amplicons with the same name but different sequences)
+            amplicon_names = {}  # sequence -> ref name (to check for amplicons with the same name but different sequences)
             amplicon_counts = {}
             amplicon_sources = {}
-            completed_batch_arr = []
             for crispresso2_folder in crispresso2_folders:
                 run_data = crispresso2_folder_infos[crispresso2_folder]
                 for ref_name in run_data['results']['ref_names']:
                     ref_seq = run_data['results']['refs'][ref_name]['sequence']
                     all_amplicons.add(ref_seq)
-                    #if this amplicon is called something else in another sample, just call it the amplicon
+                    # if this amplicon is called something else in another sample, just call it the amplicon
                     if ref_name in amplicon_names and amplicon_names[ref_seq] != ref_name:
                         amplicon_names[ref_seq] = ref_seq
                     else:
@@ -220,7 +242,7 @@ ___________________________________
                     amplicon_counts[ref_seq]+= 1
                     amplicon_sources[ref_seq].append(crispresso2_folder+'(' + ref_name + ')')
 
-            #make sure amplicon names aren't super long
+            # make sure amplicon names aren't super long
             for amplicon in all_amplicons:
                 if len(amplicon_names[amplicon]) > 21:
                     amplicon_names[amplicon] = amplicon_names[amplicon][0:21]
@@ -336,7 +358,9 @@ ___________________________________
 
                     mod_pcts = {}
                     for key in mod_freqs:
-                        mod_pcts[key] = np.array(mod_freqs[key]).astype(np.float)/float(this_amp_total_reads)
+                        mod_pcts[key] = np.array(
+                            mod_freqs[key],
+                        ).astype(float) / float(this_amp_total_reads)
 
                     amp_found_count += 1
 
@@ -401,48 +425,80 @@ ___________________________________
                     crispresso2_info['results']['refs'][amplicon_name]['modification_frequency_summary_filename'] = os.path.basename(modification_frequency_summary_filename)
                     crispresso2_info['results']['refs'][amplicon_name]['modification_percentage_summary_filename'] = os.path.basename(modification_percentage_summary_filename)
 
+                    this_number_samples = len(pd.unique(nucleotide_percentage_summary_df['Folder']))
+
                     #if guides are all the same, merge substitutions and perform base editor comparison at guide quantification window
                     if guides_all_same and consensus_guides != []:
                         info("All guides are equal. Performing comparison of runs for amplicon '%s'"% amplicon_name)
                         include_idxs = consensus_include_idxs #include indexes are the same for all guides
                         for idx, sgRNA in enumerate(consensus_guides):
-                            sgRNA_intervals = consensus_sgRNA_intervals[idx]
                             sgRNA_plot_idxs = consensus_sgRNA_plot_idxs[idx]
                             plot_idxs_flat = [0, 1] # guide, nucleotide
                             plot_idxs_flat.extend([plot_idx + 2 for plot_idx in sgRNA_plot_idxs])
+
                             sub_nucleotide_frequency_summary_df = nucleotide_frequency_summary_df.iloc[:, plot_idxs_flat]
+                            sub_nucleotide_frequency_summary_df = pd.concat([sub_nucleotide_frequency_summary_df.iloc[:, 0:2],
+                                                                        sub_nucleotide_frequency_summary_df.iloc[:, 2:].apply(pd.to_numeric)], axis=1)
+                            sub_nucleotide_frequency_summary_filename = _jp(amplicon_plot_name + 'Nucleotide_frequency_summary_around_sgRNA_'+sgRNA+'.txt')
+                            sub_nucleotide_frequency_summary_df.to_csv(sub_nucleotide_frequency_summary_filename, sep='\t', index=None)
+
                             sub_nucleotide_percentage_summary_df = nucleotide_percentage_summary_df.iloc[:, plot_idxs_flat]
+                            sub_nucleotide_percentage_summary_df = pd.concat([sub_nucleotide_percentage_summary_df.iloc[:, 0:2],
+                                                                        sub_nucleotide_percentage_summary_df.iloc[:, 2:].apply(pd.to_numeric)], axis=1)
+                            sub_nucleotide_percentage_summary_filename = _jp(amplicon_plot_name + 'Nucleotide_percentage_summary_around_sgRNA_'+sgRNA+'.txt')
+                            sub_nucleotide_percentage_summary_df.to_csv(sub_nucleotide_percentage_summary_filename, sep='\t', index=None)
+
                             sub_modification_percentage_summary_df = modification_percentage_summary_df.iloc[:, plot_idxs_flat]
+                            sub_modification_percentage_summary_df = pd.concat([sub_modification_percentage_summary_df.iloc[:, 0:2],
+                                                                        sub_modification_percentage_summary_df.iloc[:, 2:].apply(pd.to_numeric)], axis=1)
+                            sub_modification_percentage_summary_filename = _jp(amplicon_plot_name + 'Modification_percentage_summary_around_sgRNA_'+sgRNA+'.txt')
+                            sub_modification_percentage_summary_df.to_csv(sub_modification_percentage_summary_filename, sep='\t', index=None)
 
-                            #show all sgRNA's on the plot
-                            sub_sgRNA_intervals = []
-                            for sgRNA_interval in consensus_sgRNA_intervals:
-                                newstart = None
-                                newend = None
-                                for idx, i in enumerate(sgRNA_plot_idxs):
-                                    if i <= sgRNA_interval[0]:
-                                        newstart = idx
-                                    if newend is None and i >= sgRNA_interval[1]:
-                                        newend = idx
+                            if not args.suppress_plots and this_number_samples < args.max_samples_per_summary_plot:
+                                # plot for each guide
+                                # show all sgRNA's on the plot
+                                sub_sgRNA_intervals = []
+                                for sgRNA_interval in consensus_sgRNA_intervals:
+                                    newstart = None
+                                    newend = None
+                                    for idx, i in enumerate(sgRNA_plot_idxs):
+                                        if i <= sgRNA_interval[0]:
+                                            newstart = idx
+                                        if newend is None and i >= sgRNA_interval[1]:
+                                            newend = idx
 
-                                #if guide doesn't overlap with plot idxs
-                                if newend == 0 or newstart == len(sgRNA_plot_idxs):
-                                    continue
-                                #otherwise, correct partial overlaps
-                                elif newstart == None and newend == None:
-                                    newstart = 0
-                                    newend = len(include_idxs) -1
-                                elif newstart == None:
-                                    newstart = 0
-                                elif newend == None:
-                                    newend = len(include_idxs) -1
-                                #and add it to the list
-                                sub_sgRNA_intervals.append((newstart, newend))
+                                    #if guide doesn't overlap with plot idxs
+                                    if newend == 0 or newstart == len(sgRNA_plot_idxs):
+                                        continue
+                                    #otherwise, correct partial overlaps
+                                    elif newstart == None and newend == None:
+                                        newstart = 0
+                                        newend = len(include_idxs) -1
+                                    elif newstart == None:
+                                        newstart = 0
+                                    elif newend == None:
+                                        newend = len(include_idxs) -1
+                                    #and add it to the list
+                                    sub_sgRNA_intervals.append((newstart, newend))
 
-                            if not args.suppress_plots:
-                                #plot for each guide
                                 this_window_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt_around_sgRNA_'+sgRNA)
-                                CRISPRessoPlot.plot_nucleotide_quilt(sub_nucleotide_percentage_summary_df, sub_modification_percentage_summary_df, this_window_nuc_pct_quilt_plot_name, save_png, sgRNA_intervals=sub_sgRNA_intervals, quantification_window_idxs=include_idxs, group_column='Folder')
+                                nucleotide_quilt_input = {
+                                    'nuc_pct_df': sub_nucleotide_percentage_summary_df,
+                                    'mod_pct_df': sub_modification_percentage_summary_df,
+                                    'fig_filename_root': this_window_nuc_pct_quilt_plot_name,
+                                    'save_also_png': save_png,
+                                    'sgRNA_intervals': sub_sgRNA_intervals,
+                                    'quantification_window_idxs': include_idxs,
+                                    'group_column': 'Folder',
+                                }
+                                if n_processes > 1:
+                                    process_results.append(process_pool.submit(
+                                        CRISPRessoPlot.plot_nucleotide_quilt,
+                                        **nucleotide_quilt_input,
+                                    ))
+                                else:
+                                    CRISPRessoPlot.plot_nucleotide_quilt(**nucleotide_quilt_input)
+
                                 plot_name = os.path.basename(this_window_nuc_pct_quilt_plot_name)
                                 window_nuc_pct_quilt_plot_names.append(plot_name)
                                 crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'sgRNA: ' + sgRNA + ' Amplicon: ' + amplicon_name
@@ -450,36 +506,192 @@ ___________________________________
                                     crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = ''
                                 crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Composition of each base around the guide ' + sgRNA + ' for the amplicon ' + amplicon_name
                                 crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [(amplicon_name + ' nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), (amplicon_name + ' modification frequencies', os.path.basename(modification_frequency_summary_filename))]
+                        # done with per-sgRNA plots
 
-                                sub_nucleotide_frequency_summary_df = pd.concat([sub_nucleotide_frequency_summary_df.iloc[:, 0:2],
-                                                                            sub_nucleotide_frequency_summary_df.iloc[:, 2:].apply(pd.to_numeric)], axis=1)
-                                sub_nucleotide_frequency_summary_filename = _jp(amplicon_plot_name + 'Nucleotide_frequency_summary_around_sgRNA_'+sgRNA+'.txt')
-                                sub_nucleotide_frequency_summary_df.to_csv(sub_nucleotide_frequency_summary_filename, sep='\t', index=None)
+                        if not args.suppress_plots: # and this_number_samples < 500: # plot the whole region
+                            this_plot_suffix = "" # in case we have a lot of regions, split them up and add a suffix here
+                            this_plot_suffix_int = 1
+                            nrow_per_sample_nucs = nucleotide_percentage_summary_df.shape[0] / this_number_samples # calculate number of rows per sample for subsetting the tables
+                            nrow_per_sample_mods = modification_percentage_summary_df.shape[0] / this_number_samples
+                            for sample_start_ind in range(0, this_number_samples, args.max_samples_per_summary_plot):
+                                sample_end_ind = min(sample_start_ind + args.max_samples_per_summary_plot, this_number_samples)
+                                this_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt' + this_plot_suffix)
+                                this_nuc_start_ind = int(sample_start_ind*nrow_per_sample_nucs)
+                                this_nuc_end_ind = int((sample_end_ind+1)*nrow_per_sample_nucs - 1)
+                                this_mod_start_ind = int(sample_start_ind*nrow_per_sample_mods)
+                                this_mod_end_ind = int((sample_end_ind+1)*nrow_per_sample_mods - 1)
+                                nucleotide_quilt_input = {
+                                    'nuc_pct_df': nucleotide_percentage_summary_df.iloc[this_nuc_start_ind:this_nuc_end_ind, :],
+                                    'mod_pct_df': modification_percentage_summary_df.iloc[this_mod_start_ind:this_mod_end_ind, :],
+                                    'fig_filename_root': this_nuc_pct_quilt_plot_name,
+                                    'save_also_png': save_png,
+                                    'sgRNA_intervals': consensus_sgRNA_intervals,
+                                    'quantification_window_idxs': include_idxs,
+                                    'group_column': 'Folder',
+                                }
+                                if n_processes > 1:
+                                    process_results.append(process_pool.submit(
+                                        CRISPRessoPlot.plot_nucleotide_quilt,
+                                        **nucleotide_quilt_input,
+                                    ))
+                                else:
+                                    CRISPRessoPlot.plot_nucleotide_quilt(**nucleotide_quilt_input)
 
-                                sub_nucleotide_percentage_summary_df = pd.concat([sub_nucleotide_percentage_summary_df.iloc[:, 0:2],
-                                                                            sub_nucleotide_percentage_summary_df.iloc[:, 2:].apply(pd.to_numeric)], axis=1)
-                                sub_nucleotide_percentage_summary_filename = _jp(amplicon_plot_name + 'Nucleotide_percentage_summary_around_sgRNA_'+sgRNA+'.txt')
-                                sub_nucleotide_percentage_summary_df.to_csv(sub_nucleotide_percentage_summary_filename, sep='\t', index=None)
+                                plot_name = os.path.basename(this_nuc_pct_quilt_plot_name)
+                                nuc_pct_quilt_plot_names.append(plot_name)
+                                crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'Amplicon: ' + amplicon_name + this_plot_suffix
+                                if len(amplicon_names) == 1:
+                                    crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = ''
+                                crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Composition of each base for the amplicon ' + amplicon_name
+                                crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [(amplicon_name + ' nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), (amplicon_name + ' modification frequencies', os.path.basename(modification_frequency_summary_filename))]
 
-                        if not args.suppress_plots: # plot the whole region
-                            this_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt')
-                            CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df, modification_percentage_summary_df, this_nuc_pct_quilt_plot_name, save_png, sgRNA_intervals=consensus_sgRNA_intervals, quantification_window_idxs=include_idxs, group_column='Folder')
-                            plot_name = os.path.basename(this_nuc_pct_quilt_plot_name)
-                            nuc_pct_quilt_plot_names.append(plot_name)
-                            crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'Amplicon: ' + amplicon_name
-                            if len(amplicon_names) == 1:
-                                crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = ''
-                            crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Composition of each base for the amplicon ' + amplicon_name
-                            crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [(amplicon_name + ' nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), (amplicon_name + ' modification frequencies', os.path.basename(modification_frequency_summary_filename))]
+                                this_plot_suffix_int += 1
+                                this_plot_suffix = "_" + str(this_plot_suffix_int)
 
-                    else: #guides are not the same
-                        if not args.suppress_plots:
-                            this_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt')
-                            CRISPRessoPlot.plot_nucleotide_quilt(nucleotide_percentage_summary_df, modification_percentage_summary_df, this_nuc_pct_quilt_plot_name, save_png, group_column='Folder')
-                            plot_name = os.path.basename(this_nuc_pct_quilt_plot_name)
-                            nuc_pct_quilt_plot_names.append(plot_name)
-                            crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Composition of each base for the amplicon ' + amplicon_name
-                            crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [(amplicon_name + ' nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), (amplicon_name + ' modification frequencies', os.path.basename(modification_frequency_summary_filename))]
+                    else: # guides are not the same
+                        if not args.suppress_plots: # and this_number_samples < 150:
+                            this_plot_suffix = "" # in case we have a lot of regions, split them up and add a suffix here
+                            this_plot_suffix_int = 1
+                            nrow_per_sample_nucs = nucleotide_percentage_summary_df.shape[0] / this_number_samples # calculate number of rows per sample for subsetting the tables
+                            nrow_per_sample_mods = modification_percentage_summary_df.shape[0] / this_number_samples
+                            for sample_start_ind in range(0,this_number_samples,args.max_samples_per_summary_plot):
+                                sample_end_ind = min(sample_start_ind + args.max_samples_per_summary_plot, this_number_samples)
+                                this_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt' + this_plot_suffix)
+                                this_nuc_start_ind = int(sample_start_ind*nrow_per_sample_nucs)
+                                this_nuc_end_ind = int((sample_end_ind+1)*nrow_per_sample_nucs - 1)
+                                this_mod_start_ind = int(sample_start_ind*nrow_per_sample_mods)
+                                this_mod_end_ind = int((sample_end_ind+1)*nrow_per_sample_mods - 1)
+
+                                nucleotide_quilt_input = {
+                                    'nuc_pct_df': nucleotide_percentage_summary_df.iloc[this_nuc_start_ind:this_nuc_end_ind, :],
+                                    'mod_pct_df': modification_percentage_summary_df.iloc[this_mod_start_ind:this_mod_end_ind, :],
+                                    'fig_filename_root': this_nuc_pct_quilt_plot_name,
+                                    'save_also_png': save_png,
+                                    'sgRNA_intervals': consensus_sgRNA_intervals,
+                                    'quantification_window_idxs': consensus_include_idxs,
+                                    'group_column': 'Folder',
+                                }
+                                if n_processes > 1:
+                                    process_results.append(process_pool.submit(
+                                        CRISPRessoPlot.plot_nucleotide_quilt,
+                                        **nucleotide_quilt_input,
+                                    ))
+                                else:
+                                    CRISPRessoPlot.plot_nucleotide_quilt(**nucleotide_quilt_input)
+
+                                plot_name = os.path.basename(this_nuc_pct_quilt_plot_name)
+                                nuc_pct_quilt_plot_names.append(plot_name)
+                                crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'Amplicon: ' + amplicon_name + this_plot_suffix
+                                if len(amplicon_names) == 1:
+                                    crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = ''
+                                crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Composition of each base for the amplicon ' + amplicon_name
+                                crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [(amplicon_name + ' nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), (amplicon_name + ' modification frequencies', os.path.basename(modification_frequency_summary_filename))]
+
+                                this_plot_suffix_int += 1
+                                this_plot_suffix = "_" + str(this_plot_suffix_int)
+
+                    if not args.suppress_plots:
+                        crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_names'] = []
+                        crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_paths'] = {}
+                        crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_titles'] = {}
+                        crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_labels'] = {}
+                        crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_datas'] = {}
+
+                        crispresso2_info['results']['general_plots']['allele_modification_line_plot_names'] = []
+                        crispresso2_info['results']['general_plots']['allele_modification_line_plot_paths'] = {}
+                        crispresso2_info['results']['general_plots']['allele_modification_line_plot_titles'] = {}
+                        crispresso2_info['results']['general_plots']['allele_modification_line_plot_labels'] = {}
+                        crispresso2_info['results']['general_plots']['allele_modification_line_plot_datas'] = {}
+                        if guides_all_same:
+                            sgRNA_intervals = [consensus_sgRNA_intervals] * modification_frequency_summary_df.shape[0]
+                        else:
+                            sgRNA_intervals = consensus_sgRNA_intervals
+                        for modification_type in ['Insertions', 'Deletions', 'Substitutions']:
+                            modification_df = modification_frequency_summary_df[
+                                modification_frequency_summary_df['Modification'] == modification_type
+                            ]
+                            modification_df.index = [
+                                '{0} ({1})'.format(folder, folder_index)
+                                for folder_index, folder in enumerate(
+                                    modification_df['Folder'], 1,
+                                )
+                            ]
+                            modification_df = modification_df.drop(
+                                ['Modification', 'Folder'], axis=1,
+                            )
+                            modification_df.columns = [
+                                '{0} ({1})'.format(column, position)
+                                for position, column in
+                                enumerate(modification_df.columns, 1)
+                            ]
+                            plot_name = 'CRISPRessoAggregate_percentage_of_{0}_across_alleles_{1}_heatmap'.format(modification_type.lower(), amplicon_name)
+                            plot_path = '{0}.html'.format(_jp(plot_name))
+
+                            allele_modification_heatmap_input = {
+                                'sample_values': modification_df,
+                                'sample_sgRNA_intervals': sgRNA_intervals,
+                                'plot_path': plot_path,
+                                'title': modification_type,
+                            }
+                            if n_processes > 1:
+                                process_results.append(process_pool.submit(
+                                    CRISPRessoPlot.plot_allele_modification_heatmap,
+                                    **allele_modification_heatmap_input,
+                                ))
+                            else:
+                                CRISPRessoPlot.plot_allele_modification_heatmap(
+                                    **allele_modification_heatmap_input,
+                                )
+
+                            crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_names'].append(plot_name)
+                            crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_paths'][plot_name] = plot_path
+                            crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_titles'][plot_name] = 'CRISPRessoAggregate {0} Across Samples for {1}'.format(
+                                modification_type,
+                                amplicon_name,
+                            )
+                            crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_labels'][plot_name] = 'Each row is a sample and each column is a position in the amplicon sequence. Each cell shows the percentage of {0} for the sample at that position relative to the amplicon. Guides for each sample are identified by a black rectangle.'.format(modification_type.lower())
+                            crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_datas'][plot_name] = [
+                                (
+                                    'CRISPRessoAggregate Modification Frequency Summary',
+                                    os.path.basename(
+                                        modification_frequency_summary_filename,
+                                    ),
+                                ),
+                            ]
+
+                            plot_name = 'CRISPRessoAggregate_percentage_of_{0}_across_alleles_{1}_line'.format(modification_type.lower(), amplicon_name)
+                            plot_path = '{0}.html'.format(_jp(plot_name))
+
+                            allele_modification_line_input = {
+                                'sample_values': modification_df,
+                                'sample_sgRNA_intervals': sgRNA_intervals,
+                                'plot_path': plot_path,
+                                'title': modification_type,
+                            }
+                            if n_processes > 1:
+                                process_results.append(process_pool.submit(
+                                    CRISPRessoPlot.plot_allele_modification_line,
+                                    **allele_modification_line_input,
+                                ))
+                            else:
+                                CRISPRessoPlot.plot_allele_modification_line(
+                                    **allele_modification_line_input
+                                )
+                            crispresso2_info['results']['general_plots']['allele_modification_line_plot_names'].append(plot_name)
+                            crispresso2_info['results']['general_plots']['allele_modification_line_plot_paths'][plot_name] = plot_path
+                            crispresso2_info['results']['general_plots']['allele_modification_line_plot_titles'][plot_name] = 'CRISPRessoAggregate {0} Across Samples for {1}'.format(
+                                modification_type,
+                                amplicon_name,
+                            )
+                            crispresso2_info['results']['general_plots']['allele_modification_line_plot_labels'][plot_name] = 'Each line is a sample that indicates the percentage of {0} for the sample at that position relative to the amplicon. Guides are shown by a grey rectangle.'.format(modification_type.lower())
+                            crispresso2_info['results']['general_plots']['allele_modification_line_plot_datas'][plot_name] = [
+                                (
+                                    'CRISPRessoAggregate Modification Frequency Summary',
+                                    os.path.basename(
+                                        modification_frequency_summary_filename,
+                                    ),
+                                ),
+                            ]
 
             crispresso2_info['results']['general_plots']['window_nuc_pct_quilt_plot_names'] = window_nuc_pct_quilt_plot_names
             crispresso2_info['results']['general_plots']['nuc_pct_quilt_plot_names'] = nuc_pct_quilt_plot_names
@@ -560,7 +772,20 @@ ___________________________________
             if not args.suppress_plots:
                 plot_root = _jp("CRISPRessoAggregate_reads_summary")
 
-                CRISPRessoPlot.plot_reads_total(plot_root, df_summary_quantification, save_png, args.min_reads_for_inclusion)
+                reads_total_input = {
+                    'fig_filename_root': plot_root,
+                    'df_summary_quantification': df_summary_quantification,
+                    'save_png': save_png,
+                    'cutoff': args.min_reads_for_inclusion,
+                }
+                if n_processes > 1:
+                    process_results.append(process_pool.submit(
+                        CRISPRessoPlot.plot_reads_total,
+                        **reads_total_input,
+                    ))
+                else:
+                    CRISPRessoPlot.plot_reads_total(**reads_total_input)
+
                 plot_name = os.path.basename(plot_root)
                 crispresso2_info['results']['general_plots']['summary_plot_root'] = plot_name
                 crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
@@ -569,7 +794,21 @@ ___________________________________
                 crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('CRISPRessoAggregate summary', os.path.basename(samples_quantification_summary_filename)), ('CRISPRessoAggregate summary by amplicon', os.path.basename(samples_quantification_summary_by_amplicon_filename))]
 
                 plot_root = _jp("CRISPRessoAggregate_quantification_of_editing_frequency")
-                CRISPRessoPlot.plot_unmod_mod_pcts(plot_root, df_summary_quantification, save_png, args.min_reads_for_inclusion)
+
+                unmod_mod_pcts_input = {
+                    'fig_filename_root': plot_root,
+                    'df_summary_quantification': df_summary_quantification,
+                    'save_png': save_png,
+                    'cutoff': args.min_reads_for_inclusion,
+                }
+                if n_processes > 1:
+                    process_results.append(process_pool.submit(
+                        CRISPRessoPlot.plot_unmod_mod_pcts,
+                        **unmod_mod_pcts_input,
+                    ))
+                else:
+                    CRISPRessoPlot.plot_unmod_mod_pcts(**unmod_mod_pcts_input)
+
                 plot_name = os.path.basename(plot_root)
                 crispresso2_info['results']['general_plots']['summary_plot_root'] = plot_name
                 crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
@@ -596,15 +835,21 @@ ___________________________________
                 report_filename = OUTPUT_DIRECTORY+'.html'
                 if (args.place_report_in_output_folder):
                     report_filename = _jp("CRISPResso2Aggregate_report.html")
-                CRISPRessoReport.make_aggregate_report(crispresso2_info, args.name, report_filename, OUTPUT_DIRECTORY, _ROOT, crispresso2_folders, crispresso2_folder_htmls)
+                CRISPRessoReport.make_aggregate_report(crispresso2_info, args.name,
+                                                       report_filename, OUTPUT_DIRECTORY,
+                                                       _ROOT, crispresso2_folders,
+                                                       crispresso2_folder_htmls,
+                                                       quilt_plots_to_show)
                 crispresso2_info['running_info']['report_location'] = report_filename
                 crispresso2_info['running_info']['report_filename'] = os.path.basename(report_filename)
 
-        end_time =  datetime.now()
-        end_time_string =  end_time.strftime('%Y-%m-%d %H:%M:%S')
+        end_time = datetime.now()
+        end_time_string = end_time.strftime('%Y-%m-%d %H:%M:%S')
         running_time = end_time - start_time
-        running_time_string =  str(running_time)
+        running_time_string = str(running_time)
 
+        crispresso2_info['running_info']['start_time'] = start_time
+        crispresso2_info['running_info']['start_time_string'] = start_time_string
         crispresso2_info['running_info']['end_time'] = end_time
         crispresso2_info['running_info']['end_time_string'] = end_time_string
         crispresso2_info['running_info']['running_time'] = running_time
@@ -613,6 +858,10 @@ ___________________________________
         CRISPRessoShared.write_crispresso_info(
             crispresso2Aggregate_info_file, crispresso2_info,
         )
+
+        wait(process_results)
+        process_pool.shutdown()
+
         info('Analysis Complete!')
         print(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)
