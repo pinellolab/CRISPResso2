@@ -25,7 +25,7 @@ from CRISPResso2 import CRISPRessoCOREResources
 from CRISPResso2.CRISPRessoMultiProcessing import get_max_processes
 
 
-__version__ = "2.2.7"
+__version__ = "2.2.8"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
