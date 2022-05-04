@@ -614,10 +614,11 @@ def main():
                      'prime_editing_pegRNA_extension_seq', 'prime_editing_pegRNA_scaffold_seq',
                      'prime_editing_pegRNA_scaffold_min_match_length', 'prime_editing_override_prime_edited_ref_seq',
                      'quantification_window_coordinates', 'quantification_window_size', 'quantification_window_center']
-        if RUNNING_MODE == 'ONLY_AMPLICONS' or RUNNING_MODE == 'AMPLICONS_AND_GENOME':
 
+        if RUNNING_MODE == 'ONLY_AMPLICONS' or RUNNING_MODE == 'AMPLICONS_AND_GENOME':
             # open amplicons file
             with open(args.amplicons_file, 'r') as amplicons_fin:
+
                 head_line = amplicons_fin.readline().strip()
                 while head_line[0] == "#":  # read past comments
                     head_line = amplicons_fin.readline()
@@ -825,6 +826,7 @@ def main():
                             setattr(this_run_args, column_name, row[column_name])
 
                     crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, this_run_args)
+
                     crispresso_cmds.append(crispresso_cmd)
 
                 else:
