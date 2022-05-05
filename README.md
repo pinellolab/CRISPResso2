@@ -946,7 +946,22 @@ The output will consist of:
 
 1.	Comparison_Efficiency.pdf: a figure containing a comparison of the edit frequencies for each category (NHEJ, MIXED NHEJ-HDR and HDR) and as well the net effect subtracting the second sample (second folder in the command line) provided in the analysis from the first sample (first folder in the command line).
 2.	Comparison_Combined_Insertion_Deletion_Substitution_Locations.pdf: a figure showing the average profile for the mutations for the two samples in the same scale and their difference with the same convention used in the previous figure (first sample – second sample).
-3.	CRISPRessoCompare_RUNNING_LOG.txt: detailed execution log.
+3.	CRISPRessoCompare_significant_base_counts.txt: a text file reporting the number of bases for each amplicon and in the quantification window for each amplicon that were significantly enriched for Insertions, Deletions, and Substitutions, as well as All Modifications (Fisher's exact test, Bonferonni corrected p-values).
+4.	CRISPRessoCompare_RUNNING_LOG.txt: detailed execution log.
+
+#### Parameter List
+crispresso_output_folder_1: First output folder with CRISPResso analysis (Required)
+crispresso_output_folder_2: Second output folder with CRISPResso analysis (Required)
+
+-n or --name: Output name. (default:'')
+-n1 or --sample_1_name: Sample 1 name
+-n2 or --sample_2_name: Sample 2 name
+-o or --output_folder: Output folder name
+--reported_qvalue_cutoff: Q-value cutoff for signifance in tests for differential editing. Each base position is tested (for insertions, deletions, substitutions, and all modifications) using Fisher's exact test, followed by Bonferonni correction. The number of bases with a significance below this threshold in the quantification window are counted and reported in the output summary. (default:0.05)
+--min_frequency_alleles_around_cut_to_plot: Minimum %% reads required to report an allele in the alleles table plot. (default:0.2)
+--max_rows_alleles_around_cut_to_plot: Maximum number of rows to report in the alleles table plot. (default:50)
+--suppress_report: Suppress output report. (default:False)
+--place_report_in_output_folder: If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output. (default:False)
 
 ### CRISPRessoPooledWGSCompare
 
@@ -974,7 +989,23 @@ docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoPooledW
 The output from these files will consist of:
 1.	COMPARISON_SAMPLES_QUANTIFICATION_SUMMARIES.txt: this file contains a summary of the quantification for each of the two conditions for each region and their difference (read counts and percentages for the various classes: Unmodified, NHEJ, MIXED NHEJ-HDR  and HDR).
 2.	A set of folders with CRISPRessoCompare reports on the common regions with enough reads in both conditions.
-3.	CRISPRessoPooledWGSCompare_RUNNING_LOG.txt: detailed execution log.
+3.	CRISPRessoPooledWGSCompare_significant_base_count_summary.txt: a text file summarizing for each sample and amplicon in both conditions the number of bases for each amplicon and in the quantification window for each amplicon that were significantly enriched for Insertions, Deletions, and Substitutions, as well as All Modifications (Fisher's exact test, Bonferonni corrected p-values).
+4.	CRISPRessoPooledWGSCompare_RUNNING_LOG.txt: detailed execution log.
+
+#### Parameter List
+crispresso_pooled_wgs_output_folder_1: First output folder with CRISPRessoPooled or CRISPRessoWGS analysis (Required)
+crispresso_pooled_wgs_output_folder_2: Second output folder with CRISPRessoPooled or CRISPRessoWGS analysis (Required)
+
+-p or --n_processes: Number of processes to use for this analysis. Can be set to 'max'.
+-n or --name: Output name. (default:'')
+-n1 or --sample_1_name: Sample 1 name
+-n2 or --sample_2_name: Sample 2 name
+-o or --output_folder: Output folder name
+--reported_qvalue_cutoff: Q-value cutoff for signifance in tests for differential editing. Each base position is tested (for insertions, deletions, substitutions, and all modifications) using Fisher's exact test, followed by Bonferonni correction. The number of bases with a significance below this threshold in the quantification window are counted and reported in the output summary. (default:0.05)
+--min_frequency_alleles_around_cut_to_plot: Minimum %% reads required to report an allele in the alleles table plot. (default:0.2)
+--max_rows_alleles_around_cut_to_plot: Maximum number of rows to report in the alleles table plot. (default:50)
+--suppress_report: Suppress output report. (default:False)
+--place_report_in_output_folder: If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output. (default:False)
 
 ### CRISPRessoAggregate
 
