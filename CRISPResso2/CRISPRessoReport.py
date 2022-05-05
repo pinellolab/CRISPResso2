@@ -386,7 +386,12 @@ def make_multi_report(
     nuc_pct_quilts=[],
     window_nuc_conv_plots=[],
     nuc_conv_plots=[],
-    summary_plots={},
+    summary_plots={
+        'names': [],
+        'titles': [],
+        'labels': [],
+        'datas': [],
+    },
     compact_plots_to_show={},
     allele_modification_heatmap_plot={},
     allele_modification_line_plot={},
