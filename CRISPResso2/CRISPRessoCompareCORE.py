@@ -87,6 +87,7 @@ def main():
         parser.add_argument('-n1', '--sample_1_name',  help='Sample 1 name')
         parser.add_argument('-n2', '--sample_2_name',  help='Sample 2 name')
         parser.add_argument('-o', '--output_folder',  help='', default='')
+        parser.add_argument('--reported_qvalue_cutoff', help='Q-value cutoff for signifance in tests for differential editing. Each base position is tested (for insertions, deletions, substitutions, and all modifications) using Fisher\'s exact test, followed by Bonferonni correction. The number of bases with a significance below this threshold in the quantification window are counted and reported in the output summary.', type=float, default=0.05)
         parser.add_argument('--min_frequency_alleles_around_cut_to_plot', type=float, help='Minimum %% reads required to report an allele in the alleles table plot.', default=0.2)
         parser.add_argument('--max_rows_alleles_around_cut_to_plot',  type=int, help='Maximum number of rows to report in the alleles table plot. ', default=50)
         parser.add_argument('--suppress_report',  help='Suppress output report', action='store_true')
@@ -171,9 +172,14 @@ def main():
                 return (plotTitle + ": " + refName)
             return plotTitle
 
+        sig_counts = {}  # number of bp significantly modified (bonferonni corrected fisher pvalue)
+        sig_counts_quant_window = {}
         for amplicon_name in amplicon_names_in_both:
             profile_1=parse_profile(amplicon_info_1[amplicon_name]['quantification_file'])
             profile_2=parse_profile(amplicon_info_2[amplicon_name]['quantification_file'])
+
+            sig_counts[amplicon_name] = {}
+            sig_counts_quant_window[amplicon_name] = {}
 
             amplicon_plot_name = amplicon_name+"."
             if len(amplicon_names_in_both) == 1 and amplicon_name == "Reference":
@@ -186,6 +192,7 @@ def main():
             len_amplicon=profile_1.shape[0]
             effect_vector_any_1=profile_1[:, 1]
             effect_vector_any_2=profile_2[:, 1]
+
             cut_points = run_info_1['results']['refs'][amplicon_name]['sgRNA_cut_points']
             sgRNA_intervals = run_info_1['results']['refs'][amplicon_name]['sgRNA_intervals']
 
@@ -244,6 +251,9 @@ def main():
             if amp_seq_2 != consensus_sequence:
                 raise DifferentAmpliconLengthException('Different amplicon lengths for the two amplicons.')
 
+            quant_windows_1 = run_info_1['results']['refs'][amplicon_name]['include_idxs']
+            quant_windows_2 = run_info_2['results']['refs'][amplicon_name]['include_idxs']
+            quant_windows_are_equal = np.array_equal(quant_windows_1, quant_windows_2)
 
             for mod in ['Insertions', 'Deletions', 'Substitutions', 'All_modifications']:
                 mod_name = mod
@@ -285,6 +295,22 @@ def main():
                 row = ['pvalues']
                 row.extend(pvalues)
                 mod_df.append(row)
+
+                m, pvals = len(pvalues), np.asarray(pvalues)
+                qval_bonferroni = pvals * float(m)
+                qval_bonferroni[np.where(qval_bonferroni > 1)] = 1
+                row = ['qval_bonferroni']
+                row.extend(qval_bonferroni)
+                mod_df.append(row)
+
+                sig_count = len(np.where(qval_bonferroni <= args.reported_qvalue_cutoff)[0])
+                sig_counts[amplicon_name][mod] = sig_count
+
+                sig_count_quant_window = np.nan
+                if quant_windows_are_equal:
+                    qvals_in_quant = np.take(qval_bonferroni, quant_windows_1)  # quant_windows_1 are the same as quant_windows_2
+                    sig_count_quant_window = len(np.where(qvals_in_quant <= args.reported_qvalue_cutoff)[0])
+                sig_counts_quant_window[amplicon_name][mod] = sig_count_quant_window
 
                 colnames = ['Reference']
                 colnames.extend(list(consensus_sequence))
@@ -346,7 +372,7 @@ def main():
                                 if sgRNA_seq in allele_file_1_name:
                                     this_sgRNA_seq = sgRNA_seq
                                     this_cut_point = cut_point
-                                    ref_seq_around_cut=consensus_sequence[max(0, this_cut_point-args.offset_around_cut_to_plot+1):min(len(reference_seq), cut_point+args.offset_around_cut_to_plot+1)]
+                                    ref_seq_around_cut=consensus_sequence[max(0, this_cut_point-args.offset_around_cut_to_plot+1):min(seq_len, cut_point+args.offset_around_cut_to_plot+1)]
                                     break
 
                         merged = pd.merge(df1, df2, on = ['Aligned_Sequence', 'Reference_Sequence', 'Unedited', 'n_deleted', 'n_inserted', 'n_mutated'], suffixes=('_' + sample_1_name, '_'+sample_2_name), how='outer')
@@ -377,6 +403,21 @@ def main():
                         'The proportion and number of reads is shown for each sample on the right, with the values for ' + sample_1_name + ' followed by the values for ' + sample_2_name +'. Alleles are sorted for enrichment in ' + sample_2_name+'.'
                         crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Allele comparison table', os.path.basename(allele_comparison_file))]
 
+        sig_counts_filename = _jp('CRISPRessoCompare_significant_base_counts.txt')
+        with open(sig_counts_filename, 'w') as fout:
+            fout.write('Amplicon\tModification\tsig_base_count\tsig_base_count_quant_window\n')
+            for amplicon_name in amplicon_names_in_both:
+                for mod in ['Insertions', 'Deletions', 'Substitutions', 'All_modifications']:
+                    val = np.nan
+                    if amplicon_name in sig_counts and mod in sig_counts[amplicon_name]:
+                        val = sig_counts[amplicon_name][mod]
+
+                    val_quant_window = np.nan
+                    if amplicon_name in sig_counts_quant_window and mod in sig_counts_quant_window[amplicon_name]:
+                        val_quant_window = sig_counts_quant_window[amplicon_name][mod]
+                    line = "%s\t%s\t%s\t%s\n"%(amplicon_name, mod, val, val_quant_window)
+                    fout.write(line)
+        crispresso2_info['running_info']['sig_counts_report_location'] = sig_counts_filename
 
         if not args.suppress_report:
             if (args.place_report_in_output_folder):

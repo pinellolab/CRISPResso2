@@ -129,6 +129,12 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
             default='1',
         )
         parser.add_argument(
+            '--reported_qvalue_cutoff',
+            type=float,
+            help='Q-value cutoff for signifance in tests for differential editing. Each base position is tested (for insertions, deletions, substitutions, and all modifications) using Fisher\'s exact test, followed by Bonferonni correction. The number of bases with a significance below this threshold in the quantification window are counted and reported in the output summary.',
+            default=0.05
+        )
+        parser.add_argument(
             '--min_frequency_alleles_around_cut_to_plot',
             type=float,
             help='Minimum %% reads required to report an allele in the alleles table plot.',
@@ -160,6 +166,7 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
         debug_flag = args.debug
 
         crispresso_compare_options = [
+            'reported_qvalue_cutoff',
             'min_frequency_alleles_around_cut_to_plot',
             'max_rows_alleles_around_cut_to_plot',
             'place_report_in_output_folder',
@@ -252,10 +259,11 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
             rsuffix='_{0}'.format(sample_2_name),
         )
 
+        print('looking for ' + '({0}-{1})_Unmodified%'.format(sample_1_name, sample_2_name))
         df_comp[
-            '({0}-{1})_Unmodified%%'.format(sample_1_name, args.sample_2_name)
-        ] = df_comp['Unmodified%%_{0}'.format(sample_1_name)] - df_comp[
-            'Unmodified%%_{0}'.format(args.sample_2_name)
+            '({0}-{1})_Unmodified%'.format(sample_1_name, sample_2_name)
+        ] = df_comp['Unmodified%_{0}'.format(sample_1_name)] - df_comp[
+            'Unmodified%_{0}'.format(sample_2_name)
         ]
 
         df_comp.fillna('NA').to_csv(_jp('COMPARISON_SAMPLES_QUANTIFICATION_SUMMARIES.txt'), sep='\t')
@@ -271,7 +279,7 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
             if row.isnull().any():
                 warn('Skipping sample {0} since it was not processed in one or both conditions'.format(idx))
             else:
-                processed_regions.add(idx)
+                processed_regions.append(idx)
                 crispresso_output_folder_1 = os.path.join(
                     args.crispresso_pooled_wgs_output_folder_1,
                     'CRISPResso_on_{0}'.format(idx),
@@ -317,6 +325,24 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
         )
         crispresso2_info['results']['processed_regions'] = processed_regions
         crispresso2_info['results']['processed_region_folder_names'] = processed_region_folder_names
+
+        header_string = ''
+        sig_count_summary_lines = []
+        for region in processed_regions:
+            processed_region_folder_name = processed_region_folder_names[region]
+            processed_region_folder = os.path.join(OUTPUT_DIRECTORY, 'CRISPRessoCompare_on_'+processed_region_folder_name)
+            run_info = CRISPRessoShared.load_crispresso_info(processed_region_folder, 'CRISPResso2Compare_info.json')
+            sig_counts_filename = run_info['running_info']['sig_counts_report_location']
+            this_sig_filepath = os.path.join(processed_region_folder, sig_counts_filename)
+            if os.path.exists(this_sig_filepath):
+                with open(this_sig_filepath, 'r') as fin:
+                    header_string = fin.readline()
+                    for line in fin:
+                        sig_count_summary_lines.append(region + "\t" + line)
+        sig_count_summary_file = _jp("CRISPRessoPooledWGSCompare_significant_base_count_summary.txt")
+        with open(sig_count_summary_file, 'w') as fout:
+            fout.write('Sample\t'+header_string)
+            fout.writelines(sig_count_summary_lines)
 
         if not args.suppress_report:
             if args.place_report_in_output_folder:
