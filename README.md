@@ -340,7 +340,7 @@ The output of CRISPResso2 consists of a set of informative graphs that allow for
 
 *CRISPResso_RUNNING_LOG.txt* is a text file and shows a log of the CRISPResso run.
 
-*CRISPResso2_info.pickle* can be read by other CRISPResso tools and contains information about the run and results.
+*CRISPResso2_info.json* can be read by other CRISPResso tools and contains information about the run and results.
 
 The remainder of the files are produced for each amplicon, and each file is prefixed by the name of the amplicon if more than one amplicon is given.
 
