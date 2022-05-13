@@ -148,20 +148,6 @@ def get_read_length_from_cigar(cigar_string):
             result += int(length)
     return result
 
-def get_ref_length_from_cigar(cigar_string):
-    """
-    Given a CIGAR string, return the number of bases consumed from the
-    reference sequence.
-    """
-    read_consuming_ops = ("M", "D", "N", "=", "X")
-    result = 0
-    ops = re.findall(r'(\d+)(\w)', cigar_string)
-    for c in ops:
-        length, op = c
-        if op in read_consuming_ops:
-            result += int(length)
-    return result
-
 def get_n_reads_fastq(fastq_filename):
      p = sb.Popen(('z' if fastq_filename.endswith('.gz') else '' ) +"cat < %s | wc -l" % fastq_filename, shell=True, stdout=sb.PIPE)
      n_reads = int(float(p.communicate()[0])/4.0)
@@ -274,7 +260,6 @@ def main():
         #tool specific optional
         parser.add_argument('--gene_annotations', type=str, help='Gene Annotation Table from UCSC Genome Browser Tables (http://genome.ucsc.edu/cgi-bin/hgTables?command=start), \
         please select as table "knownGene", as output format "all fields from selected table" and as file returned "gzip compressed"', default='')
-        parser.add_argument('-x', '--bowtie2_index', type=str, help='Basename of Bowtie2 index for the reference genome', default='')
         # rationale for setting the default scores:
         # --end-to-end - no clipping, match bonus -ma is set to 0
         # -N 0 number of mismatches allowed in seed alignment
@@ -869,10 +854,10 @@ def main():
                     for line in aln.readlines():
                         line_els = line.split("\t")
                         if line_els[2] == "*":
-                            info('The amplicon [%s] is not mappable to the reference genome provided!' % idx )
+                            info('The amplicon [%s] is not mappable to the reference genome provided!' % line_els[0])
                             additional_columns.append([line_els[0], 'NOT_ALIGNED', 0, -1, '+', ''])
                         else:
-                            aln_len = get_ref_length_from_cigar(line_els[5])
+                            aln_len = CRISPRessoShared.get_ref_length_from_cigar(line_els[5])
                             seq_start = int(line_els[3])
                             seq_stop = seq_start + aln_len
                             strand = "-" if (int(line_els[1]) & 0x10) else "+"
