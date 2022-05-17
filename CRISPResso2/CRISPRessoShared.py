@@ -147,11 +147,13 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
         'A value of 0 disables this filter. (can be comma-separated list of values, corresponding to amplicon sequences given in --amplicon_seq e.g. 5-10,5-10_20-30 would specify the 5th-10th bp in the first reference and the 5th-10th and 20th-30th bp in the second reference)', default=None)
     parser.add_argument('--annotate_wildtype_allele', type=str, help='Wildtype alleles in the allele table plots will be marked with this string (e.g. **).', default='')
 
-    #verbosity parameters
+    #output parameters
     parser.add_argument('--keep_intermediate', help='Keep all the  intermediate files', action='store_true')
     parser.add_argument('--dump', help='Dump numpy arrays and pandas dataframes to file for debugging purposes', action='store_true')
     parser.add_argument('--write_detailed_allele_table', help='If set, a detailed allele table will be written including alignment scores for each read sequence.', action='store_true')
     parser.add_argument('--fastq_output', help='If set, a fastq file with annotations for each read will be produced.', action='store_true')
+    parser.add_argument('--bam_output', help='If set, a bam file with alignments for each read will be produced.', action='store_true')
+    parser.add_argument('-x', '--bowtie2_index', type=str, help='Basename of Bowtie2 index for the reference genome', default='')
 
     #report style parameters
     parser.add_argument('--max_rows_alleles_around_cut_to_plot',  type=int, help='Maximum number of rows to report in the alleles table plot.', default=50)
@@ -276,6 +278,57 @@ def slugify(value): #adapted from the Django project
     value = re.sub(rb'[-\s]+', b'-', value)
 
     return value.decode('utf-8')
+
+
+CIGAR_LOOKUP = {
+    ('A', 'A'): 'M', ('A', 'C'): 'M', ('A', 'T'): 'M', ('A', 'G'): 'M',
+    ('C', 'A'): 'M', ('C', 'C'): 'M', ('C', 'T'): 'M', ('C', 'G'): 'M',
+    ('T', 'A'): 'M', ('T', 'C'): 'M', ('T', 'T'): 'M', ('T', 'G'): 'M',
+    ('G', 'A'): 'M', ('G', 'C'): 'M', ('G', 'T'): 'M', ('G', 'G'): 'M',
+    ('A', '-'): 'I', ('T', '-'): 'I', ('C', '-'): 'I', ('G', '-'): 'I',
+    ('-', 'A'): 'D', ('-', 'T'): 'D', ('-', 'C'): 'D', ('-', 'G'): 'D',
+    }
+
+cigarUnexplodePattern = re.compile(r'((\w)\2{0,})')
+
+
+def unexplode_cigar(exploded_cigar_string):
+    """Make a CIGAR string from an exploded cigar string.
+    Exploded cigar: IIMMMMMMM
+    cigar_els: ['2I','7M']
+    CIGAR: 2I7M
+
+    Parameters
+    ----------
+    exploded_cigar_string : str
+        Exploded cigar string, e.g. IIMMMMMMM
+
+    Returns
+    -------
+    cigar_els : list
+        List of CIGAR elements
+
+
+    """
+    cigar_els = []
+    for (cigar_str, cigar_char) in re.findall(cigarUnexplodePattern, exploded_cigar_string):
+        cigar_els.append(str(len(cigar_str)) + cigar_char)
+    return cigar_els
+
+
+def get_ref_length_from_cigar(cigar_string):
+    """
+    Given a CIGAR string, return the number of bases consumed from the
+    reference sequence.
+    """
+    read_consuming_ops = ("M", "D", "N", "=", "X")
+    result = 0
+    ops = re.findall(r'(\d+)(\w)', cigar_string)
+    for c in ops:
+        length, op = c
+        if op in read_consuming_ops:
+            result += int(length)
+    return result
 
 
 ######
