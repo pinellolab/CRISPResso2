@@ -307,6 +307,10 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --fastq_output: If set, a fastq file with annotations for each read will be produced. (default: False)
 
+--bam_output': If set, a bam file with alignments for each read will be produced. Setting this parameter will produce a file called 'CRISPResso_output.bam' with the alignments in bam format. If the `bowtie2_index` is provided, alignments will be reported in reference to that genome. If the `bowtie2_index` is not provided, alignments will be reported in reference to a custom reference created by the amplicon sequence(s) and written to the file 'CRISPResso_output.fa'. (default: False)
+
+-x or --bowtie2_index: Basename of Bowtie2 index for the reference genome. Optionally used in the creation of a bam file. See `bam_output`. (default: '')
+
 --keep_intermediate: Keep all the intermediate files (default: False)
 
 --dump: Dump numpy arrays and pandas dataframes to file for debugging purposes (default: False)
@@ -549,9 +553,9 @@ To run the tool in this mode the user must provide:
     the first nucleotide is position 0. Ranges are separated by the dash sign like "start-stop",
     and multiple ranges can be separated by the underscore (_). A value of 0 disables this filter.
     If not available, enter *NA.*
-  *W or QUANTIFICATION\_WINDOW\_SIZE (OPTIONAL)*: Defines the size (in bp) of the quantification window extending from the position specified by the "--cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence(s) (--sgRNA). Mutations within this number of bp from the quantification window center are used in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 1, 1bp on each side of the cleavage position for a total length of 2bp. (default: 1) If not available, enter *NA.*
+- *W or QUANTIFICATION\_WINDOW\_SIZE (OPTIONAL)*: Defines the size (in bp) of the quantification window extending from the position specified by the "--cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence(s) (--sgRNA). Mutations within this number of bp from the quantification window center are used in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 1, 1bp on each side of the cleavage position for a total length of 2bp. (default: 1) If not available, enter *NA.*
 
-  *WC or QUANTIFICATION\_WINDOW\_CENTER (OPTIONAL)*: Center of quantification window to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17. (default: -3) If not available, enter *NA.*
+- *WC or QUANTIFICATION\_WINDOW\_CENTER (OPTIONAL)*: Center of quantification window to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17. (default: -3) If not available, enter *NA.*
 
 A file in the correct format should look like this:
 
