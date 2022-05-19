@@ -108,7 +108,7 @@ docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso -r1 sa
 ```
 
 ## CRISPResso2 usage
-CRISPResso2 is designed be run on a single amplicon. For experiments involving multiple amplicons in the same fastq, see the instructions for CRISPRessoPooled or CRISPRessoWGS below.
+CRISPResso2 is designed be run on a single amplicon. For experiments involving multiple amplicons in the same fastq, see the instructions for [CRISPRessoPooled](#crispressopooled) or [CRISPRessoWGS](#crispressoWGS) below.
 
 CRISPresso2 requires only two parameters: input sequences in the form of fastq files (given by the `--fastq_r1` and `--fastq_r2`) parameters, and the amplicon sequence to align to (given by the `--amplicon_seq` parameter). For example:
 
@@ -417,7 +417,7 @@ If your amplicon sequence is longer than your sequenced read length, the R1 and 
 Especially in repetitive regions, multiple alignments may have the best score. If you want to investigate alternate best-scoring alignments, you can view all alignments using this tool: http://rna.informatik.uni-freiburg.de/Teaching/index.jsp?toolName=Gotoh. As input, sequences from the 'Alleles_frequency_table.txt' can be used. Specifically, for a given row, the value in the 'Aligned_Sequence' should be entered into the 'Sequence a' box after removing any dashes, and the value in the 'Reference_Sequence' should be entered into the 'Sequence b' box after removing any dashes. The alternate alignments can be selected in the 'Results' panel in the Output section.
 
 ## Alternate running modes
-CRISPResso2 can be run for many fastqs (CRISPRessoBatch), for many amplicons in the same fastq (CRISPRessoPooled), or for whole-genome sequencing (CRISPRessoWGS).
+CRISPResso2 can be run for many fastqs ([CRISPRessoBatch](#crispressobatch)), for many amplicons in the same fastq ([CRISPRessoPooled](#crispressopooled)), or for whole-genome sequencing ([CRISPRessoWGS](#crispressowgs)).
 
 ### CRISPRessoBatch
 CRISPRessoBatch allows users to specify input files and other command line arguments in a single file, and then to run CRISPResso2 analysis on each file in parallel. Samples for which the amplicon and guide sequences are the same will be compared between batches, producing useful summary tables and coomparison plots.
