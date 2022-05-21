@@ -818,7 +818,6 @@ def process_single_fastq_write_bam_out(fastq_input, bam_output, bam_header, vari
                     fastq_seq,       # seq
                     fastq_qual       # qual
                 ]
-                sam_out_handle.write("\t".join(new_sam_entry)+"\n")  # write cached alignment with modified read id and qual
                 crispresso_sam_optional_fields = "c2:Z:ALN=NA" +\
                         " ALN_SCORES=" + ('&'.join([str(x) for x in new_variant['aln_scores']])) +\
                         " ALN_DETAILS=" + ('&'.join([','.join([str(y) for y in x]) for x in new_variant['ref_aln_details']]))
