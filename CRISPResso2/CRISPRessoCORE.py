@@ -3885,18 +3885,16 @@ def main():
                         'save_also_png': save_png,
                     }
                     if ref_name == ref_names[0]:
+                        plot_root = _jp('4e.' + ref_names[0] + '.Global_mutations_in_all_reads')
                         plot_4e_input['plot_title'] = 'Mutation position distribution in all reads with reference to %s' % (ref_names[0])
-                        plot_4e_input['plot_root'] = _jp(
-                            '4e.' + ref_names[0] + '.Global_mutations_in_all_reads',
-                        )
+                        plot_4e_input['plot_root'] = plot_root
                         crispresso2_info['results']['refs'][ref_names[0]]['plot_4e_root'] = os.path.basename(plot_root)
                         crispresso2_info['results']['refs'][ref_names[0]]['plot_4e_caption'] = "Figure 4e: Positions of modifications in all reads when aligned to the reference sequence ("+ref_names[0]+"). Insertions: red, deletions: purple, substitutions: green. All modifications (including those outside the quantification window) are shown."
                         crispresso2_info['results']['refs'][ref_names[0]]['plot_4e_data'] = []
                     elif ref_name == "HDR":
+                        plot_root = _jp('4f.' + ref_names[0] + '.Global_mutations_in_HDR_reads_with_reference_to_'+ref_names[0])
                         plot_4e_input['plot_title'] = 'Mutation position distribution in %s reads with reference to %s'%(ref_name, ref_names[0])
-                        plot_4e_input['plot_root'] = _jp(
-                            '4f.' + ref_names[0] + '.Global_mutations_in_HDR_reads_with_reference_to_'+ref_names[0],
-                        )
+                        plot_4e_input['plot_root'] = plot_root
                         crispresso2_info['results']['refs'][ref_names[0]]['plot_4f_root'] = os.path.basename(plot_root)
                         crispresso2_info['results']['refs'][ref_names[0]]['plot_4f_caption'] = "Figure 4f: Positions of modifications in HDR reads with respect to the reference sequence ("+ref_names[0]+"). Insertions: red, deletions: purple, substitutions: green. All modifications (including those outside the quantification window) are shown."
                         crispresso2_info['results']['refs'][ref_names[0]]['plot_4f_data'] = []
