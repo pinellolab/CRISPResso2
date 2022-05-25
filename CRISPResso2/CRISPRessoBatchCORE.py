@@ -183,6 +183,7 @@ def main():
                        'plot_window_size', 'max_rows_alleles_around_cut_to_plot']
         for int_col in int_columns:
             if int_col in batch_params.columns:
+                batch_params[int_col].fillna(getattr(args, int_col), inplace=True)
                 batch_params[int_col] = batch_params[int_col].astype(int)
 
         # rename column "a" to "amplicon_seq", etc
