@@ -297,7 +297,7 @@ def main():
             batch_names_arr.append(batch_name)
             batch_input_names[batch_name] = row["name"]
 
-            crispresso_cmd = args.crispresso_command + ' -o %s --name %s' % (OUTPUT_DIRECTORY, batch_name)
+            crispresso_cmd = args.crispresso_command + ' -o "%s" --name %s' % (OUTPUT_DIRECTORY, batch_name)
             crispresso_cmd = propagate_options(crispresso_cmd, crispresso_options_for_batch, batch_params, idx)
             if row.amplicon_seq == "":
                 crispresso_cmd += ' --auto '
