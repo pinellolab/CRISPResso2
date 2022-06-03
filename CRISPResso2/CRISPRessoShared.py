@@ -744,7 +744,10 @@ def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,
     return amplicon_seq_arr
 
 def guess_guides(amplicon_sequence,fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,
-            min_paired_end_reads_overlap,aln_matrix,needleman_wunsch_gap_open,needleman_wunsch_gap_extend,min_edit_freq_to_consider=0.1,pam_seq="NGG",min_pct_subs_in_base_editor_win=0.8):
+            min_paired_end_reads_overlap,exclude_bp_from_left,exclude_bp_from_right,
+            aln_matrix,needleman_wunsch_gap_open,needleman_wunsch_gap_extend,
+            min_edit_freq_to_consider=0.1,min_edit_fold_change_to_consider=3,
+            pam_seq="NGG", min_pct_subs_in_base_editor_win=0.8):
     """
     guesses the guides used in an experiment by identifying the most-frequently edited positions, editing types, and PAM sites
     input:
@@ -755,10 +758,13 @@ def guess_guides(amplicon_sequence,fastq_r1,fastq_r2,number_of_reads_to_consider
     flash_command: command to call flash
     min_paired_end_reads_overlap: min overlap in bp for flashing (merging) r1 and r2
     max_paired_end_reads_overlap: max overlap in bp for flashing (merging) r1 and r2
+    exclude_bp_from_left: number of bp to exclude from the left side of the amplicon sequence for the quantification of the indels
+    exclude_bp_from_right: number of bp to exclude from the right side of the amplicon sequence for the quantification of the indels
     aln_matrix: matrix specifying alignment substitution scores in the NCBI format
     needleman_wunsch_gap_open: alignment penalty assignment used to determine similarity of two sequences
     needleman_wunsch_gap_extend: alignment penalty assignment used to determine similarity of two sequences
     min_edit_freq_to_consider: edits must be at least this frequency for consideration
+    min_edit_fold_change_to_consider: edits must be at least this fold change over background for consideration
     pam_seq: pam sequence to look for (can be regex or contain degenerate bases)
     min_pct_subs_in_base_editor_win: if at least this percent of substitutions happen in the predicted base editor window, return base editor flag
 
@@ -770,7 +776,18 @@ def guess_guides(amplicon_sequence,fastq_r1,fastq_r2,number_of_reads_to_consider
 
     amp_len = len(amplicon_sequence)
     gap_incentive = np.zeros(amp_len+1, dtype=int)
-    include_idxs = set(range(0, amp_len))
+    include_idxs=range(amp_len)
+    exclude_idxs=[]
+
+
+    if exclude_bp_from_left:
+       exclude_idxs+=range(exclude_bp_from_left)
+    if exclude_bp_from_right:
+       exclude_idxs+=range(amp_len)[-exclude_bp_from_right:]
+    include_idxs=np.ravel(include_idxs)
+    exclude_idxs=np.ravel(exclude_idxs)
+
+    include_idxs=set(np.setdiff1d(include_idxs, exclude_idxs))
 
     all_indel_count_vector = np.zeros(amp_len)
     all_sub_count_vector = np.zeros(amp_len)
@@ -786,12 +803,19 @@ def guess_guides(amplicon_sequence,fastq_r1,fastq_r2,number_of_reads_to_consider
         all_indel_count_vector[payload['all_deletion_positions']]+=count
         all_sub_count_vector[payload['all_substitution_positions']]+=count
 
+    background_val = np.mean(all_indel_count_vector)
+    if len(exclude_idxs) > 0:
+        all_indel_count_vector[exclude_idxs] = 0
     max_loc = np.argmax(all_indel_count_vector)
     max_val = all_indel_count_vector[max_loc]
 
     #return nothing if the max edit doesn't break threshold
     if max_val/float(tot_count) < min_edit_freq_to_consider:
         return (None, None)
+
+    #return nothing if the max edit doesn't break threshold over background
+    if max_val/background_val < min_edit_fold_change_to_consider:
+        return(None, None)
 
 
     pam_regex_string = pam_seq.upper()
@@ -1000,6 +1024,8 @@ def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,qua
     seen_cut_points = {} #keep track of cut points in case 2 gudes cut at same position (so they can get different names)
     seen_guide_names = {} #keep track of guide names (so we don't assign a guide the same name as another guide)
     for guide_idx, current_guide_seq in enumerate(guides):
+        if current_guide_seq == '':
+            continue
         offset_fw=quantification_window_centers[guide_idx]+len(current_guide_seq)-1
         offset_rc=(-quantification_window_centers[guide_idx])-1
 
