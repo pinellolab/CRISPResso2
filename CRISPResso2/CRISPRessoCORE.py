@@ -1182,6 +1182,8 @@ def main():
         if args.auto:
             number_of_reads_to_consider = 5000
 
+            info('Inferring reference amplicon sequence..')
+
             auto_fastq_r1 = args.fastq_r1 #paths to fastq files for performing auto functions
             auto_fastq_r2 = args.fastq_r2
             if args.bam_input != "": #if input is a bam, create temp files with reads for processing here
@@ -1219,7 +1221,9 @@ def main():
             if len(guides) == 0:
                 for amplicon_seq in amplicon_seq_arr:
                     (potential_guide, is_base_editor) = CRISPRessoShared.guess_guides(amplicon_seq, auto_fastq_r1, auto_fastq_r2, number_of_reads_to_consider, args.flash_command,
-                        args.max_paired_end_reads_overlap, args.min_paired_end_reads_overlap, aln_matrix, args.needleman_wunsch_gap_open, args.needleman_wunsch_gap_extend)
+                        args.max_paired_end_reads_overlap, args.min_paired_end_reads_overlap,
+                        args.exclude_bp_from_left, args.exclude_bp_from_right,
+                        aln_matrix, args.needleman_wunsch_gap_open, args.needleman_wunsch_gap_extend)
                     if potential_guide is not None and potential_guide not in guides:
                         guides.append(potential_guide)
                         guide_names.append('Guessed sgRNA')
