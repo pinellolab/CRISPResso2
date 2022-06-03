@@ -1020,7 +1020,7 @@ crispresso_pooled_wgs_output_folder_2: Second output folder with CRISPRessoPoole
 
 ### CRISPRessoAggregate
 
-CRISPRessoAggregate is a utility to combine the analysis of several CRISPResso runs. The are summarized and editing rates are optionally visualized in a summary report.
+CRISPRessoAggregate is a utility to combine the analysis of several CRISPResso runs. The analyses are summarized and editing rates are optionally visualized in a summary report.
 
 #### Usage
 
