@@ -4485,26 +4485,27 @@ def main():
                     global_count_unmodified += counts_unmodified[ref_name]
 
             if not args.suppress_plots:
-                plot_root = _jp('5a.Global_frameshift_in-frame_mutations_pie_chart')
-                plot_5a_input = {
-                    'global_modified_frameshift': global_MODIFIED_FRAMESHIFT,
-                    'global_modified_non_frameshift': global_MODIFIED_NON_FRAMESHIFT,
-                    'global_non_modified_non_frameshift': global_NON_MODIFIED_NON_FRAMESHIFT,
-                    'plot_root': plot_root,
-                    'save_also_png': save_png,
-                }
-                if n_processes > 1:
-                    plot_results.append(plot_pool.submit(
-                        CRISPRessoPlot.plot_global_frameshift_analysis,
-                        **plot_5a_input,
-                    ))
-                else:
-                    CRISPRessoPlot.plot_global_frameshift_analysis(
-                        **plot_5a_input,
-                    )
-                crispresso2_info['results']['general_plots']['plot_5a_root'] = os.path.basename(plot_root)
-                crispresso2_info['results']['general_plots']['plot_5a_caption'] = "Figure 5a: Frameshift analysis of coding sequence reads affected by modifications for all reads. Unmodified reference reads are excluded from this plot, and all HDR reads are included in this plot."
-                crispresso2_info['results']['general_plots']['plot_5a_data'] = []
+                if (global_MODIFIED_FRAMESHIFT + global_MODIFIED_NON_FRAMESHIFT + global_NON_MODIFIED_NON_FRAMESHIFT) > 0:
+                    plot_root = _jp('5a.Global_frameshift_in-frame_mutations_pie_chart')
+                    plot_5a_input = {
+                        'global_modified_frameshift': global_MODIFIED_FRAMESHIFT,
+                        'global_modified_non_frameshift': global_MODIFIED_NON_FRAMESHIFT,
+                        'global_non_modified_non_frameshift': global_NON_MODIFIED_NON_FRAMESHIFT,
+                        'plot_root': plot_root,
+                        'save_also_png': save_png,
+                    }
+                    if n_processes > 1:
+                        plot_results.append(plot_pool.submit(
+                            CRISPRessoPlot.plot_global_frameshift_analysis,
+                            **plot_5a_input,
+                        ))
+                    else:
+                        CRISPRessoPlot.plot_global_frameshift_analysis(
+                            **plot_5a_input,
+                        )
+                    crispresso2_info['results']['general_plots']['plot_5a_root'] = os.path.basename(plot_root)
+                    crispresso2_info['results']['general_plots']['plot_5a_caption'] = "Figure 5a: Frameshift analysis of coding sequence reads affected by modifications for all reads. Unmodified reference reads are excluded from this plot, and all HDR reads are included in this plot."
+                    crispresso2_info['results']['general_plots']['plot_5a_data'] = []
 
                  #profiles-----------------------------------------------------------------------------------
                 plot_root = _jp('6a.Global_frameshift_in-frame_mutation_profiles')
