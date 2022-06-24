@@ -18,14 +18,11 @@ import shutil
 import signal
 import subprocess as sb
 import unicodedata
-from math import floor, sqrt
 
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoCOREResources
-from CRISPResso2.CRISPRessoMultiProcessing import get_max_processes
 
-
-__version__ = "2.2.8"
+__version__ = "2.2.9"
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
