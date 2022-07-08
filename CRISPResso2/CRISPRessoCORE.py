@@ -45,7 +45,6 @@ import logging
 logging.basicConfig(
                      format='%(levelname)-5s @ %(asctime)s:\n\t %(message)s \n',
                      datefmt='%a, %d %b %Y %H:%M:%S',
-                     stream=sys.stderr,
                      filemode="w"
                      )
 
@@ -971,6 +970,19 @@ def main():
 
         arg_parser = CRISPRessoShared.getCRISPRessoArgParser()
         args = arg_parser.parse_args()
+        
+        #verbosity_to_loglevel = {1:logging.ERROR, 2:logging.WARNING, 3:logging.INFO, 4:logging.DEBUG}
+        if args.verbosity == 1:
+            logger.setLevel(logging.ERROR)
+        elif args.verbosity == 2:
+            logger.setLevel(logging.WARNING)
+        elif args.verbosity == 3:
+            logger.setLevel(logging.INFO)
+        elif args.verbosity == 4:
+            logger.setLevel(logging.DEBUG)
+        else:
+            raise ValueError("Invalid verbosity value {}. Should be one of 1, 2, 3, 4.".format(args.verbosity))
+
 
         aln_matrix_loc = os.path.join(_ROOT, "EDNAFULL")
         CRISPRessoShared.check_file(aln_matrix_loc)
@@ -1067,7 +1079,9 @@ def main():
             warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
 
         finally:
-            logger.addHandler(logging.FileHandler(log_filename))
+            handler = logging.FileHandler(log_filename)
+            handler.setFormatter(OUTPUT_DIRECTORY + ":" + '%(levelname)-5s @ %(asctime)s:\n\t %(message)s \n')
+            logger.addHandler(handler)
 
             with open(log_filename, 'w+') as outfile:
                 outfile.write('CRISPResso version %s\n[Command used]:\n%s\n\n[Execution log]:\n' %(CRISPRessoShared.__version__, crispresso_cmd_to_write))
@@ -1599,9 +1613,12 @@ def main():
 
 
             # Calculate cut sites for this reference
-            (this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_cut_points, this_sgRNA_plot_cut_points, this_sgRNA_plot_idxs, this_sgRNA_mismatches, this_sgRNA_names, this_include_idxs,
-                this_exclude_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(this_seq, this_guides, this_guide_mismatches, this_guide_names, this_guide_qw_centers,
-                this_guide_qw_sizes, this_quant_window_coordinates, args.exclude_bp_from_left, args.exclude_bp_from_right, args.plot_window_size, this_guide_plot_cut_points, args.discard_guide_positions_overhanging_amplicon_edge)
+            try:
+                (this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_cut_points, this_sgRNA_plot_cut_points, this_sgRNA_plot_idxs, this_sgRNA_mismatches, this_sgRNA_names, this_include_idxs,
+                    this_exclude_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(this_seq, this_guides, this_guide_mismatches, this_guide_names, this_guide_qw_centers,
+                    this_guide_qw_sizes, this_quant_window_coordinates, args.exclude_bp_from_left, args.exclude_bp_from_right, args.plot_window_size, this_guide_plot_cut_points, args.discard_guide_positions_overhanging_amplicon_edge)
+            except CRISPRessoShared.BadParameterException as e:
+                raise CRISPRessoShared.BadParameterException(database_id + ":  " + str(e))
 
             this_orig_guide_lookup = {} #dict of new seq to original (input) sequence
             for idx, guide in enumerate(this_guides):

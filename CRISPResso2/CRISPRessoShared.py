@@ -53,6 +53,7 @@ class NoReadsAfterQualityFilteringException(Exception):
     pass
 
 class BadParameterException(Exception):
+    session_name=""
     pass
 
 class AutoException(Exception):
@@ -98,6 +99,7 @@ def getCRISPRessoArgParser(parserTitle = "CRISPResso Parameters",requiredParams=
     parser.add_argument('--file_prefix',  help='File prefix for output plots and tables', default='')
     parser.add_argument('-n', '--name',  help='Output name of the report (default: the name is obtained from the filename of the fastq file/s used in input)', default='')
     parser.add_argument('-o', '--output_folder',  help='Output folder to use for the analysis (default: current folder)', default='')
+    parser.add_argument('-v', '--verbosity', help="Control output verbosity. 1=ERROR, 2=WARNING, 3=INFO, 4=DEBUG", type=int, default=3)
 
     ## read preprocessing params
     parser.add_argument('--split_interleaved_input', '--split_paired_end', help='Splits a single fastq file containing paired end reads into two files before running CRISPResso', action='store_true')
@@ -1134,11 +1136,11 @@ def get_amplicon_info_for_guides(ref_seq,guides,guide_mismatches,guide_names,qua
             raise BadParameterException('The entire sequence has been excluded. Please enter a longer amplicon, or decrease the exclude_bp_from_right and exclude_bp_from_left parameters')
 
     if this_sgRNA_cut_points and plot_window_size>0:
-        for cut_p in this_sgRNA_cut_points:
+        for cut_p, guide_name in zip(this_sgRNA_cut_points, this_sgRNA_names):
             if cut_p - window_around_cut + 1 < 0:
-                raise BadParameterException('Offset around cut would extend to the left of the amplicon. Please decrease plot_window_size parameter. Cut point: ' + str(cut_p) + ' window: ' + str(window_around_cut) + ' reference: ' + str(ref_seq_length))
+                raise BadParameterException('Offset around cut would extend to the left of the amplicon. Please decrease plot_window_size parameter. Guide: ' + guide_name + ' Cut point: ' + str(cut_p) + ' window: ' + str(window_around_cut) + ' reference: ' + str(ref_seq_length))
             if cut_p + window_around_cut > ref_seq_length-1:
-                raise BadParameterException('Offset around cut would be greater than reference sequence length. Please decrease plot_window_size parameter. Cut point: ' + str(cut_p) + ' window: ' + str(window_around_cut) + ' reference: ' + str(ref_seq_length))
+                raise BadParameterException('Offset around cut would be greater than reference sequence length. Please decrease plot_window_size parameter. Guide: ' + guide_name + ' Cut point: ' + str(cut_p) + ' window: ' + str(window_around_cut) + ' reference: ' + str(ref_seq_length))
             st=max(0, cut_p-window_around_cut+1)
             en=min(ref_seq_length-1, cut_p+window_around_cut+1)
             this_sgRNA_plot_idxs.append(sorted(list(range(st, en))))
