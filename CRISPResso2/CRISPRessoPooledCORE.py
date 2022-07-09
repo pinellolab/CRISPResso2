@@ -612,6 +612,7 @@ def main():
             head_lookup = CRISPRessoShared.get_crispresso_options_lookup()  # dict of qwc -> quantification_window_coordinates
             head_lookup['sgRNA'] = 'guide_seq'
             head_lookup['Expected_HDR'] = 'expected_hdr_amplicon_seq'
+            head_lookup['name'] = 'amplicon_name'
 
             headers = []
             has_header = True
@@ -635,6 +636,8 @@ def main():
                 headers = []
                 for i in range(len(header_els)):
                     headers.append(amplicon_input_column_names[i])
+                if len(headers) > 5:
+                    raise CRISPRessoShared.BadParameterException('Incorrect number of columns provided without header.')
 
             if args.debug:
                 info(f'Header variable names in order: {headers}')
