@@ -554,13 +554,21 @@ class CRISPRessoJSONDecoder(json.JSONDecoder):
 def load_crispresso_info(
     crispresso_output_folder="",
     crispresso_info_file_name='CRISPResso2_info.json',
+    crispresso_info_file_path=None
 ):
     """Load the CRISPResso2 info for a CRISPResso run.
+
+        If crispresso_info_file_path is given, attempt to read info file at that location
+        Otherwise, read file at crispresso_output_folder/crispresso_info_file_name
 
     Parameters
     ----------
     crispresso_output_folder : string
         Path to CRISPResso folder
+    crispresso_info_file_name : string
+        Name of info file in CRISPResso folder
+    crispresso_info_path: string
+        Path to info file
 
     Returns
     -------
@@ -571,6 +579,9 @@ def load_crispresso_info(
     crispresso_info_file = os.path.join(
         crispresso_output_folder, crispresso_info_file_name,
     )
+    if crispresso_info_file_path is not None:
+        crispresso_info_file = crispresso_info_file_path
+
     if not os.path.isfile(crispresso_info_file):
         raise Exception('Cannot open CRISPResso info file at ' + crispresso_info_file)
     try:
