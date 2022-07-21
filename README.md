@@ -27,7 +27,7 @@ In addition, CRISPResso can be run as part of a larger tool suite:
 - [CRISPRessoPooled](#crispressopooled) - for analyzing multiple amplicons from a pooled amplicon sequencing experiment 
 - [CRISPRessoWGS](#crispressowgs) - for analyzing specific sites in whole-genome sequencing samples
 - [CRISPRessoCompare](#crispressocompare) - for comparing editing between two samples (e.g., treated vs control)
-- [CRISPRessoAggregate](#crispressoaggregate) - for aggregating results from previuosly-run CRISPResso analyses
+- [CRISPRessoAggregate](#crispressoaggregate) - for aggregating results from previously-run CRISPResso analyses
 
 ## CRISPResso2 processing
 ![CRISPResso2 Schematic](https://github.com/pinellolab/CRISPResso2/blob/master/crispresso_schematic.png "CRISPResso2 Schematic")
