@@ -3094,9 +3094,9 @@ def main():
             outfile.close()
 
         crispresso2_info['results']['alignment_stats']['insertion_pct_vectors'] = insertion_pct_vectors
-        crispresso2_info['results']['alignment_stats']['deletion_pct_vectors'] = insertion_pct_vectors
-        crispresso2_info['results']['alignment_stats']['substitution_pct_vectors'] = insertion_pct_vectors
-        crispresso2_info['results']['alignment_stats']['indelsub_pct_vectors'] = insertion_pct_vectors
+        crispresso2_info['results']['alignment_stats']['deletion_pct_vectors'] = deletion_pct_vectors
+        crispresso2_info['results']['alignment_stats']['substitution_pct_vectors'] = substitution_pct_vectors
+        crispresso2_info['results']['alignment_stats']['indelsub_pct_vectors'] = indelsub_pct_vectors
 
 
         #set unique plot name to appear as prefix to files for each reference
