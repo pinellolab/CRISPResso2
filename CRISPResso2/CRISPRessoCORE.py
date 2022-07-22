@@ -4797,6 +4797,9 @@ def main():
             crispresso2_info,
         )
 
+        if args.zip:
+            CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
+
         info('Analysis Complete!')
         print(CRISPRessoShared.get_crispresso_footer())
 
