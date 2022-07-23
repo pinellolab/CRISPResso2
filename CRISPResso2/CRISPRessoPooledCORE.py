@@ -287,6 +287,8 @@ def main():
 
         files_to_remove = []
 
+        if args.zip:
+            args.place_report_in_output_folder = True
 
         info('Checking dependencies...')
 

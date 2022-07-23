@@ -353,12 +353,11 @@ def propagate_crispresso_options(cmd, options, params):
     # cmd - the command to run
     # options - list of options to propagate e.g. crispresso options
     # params - arguments given to this program
-
     for option in options:
         if option:
             if option in params:
                 val = getattr(params, option)
-                if val is None:
+                if val is None or option == 'zip':
                     pass
                 elif str(val) == "True":
                     cmd += ' --%s' % option
@@ -1605,9 +1604,13 @@ def zip_results(results_folder):
     path_values = os.path.split(results_folder)
     output_folder = path_values[0]
     folder_id = path_values[1]
-    # zip the result folder:
-    cmd_to_zip = 'cd {0} && zip -m -r {1} {2} .'.format(
-        output_folder, folder_id + ".zip", folder_id
-    )
+    if output_folder == "":
+        cmd_to_zip = 'zip -m -r {0} {1}'.format(
+            folder_id + ".zip", folder_id
+        )
+    else:
+        cmd_to_zip = 'cd {0} && zip -m -r {1} {2} .'.format(
+            output_folder, folder_id + ".zip", folder_id
+        )
     sb.call(cmd_to_zip, shell=True)
     return

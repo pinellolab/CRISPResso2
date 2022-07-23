@@ -45,7 +45,7 @@ def propagate_options(cmd, options, params, paramInd):
         if option:
             if option in params:
                 val = params.loc[paramInd, option]
-                if val is None:
+                if val is None or option == "zip":
                     pass
                 elif str(val) == "True":
                     cmd += ' --%s' % option
@@ -111,6 +111,9 @@ def main():
         crispresso_options_for_batch = list(crispresso_options-options_to_ignore)
 
         CRISPRessoShared.check_file(args.batch_settings)
+
+        if args.zip:
+            args.place_report_in_output_folder = True
 
         batch_folder_name = os.path.splitext(os.path.basename(args.batch_settings))[0]
         if args.name and args.name != "":
@@ -931,6 +934,12 @@ def main():
             crispresso2_info,
         )
         info('Analysis Complete!')
+        if args.zip:
+            if args.output_folder == "":
+                path_value = os.path.split(OUTPUT_DIRECTORY)
+                CRISPRessoShared.zip_results(path_value[1])
+            else:
+                CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
         print(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)
 

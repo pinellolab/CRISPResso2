@@ -296,6 +296,9 @@ def main():
 
         info('Checking dependencies...')
 
+        if args.zip:
+            args.place_report_in_output_folder = True
+
         if check_samtools() and check_bowtie2():
             info('\n All the required dependencies are present!')
         else:
@@ -721,6 +724,8 @@ def main():
         )
 
         info('Analysis Complete!')
+        if args.zip:
+            CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
         print(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)
 
