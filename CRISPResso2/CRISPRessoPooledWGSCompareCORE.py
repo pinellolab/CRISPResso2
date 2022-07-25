@@ -161,6 +161,7 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
             help='Show debug messages',
             action='store_true',
         )
+        parser.add_argument('--zip', help="If set the output will be placed in a single zip file.", action='store_true')
 
         args = parser.parse_args()
         debug_flag = args.debug
@@ -174,6 +175,8 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
             'debug',
         ]
 
+        if args.zip:
+            args.place_report_in_output_folder = True
         sample_1_name = CRISPRessoShared.slugify(args.sample_1_name)
         sample_2_name = CRISPRessoShared.slugify(args.sample_2_name)
 
@@ -365,6 +368,9 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
         CRISPRessoShared.write_crispresso_info(
             crispresso2Compare_info_file, crispresso2_info,
         )
+
+        if args.zip:
+            CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
 
         info('All Done!')
         print(CRISPRessoShared.get_crispresso_footer())
