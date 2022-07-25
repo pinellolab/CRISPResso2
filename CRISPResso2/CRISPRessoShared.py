@@ -703,8 +703,8 @@ class CRISPRessoJSONDecoder(json.JSONDecoder):
 
 
 def load_crispresso_info(
-        crispresso_output_folder="",
-        crispresso_info_file_name='CRISPResso2_info.json',
+    crispresso_output_folder="",
+    crispresso_info_file_name='CRISPResso2_info.json',
 ):
     """Load the CRISPResso2 info for a CRISPResso run.
 
@@ -772,7 +772,7 @@ def get_command_output(command):
                  #  encoding='utf-8',universal_newlines=True)
                  universal_newlines=True,
                  bufsize=-1)  # bufsize system default
-    while (True):
+    while True:
         retcode = p.poll()
         line = p.stdout.readline()
         yield line
@@ -1019,7 +1019,7 @@ def guess_guides(amplicon_sequence, fastq_r1, fastq_r2, number_of_reads_to_consi
                 # specifically, if at least min_pct_subs_in_base_editor_win % of substitutions happen in the predicted base editor window
                 if sum_base_edits > min_pct_subs_in_base_editor_win * sum(all_sub_count_vector):
                     is_base_editor = True
-                return (guide_seq, is_base_editor)
+                return guide_seq, is_base_editor
 
         # reverse direction
         pam_start = max_loc - 5 - offset
@@ -1036,7 +1036,7 @@ def guess_guides(amplicon_sequence, fastq_r1, fastq_r2, number_of_reads_to_consi
                 # specifically, if at least min_pct_subs_in_base_editor_win % of substitutions happen in the predicted base editor window
                 if sum_base_edits > min_pct_subs_in_base_editor_win * sum(all_sub_count_vector):
                     is_base_editor = True
-                return (guide_seq, is_base_editor)
+                return guide_seq, is_base_editor
 
     return (None, None)
 
@@ -1518,7 +1518,7 @@ def get_sgRNA_mismatch_vals(seq1, seq2, start_loc, end_loc, coords_l, coords_r, 
             this_mismatches.append(i - coords_l[start_loc] - 0.5)
         seen_inds[this_last_mismatch_val] = 1
         last_mismatch_val = this_last_mismatch_val + 1
-    return (list(set(this_mismatches)))
+    return list(set(this_mismatches))
 
 
 ######
