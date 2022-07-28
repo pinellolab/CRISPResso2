@@ -348,15 +348,19 @@ def get_crispresso_options_lookup():
     return crispresso_options_lookup
 
 
-def propagate_crispresso_options(cmd, options, params):
+def propagate_crispresso_options(cmd, options, params, paramInd=None):
     ####
     # cmd - the command to run
     # options - list of options to propagate e.g. crispresso options
     # params - arguments given to this program
+    # paramInd - index in dict - this is the run number in case of multiple runs.
     for option in options:
         if option:
             if option in params:
-                val = getattr(params, option)
+                if paramInd is None:
+                    val = getattr(params, option)
+                else:
+                    val = params.loc[paramInd, option]
                 if val is None or option == 'zip':
                     pass
                 elif str(val) == "True":
