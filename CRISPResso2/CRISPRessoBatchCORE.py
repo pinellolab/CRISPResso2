@@ -755,7 +755,7 @@ def main():
             if guides_all_same:
                 sgRNA_intervals = [consensus_sgRNA_intervals] * modification_frequency_summary_df.shape[0]
             else:
-                sgRNA_intervals = consensus_sgRNA_intervals
+                sgRNA_intervals = [consensus_sgRNA_intervals]
             for modification_type in ['Insertions', 'Deletions', 'Substitutions']:
                 modification_df = modification_frequency_summary_df[
                     modification_frequency_summary_df['Modification'] == modification_type
