@@ -179,8 +179,9 @@ ___________________________________
                 if os.path.exists(wgs_info_file):
                     wgs_data = CRISPRessoShared.load_crispresso_info(
                         folder, 'CRISPResso2WGS_info.json',
+                                'CRISPResso2WGS_info.json'
                     )
-                    if 'good_region_folders' in wgs_data:
+                    if 'good_region_folders' in wgs_data['results']:
                         run_names = wgs_data['results']['good_region_folders']
                         for run_name in run_names:
                             run_folder_loc = os.path.join(folder, 'CRISPResso_on_%s'%run_name)
@@ -188,7 +189,7 @@ ___________________________________
                                 run_data = CRISPRessoShared.load_crispresso_info(run_folder_loc)
                                 crispresso2_folder_infos[run_folder_loc] = run_data
                                 successfully_imported_count += 1
-                            except Exception as e:
+                            except Exception:
                                 warn('Could not open CRISPResso2 info file in ' + run_folder_loc)
                                 not_imported_count += 1
                     else:
