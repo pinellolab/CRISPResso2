@@ -179,7 +179,6 @@ ___________________________________
                 if os.path.exists(wgs_info_file):
                     wgs_data = CRISPRessoShared.load_crispresso_info(
                         folder, 'CRISPResso2WGS_info.json',
-                                'CRISPResso2WGS_info.json'
                     )
                     if 'good_region_folders' in wgs_data['results']:
                         run_names = wgs_data['results']['good_region_folders']
