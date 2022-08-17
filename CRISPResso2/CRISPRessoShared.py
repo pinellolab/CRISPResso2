@@ -29,54 +29,41 @@ __version__ = "2.2.9"
 class FlashException(Exception):
     pass
 
-
 class TrimmomaticException(Exception):
     pass
-
 
 class NoReadsAlignedException(Exception):
     pass
 
-
 class AlignmentException(Exception):
     pass
-
 
 class SgRNASequenceException(Exception):
     pass
 
-
 class NTException(Exception):
     pass
-
 
 class ExonSequenceException(Exception):
     pass
 
-
 class DuplicateSequenceIdException(Exception):
     pass
-
 
 class NoReadsAfterQualityFilteringException(Exception):
     pass
 
-
 class BadParameterException(Exception):
     pass
-
 
 class AutoException(Exception):
     pass
 
-
 class OutputFolderIncompleteException(Exception):
     pass
 
-
 class InstallationException(Exception):
     pass
-
 
 #########################################
 
@@ -87,11 +74,9 @@ def getCRISPRessoArgParser(parserTitle="CRISPResso Parameters", requiredParams={
     parser.add_argument('-r1', '--fastq_r1', type=str, help='First fastq file', default='',
                         required='fastq_r1' in requiredParams)
     parser.add_argument('-r2', '--fastq_r2', type=str, help='Second fastq file for paired end reads', default='')
-
     parser.add_argument('-a', '--amplicon_seq', type=str,
                         help='Amplicon Sequence (can be comma-separated list of multiple sequences)',
                         required='amplicon_seq' in requiredParams)
-
     parser.add_argument('-an', '--amplicon_name', type=str,
                         help='Amplicon Name (can be comma-separated list of multiple names, corresponding to amplicon sequences given in --amplicon_seq',
                         default='Reference')
@@ -361,7 +346,7 @@ def propagate_crispresso_options(cmd, options, params, paramInd=None):
                     val = getattr(params, option)
                 else:
                     val = params.loc[paramInd, option]
-                if val is None or option == 'zip':
+                if val is None:
                     pass
                 elif str(val) == "True":
                     cmd += ' --%s' % option

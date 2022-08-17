@@ -76,12 +76,13 @@ def main():
         debug_flag = args.debug
 
         crispresso_options = CRISPRessoShared.get_crispresso_options()
-        options_to_ignore = {'name', 'output_folder'}
+        options_to_ignore = {'name', 'output_folder', 'zip'}
         crispresso_options_for_batch = list(crispresso_options-options_to_ignore)
 
         CRISPRessoShared.check_file(args.batch_settings)
 
-        if args.zip:
+        if args.zip and not args.place_report_in_output_folder:
+            logger.warn('Invalid arguement combination: If zip is True then place_report_in_output_folder must also be True. Setting place_report_in_output_folder to True.')
             args.place_report_in_output_folder = True
 
         batch_folder_name = os.path.splitext(os.path.basename(args.batch_settings))[0]
