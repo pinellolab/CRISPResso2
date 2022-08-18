@@ -904,7 +904,7 @@ def main():
             crispresso2_info,
         )
         info('Analysis Complete!')
-        if arg.zip_output:
+        if args.zip_output:
             if args.output_folder == "":
                 path_value = os.path.split(OUTPUT_DIRECTORY)
                 CRISPRessoShared.zip_results(path_value[1])
