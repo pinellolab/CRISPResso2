@@ -400,13 +400,14 @@ def slugify(value):  # adapted from the Django project
 
 
 CIGAR_LOOKUP = {
-    ('A', 'A'): 'M', ('A', 'C'): 'M', ('A', 'T'): 'M', ('A', 'G'): 'M',
-    ('C', 'A'): 'M', ('C', 'C'): 'M', ('C', 'T'): 'M', ('C', 'G'): 'M',
-    ('T', 'A'): 'M', ('T', 'C'): 'M', ('T', 'T'): 'M', ('T', 'G'): 'M',
-    ('G', 'A'): 'M', ('G', 'C'): 'M', ('G', 'T'): 'M', ('G', 'G'): 'M',
-    ('A', '-'): 'I', ('T', '-'): 'I', ('C', '-'): 'I', ('G', '-'): 'I',
-    ('-', 'A'): 'D', ('-', 'T'): 'D', ('-', 'C'): 'D', ('-', 'G'): 'D',
-}
+    ('A', 'A'): 'M', ('A', 'C'): 'M', ('A', 'T'): 'M', ('A', 'G'): 'M', ('A', 'N'): 'M',
+    ('C', 'A'): 'M', ('C', 'C'): 'M', ('C', 'T'): 'M', ('C', 'G'): 'M', ('C', 'N'): 'M',
+    ('T', 'A'): 'M', ('T', 'C'): 'M', ('T', 'T'): 'M', ('T', 'G'): 'M', ('T', 'N'): 'M',
+    ('G', 'A'): 'M', ('G', 'C'): 'M', ('G', 'T'): 'M', ('G', 'G'): 'M', ('G', 'N'): 'M',
+    ('N', 'A'): 'M', ('N', 'C'): 'M', ('N', 'T'): 'M', ('N', 'G'): 'M', ('N', 'N'): 'M',
+    ('A', '-'): 'I', ('T', '-'): 'I', ('C', '-'): 'I', ('G', '-'): 'I', ('N', '-'): 'I',
+    ('-', 'A'): 'D', ('-', 'T'): 'D', ('-', 'C'): 'D', ('-', 'G'): 'D', ('-', 'N'): 'D',
+    }
 
 cigarUnexplodePattern = re.compile(r'((\w)\2{0,})')
 
@@ -694,13 +695,21 @@ class CRISPRessoJSONDecoder(json.JSONDecoder):
 def load_crispresso_info(
     crispresso_output_folder="",
     crispresso_info_file_name='CRISPResso2_info.json',
+    crispresso_info_file_path=None
 ):
     """Load the CRISPResso2 info for a CRISPResso run.
+
+        If crispresso_info_file_path is given, attempt to read info file at that location
+        Otherwise, read file at crispresso_output_folder/crispresso_info_file_name
 
     Parameters
     ----------
     crispresso_output_folder : string
         Path to CRISPResso folder
+    crispresso_info_file_name : string
+        Name of info file in CRISPResso folder
+    crispresso_info_path: string
+        Path to info file
 
     Returns
     -------
@@ -711,6 +720,9 @@ def load_crispresso_info(
     crispresso_info_file = os.path.join(
         crispresso_output_folder, crispresso_info_file_name,
     )
+    if crispresso_info_file_path is not None:
+        crispresso_info_file = crispresso_info_file_path
+
     if not os.path.isfile(crispresso_info_file):
         raise Exception('Cannot open CRISPResso info file at ' + crispresso_info_file)
     try:

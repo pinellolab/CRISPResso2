@@ -6,7 +6,6 @@ Software pipeline for the analysis of genome editing outcomes from deep sequenci
 '''
 
 
-import argparse
 from datetime import datetime
 import gzip
 import os
@@ -385,7 +384,7 @@ def main():
         can_finish_incomplete_run = False
         if args.no_rerun:
             if os.path.exists(crispresso2_info_file):
-                previous_run_data = CRISPRessoShared.load_crispresso_info(OUTPUT_DIRECTORY)
+                previous_run_data = CRISPRessoShared.load_crispresso_info(crispresso_info_file_path=crispresso2_info_file)
                 if previous_run_data['running_info']['version'] == CRISPRessoShared.__version__:
                     args_are_same = True
                     for arg in vars(args):

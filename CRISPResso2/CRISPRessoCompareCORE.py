@@ -120,6 +120,9 @@ def main():
             if 'running_info' in run_info_2 and 'name' in run_info_2['running_info'] and run_info_2['running_info']['name']:
                 sample_2_name = run_info_2['running_info']['name']
 
+        if sample_1_name == sample_2_name:
+            sample_2_name += '_2'
+
         get_name_from_folder=lambda x: os.path.basename(os.path.abspath(x)).replace('CRISPResso_on_', '')
 
         if not args.name:

@@ -27,7 +27,7 @@ In addition, CRISPResso can be run as part of a larger tool suite:
 - [CRISPRessoPooled](#crispressopooled) - for analyzing multiple amplicons from a pooled amplicon sequencing experiment 
 - [CRISPRessoWGS](#crispressowgs) - for analyzing specific sites in whole-genome sequencing samples
 - [CRISPRessoCompare](#crispressocompare) - for comparing editing between two samples (e.g., treated vs control)
-- [CRISPRessoAggregate](#crispressoaggregate) - for aggregating results from previuosly-run CRISPResso analyses
+- [CRISPRessoAggregate](#crispressoaggregate) - for aggregating results from previously-run CRISPResso analyses
 
 ## CRISPResso2 processing
 ![CRISPResso2 Schematic](https://github.com/pinellolab/CRISPResso2/blob/master/crispresso_schematic.png "CRISPResso2 Schematic")
@@ -93,7 +93,7 @@ CRISPResso2 can be used via the Docker containerization system. This system allo
 
 Next, Docker must be configured to access your hard drive and to run with sufficient memory. These parameters can be found in the Docker settings menu. To allow Docker to access your hard drive, select 'Shared Drives' and make sure your drive name is selected. To adjust the memory allocation, select the 'Advanced' tab and allocate at least 4G of memory.
 
-To run CRISPresso2, make sure Docker is running, then open a command prompt (Mac) or Powershell (Windows). Change directories to the location where your data is, and run the following command:
+To run CRISPResso2, make sure Docker is running, then open a command prompt (Mac) or Powershell (Windows). Change directories to the location where your data is, and run the following command:
 
 ```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso -h
@@ -110,7 +110,7 @@ docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso -r1 sa
 ## CRISPResso2 usage
 CRISPResso2 is designed be run on a single amplicon. For experiments involving multiple amplicons in the same fastq, see the instructions for [CRISPRessoPooled](#crispressopooled) or [CRISPRessoWGS](#crispressoWGS) below.
 
-CRISPresso2 requires only two parameters: input sequences in the form of fastq files (given by the `--fastq_r1` and `--fastq_r2`) parameters, and the amplicon sequence to align to (given by the `--amplicon_seq` parameter). For example:
+CRISPResso2 requires only two parameters: input sequences in the form of fastq files (given by the `--fastq_r1` and `--fastq_r2`) parameters, and the amplicon sequence to align to (given by the `--amplicon_seq` parameter). For example:
 
 *Using Bioconda:*
 ```

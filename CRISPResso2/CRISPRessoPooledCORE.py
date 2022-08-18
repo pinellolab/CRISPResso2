@@ -423,9 +423,7 @@ def main():
         can_finish_incomplete_run = False
         if args.no_rerun:
             if os.path.exists(crispresso2_info_file):
-                previous_run_data = CRISPRessoShared.load_crispresso_info(
-                    OUTPUT_DIRECTORY,
-                )
+                previous_run_data = CRISPRessoShared.load_crispresso_info(crispresso_info_file_path=crispresso2_info_file)
                 if previous_run_data['running_info']['version'] == CRISPRessoShared.__version__:
                     args_are_same = True
                     for arg in vars(args):
@@ -615,6 +613,7 @@ def main():
             head_lookup = CRISPRessoShared.get_crispresso_options_lookup()  # dict of qwc -> quantification_window_coordinates
             head_lookup['sgRNA'] = 'guide_seq'
             head_lookup['Expected_HDR'] = 'expected_hdr_amplicon_seq'
+            head_lookup['name'] = 'amplicon_name'
 
             headers = []
             has_header = True
@@ -638,6 +637,8 @@ def main():
                 headers = []
                 for i in range(len(header_els)):
                     headers.append(amplicon_input_column_names[i])
+                if len(headers) > 5:
+                    raise CRISPRessoShared.BadParameterException('Incorrect number of columns provided without header.')
 
             if args.debug:
                 info(f'Header variable names in order: {headers}')
