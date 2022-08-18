@@ -170,6 +170,18 @@ def get_reference_positions( pos, cigar,full_length=True):
     return positions
 
 def write_trimmed_fastq(in_bam_filename, bpstart, bpend, out_fastq_filename):
+    """ Write the trimmed fastq by extracting reads from a bam, trimming them, and writing them to a file.
+    The bam file was previously filtered for reads at the correct chromosome location.
+
+    Args:
+        in_bam_filename (string): bam input file
+        bpstart (int): start position
+        bpend (int): stop position
+        out_fastq_filename (str): name of file to write reads to
+
+    Returns:
+        n_reasd (int): number of reads written to the output fastq file
+    """
     p = sb.Popen(
                 'samtools view %s | cut -f1,4,6,10,11' % in_bam_filename,
                 stdout = sb.PIPE,
@@ -215,7 +227,7 @@ def extract_reads(row):
 
         info('Extracting reads in:%s and creating .bam file: %s' % (region, row.bam_file_with_reads_in_region))
 
-        cmd=r'''samtools view -b -F 4 %s %s > %s ''' % (row.original_bam, region, row.bam_file_with_reads_in_region)
+        cmd=r'''samtools view -b -F 4 --reference %s %s %s > %s ''' % (row.reference_file, row.original_bam, region, row.bam_file_with_reads_in_region)
         sb.call(cmd, shell=True)
 
         cmd=r'''samtools index %s ''' % (row.bam_file_with_reads_in_region)
@@ -536,6 +548,7 @@ def main():
         df_regions['bam_file_with_reads_in_region'], df_regions['fastq_file_trimmed_reads_in_region'], df_regions['row_fastq_exists'] = zip(*df_regions.apply(set_filenames, axis=1))
         df_regions['n_reads'] = 0
         df_regions['original_bam'] = args.bam_file #stick this in the df so we can parallelize the analysis and not pass params
+        df_regions['reference_file'] = args.reference_file
 
 
         report_reads_aligned_filename = _jp('REPORT_READS_ALIGNED_TO_SELECTED_REGIONS_WGS.txt')
@@ -599,6 +612,7 @@ def main():
         all_region_names = []
         all_region_read_counts = {}
         good_region_names = []
+        good_region_display_names = {}
         good_region_folders = {}
         header = 'Name\tUnmodified%\tModified%\tReads_total\tReads_aligned\tUnmodified\tModified\tDiscarded\tInsertions\tDeletions\tSubstitutions\tOnly Insertions\tOnly Deletions\tOnly Substitutions\tInsertions and Deletions\tInsertions and Substitutions\tDeletions and Substitutions\tInsertions Deletions and Substitutions'
         header_els = header.split("\t")
@@ -606,8 +620,8 @@ def main():
         empty_line_els = [np.nan]*(header_el_count-1)
         n_reads_index = header_els.index('Reads_total') - 1
         for idx, row in df_regions.iterrows():
-            folder_name='CRISPResso_on_%s' % idx
-            run_name = idx
+            run_name = CRISPRessoShared.slugify(idx)
+            folder_name = 'CRISPResso_on_%s' % run_name
 
             all_region_names.append(run_name)
             all_region_read_counts[run_name] = row.n_reads
@@ -652,8 +666,10 @@ def main():
                 vals.extend([round(unmod_pct, 8), round(mod_pct, 8), n_aligned, n_tot, n_unmod, n_mod, n_discarded, n_insertion, n_deletion, n_substitution, n_only_insertion, n_only_deletion, n_only_substitution, n_insertion_and_deletion, n_insertion_and_substitution, n_deletion_and_substitution, n_insertion_and_deletion_and_substitution])
                 quantification_summary.append(vals)
 
-                good_region_names.append(idx)
-                good_region_folders[idx] = folder_name
+                good_region_names.append(run_name)
+                good_region_folders[run_name] = folder_name
+                good_region_display_names[run_name] = idx
+                
         samples_quantification_summary_filename = _jp('SAMPLES_QUANTIFICATION_SUMMARY.txt')
 
         df_summary_quantification=pd.DataFrame(quantification_summary, columns=header_els)
@@ -669,6 +685,7 @@ def main():
         crispresso2_info['results']['all_region_read_counts'] = all_region_read_counts
         crispresso2_info['results']['good_region_names'] = good_region_names
         crispresso2_info['results']['good_region_folders'] = good_region_folders
+        crispresso2_info['results']['good_region_display_names'] = good_region_display_names
 
         crispresso2_info['results']['general_plots']['summary_plot_names'] = []
         crispresso2_info['results']['general_plots']['summary_plot_titles'] = {}

@@ -780,9 +780,13 @@ def get_command_output(command):
         if retcode is not None:
             break
 
+<<<<<<< HEAD
 
 def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command,
                             max_paired_end_reads_overlap, min_paired_end_reads_overlap, debug=False):
+=======
+def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command, max_paired_end_reads_overlap, min_paired_end_reads_overlap, split_interleaved_input=False, debug=False):
+>>>>>>> origin/master
     """
     Get the most frequent amplicon from a fastq file (or after merging a r1 and r2 fastq file).
 
@@ -801,6 +805,48 @@ def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, fla
     124 ATATATA
     5 TTATA
     """
+
+    if split_interleaved_input:
+        output_r1 = fastq_r1 + ".tmp.r1.gz"
+        output_r2 = fastq_r2 + ".tmp.r2.gz"
+        if fastq_r1.endswith('.gz'):
+            fastq_handle = gzip.open(fastq_r1, 'rt')
+        else:
+            fastq_handle=open(fastq_r1)
+
+        try:
+            o1 = gzip.open(output_r1, 'wt')
+            o2 = gzip.open(output_r2, 'wt')
+            lines_read = 1
+            r1_id = fastq_handle.readline()
+            r1_seq = fastq_handle.readline()
+            r1_plus = fastq_handle.readline()
+            r1_qual = fastq_handle.readline()
+
+            r2_id = fastq_handle.readline()
+            r2_seq = fastq_handle.readline()
+            r2_plus = fastq_handle.readline()
+            r2_qual = fastq_handle.readline()
+            while (r1_id and lines_read <= number_of_reads_to_consider):
+                o1.write("%s%s%s%s"%(r1_id,r1_seq,r1_plus,r1_qual))
+                o2.write("%s%s%s%s"%(r2_id,r2_seq,r2_plus,r2_qual))
+                r1_id = fastq_handle.readline()
+                r1_seq = fastq_handle.readline()
+                r1_plus = fastq_handle.readline()
+                r1_qual = fastq_handle.readline()
+
+                r2_id = fastq_handle.readline()
+                r2_seq = fastq_handle.readline()
+                r2_plus = fastq_handle.readline()
+                r2_qual = fastq_handle.readline()
+            o1.close()
+            o2.close()
+            fastq_handle.close()
+        except:
+            raise BadParameterException('Error in splitting read pairs from a single file')
+        fastq_r1 = output_r1
+        fastq_r2 = output_r2
+
     view_cmd_1 = 'cat'
     if fastq_r1.endswith('.gz'):
         view_cmd_1 = 'zcat'
@@ -840,12 +886,21 @@ def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, fla
     seq_lines = top_unaligned.decode('utf-8').strip().split("\n")
     if len(seq_lines) == 0:
         raise AutoException('Cannot parse any frequent amplicons sequences.')
+
+    if split_interleaved_input:
+        os.remove(output_r1)
+        os.remove(output_r2)
+
     return seq_lines
 
+<<<<<<< HEAD
 
 def guess_amplicons(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command, max_paired_end_reads_overlap,
                     min_paired_end_reads_overlap, aln_matrix, needleman_wunsch_gap_open, needleman_wunsch_gap_extend,
                     min_freq_to_consider=0.2, amplicon_similarity_cutoff=0.95):
+=======
+def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,min_paired_end_reads_overlap,aln_matrix,needleman_wunsch_gap_open,needleman_wunsch_gap_extend,split_interleaved_input=False,min_freq_to_consider=0.2,amplicon_similarity_cutoff=0.95):
+>>>>>>> origin/master
     """
     guesses the amplicons used in an experiment by examining the most frequent read (giant caveat -- most frequent read should be unmodified)
     input:
@@ -858,14 +913,19 @@ def guess_amplicons(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_comma
     aln_matrix: matrix specifying alignment substitution scores in the NCBI format
     needleman_wunsch_gap_open: alignment penalty assignment used to determine similarity of two sequences
     needleman_wunsch_gap_extend: alignment penalty assignment used to determine similarity of two sequences
+    split_interleaved_input: if true, split interleaved input into two files
     min_freq_to_consider: selected ampilcon must be frequent at least at this percentage in the population
     amplicon_similarity_cutoff: if the current amplicon has similarity of greater than this cutoff to any other existing amplicons, it won't be added
 
     returns:
     list of putative amplicons
     """
+<<<<<<< HEAD
     seq_lines = get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command,
                                         max_paired_end_reads_overlap, min_paired_end_reads_overlap)
+=======
+    seq_lines = get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command, max_paired_end_reads_overlap, min_paired_end_reads_overlap, split_interleaved_input=split_interleaved_input)
+>>>>>>> origin/master
 
     curr_amplicon_id = 1
 
@@ -909,6 +969,7 @@ def guess_amplicons(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_comma
 
     return amplicon_seq_arr
 
+<<<<<<< HEAD
 
 def guess_guides(amplicon_sequence, fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command,
                  max_paired_end_reads_overlap,
@@ -916,6 +977,13 @@ def guess_guides(amplicon_sequence, fastq_r1, fastq_r2, number_of_reads_to_consi
                  aln_matrix, needleman_wunsch_gap_open, needleman_wunsch_gap_extend,
                  min_edit_freq_to_consider=0.1, min_edit_fold_change_to_consider=3,
                  pam_seq="NGG", min_pct_subs_in_base_editor_win=0.8):
+=======
+def guess_guides(amplicon_sequence,fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,
+            min_paired_end_reads_overlap,exclude_bp_from_left,exclude_bp_from_right,
+            aln_matrix,needleman_wunsch_gap_open,needleman_wunsch_gap_extend,
+            min_edit_freq_to_consider=0.1,min_edit_fold_change_to_consider=3,
+            pam_seq="NGG", min_pct_subs_in_base_editor_win=0.8,split_interleaved_input=False):
+>>>>>>> origin/master
     """
     guesses the guides used in an experiment by identifying the most-frequently edited positions, editing types, and PAM sites
     input:
@@ -935,13 +1003,18 @@ def guess_guides(amplicon_sequence, fastq_r1, fastq_r2, number_of_reads_to_consi
     min_edit_fold_change_to_consider: edits must be at least this fold change over background for consideration
     pam_seq: pam sequence to look for (can be regex or contain degenerate bases)
     min_pct_subs_in_base_editor_win: if at least this percent of substitutions happen in the predicted base editor window, return base editor flag
+    split_interleaved_input: if true, interleaved fastq will be split into r1 and r2
 
     returns:
     tuple of (putative guide, boolean is_base_editor)
     or (None, None)
     """
+<<<<<<< HEAD
     seq_lines = get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command,
                                         max_paired_end_reads_overlap, min_paired_end_reads_overlap)
+=======
+    seq_lines = get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command, max_paired_end_reads_overlap, min_paired_end_reads_overlap,split_interleaved_input=split_interleaved_input)
+>>>>>>> origin/master
 
     amp_len = len(amplicon_sequence)
     gap_incentive = np.zeros(amp_len + 1, dtype=int)
