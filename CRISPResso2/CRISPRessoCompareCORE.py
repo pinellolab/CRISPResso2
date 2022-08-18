@@ -92,12 +92,15 @@ def main():
         parser.add_argument('--max_rows_alleles_around_cut_to_plot',  type=int, help='Maximum number of rows to report in the alleles table plot. ', default=50)
         parser.add_argument('--suppress_report',  help='Suppress output report', action='store_true')
         parser.add_argument('--place_report_in_output_folder',  help='If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output.', action='store_true')
+        parser.add_argument('--zip_output', help="If set, the output will be placed in a zip folder.", action='store_true')
         parser.add_argument('--debug', help='Show debug messages', action='store_true')
 
         args = parser.parse_args()
         debug_flag = args.debug
 
-
+        if args.zip_output and not args.place_report_in_output_folder:
+            logger.warn('Invalid arguement combination: If zip_output is True then place_report_in_output_folder must also be True. Setting place_report_in_output_folder to True.')
+            args.place_report_in_output_folder = True
         #check that the CRISPResso output is present and fill amplicon_info
         quantification_file_1, amplicon_names_1, amplicon_info_1=CRISPRessoShared.check_output_folder(args.crispresso_output_folder_1)
         quantification_file_2, amplicon_names_2, amplicon_info_2=CRISPRessoShared.check_output_folder(args.crispresso_output_folder_2)
@@ -432,6 +435,9 @@ def main():
             crispresso2_info['running_info']['report_filename'] = os.path.basename(report_name)
 
         CRISPRessoShared.write_crispresso_info(crispresso2Compare_info_file, crispresso2_info)
+
+        if args.zip_output:
+            CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
 
         info('Analysis Complete!')
         print(CRISPRessoShared.get_crispresso_footer())
