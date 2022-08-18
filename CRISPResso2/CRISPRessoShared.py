@@ -780,13 +780,8 @@ def get_command_output(command):
         if retcode is not None:
             break
 
-<<<<<<< HEAD
 
-def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command,
-                            max_paired_end_reads_overlap, min_paired_end_reads_overlap, debug=False):
-=======
 def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command, max_paired_end_reads_overlap, min_paired_end_reads_overlap, split_interleaved_input=False, debug=False):
->>>>>>> origin/master
     """
     Get the most frequent amplicon from a fastq file (or after merging a r1 and r2 fastq file).
 
@@ -893,14 +888,8 @@ def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, fla
 
     return seq_lines
 
-<<<<<<< HEAD
 
-def guess_amplicons(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command, max_paired_end_reads_overlap,
-                    min_paired_end_reads_overlap, aln_matrix, needleman_wunsch_gap_open, needleman_wunsch_gap_extend,
-                    min_freq_to_consider=0.2, amplicon_similarity_cutoff=0.95):
-=======
 def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,min_paired_end_reads_overlap,aln_matrix,needleman_wunsch_gap_open,needleman_wunsch_gap_extend,split_interleaved_input=False,min_freq_to_consider=0.2,amplicon_similarity_cutoff=0.95):
->>>>>>> origin/master
     """
     guesses the amplicons used in an experiment by examining the most frequent read (giant caveat -- most frequent read should be unmodified)
     input:
@@ -920,12 +909,7 @@ def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,
     returns:
     list of putative amplicons
     """
-<<<<<<< HEAD
-    seq_lines = get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command,
-                                        max_paired_end_reads_overlap, min_paired_end_reads_overlap)
-=======
     seq_lines = get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command, max_paired_end_reads_overlap, min_paired_end_reads_overlap, split_interleaved_input=split_interleaved_input)
->>>>>>> origin/master
 
     curr_amplicon_id = 1
 
@@ -969,21 +953,12 @@ def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,
 
     return amplicon_seq_arr
 
-<<<<<<< HEAD
 
-def guess_guides(amplicon_sequence, fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command,
-                 max_paired_end_reads_overlap,
-                 min_paired_end_reads_overlap, exclude_bp_from_left, exclude_bp_from_right,
-                 aln_matrix, needleman_wunsch_gap_open, needleman_wunsch_gap_extend,
-                 min_edit_freq_to_consider=0.1, min_edit_fold_change_to_consider=3,
-                 pam_seq="NGG", min_pct_subs_in_base_editor_win=0.8):
-=======
 def guess_guides(amplicon_sequence,fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,
             min_paired_end_reads_overlap,exclude_bp_from_left,exclude_bp_from_right,
             aln_matrix,needleman_wunsch_gap_open,needleman_wunsch_gap_extend,
             min_edit_freq_to_consider=0.1,min_edit_fold_change_to_consider=3,
             pam_seq="NGG", min_pct_subs_in_base_editor_win=0.8,split_interleaved_input=False):
->>>>>>> origin/master
     """
     guesses the guides used in an experiment by identifying the most-frequently edited positions, editing types, and PAM sites
     input:
@@ -1009,12 +984,7 @@ def guess_guides(amplicon_sequence,fastq_r1,fastq_r2,number_of_reads_to_consider
     tuple of (putative guide, boolean is_base_editor)
     or (None, None)
     """
-<<<<<<< HEAD
-    seq_lines = get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command,
-                                        max_paired_end_reads_overlap, min_paired_end_reads_overlap)
-=======
     seq_lines = get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command, max_paired_end_reads_overlap, min_paired_end_reads_overlap,split_interleaved_input=split_interleaved_input)
->>>>>>> origin/master
 
     amp_len = len(amplicon_sequence)
     gap_incentive = np.zeros(amp_len + 1, dtype=int)
