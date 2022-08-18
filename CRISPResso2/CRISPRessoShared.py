@@ -233,7 +233,7 @@ def getCRISPRessoArgParser(parserTitle="CRISPResso Parameters", requiredParams={
                         action='store_true')
     parser.add_argument('-x', '--bowtie2_index', type=str, help='Basename of Bowtie2 index for the reference genome',
                         default='')
-    parser.add_argument('--zip', help="If set the output will be placed in a single zip file.", action='store_true')
+    parser.add_argument('--zip_output', help="If set, the output will be placed in a zip folder.", action='store_true')
 
     # report style parameters
     parser.add_argument('--max_rows_alleles_around_cut_to_plot', type=int,

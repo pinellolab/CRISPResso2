@@ -282,13 +282,13 @@ def main():
         args = parser.parse_args()
 
         crispresso_options = CRISPRessoShared.get_crispresso_options()
-        options_to_ignore = {'fastq_r1', 'fastq_r2', 'amplicon_seq', 'amplicon_name', 'output_folder', 'name', 'zip'}
+        options_to_ignore = {'fastq_r1', 'fastq_r2', 'amplicon_seq', 'amplicon_name', 'output_folder', 'name', 'zip_output'}
         crispresso_options_for_pooled = list(crispresso_options-options_to_ignore)
 
         files_to_remove = []
 
-        if args.zip and not args.place_report_in_output_folder:
-            logger.warn('Invalid arguement combination: If zip is True then place_report_in_output_folder must also be True. Setting place_report_in_output_folder to True.')
+        if args.zip_output and not args.place_report_in_output_folder:
+            logger.warn('Invalid arguement combination: If zip_output is True then place_report_in_output_folder must also be True. Setting place_report_in_output_folder to True.')
             args.place_report_in_output_folder = True
 
         info('Checking dependencies...')
@@ -1598,7 +1598,7 @@ def main():
             crispresso2_info_file, crispresso2_info,
         )
 
-        if args.zip:
+        if args.zip_output:
             CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
 
         info('All Done!')
