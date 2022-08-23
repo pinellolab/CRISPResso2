@@ -34,37 +34,6 @@ info    = logger.info
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
 ####Support functions###
-def propagate_options(cmd, options, params, paramInd):
-####
-# cmd - the command to run
-# options - list of options to propagate e.g. crispresso options
-# params - df from excel parser e.g. params['amplicon_name'] = ['name1','name2','name3'] where each item corresponds to a different run in the batch
-# paramInd - index in dict - this is the run number in the batch
-
-    for option in options:
-        if option:
-            if option in params:
-                val = params.loc[paramInd, option]
-                if val is None:
-                    pass
-                elif str(val) == "True":
-                    cmd += ' --%s' % option
-                elif str(val) == "False":
-                    pass
-                elif isinstance(val, str):
-                    if val != "":
-                        if " " in val or "-" in val:
-                            cmd += ' --%s "%s"' % (option, str(val))  # quotes for options with spaces
-                        else:
-                            cmd += ' --%s %s' % (option, str(val))
-                elif isinstance(val, bool):
-                    if val:
-                        cmd += ' --%s' % option
-                else:
-                    cmd += ' --%s %s' % (option, str(val))
-#    print("cmd is " + str(cmd))
-    return cmd
-
 def check_library(library_name):
     try:
         return __import__(library_name)
@@ -107,10 +76,14 @@ def main():
         debug_flag = args.debug
 
         crispresso_options = CRISPRessoShared.get_crispresso_options()
-        options_to_ignore = {'name', 'output_folder'}
+        options_to_ignore = {'name', 'output_folder', 'zip_output'}
         crispresso_options_for_batch = list(crispresso_options-options_to_ignore)
 
         CRISPRessoShared.check_file(args.batch_settings)
+
+        if args.zip_output and not args.place_report_in_output_folder:
+            logger.warn('Invalid arguement combination: If zip_output is True then place_report_in_output_folder must also be True. Setting place_report_in_output_folder to True.')
+            args.place_report_in_output_folder = True
 
         batch_folder_name = os.path.splitext(os.path.basename(args.batch_settings))[0]
         if args.name and args.name != "":
@@ -298,7 +271,7 @@ def main():
             batch_input_names[batch_name] = row["name"]
 
             crispresso_cmd = args.crispresso_command + ' -o "%s" --name %s' % (OUTPUT_DIRECTORY, batch_name)
-            crispresso_cmd = propagate_options(crispresso_cmd, crispresso_options_for_batch, batch_params, idx)
+            crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_batch, batch_params, idx)
             if row.amplicon_seq == "":
                 crispresso_cmd += ' --auto '
             crispresso_cmds.append(crispresso_cmd)
@@ -931,6 +904,12 @@ def main():
             crispresso2_info,
         )
         info('Analysis Complete!')
+        if args.zip_output:
+            if args.output_folder == "":
+                path_value = os.path.split(OUTPUT_DIRECTORY)
+                CRISPRessoShared.zip_results(path_value[1])
+            else:
+                CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
         print(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)
 

@@ -323,6 +323,8 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --place_report_in_output_folder: If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output. (default: False)
 
+--zip_output: If true, the output folder will be zipped upon completion. If --zip_output is true --place_report_in_output_folder should be true otherwise --place_report_in_output_folder is automatically set to true as well. (default: False)
+
 #### Miscellaneous parameters
 
 --auto: Infer amplicon sequence from most common reads (default: False)

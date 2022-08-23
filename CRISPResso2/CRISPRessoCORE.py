@@ -975,6 +975,9 @@ def main():
         CRISPRessoShared.check_file(aln_matrix_loc)
         aln_matrix = CRISPResso2Align.read_matrix(aln_matrix_loc)
 
+        if args.zip_output:
+            args.place_report_in_output_folder = True
+
         n_processes = 1
         if args.n_processes == "max":
             n_processes = CRISPRessoMultiProcessing.get_max_processes()
@@ -4816,6 +4819,8 @@ def main():
             crispresso2_info_file,
             crispresso2_info,
         )
+        if args.zip_output:
+            CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
 
         info('Analysis Complete!')
         print(CRISPRessoShared.get_crispresso_footer())
