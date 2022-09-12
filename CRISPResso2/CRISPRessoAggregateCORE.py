@@ -54,7 +54,7 @@ ___________________________________
         '''
         print(CRISPRessoShared.get_crispresso_header(description, aggregate_string))
 
-        parser = argparse.ArgumentParser(description="Aggreate CRISPResso2 Runs")
+        parser = argparse.ArgumentParser(description="Aggregate CRISPResso2 Runs")
         parser.add_argument("-p", "--prefix", action='append', help="Prefix for CRISPResso folders to aggregate (may be specified multiple times)", default=[])
         parser.add_argument("-s", "--suffix", type=str, help="Suffix for CRISPResso folders to aggregate", default="")
 
