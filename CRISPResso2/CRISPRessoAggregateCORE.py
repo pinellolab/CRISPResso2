@@ -842,6 +842,12 @@ ___________________________________
                                                        quilt_plots_to_show)
                 crispresso2_info['running_info']['report_location'] = report_filename
                 crispresso2_info['running_info']['report_filename'] = os.path.basename(report_filename)
+        else: #no files successfully imported
+            files_in_curr_dir = os.listdir('.')
+            if len(files_in_curr_dir) > 15:
+                files_in_curr_dir = files_in_curr_dir[0:15]
+                files_in_curr_dir.append("(Complete listing truncated)")
+            info('No CRISPResso runs could be imported.\nFiles in current directory:\n\t' + "\n\t".join(files_in_curr_dir))
 
         end_time = datetime.now()
         end_time_string = end_time.strftime('%Y-%m-%d %H:%M:%S')
