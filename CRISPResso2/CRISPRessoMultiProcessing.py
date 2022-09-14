@@ -195,3 +195,29 @@ def run_parallel_commands(commands_arr,n_processes=1,descriptor='CRISPResso2',co
     else:
         pool.close()
     pool.join()
+
+
+def run_plot(plot_func, plot_args, num_processes, process_results, process_pool):
+    """Run a plot in parallel if num_processes > 1, otherwise in serial.
+
+    Parameters
+    ----------
+    plot_func: function
+        The plotting function to call.
+    plot_args: dict
+        The arguments to pass to the plotting function.
+    num_processes: int
+        The number of processes to use in parallel.
+    process_results: List
+        The list of futures that submitting the parallel job will return.
+    process_pool: ProcessPoolExecutor or ThreadPoolExecutor
+        The pool to submit the job to.
+
+    Returns
+    -------
+    None
+    """
+    if num_processes > 1:
+        process_results.append(process_pool.submit(plot_func(**plot_args)))
+    else:
+        plot_func(**plot_args)
