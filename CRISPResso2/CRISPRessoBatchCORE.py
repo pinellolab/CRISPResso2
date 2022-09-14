@@ -796,9 +796,10 @@ def main():
                         CRISPRessoPlot.plot_allele_modification_line,
                         **allele_modification_line_input,
                     ))
-                CRISPRessoPlot.plot_allele_modification_line(
-                    **allele_modification_line_input,
-                )
+                else:
+                    CRISPRessoPlot.plot_allele_modification_line(
+                        **allele_modification_line_input,
+                    )
 
                 crispresso2_info['results']['general_plots']['allele_modification_line_plot_names'].append(plot_name)
                 crispresso2_info['results']['general_plots']['allele_modification_line_plot_paths'][plot_name] = plot_path
