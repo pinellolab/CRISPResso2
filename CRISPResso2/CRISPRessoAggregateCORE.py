@@ -9,6 +9,7 @@ import os
 import glob
 from copy import deepcopy
 from concurrent.futures import ProcessPoolExecutor, wait
+from functools import partial
 import sys
 import argparse
 import numpy as np
@@ -18,7 +19,7 @@ from datetime import datetime
 from CRISPResso2 import CRISPRessoShared
 from CRISPResso2 import CRISPRessoPlot
 from CRISPResso2 import CRISPRessoReport
-from CRISPResso2.CRISPRessoMultiProcessing import get_max_processes
+from CRISPResso2.CRISPRessoMultiProcessing import get_max_processes, run_plot
 
 
 import logging
@@ -107,6 +108,13 @@ ___________________________________
 
         process_pool = ProcessPoolExecutor(n_processes)
         process_results = []
+
+        plot = partial(
+            run_plot,
+            num_processes=n_processes,
+            process_pool=process_pool,
+            process_results=process_results,
+        )
 
         #glob returns paths including the original prefix
         all_files = []
@@ -491,13 +499,10 @@ ___________________________________
                                     'quantification_window_idxs': include_idxs,
                                     'group_column': 'Folder',
                                 }
-                                if n_processes > 1:
-                                    process_results.append(process_pool.submit(
-                                        CRISPRessoPlot.plot_nucleotide_quilt,
-                                        **nucleotide_quilt_input,
-                                    ))
-                                else:
-                                    CRISPRessoPlot.plot_nucleotide_quilt(**nucleotide_quilt_input)
+                                plot(
+                                    CRISPRessoPlot.plot_nucleotide_quilt,
+                                    nucleotide_quilt_input,
+                                )
 
                                 plot_name = os.path.basename(this_window_nuc_pct_quilt_plot_name)
                                 window_nuc_pct_quilt_plot_names.append(plot_name)
@@ -529,13 +534,10 @@ ___________________________________
                                     'quantification_window_idxs': include_idxs,
                                     'group_column': 'Folder',
                                 }
-                                if n_processes > 1:
-                                    process_results.append(process_pool.submit(
-                                        CRISPRessoPlot.plot_nucleotide_quilt,
-                                        **nucleotide_quilt_input,
-                                    ))
-                                else:
-                                    CRISPRessoPlot.plot_nucleotide_quilt(**nucleotide_quilt_input)
+                                plot(
+                                    CRISPRessoPlot.plot_nucleotide_quilt,
+                                    nucleotide_quilt_input,
+                                )
 
                                 plot_name = os.path.basename(this_nuc_pct_quilt_plot_name)
                                 nuc_pct_quilt_plot_names.append(plot_name)
@@ -571,13 +573,10 @@ ___________________________________
                                     'quantification_window_idxs': consensus_include_idxs,
                                     'group_column': 'Folder',
                                 }
-                                if n_processes > 1:
-                                    process_results.append(process_pool.submit(
-                                        CRISPRessoPlot.plot_nucleotide_quilt,
-                                        **nucleotide_quilt_input,
-                                    ))
-                                else:
-                                    CRISPRessoPlot.plot_nucleotide_quilt(**nucleotide_quilt_input)
+                                plot(
+                                    CRISPRessoPlot.plot_nucleotide_quilt,
+                                    nucleotide_quilt_input,
+                                )
 
                                 plot_name = os.path.basename(this_nuc_pct_quilt_plot_name)
                                 nuc_pct_quilt_plot_names.append(plot_name)
@@ -633,15 +632,10 @@ ___________________________________
                                 'plot_path': plot_path,
                                 'title': modification_type,
                             }
-                            if n_processes > 1:
-                                process_results.append(process_pool.submit(
-                                    CRISPRessoPlot.plot_allele_modification_heatmap,
-                                    **allele_modification_heatmap_input,
-                                ))
-                            else:
-                                CRISPRessoPlot.plot_allele_modification_heatmap(
-                                    **allele_modification_heatmap_input,
-                                )
+                            plot(
+                                CRISPRessoPlot.plot_allele_modification_heatmap,
+                                allele_modification_heatmap_input,
+                            )
 
                             crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_names'].append(plot_name)
                             crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_paths'][plot_name] = plot_path
@@ -668,15 +662,10 @@ ___________________________________
                                 'plot_path': plot_path,
                                 'title': modification_type,
                             }
-                            if n_processes > 1:
-                                process_results.append(process_pool.submit(
-                                    CRISPRessoPlot.plot_allele_modification_line,
-                                    **allele_modification_line_input,
-                                ))
-                            else:
-                                CRISPRessoPlot.plot_allele_modification_line(
-                                    **allele_modification_line_input
-                                )
+                            plot(
+                                CRISPRessoPlot.plot_allele_modification_line,
+                                allele_modification_line_input,
+                            )
                             crispresso2_info['results']['general_plots']['allele_modification_line_plot_names'].append(plot_name)
                             crispresso2_info['results']['general_plots']['allele_modification_line_plot_paths'][plot_name] = plot_path
                             crispresso2_info['results']['general_plots']['allele_modification_line_plot_titles'][plot_name] = 'CRISPRessoAggregate {0} Across Samples for {1}'.format(
@@ -778,13 +767,7 @@ ___________________________________
                     'save_png': save_png,
                     'cutoff': args.min_reads_for_inclusion,
                 }
-                if n_processes > 1:
-                    process_results.append(process_pool.submit(
-                        CRISPRessoPlot.plot_reads_total,
-                        **reads_total_input,
-                    ))
-                else:
-                    CRISPRessoPlot.plot_reads_total(**reads_total_input)
+                plot(CRISPRessoPlot.plot_reads_total, reads_total_input)
 
                 plot_name = os.path.basename(plot_root)
                 crispresso2_info['results']['general_plots']['summary_plot_root'] = plot_name
@@ -801,13 +784,7 @@ ___________________________________
                     'save_png': save_png,
                     'cutoff': args.min_reads_for_inclusion,
                 }
-                if n_processes > 1:
-                    process_results.append(process_pool.submit(
-                        CRISPRessoPlot.plot_unmod_mod_pcts,
-                        **unmod_mod_pcts_input,
-                    ))
-                else:
-                    CRISPRessoPlot.plot_unmod_mod_pcts(**unmod_mod_pcts_input)
+                plot(CRISPRessoPlot.plot_unmod_mod_pcts, unmod_mod_pcts_input)
 
                 plot_name = os.path.basename(plot_root)
                 crispresso2_info['results']['general_plots']['summary_plot_root'] = plot_name
