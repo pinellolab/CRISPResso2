@@ -607,7 +607,7 @@ def main():
 
                     if not args.suppress_plots and not args.suppress_batch_summary_plots:  # plot the whole region
                         this_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt')
-                        nucleotide_plot_input = {
+                        nucleotide_quilt_input = {
                             'nuc_pct_df': nucleotide_percentage_summary_df,
                             'mod_pct_df': modification_percentage_summary_df,
                             'fig_filename_root': this_nuc_pct_quilt_plot_name,
