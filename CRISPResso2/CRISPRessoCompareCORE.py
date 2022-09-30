@@ -201,6 +201,7 @@ def main():
 
             cut_points = run_info_1['results']['refs'][amplicon_name]['sgRNA_cut_points']
             sgRNA_intervals = run_info_1['results']['refs'][amplicon_name]['sgRNA_intervals']
+            sgRNA_plot_intervals = run_info_1['results']['refs'][amplicon_name]['sgRNA_plot_intervals']
 
 
             #Quantification comparison barchart
@@ -378,7 +379,7 @@ def main():
                                 if sgRNA_seq in allele_file_1_name:
                                     this_sgRNA_seq = sgRNA_seq
                                     this_cut_point = cut_point
-                                    ref_seq_around_cut=consensus_sequence[max(0, this_cut_point-args.offset_around_cut_to_plot+1):min(seq_len, cut_point+args.offset_around_cut_to_plot+1)]
+                                    ref_seq_around_cut=consensus_sequence[max(0, this_cut_point-args.plot_window_size+1):min(seq_len, cut_point+args.plot_window_size+1)]
                                     break
 
                         merged = pd.merge(df1, df2, on = ['Aligned_Sequence', 'Reference_Sequence', 'Unedited', 'n_deleted', 'n_inserted', 'n_mutated'], suffixes=('_' + sample_1_name, '_'+sample_2_name), how='outer')

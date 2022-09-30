@@ -153,8 +153,7 @@ def main():
         int_columns = ['default_min_aln_score', 'min_average_read_quality', 'min_single_bp_quality',
                        'min_bp_quality_or_N',
                        'quantification_window_size', 'quantification_window_center', 'exclude_bp_from_left',
-                       'exclude_bp_from_right',
-                       'plot_window_size', 'max_rows_alleles_around_cut_to_plot']
+                       'exclude_bp_from_right', 'max_rows_alleles_around_cut_to_plot']
         for int_col in int_columns:
             if int_col in batch_params.columns:
                 batch_params[int_col].fillna(getattr(args, int_col), inplace=True)
@@ -219,8 +218,6 @@ def main():
             curr_amplicon_seq_arr = str(curr_amplicon_seq_str).split(',')
             curr_amplicon_quant_window_coordinates_arr = [None]*len(curr_amplicon_seq_arr)
             if row.quantification_window_coordinates is not None:
-                print(f'{row.quantification_window_coordinates =}')
-                print(f'{row =}')
                 for idx, coords in enumerate(row.quantification_window_coordinates.strip("'").strip('"').split(",")):
                     if coords != "":
                         curr_amplicon_quant_window_coordinates_arr[idx] = coords
@@ -229,8 +226,6 @@ def main():
             guides_are_in_amplicon = {} # dict of whether a guide is in at least one amplicon sequence
             # iterate through amplicons for this run
             for amp_idx, curr_amplicon_seq in enumerate(curr_amplicon_seq_arr):
-                this_include_idxs = [] #mask for bp to include for this amplicon seq, as specified by sgRNA cut points
-                this_sgRNA_intervals = []
                 curr_amplicon_quant_window_coordinates = curr_amplicon_quant_window_coordinates_arr[amp_idx]
                 wrong_nt = CRISPRessoShared.find_wrong_nt(curr_amplicon_seq)
                 if wrong_nt:
@@ -252,9 +247,15 @@ def main():
                     discard_guide_positions_overhanging_amplicon_edge = False
                     if 'discard_guide_positions_overhanging_amplicon_edge' in row:
                         discard_guide_positions_overhanging_amplicon_edge = row.discard_guide_positions_overhanging_amplicon_edge
-                    (this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_cut_points, this_sgRNA_plot_cut_points, this_sgRNA_plot_idxs, this_sgRNA_mismatches, this_sgRNA_names, this_include_idxs,
-                        this_exclude_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(curr_amplicon_seq, guides, guide_mismatches, guide_names, guide_qw_centers,
-                        guide_qw_sizes, curr_amplicon_quant_window_coordinates, row.exclude_bp_from_left, row.exclude_bp_from_right, row.plot_window_size, guide_plot_cut_points, discard_guide_positions_overhanging_amplicon_edge)
+                    if 'shrink_plot_window_to_amplicon_size' in row:
+                        shrink_plot_window_to_amplicon_size = row.shrink_plot_window_to_amplicon_size
+                    if 'shrink_quantification_window_to_included_bases' in row:
+                        shrink_quantification_window_to_included_bases = row.shrink_quantification_window_to_included_bases
+                    (this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_orientations, this_sgRNA_cut_points, this_sgRNA_plot_cut_points, this_sgRNA_plot_idxs, this_sgRNA_quantification_idxs,
+                        this_sgRNA_mismatches, this_sgRNA_names, this_amplicon_include_idxs, this_amplicon_exclude_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(curr_amplicon_seq, guides, guide_mismatches, guide_names, guide_qw_centers,
+                        guide_qw_sizes, row.quantification_window_size_5prime, row.quantification_window_size_3prime, curr_amplicon_quant_window_coordinates,
+                        row.exclude_bp_from_left, row.exclude_bp_from_right, row.plot_window_size, row.plot_window_size_5prime, row.plot_window_size_3prime,
+                        guide_plot_cut_points, discard_guide_positions_overhanging_amplicon_edge, shrink_plot_window_to_amplicon_size, shrink_quantification_window_to_included_bases)
                     for guide_seq in this_sgRNA_sequences:
                         guides_are_in_amplicon[guide_seq] = 1
 

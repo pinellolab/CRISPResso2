@@ -24,7 +24,7 @@ CRISPResso2 can be used to analyze genome editing outcomes using cleaving nuclea
 
 In addition, CRISPResso can be run as part of a larger tool suite:
 - [CRISPRessoBatch](#crispressobatch) - for analyzing and comparing multiple experimental conditions at the same site
-- [CRISPRessoPooled](#crispressopooled) - for analyzing multiple amplicons from a pooled amplicon sequencing experiment 
+- [CRISPRessoPooled](#crispressopooled) - for analyzing multiple amplicons from a pooled amplicon sequencing experiment
 - [CRISPRessoWGS](#crispressowgs) - for analyzing specific sites in whole-genome sequencing samples
 - [CRISPRessoCompare](#crispressocompare) - for comparing editing between two samples (e.g., treated vs control)
 - [CRISPRessoAggregate](#crispressoaggregate) - for aggregating results from previously-run CRISPResso analyses
@@ -220,9 +220,11 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 #### Quantification window parameters
 
--w or --quantification_window_size or --window_around_sgrna: Defines the size (in bp) of the quantification window extending from the position specified by the "--cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence(s) (--sgRNA). Mutations within this number of bp from the quantification window center are used in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 1, 1bp on each side of the cleavage position for a total length of 2bp. (default: 1)
-
 -wc or --quantification_window_center or --cleavage_offset: Center of quantification window to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17. (default: -3)
+
+-w or --quantification_window_size or --window_around_sgrna: Defines the size (in bp) of the quantification window extending from the position specified by the "--cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence(s) (--sgRNA). Mutations within this number of bp from the quantification window center are used in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 1, 1bp on each side of the cleavage position for a total length of 2bp. Multiple quantification window sizes (corresponding to each guide specified by --guide_seq) can be specified with a comma-separated list. This parameter sets the quantification window around the quantification_window_center in a symmetric manner. To set an asymmetric quantification window, set quantification_window_size_5prime or quantification_window_size_3prime. (default: 1)
+-w5 or --quantification_window_size_5prime: Defines the size (in bp) of the quantification window extending upstream in the sgRNA 5' direction from the quantification_window_center. If set, this value overrides the value set by --quantification_window_size. If not set, quantification_window_size will be used. Values for multiple guides can be specified with a comma-separated list. (default: None)
+-w3 or --quantification_window_size_3prime: Defines the size (in bp) of the quantification window extending downstream in the sgRNA 5' direction from the quantification_window_center. If set, this value overrides the value set by --quantification_window_size. If not set, quantification_window_size will be used. Values for multiple guides can be specified with a comma-separated list.(default: None)
 
 -qwc or --quantification_window_coordinates: Bp positions in the amplicon sequence specifying the quantification window. This parameter overrides values of the "--quantification_window_center", "-- cleavage_offset", "--window_around_sgrna" or "-- window_around_sgrna" values. Any indels/substitutions outside this window are excluded. Indexes are 0-based, meaning that the first nucleotide is position 0. Ranges are separated by the dash sign like "start-stop", and multiple ranges can be separated by the underscore (\_). A value of 0 disables this filter. (can be comma-separated list of values, corresponding to amplicon sequences given in --amplicon_seq e.g. 5-10,5-10_20-30 would specify the 5th-10th bp in the first reference and the 5th-10th and 20th-30th bp in the second reference) (default: None)
 
@@ -237,6 +239,8 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 --ignore_deletions: Ignore deletions events for the quantification and visualization (default: False)
 
 --discard_indel_reads: Discard reads with indels in the quantification window from analysis (default: False)
+
+--shrink_quantification_window_to_included_bases: If True, for guides whose quantification window extends into excluded bases (set by --exclude_bp_from_left and --exclude_bp_from_right), the quantification window will be shrunk to the included bases. Otherwise, a BadParameterException will be thrown. (default: False)
 
 #### Read alignment parameters
 
@@ -283,7 +287,11 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 #### Allele plot parameters
 
---plot_window_size or --offset_around_cut_to_plot: Defines the size of the window extending from the quantification window center to plot. Nucleotides within plot_window_size of the quantification_window_center for each guide are plotted. (default: 20)
+--plot_window_size or --offset_around_cut_to_plot: Defines the size of the window extending from the quantification window center to plot. Nucleotides within plot_window_size of the quantification_window_center for each guide are plotted. This value is overridden by --plot_window_size_3prime and/or --plot_window_size_5prime values. (default: 20)
+
+--plot_window_size_5prime: Defines the extent of the window extending upstream in the sgRNA 5' direction from the quantification window center to plot. Nucleotides within plot_window_size_5prime bp upstream (in the sgRNA 5' direction) of the quantification_window_center for each guide are plotted. If set, this value overrides the value set by --plot_window_size. (default: None)
+
+--plot_window_size_3prime: Defines the extent of the window extending downstream in the sgRNA 3' direction from the quantification window center to plot. Nucleotides within plot_window_size_3prime bp downstream (in the sgRNA 3' direction) of the quantification_window_center for each guide are plotted. If set, this value overrides the value set by --plot_window_size. (default: None)
 
 --min_frequency_alleles_around_cut_to_plot: Minimum % reads required to report an allele in the alleles table plot. This parameter only affects plotting. All alleles will be reported in data files. (default: 0.2 (i.e. 0.2\%))
 
@@ -294,6 +302,8 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 --allele_plot_pcts_only_for_assigned_reference: If set, in the allele plots, the percentages will show the percentage as a percent of reads aligned to the assigned reference. Default behavior is to show percentage as a percent of all reads. (default: False)
 
 --annotate_wildtype_allele: Wildtype alleles in the allele table plots will be marked with this string (e.g. \*\*). (default: )
+
+--shrink_plot_window_to_amplicon_size: If True, for guides whose plot window extends beyond the range of the amplicon, the plot window will be shrunk to the amplicon size. Otherwise, a BadParameterException will be thrown. (default: False)
 
 #### Output parameters
 

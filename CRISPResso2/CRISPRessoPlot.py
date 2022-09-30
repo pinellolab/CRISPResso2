@@ -3119,12 +3119,12 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,M
             cut_point = sgRNA_cut_points[ind]
             plot_cut_point = sgRNA_plot_cut_points[ind]
             plot_idxs = sgRNA_plot_idxs[ind]
-            plot_half_window = max(1, crispresso2_info['running_info']['args'].plot_window_size)
-            ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_half_window+1:cut_point+plot_half_window+1]
+            ref_seq = refs[ref_name]['sequence']
+            ref_seq_around_cut =  ''.join([ref_seq[i] for i in plot_idxs])
 
             new_sgRNA_intervals = []
             #adjust coordinates of sgRNAs
-            new_sel_cols_start = cut_point - plot_half_window
+            new_sel_cols_start = plot_idxs[0]
             for (int_start, int_end) in refs[ref_name]['sgRNA_intervals']:
                 new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1, int_end - new_sel_cols_start - 1)]
 
@@ -3216,12 +3216,12 @@ def plot_nucleotide_quilt_from_folder(crispresso_output_folder,fig_filename_root
             cut_point = sgRNA_cut_points[ind]
             plot_cut_point = sgRNA_plot_cut_points[ind]
             plot_idxs = sgRNA_plot_idxs[ind]
-            plot_half_window = max(1, crispresso2_info['running_info']['args'].plot_window_size)
-            ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_half_window+1:cut_point+plot_half_window+1]
+            ref_seq = refs[ref_name]['sequence']
+            ref_seq_around_cut =  ''.join([ref_seq[i] for i in plot_idxs])
 
             new_sgRNA_intervals = []
             #adjust coordinates of sgRNAs
-            new_sel_cols_start = cut_point - plot_half_window
+            new_sel_cols_start = plot_idxs[0]
             for (int_start, int_end) in refs[ref_name]['sgRNA_intervals']:
                 new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1, int_end - new_sel_cols_start - 1)]
 
