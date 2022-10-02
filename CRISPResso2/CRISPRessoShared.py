@@ -19,7 +19,7 @@ import signal
 import subprocess as sb
 import unicodedata
 
-from CRISPResso2 import CRISPResso2Align
+from CRISPResso2 import CRISPResso2Align, CRISPRessoObjects
 from CRISPResso2 import CRISPRessoCOREResources
 
 __version__ = "2.2.10"
@@ -63,6 +63,9 @@ class OutputFolderIncompleteException(Exception):
     pass
 
 class InstallationException(Exception):
+    pass
+
+class RuntimeException(Exception):
     pass
 
 #########################################
@@ -1175,6 +1178,34 @@ def get_row_around_cut(row, cut_point, offset):
            row['Read_Status'] == 'UNMODIFIED', row['n_deleted'], row['n_inserted'], row['n_mutated'], row['#Reads'], \
            row['%Reads']
 
+def get_row_at_idxs(row, sel_idxs):
+    return row['Aligned_Sequence'][sel_idxs[0] + 1:sel_idxs[1] + 1], row['Reference_Sequence'][
+                                                                               sel_idxs[0] + 1:sel_idxs[1] + 1], \
+           row['Read_Status'] == 'UNMODIFIED', row['n_deleted'], row['n_inserted'], row['n_mutated'], row['#Reads'], \
+           row['%Reads']
+
+def get_dataframe_at_idxs(df_alleles, sel_idxs, collapse_by_sequence=True):
+    if df_alleles.shape[0] == 0:
+        return df_alleles
+    ref1 = df_alleles['Reference_Sequence'].iloc[0]
+    ref1 = ref1.replace('-', '')
+    if (sel_idxs[1] + 1 > len(ref1)):
+        raise (BadParameterException(
+            'The plotting window cannot extend past the end of the amplicon. Amplicon length is ' + str(
+                len(ref1)) + ' but plot extends to ' + str(sel_idxs[1] + 1)))
+
+    df_alleles_around_cut = pd.DataFrame(
+        list(df_alleles.apply(lambda row: get_row_at_idxs(row, sel_idxs), axis=1).values),
+        columns=['Aligned_Sequence', 'Reference_Sequence', 'Unedited', 'n_deleted', 'n_inserted', 'n_mutated', '#Reads',
+                 '%Reads'])
+
+    df_alleles_around_cut = df_alleles_around_cut.groupby(
+        ['Aligned_Sequence', 'Reference_Sequence', 'Unedited', 'n_deleted', 'n_inserted',
+         'n_mutated']).sum().reset_index().set_index('Aligned_Sequence')
+
+    df_alleles_around_cut.sort_values(by='%Reads', inplace=True, ascending=False)
+    df_alleles_around_cut['Unedited'] = df_alleles_around_cut['Unedited'] > 0
+    return df_alleles_around_cut
 
 def get_dataframe_around_cut(df_alleles, cut_point, offset, collapse_by_sequence=True):
     if df_alleles.shape[0] == 0:
@@ -1230,7 +1261,7 @@ def get_amplicon_info_for_guides(ref_seq, guides, quantification_window_coordina
 
     input:
     ref_seq : reference sequence
-    guides : a list of CRISPRessoObjects Guide Objects
+    guides : a list of CRISPRessoObjects.Guide Objects
     quantification_window_coordinates: if given, these override quantification_window_center and quantification_window_size for setting quantification window. These are specific for this amplicon.
     exclude_bp_from_left : these bp are excluded from the quantification window
     exclude_bp_from_right : these bp are excluded from the quantification window
@@ -1253,16 +1284,7 @@ def get_amplicon_info_for_guides(ref_seq, guides, quantification_window_coordina
     """
     ref_seq_length = len(ref_seq)
 
-
-    this_sgRNA_sequences = []
-    this_sgRNA_intervals = []
-    this_sgRNA_orientations = []
-    this_sgRNA_cut_points = []
-    this_sgRNA_plot_cut_points = []
-    this_sgRNA_plot_idxs = []
-    this_sgRNA_quantification_idxs = []
-    this_sgRNA_mismatches = []
-    this_sgRNA_names = []
+    guides_in_amplicon = [] #store guide instances
     this_amplicon_include_idxs = []
     this_amplicon_exclude_idxs = []
 
@@ -1277,7 +1299,7 @@ def get_amplicon_info_for_guides(ref_seq, guides, quantification_window_coordina
     seen_cut_points = {}  # keep track of cut points in case 2 guides cut at same position (so they can get different names)
     seen_guide_names = {}  # keep track of guide names (so we don't assign a guide the same name as another guide)
     for guide_idx, current_guide in enumerate(guides):
-        current_guide_seq = current_guide.get_seq()
+        current_guide_seq = current_guide.get_sequence()
         if current_guide_seq == '':
             continue
         current_guide_qwc = current_guide.get_qw_center()
@@ -1294,21 +1316,21 @@ def get_amplicon_info_for_guides(ref_seq, guides, quantification_window_coordina
         rv_matches = re.finditer(reverse_complement(current_guide_seq), ref_seq, flags=re.IGNORECASE)
 
         #pull out this guide's quantification and plot window sizes
-        this_quantification_window_around_cut_5prime = current_guide.get_qw_5prime()
-        this_quantification_window_around_cut_3prime = current_guide.get_qw_3prime()
+        this_qw_around_cut_5prime = current_guide.get_qw_size_5prime()
+        this_qw_around_cut_3prime = current_guide.get_qw_size_3prime()
 
-        this_plot_window_around_cut_5prime = max(1, current_guide.get_pw_5prime())
-        this_plot_window_around_cut_3prime = max(1, current_guide.get_pw_3prime())
+        this_pw_around_cut_5prime = max(1, current_guide.get_pw_size_5prime())
+        this_pw_around_cut_3prime = max(1, current_guide.get_pw_size_3prime())
 
         # for every match, append:
         # this_sgRNA_orientations, this_sgRNA_cut_points, this_sgRNA_intervals, this_sgRNA_mismatches, this_sgRNA_names,this_sgRNA_sequences, this_sgRNA_plot_idxs, this_sgRNA_quantification_idxs, include_idxs
         for m in fw_matches:
             cut_p = m.start() + offset_fw
 
-            plot_start = cut_p - this_plot_window_around_cut_5prime + 1
-            plot_end = cut_p + this_plot_window_around_cut_3prime + 1
-            quant_start = cut_p - this_quantification_window_around_cut_5prime + 1
-            quant_end = cut_p + this_quantification_window_around_cut_3prime + 1
+            plot_start = cut_p - this_pw_around_cut_5prime + 1
+            plot_end = cut_p + this_pw_around_cut_3prime + 1
+            quant_start = cut_p - this_qw_around_cut_5prime + 1
+            quant_end = cut_p + this_qw_around_cut_3prime + 1
 
             #skip guide if plotting or quantification window extends beyond amplicon edge
             if discard_guide_positions_overhanging_amplicon_edge and (
@@ -1318,58 +1340,52 @@ def get_amplicon_info_for_guides(ref_seq, guides, quantification_window_coordina
             #set plotting window for this guide
             if plot_start < 0:
                     error_message = 'Plot window around cut would extend to the left of the amplicon. Please decrease plot_window_size parameter. Cut point: ' + str(
-                                cut_p) + ' window: ' + str(this_plot_window_around_cut_5prime) + ' reference: ' + str(ref_seq_length) + 'bp'
+                                cut_p) + ' window: ' + str(this_pw_around_cut_5prime) + ' reference: ' + str(ref_seq_length) + 'bp'
                     if not shrink_plot_window_to_amplicon_size:
                         raise BadParameterException(error_message)
                     else:
                         plot_start = 0
             if plot_end > ref_seq_length - 1:
                     error_message = 'Plot window around cut would be greater than reference sequence length. Please decrease plot_window_size parameter. Cut point: ' + str(
-                            cut_p) + ' window: ' + str(this_plot_window_around_cut_3prime) + ' reference: ' + str(ref_seq_length) + 'bp'
+                            cut_p) + ' window: ' + str(this_pw_around_cut_3prime) + ' reference: ' + str(ref_seq_length) + 'bp'
                     if not shrink_plot_window_to_amplicon_size:
                         raise BadParameterException(error_message)
                     else:
                         plot_end = ref_seq_length - 1
 
+            this_sgRNA_plot_idxs = (0,ref_seq_length-1)
             if plot_start != plot_end:
-                this_sgRNA_plot_idxs.append(sorted(list(range(plot_start,plot_end))))
-            else:
-                this_sgRNA_plot_idxs.append(range(ref_seq_length))
+                this_sgRNA_plot_idxs = (plot_start,plot_end)
 
             # done setting plotting window
 
             #set this guide's quantification window
             if quant_start < exclude_bp_from_left:
                     error_message = 'Quantifiation window around cut would extend to the left of the amplicon. Please decrease quantification_window_size parameter. Cut point: ' + str(
-                                cut_p) + ' window: ' + str(this_quant_window_around_cut_5prime) + ' reference: ' + str(ref_seq_length) + 'bp exclude_bp_from_left: ' + str(exclude_bp_from_left)
+                                cut_p) + ' window: ' + str(this_qw_around_cut_5prime) + ' reference: ' + str(ref_seq_length) + 'bp exclude_bp_from_left: ' + str(exclude_bp_from_left)
                     if not shrink_quantification_window_to_included_bases and quantification_window_coordinates is None:
                         raise BadParameterException(error_message)
                     else:
                         quant_start = exclude_bp_from_left + 1
             if quant_end > ref_seq_length - 1 - exclude_bp_from_right:
                     error_message = 'Quantification window around cut would be greater than reference sequence length. Please decrease quantification_window_size parameter. Cut point: ' + str(
-                            cut_p) + ' window: ' + str(this_quantification_window_around_cut_3prime) + ' reference: ' + str(ref_seq_length) + 'bp exclude_bp_from_right: ' + str(exclude_bp_from_right)
+                            cut_p) + ' window: ' + str(this_qw_around_cut_3prime) + ' reference: ' + str(ref_seq_length) + 'bp exclude_bp_from_right: ' + str(exclude_bp_from_right)
                     if not shrink_quantification_window_to_included_bases and quantification_window_coordinates is None:
                         raise BadParameterException(error_message)
                     else:
                         quant_end = ref_seq_length - 1 - exclude_bp_from_right - 1
 
-            if (this_quantification_window_around_cut_3prime != 0 or this_quantification_window_around_cut_3prime != 0) and quant_start != quant_end:
-                this_sgRNA_quantification_idxs.append(sorted(list(range(quant_start,quant_end))))
+            if (this_qw_around_cut_3prime != 0 or this_qw_around_cut_3prime != 0) and quant_start != quant_end:
+                this_sgRNA_quantification_idxs = list(range(quant_start,quant_end))
                 #apply sgRNA quantification indexes to the amplicon include indexes
                 this_amplicon_include_idxs.extend(range(quant_start, quant_end))
             else:
-                this_sgRNA_quantification_idxs.append(range(ref_seq_length))
-
-            this_sgRNA_orientations.append('F')
-            this_sgRNA_cut_points.append(cut_p)
-            this_sgRNA_plot_cut_points.append(current_guide.get_show_cut_point())
-            this_sgRNA_intervals.append((m.start(), m.start() + len(current_guide_seq) - 1))
-            this_sgRNA_mismatches.append(current_guide.get_mismatches())
+                this_sgRNA_quantification_idxs = list(range(ref_seq_length))
 
             this_sgRNA_name = current_guide.get_name()
+            this_sgRNA_name_in_ref = this_sgRNA_name
             if match_count == 1:
-                this_sgRNA_names.append(this_sgRNA_name)
+                this_sgRNA_name_in_ref = this_sgRNA_name
             else:
                 if this_sgRNA_name == "":
                     this_sgRNA_name = current_guide_seq.upper()
@@ -1378,16 +1394,27 @@ def get_amplicon_info_for_guides(ref_seq, guides, quantification_window_coordina
                 while this_potential_name in seen_guide_names:
                     curr_guide_idx += 1
                     this_potential_name = this_sgRNA_name + "_" + str(m.start()) + "_" + curr_guide_idx
-                this_sgRNA_names.append(this_potential_name)
-            this_sgRNA_sequences.append(current_guide_seq.upper())
+                this_sgRNA_name_in_ref = this_potential_name
+
+            guides_in_amplicon.append(CRISPRessoObjects.Guide_instance(guide=current_guide,
+                                                                    sequence=current_guide.get_sequence(),
+                                                                    interval=(m.start(), m.start() + len(current_guide_seq) - 1),
+                                                                    orientation='F',
+                                                                    cut_point=cut_p,
+                                                                    plot_idx=this_sgRNA_plot_idxs,
+                                                                    quantification_idx=this_sgRNA_quantification_idxs,
+                                                                    name_in_ref=this_sgRNA_name_in_ref,
+                                                                    mismatches_in_ref=current_guide.get_mismatches()
+                )
+            )
 
         for m in rv_matches:
             cut_p = m.start() + offset_rc  # cut position
 
-            plot_start = cut_p - this_plot_window_around_cut_3prime + 1
-            plot_end = cut_p + this_plot_window_around_cut_5prime + 1
-            quant_start = cut_p - this_quantification_window_around_cut_3prime + 1
-            quant_end = cut_p + this_quantification_window_around_cut_5prime + 1
+            plot_start = cut_p - this_pw_around_cut_3prime + 1
+            plot_end = cut_p + this_pw_around_cut_5prime + 1
+            quant_start = cut_p - this_qw_around_cut_3prime + 1
+            quant_end = cut_p + this_qw_around_cut_5prime + 1
 
             #skip guide if plotting or quantification window extends beyond amplicon edge
             if discard_guide_positions_overhanging_amplicon_edge and (
@@ -1397,57 +1424,51 @@ def get_amplicon_info_for_guides(ref_seq, guides, quantification_window_coordina
             #set plotting window for this guide
             if plot_start < 0:
                     error_message = 'Plot window around cut would extend to the left of the amplicon. Please decrease plot_window_size parameter. Cut point: ' + str(
-                                cut_p) + ' window: ' + str(this_plot_window_around_cut_5prime) + ' reference: ' + str(ref_seq_length) + 'bp'
+                                cut_p) + ' window: ' + str(this_pw_around_cut_5prime) + ' reference: ' + str(ref_seq_length) + 'bp'
                     if not shrink_plot_window_to_amplicon_size:
                         raise BadParameterException(error_message)
                     else:
                         plot_start = 0
             if plot_end > ref_seq_length - 1:
                     error_message = 'Plot window around cut would be greater than reference sequence length. Please decrease plot_window_size parameter. Cut point: ' + str(
-                            cut_p) + ' window: ' + str(this_plot_window_around_cut_3prime) + ' reference: ' + str(ref_seq_length) + 'bp'
+                            cut_p) + ' window: ' + str(this_pw_around_cut_3prime) + ' reference: ' + str(ref_seq_length) + 'bp'
                     if not shrink_plot_window_to_amplicon_size:
                         raise BadParameterException(error_message)
                     else:
                         plot_end = ref_seq_length - 1
 
+            this_sgRNA_plot_idxs = (0,ref_seq_length-1)
             if plot_start != plot_end:
-                this_sgRNA_plot_idxs.append(sorted(list(range(plot_start,plot_end))))
-            else:
-                this_sgRNA_plot_idxs.append(range(ref_seq_length))
+                this_sgRNA_plot_idxs = (plot_start,plot_end)
 
             # done setting plotting window
 
             #set this guide's quantification window
             if quant_start < 0:
                     error_message = 'Quantifiation window around cut would extend to the left of the amplicon. Please decrease quantification_window_size parameter. Cut point: ' + str(
-                                cut_p) + ' window: ' + str(this_quant_window_around_cut_5prime) + ' reference: ' + str(ref_seq_length) + 'bp'
+                                cut_p) + ' window: ' + str(this_qw_around_cut_5prime) + ' reference: ' + str(ref_seq_length) + 'bp'
                     if not shrink_quantification_window_to_included_bases and quantification_window_coordinates is None:
                         raise BadParameterException(error_message)
                     else:
                         quant_start = exclude_bp_from_left + 1
             if quant_end > ref_seq_length - 1:
                     error_message = 'Quantification window around cut would be greater than reference sequence length. Please decrease quantification_window_size parameter. Cut point: ' + str(
-                            cut_p) + ' window: ' + str(this_quantification_window_around_cut_3prime) + ' reference: ' + str(ref_seq_length) + 'bp'
+                            cut_p) + ' window: ' + str(this_qw_around_cut_3prime) + ' reference: ' + str(ref_seq_length) + 'bp'
                     if not shrink_quantification_window_to_included_bases and quantification_window_coordinates is None:
                         raise BadParameterException(error_message)
                     else:
                         quant_end = ref_seq_length - 1 - exclude_bp_from_right - 1
 
-            if quant_start != quant_end:
-                this_sgRNA_quantification_idxs.append(sorted(list(range(quant_start,quant_end))))
-                this_amplicon_include_idxs.extend(range(quant_start, quant_end))
+            if (this_qw_around_cut_3prime != 0 or this_qw_around_cut_3prime != 0) and quant_start != quant_end:
+                this_sgRNA_quantification_idxs = list(range(quant_start,quant_end))
+                this_amplicon_include_idxs.extend(range(quant_start, quant_end)) #extending with a range is just a list
             else:
-                this_sgRNA_quantification_idxs.append(range(ref_seq_length))
+                this_sgRNA_quantification_idxs = list(range(ref_seq_length))
 
-            this_sgRNA_orientations.append('R')
-            this_sgRNA_cut_points.append(cut_p)
-            this_sgRNA_plot_cut_points.append(current_guide.get_show_cut_point())
-            this_sgRNA_intervals.append((m.start(), m.start() + len(current_guide_seq) - 1))
-            this_sgRNA_mismatches.append([len(current_guide_seq) - (x + 1) for x in current_guide.get_mismatches()])
-
-            this_sgRNA_name = guide_names[guide_idx]
+            this_sgRNA_name = current_guide.get_name()
+            this_sgRNA_name_in_ref = this_sgRNA_name
             if match_count == 1:
-                this_sgRNA_names.append(this_sgRNA_name)
+                this_sgRNA_name_in_ref = this_sgRNA_name
             else:
                 if this_sgRNA_name == "":
                     this_sgRNA_name = current_guide_seq.upper()
@@ -1456,8 +1477,19 @@ def get_amplicon_info_for_guides(ref_seq, guides, quantification_window_coordina
                 while this_potential_name in seen_guide_names:
                     curr_guide_idx += 1
                     this_potential_name = this_sgRNA_name + "_" + str(m.start()) + "_" + curr_guide_idx
-                this_sgRNA_names.append(this_potential_name)
-            this_sgRNA_sequences.append(current_guide_seq.upper())
+                this_sgRNA_name_in_ref = this_potential_name
+
+            guides_in_amplicon.append(CRISPRessoObjects.Guide_instance(guide=current_guide,
+                                                                    sequence=reverse_complement(current_guide.get_sequence()),
+                                                                    interval=((m.start(), m.start() + len(current_guide_seq) - 1)),
+                                                                    orientation='R',
+                                                                    cut_point=cut_p,
+                                                                    plot_idx=this_sgRNA_plot_idxs,
+                                                                    quantification_idx=this_sgRNA_quantification_idxs,
+                                                                    name_in_ref=this_sgRNA_name_in_ref,
+                                                                    mismatches_in_ref=[len(current_guide_seq) - (x + 1) for x in current_guide.get_mismatches()],
+                )
+            )
 
     # create mask of positions in which to include/exclude indels for the quantification window
     # first, if exact coordinates have been given, set those
@@ -1479,17 +1511,21 @@ def get_amplicon_info_for_guides(ref_seq, guides, quantification_window_coordina
                     theseCoords) + "'. Coordinates must be given in the form start-end e.g. 5-10 . Please check the --quantification_window_coordinate parameter.")
         given_include_idxs = coordinate_include_idxs
         this_amplicon_include_idxs = coordinate_include_idxs
+
+        for guide_instance in guides_in_amplicon:
+            guide_instance.set_quantification_idx(coordinate_include_idxs)
+
     # otherwise, take quantification centers + windows calculated for each guide above
-    elif this_sgRNA_cut_points and len(this_amplicon_include_idxs) > 0:
+    elif len(guides_in_amplicon) > 0 and len(this_amplicon_include_idxs) > 0:
         given_include_idxs = this_amplicon_include_idxs
     #otherwise, (e.g. if no guides are given or quantification window size is set to 0) the quantification window will be set to the entire amplicon
     else:
         this_amplicon_include_idxs = range(ref_seq_length)
 
-    # flatten the arrays to avoid errors with old numpy library
-    this_amplicon_include_idxs = np.ravel(this_amplicon_include_idxs)
-    this_amplicon_exclude_idxs = np.ravel(this_amplicon_exclude_idxs)
-    given_include_idxs = np.ravel(given_include_idxs)
+    # flatten the arrays to avoid duplicates in quantificaiton window
+    this_amplicon_include_idxs = np.ravel(list(set(this_amplicon_include_idxs)))
+    this_amplicon_exclude_idxs = np.ravel(list(set(this_amplicon_exclude_idxs)))
+    given_include_idxs = np.ravel(list(set(given_include_idxs)))
     pre_exclude_include_idxs = this_amplicon_include_idxs.copy()
 
     this_amplicon_include_idxs = set(np.setdiff1d(this_amplicon_include_idxs, this_amplicon_exclude_idxs))
@@ -1503,12 +1539,13 @@ def get_amplicon_info_for_guides(ref_seq, guides, quantification_window_coordina
                 'The quantification window around the sgRNA is excluded. Please decrease the exclude_bp_from_right and exclude_bp_from_left parameters.')
         else:
             raise BadParameterException(
-                'The entire sequence has been excluded. Please enter a longer amplicon, or decrease the exclude_bp_from_right and exclude_bp_from_left parameters')
+                'The entire amplicon sequence has been excluded. Please enter a longer amplicon, or decrease the exclude_bp_from_right and exclude_bp_from_left parameters')
 
     this_amplicon_include_idxs = np.sort(list(this_amplicon_include_idxs))
     this_amplicon_exclude_idxs = np.sort(list(this_amplicon_exclude_idxs))
 
-    return this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_orientations, this_sgRNA_cut_points, this_sgRNA_plot_cut_points, this_sgRNA_plot_idxs, this_sgRNA_quantification_idxs, this_sgRNA_mismatches, this_sgRNA_names, this_amplicon_include_idxs, this_amplicon_exclude_idxs
+
+    return guides_in_amplicon, this_amplicon_include_idxs, this_amplicon_exclude_idxs
 
 def set_guide_array(vals, guides, property_name_for_display):
     """

@@ -12,10 +12,7 @@ from functools import partial
 import sys
 import traceback
 from datetime import datetime
-from CRISPResso2 import CRISPRessoShared
-from CRISPResso2 import CRISPRessoPlot
-from CRISPResso2 import CRISPRessoMultiProcessing
-from CRISPResso2 import CRISPRessoReport
+from CRISPResso2 import CRISPRessoShared, CRISPRessoPlot, CRISPRessoMultiProcessing, CRISPRessoReport, CRISPRessoObjects
 
 import logging
 logging.basicConfig(
@@ -151,9 +148,8 @@ def main():
         batch_params.columns = batch_params.columns.str.strip(' -\xd0')
 
         int_columns = ['default_min_aln_score', 'min_average_read_quality', 'min_single_bp_quality',
-                       'min_bp_quality_or_N',
-                       'quantification_window_size', 'quantification_window_center', 'exclude_bp_from_left',
-                       'exclude_bp_from_right', 'max_rows_alleles_around_cut_to_plot']
+                       'min_bp_quality_or_N', 'quantification_window_center', 
+                       'exclude_bp_from_left', 'exclude_bp_from_right', 'max_rows_alleles_around_cut_to_plot']
         for int_col in int_columns:
             if int_col in batch_params.columns:
                 batch_params[int_col].fillna(getattr(args, int_col), inplace=True)
@@ -234,28 +230,45 @@ def main():
                 # iterate through guides
                 curr_guide_seq_string = row.guide_seq
                 if curr_guide_seq_string is not None and curr_guide_seq_string != "":
-                    guides = str(curr_guide_seq_string).strip().upper().split(',')
-                    for curr_guide_seq in guides:
-                        wrong_nt = CRISPRessoShared.find_wrong_nt(curr_guide_seq)
-                        if wrong_nt:
-                            raise CRISPRessoShared.NTException('The sgRNA sequence in row %d (%s) contains incorrect characters:%s'  % (idx+1, curr_guide_seq, ' '.join(wrong_nt)))
-                    guide_mismatches = [[]]*len(guides)
-                    guide_names = [""]*len(guides)
-                    guide_qw_centers = CRISPRessoShared.set_guide_array(row.quantification_window_center, guides, 'guide quantification center')
-                    guide_qw_sizes = CRISPRessoShared.set_guide_array(row.quantification_window_size, guides, 'guide quantification size')
-                    guide_plot_cut_points = [1]*len(guides)
+                    try:
+                        guides = CRISPRessoObjects.set_guides_from_args(row)
+                    except Exception as e:
+                        raise CRISPRessoShared.BadParameterException('Error in parsing row %d') from e
+
                     discard_guide_positions_overhanging_amplicon_edge = False
                     if 'discard_guide_positions_overhanging_amplicon_edge' in row:
                         discard_guide_positions_overhanging_amplicon_edge = row.discard_guide_positions_overhanging_amplicon_edge
+                    else:
+                        discard_guide_positions_overhanging_amplicon_edge = args.discard_guide_positions_overhanging_amplicon_edge
+
                     if 'shrink_plot_window_to_amplicon_size' in row:
                         shrink_plot_window_to_amplicon_size = row.shrink_plot_window_to_amplicon_size
+                    else:
+                        shrink_plot_window_to_amplicon_size = args.shrink_plot_window_to_amplicon_size
+                    
                     if 'shrink_quantification_window_to_included_bases' in row:
                         shrink_quantification_window_to_included_bases = row.shrink_quantification_window_to_included_bases
-                    (this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_orientations, this_sgRNA_cut_points, this_sgRNA_plot_cut_points, this_sgRNA_plot_idxs, this_sgRNA_quantification_idxs,
-                        this_sgRNA_mismatches, this_sgRNA_names, this_amplicon_include_idxs, this_amplicon_exclude_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(curr_amplicon_seq, guides, guide_mismatches, guide_names, guide_qw_centers,
-                        guide_qw_sizes, row.quantification_window_size_5prime, row.quantification_window_size_3prime, curr_amplicon_quant_window_coordinates,
-                        row.exclude_bp_from_left, row.exclude_bp_from_right, row.plot_window_size, row.plot_window_size_5prime, row.plot_window_size_3prime,
-                        guide_plot_cut_points, discard_guide_positions_overhanging_amplicon_edge, shrink_plot_window_to_amplicon_size, shrink_quantification_window_to_included_bases)
+                    else:
+                        shrink_quantification_window_to_included_bases = args.shrink_quantification_window_to_included_bases
+
+                    for guide in guides:
+                        guide.print()
+                    (guides_in_amplicon, this_amplicon_include_idxs, this_amplicon_exclude_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(curr_amplicon_seq, guides,
+                                curr_amplicon_quant_window_coordinates, row.exclude_bp_from_left, row.exclude_bp_from_right,
+                                discard_guide_positions_overhanging_amplicon_edge, shrink_plot_window_to_amplicon_size, shrink_quantification_window_to_included_bases)
+
+                    
+                    this_sgRNA_sequences = [guide_instance.get_sequence() for guide_instance in guides_in_amplicon]
+                    this_sgRNA_intervals = [guide_instance.get_interval() for guide_instance in guides_in_amplicon]
+                    this_sgRNA_orientations = [guide_instance.get_orientation() for guide_instance in guides_in_amplicon]
+                    this_sgRNA_cut_points = [guide_instance.get_cut_point() for guide_instance in guides_in_amplicon]
+                    this_sgRNA_plot_cut_points = [guide_instance.get_guide().get_show_cut_point() for guide_instance in guides_in_amplicon]
+                    this_sgRNA_plot_idxs = [guide_instance.get_plot_idx() for guide_instance in guides_in_amplicon]
+                    this_sgRNA_quantification_idxs = [guide_instance.get_quantification_idx() for guide_instance in guides_in_amplicon]
+                    this_sgRNA_mismatches = [guide_instance.get_mismatches_in_ref() for guide_instance in guides_in_amplicon]
+                    this_sgRNA_orig_seqs = [guide_instance.get_guide().get_original_seq() for guide_instance in guides_in_amplicon]
+                    this_sgRNA_names = [guide_instance.get_name_in_ref() for guide_instance in guides_in_amplicon]
+
                     for guide_seq in this_sgRNA_sequences:
                         guides_are_in_amplicon[guide_seq] = 1
 

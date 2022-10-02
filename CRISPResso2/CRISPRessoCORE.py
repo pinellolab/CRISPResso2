@@ -1224,7 +1224,7 @@ def main():
                                 needleman_wunsch_gap_extend=args.needleman_wunsch_gap_extend,
                                 split_interleaved_input=args.split_interleaved_input
                                 )
-                existing_guide_seqs = [guide.get_seq() for guide in guides]
+                existing_guide_seqs = [guide.get_sequence() for guide in guides]
                 if potential_guide_seq is not None and potential_guide_seq not in existing_guide_seqs:
                     new_guide = CRISPRessoObjects.Guide.default_from_args(default_args=args)
                     new_guide.set_name('Guessed sgRNA')
@@ -1246,7 +1246,7 @@ def main():
             info("Auto-detected %d guide%s"%(len(discovered_guides), plural_string))
             if args.debug:
                 for idx, guide in enumerate(discovered_guides):
-                    info('Detected guide ' + str(idx) + ":" + str(guide.get_seq()))
+                    info('Detected guide ' + str(idx) + ":" + str(guide.get_sequence()))
             if amplicon_seq_arr == 0:
                 raise CRISPRessoShared.BadParameterException(
                     "Cannot automatically infer amplicon sequence.",
@@ -1355,8 +1355,11 @@ def main():
                 this_name = amplicon_name_arr[idx]
                 raise CRISPRessoShared.NTException('Reference amplicon sequence %d (%s) contains invalid characters: %s'%(idx, this_name, ' '.join(wrong_nt)))
 
-        def get_prime_editing_guides(this_amp_seq, this_amp_name, ref0_seq, prime_edited_seq, prime_editing_extension_seq_top_strand, prime_editing_extension_seq_dna, prime_editing_pegRNA_extension_quantification_window_size,
-                prime_editing_pegRNA_spacer_seq, prime_editing_nicking_guide_seq, nicking_qw_center, nicking_qw_size,plot_window_size,aln_matrix,needleman_wunsch_gap_open,needleman_wunsch_gap_extend, default_guide_template):
+        def get_prime_editing_guides(this_amp_seq, this_amp_name, ref0_seq, prime_edited_seq, prime_editing_extension_seq_top_strand, prime_editing_extension_seq_dna, 
+                                     prime_editing_pegRNA_extension_quantification_window_size, prime_editing_pegRNA_spacer_seq, prime_editing_nicking_guide_seq, 
+                                     nicking_qw_center, nicking_qw_size, nicking_qw_size_5prime, nicking_qw_size_3prime,
+                                     plot_window_size, plot_window_size_5prime, plot_window_size_3prime, 
+                                     aln_matrix, needleman_wunsch_gap_open, needleman_wunsch_gap_extend, default_guide_template):
             """
             get prime editing guide sequences and information for this amplicon
 
@@ -1392,13 +1395,13 @@ def main():
             #if this is the prime edited sequence, add it directly
             if this_amp_seq == prime_editing_edited_amp_seq:
                 best_aln_seq, best_aln_score, best_aln_mismatches, best_aln_start, best_aln_end, s1, s2 = CRISPRessoShared.get_best_aln_pos_and_mismatches(prime_editing_extension_seq_dna, prime_editing_edited_amp_seq,aln_matrix,needleman_wunsch_gap_open,0)
-                pe_extension_guide = CRISPRessoObjects.Guide.from_template(default_guide_template)
+                pe_extension_guide = default_guide_template.copy()
                 pe_extension_guide.set_sequence(prime_editing_extension_seq_top_strand)
                 pe_extension_guide.set_original_sequence(prime_editing_extension_seq_top_strand)
                 pe_extension_guide.set_mismatches(best_aln_mismatches)
                 pe_extension_guide.set_name('PE Extension')
                 pe_extension_guide.set_qw_center(0)
-                pe_extension_guide.set_qw_sizes(prime_editing_pegRNA_extension_quantification_window_size)
+                pe_extension_guide.set_qw_size(prime_editing_pegRNA_extension_quantification_window_size)
                 pe_extension_guide.set_show_cut_point(False)
                 pe_extension_guide.set_pw_size(pe_plot_window_size)
                 pe_extension_guide.set_pw_size_5prime(pe_plot_window_size_5prime)
@@ -1418,13 +1421,13 @@ def main():
                 this_mismatches = CRISPRessoShared.get_sgRNA_mismatch_vals(this_amp_seq, prime_editing_edited_amp_seq, pe_start_loc, pe_end_loc, coords_l, coords_r, rev_coords_l, rev_coords_r)
                 this_mismatches += [coords_l[i] for i in best_aln_mismatches] #add mismatches to original sequence
 
-                pe_extension_guide = CRISPRessoObjects.Guide.from_template(default_guide_template)
+                pe_extension_guide = default_guide_template.copy()
                 pe_extension_guide.set_sequence(new_seq)
                 pe_extension_guide.set_original_sequence(prime_editing_extension_seq_top_strand)
                 pe_extension_guide.set_mismatches(this_mismatches)
                 pe_extension_guide.set_name('PE Extension')
                 pe_extension_guide.set_qw_center(0)
-                pe_extension_guide.set_qw_sizes(prime_editing_pegRNA_extension_quantification_window_size)
+                pe_extension_guide.set_qw_size(prime_editing_pegRNA_extension_quantification_window_size)
                 pe_extension_guide.set_show_cut_point(False)
                 pe_extension_guide.set_pw_size(pe_plot_window_size)
                 pe_extension_guide.set_pw_size_5prime(pe_plot_window_size_5prime)
@@ -1445,7 +1448,7 @@ def main():
             #if this is the first sequence, add it directly
             if this_amp_seq == ref0_seq:
                 best_aln_seq, best_aln_score, best_aln_mismatches, best_aln_start, best_aln_end, s1, s2 = CRISPRessoShared.get_best_aln_pos_and_mismatches(pegRNA_spacer_seq, ref0_seq,aln_matrix,needleman_wunsch_gap_open,0)
-                pe_spacer_guide = CRISPRessoObjects.Guide.from_template(default_guide_template)
+                pe_spacer_guide = default_guide_template.copy()
                 pe_spacer_guide.set_sequence(best_aln_seq)
                 pe_spacer_guide.set_original_sequence(prime_editing_pegRNA_spacer_seq)
                 pe_spacer_guide.set_mismatches(best_aln_mismatches)
@@ -1453,7 +1456,7 @@ def main():
                 pe_spacer_guide.set_qw_center(nicking_qw_center)
                 pe_spacer_guide.set_qw_size(nicking_qw_size)
                 pe_spacer_guide.set_qw_size_5prime(nicking_qw_size_5prime)
-                pe_spacer_guide.set_qw_size_3prime(nicking_qw_size_eprime)
+                pe_spacer_guide.set_qw_size_3prime(nicking_qw_size_3prime)
                 pe_spacer_guide.set_show_cut_point(True)
                 pe_spacer_guide.set_pw_size(pe_plot_window_size)
                 pe_spacer_guide.set_pw_size_5prime(pe_plot_window_size_5prime)
@@ -1471,7 +1474,7 @@ def main():
                 this_mismatches = CRISPRessoShared.get_sgRNA_mismatch_vals(this_amp_seq, ref0_seq, r0_start_loc, r0_end_loc, coords_l, coords_r, rev_coords_l, rev_coords_r)
                 this_mismatches += [coords_l[i] for i in best_aln_mismatches] #add mismatches to original sequence
 
-                pe_spacer_guide = CRISPRessoObjects.Guide.from_template(default_guide_template)
+                pe_spacer_guide = default_guide_template.copy()
                 pe_spacer_guide.set_sequence(new_seq)
                 pe_spacer_guide.set_original_sequence(prime_editing_pegRNA_spacer_seq)
                 pe_spacer_guide.set_mismatches(this_mismatches)
@@ -1481,7 +1484,7 @@ def main():
                 pe_spacer_guide.set_qw_center(nicking_center_this_amp_seq)
                 pe_spacer_guide.set_qw_size(nicking_qw_size)
                 pe_spacer_guide.set_qw_size_5prime(nicking_qw_size_5prime)
-                pe_spacer_guide.set_qw_size_3prime(nicking_qw_size_eprime)
+                pe_spacer_guide.set_qw_size_3prime(nicking_qw_size_3prime)
                 pe_spacer_guide.set_show_cut_point(True)
                 pe_spacer_guide.set_pw_size(pe_plot_window_size)
                 pe_spacer_guide.set_pw_size_5prime(pe_plot_window_size_5prime)
@@ -1502,7 +1505,7 @@ def main():
                     if nicking_guide_seq not in rc_ref0_seq:
                         warn('The given prime editing nicking guide is not found in the reference sequence. Using the best match: ' + str(best_aln_seq))
 
-                    pe_nicking_guide = CRISPRessoObjects.Guide.from_template(default_guide_template)
+                    pe_nicking_guide = default_guide_template.copy()
                     pe_nicking_guide.set_sequence(best_aln_seq)
                     pe_nicking_guide.set_original_sequence(prime_editing_nicking_guide_seq)
                     pe_nicking_guide.set_mismatches(best_aln_mismatches)
@@ -1510,7 +1513,7 @@ def main():
                     pe_nicking_guide.set_qw_center(nicking_qw_center)
                     pe_nicking_guide.set_qw_size(nicking_qw_size)
                     pe_nicking_guide.set_qw_size_5prime(nicking_qw_size_5prime)
-                    pe_nicking_guide.set_qw_size_3prime(nicking_qw_size_eprime)
+                    pe_nicking_guide.set_qw_size_3prime(nicking_qw_size_3prime)
                     pe_nicking_guide.set_show_cut_point(True)
                     pe_nicking_guide.set_pw_size(pe_plot_window_size)
                     pe_nicking_guide.set_pw_size_5prime(pe_plot_window_size_5prime)
@@ -1533,7 +1536,7 @@ def main():
                     nicking_center_ref0 = r0_end_loc + nicking_qw_center
                     nicking_center_this_amp_seq = rev_coords_r[nicking_center_ref0] - coords_r[r0_end_loc]
 
-                    pe_nicking_guide = CRISPRessoObjects.Guide.from_template(default_guide_template)
+                    pe_nicking_guide = default_guide_template.copy()
                     pe_nicking_guide.set_sequence(new_seq)
                     pe_nicking_guide.set_original_sequence(prime_editing_nicking_guide_seq)
                     pe_nicking_guide.set_mismatches(this_mismatches)
@@ -1541,7 +1544,7 @@ def main():
                     pe_nicking_guide.set_qw_center(nicking_center_this_amp_seq)
                     pe_nicking_guide.set_qw_size(nicking_qw_size)
                     pe_nicking_guide.set_qw_size_5prime(nicking_qw_size_5prime)
-                    pe_nicking_guide.set_qw_size_3prime(nicking_qw_size_eprime)
+                    pe_nicking_guide.set_qw_size_3prime(nicking_qw_size_3prime)
                     pe_nicking_guide.set_show_cut_point(True)
                     pe_nicking_guide.set_pw_size(pe_plot_window_size)
                     pe_nicking_guide.set_pw_size_5prime(pe_plot_window_size_5prime)
@@ -1552,7 +1555,6 @@ def main():
         #end prime editing guide function
 
         #now that we're done with adding possible guides and amplicons, go through each amplicon and compute quantification windows
-        print('guides is ' + str(guides))
         found_guide_seq = [False]*len(guides)
         found_coding_seq = [False]*len(coding_seqs)
 
@@ -1624,7 +1626,7 @@ def main():
                 existing_guide_seqs = [guide.get_seq() for guide in guides]
                 for i in range(len(flexi_guides)):
                     flexi_guide = flexi_guides[i]
-                    if flexi_guide.get_seq() not in existing_guide_seqs:
+                    if flexi_guide.get_sequence() not in existing_guide_seqs:
                         flexi_guide_count += 1
                         this_amplicon_guides.append(flexi_guide)
                 info('Added %d guides with flexible matching\n\tOriginal flexiguides: %s\n\tFound guides: %s\n\tMismatch locations: %s'%(flexi_guide_count, str(args.flexiguide_seq.split(",")), str(flexi_guides), str(flexi_guide_mismatches)))
@@ -1632,41 +1634,58 @@ def main():
             if args.prime_editing_pegRNA_extension_seq:
                 nicking_qw_center = int(args.quantification_window_center.split(",")[0])
                 nicking_qw_size = int(args.quantification_window_size.split(",")[0])
+
                 nicking_qw_size_5prime = nicking_qw_size
                 if args.quantification_window_size_5prime is not None:
                     nicking_qw_size_5prime = int(args.quantification_window_size_5prime.split(",")[0])
+
                 nicking_qw_size_3prime = nicking_qw_size
                 if args.quantification_window_size_3prime is not None:
                     nicking_qw_size_3prime = int(args.quantification_window_size_3prime.split(",")[0])
+
                 pe_plot_window_size = int(args.plot_window_size.split(",")[0])
+
                 pe_plot_window_size_5prime = pe_plot_window_size
                 if args.plot_window_size_5prime is not None:
                     pe_plot_window_size_5prime = int(args.plot_window_size_5prime.split(",")[0])
+
                 pe_plot_window_size_3prime = pe_plot_window_size
                 if args.plot_window_size_3prime is not None:
                     pe_plot_window_size_3prime = int(args.plot_window_size_3prime.split(",")[0])
 
+                guide_template = CRISPRessoObjects.Guide.default_from_args(args)
                 pe_guides = get_prime_editing_guides(this_seq, this_name, amplicon_seq_arr[0],
                         prime_editing_edited_amp_seq, extension_seq_dna_top_strand, prime_editing_extension_seq_dna, args.prime_editing_pegRNA_extension_quantification_window_size,
                         args.prime_editing_pegRNA_spacer_seq, args.prime_editing_nicking_guide_seq, nicking_qw_center, nicking_qw_size, nicking_qw_size_5prime, nicking_qw_size_3prime,
-                        pe_plot_window_size, pe_plot_window_size_5prime, pe_plot_window_size_3prime, aln_matrix,args.needleman_wunsch_gap_open,args.needleman_wunsch_gap_extend)
+                        pe_plot_window_size, pe_plot_window_size_5prime, pe_plot_window_size_3prime, aln_matrix,args.needleman_wunsch_gap_open,args.needleman_wunsch_gap_extend,guide_template)
 
                 this_amplicon_guides.extend(pe_guides)
 
-            # Calculate cut sites for this reference
-            (this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_orientations, this_sgRNA_cut_points, this_sgRNA_plot_cut_points, this_sgRNA_plot_idxs, this_sgRNA_quantification_idxs,
-                        this_sgRNA_mismatches, this_sgRNA_names, this_include_idxs, this_exclude_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(this_seq, this_amplicon_guides,
+            # Calculate cut sitese
+            (guides_in_amplicon, this_include_idxs, this_exclude_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(this_seq, this_amplicon_guides,
                         this_quant_window_coordinates, args.exclude_bp_from_left, args.exclude_bp_from_right,
                         args.discard_guide_positions_overhanging_amplicon_edge, args.shrink_plot_window_to_amplicon_size, args.shrink_quantification_window_to_included_bases)
 
-            this_amplicon_contains_guide = False
+            
+            this_sgRNA_sequences = [guide_instance.get_sequence() for guide_instance in guides_in_amplicon]
+            this_sgRNA_intervals = [guide_instance.get_interval() for guide_instance in guides_in_amplicon]
+            this_sgRNA_orientations = [guide_instance.get_orientation() for guide_instance in guides_in_amplicon]
+            this_sgRNA_cut_points = [guide_instance.get_cut_point() for guide_instance in guides_in_amplicon]
+            this_sgRNA_plot_cut_points = [guide_instance.get_guide().get_show_cut_point() for guide_instance in guides_in_amplicon]
+            this_sgRNA_plot_idxs = [guide_instance.get_plot_idx() for guide_instance in guides_in_amplicon]
+            this_sgRNA_quantification_idxs = [guide_instance.get_quantification_idx() for guide_instance in guides_in_amplicon]
+            this_sgRNA_mismatches = [guide_instance.get_mismatches_in_ref() for guide_instance in guides_in_amplicon]
+            this_sgRNA_orig_seqs = [guide_instance.get_guide().get_original_seq() for guide_instance in guides_in_amplicon]
+            this_sgRNA_names = [guide_instance.get_name_in_ref() for guide_instance in guides_in_amplicon]
+
+            this_amplicon_contains_guide = False # whether this amplicon contains a guide
             if len(this_sgRNA_sequences) > 0:
                 this_amplicon_contains_guide = True
 
-            for guide_idx, guide in enumerate(guides):
+            for guide_idx, guide in enumerate(guides): #enumerate through all guides
                 #this_sgRNA_sequences contains all good guides contained in this amplicon
                 #don't consider flexiguides or other guides in this_sgRNA_sequences which may be specific to this amplicon
-                if guide.get_seq().upper() in this_sgRNA_sequences:
+                if guide.get_original_seq().upper() in this_sgRNA_orig_seqs:
                     found_guide_seq[guide_idx] = True
 
             # Calculate coding sequence for this reference
@@ -1761,12 +1780,12 @@ def main():
         if args.guide_seq:
             for idx, presence_bool in enumerate(found_guide_seq):
                 if not presence_bool:
-                    raise CRISPRessoShared.SgRNASequenceException('The guide sequence %d (%s) provided is not present in the amplicon sequences!\n\nPlease check your input!' % (idx, guides[idx]))
+                    raise CRISPRessoShared.SgRNASequenceException('The guide #%d (%s) provided is not present in the amplicon sequences!\n\nPlease check your input!' % (idx+1, guides[idx]))
 
         if args.coding_seq:
             for idx, presence_bool in enumerate(found_coding_seq):
                 if not presence_bool:
-                    raise CRISPRessoShared.ExonSequenceException('The coding subsequence %d (%s) provided is not contained in any amplicon sequence!\n\nPlease check your input!' % (idx, coding_seqs[idx]))
+                    raise CRISPRessoShared.ExonSequenceException('The coding subsequence %d (%s) provided is not contained in any amplicon sequence!\n\nPlease check your input!' % (idx+1, coding_seqs[idx]))
 
         #clone cut points and include idx from first reference where those are set (also exons)
         clone_ref_name = None
@@ -1880,14 +1899,10 @@ def main():
                         this_sgRNA_mismatches.append(sorted(best_aln_mismatches))
 
                         ref_seq_length = len(refs[ref_name]['sequence'])
-                        window_around_cut=max(1, args.plot_window_size)
-                        st=max(0, sgRNA_cut_point_this-window_around_cut+1)
-                        en=min(ref_seq_length-1, sgRNA_cut_point_this+window_around_cut+1)
+                        clone_plot_idxs = refs[clone_ref_name]['sgRNA_plot_idxs']
+                        st=max(0, s1inds[clone_plot_idxs[0]]+1)
+                        en=min(ref_seq_length-1, s1inds[clone_plot_idxs[1]]+1)
                         this_sgRNA_plot_idxs.append(sorted(list(range(st, en))))
-
-                    old_this_sgRNA_plot_idxs = []
-                    for plot_idx_list in refs[clone_ref_name]['sgRNA_plot_idxs']:
-                        old_this_sgRNA_plot_idxs.append([s1inds[x] for x in plot_idx_list])
 
                     this_include_idxs = []
                     start_val = -1
@@ -3448,6 +3463,7 @@ def main():
             quantification_window_ref_seq = [list(ref_seq)[x] for x in include_idxs_list]
             sgRNA_sequences = refs[ref_name]['sgRNA_sequences']
             sgRNA_orig_sequences = refs[ref_name]['sgRNA_orig_sequences']
+            sgRNA_plot_idxs = refs[ref_name]['sgRNA_plot_idxs']
             cut_points = refs[ref_name]['sgRNA_cut_points']
             plot_cut_points = refs[ref_name]['sgRNA_plot_cut_points']
             sgRNA_intervals = refs[ref_name]['sgRNA_intervals']
@@ -3557,6 +3573,7 @@ def main():
                         cut_point = cut_points[i]
                         sgRNA = sgRNA_orig_sequences[i]
                         sgRNA_name = sgRNA_names[i]
+                        sgRNA_plot_idx = sgRNA_plot_idxs[i]
 
                         sgRNA_label = "sgRNA_"+sgRNA # for file names
                         sgRNA_legend = "sgRNA " + sgRNA # for legends
@@ -3567,9 +3584,8 @@ def main():
 
                         #get nucleotide columns to print for this sgRNA
                         sel_cols = [0, 1]
-                        plot_half_window = max(1, args.plot_window_size)
-                        new_sel_cols_start = max(2, cut_point-plot_half_window+1)
-                        new_sel_cols_end = min(ref_len, cut_point+plot_half_window+1)
+                        new_sel_cols_start = sgRNA_plot_idx[0]
+                        new_sel_cols_end = sgRNA_plot_idx[1]
                         sel_cols.extend(list(range(new_sel_cols_start+2, new_sel_cols_end+2)))
                         #get new intervals
                         new_sgRNA_intervals = []
@@ -4154,8 +4170,7 @@ def main():
                     sgRNA_legend = sgRNA_name + " (" + sgRNA +")"
                 sgRNA_label = CRISPRessoShared.slugify(sgRNA_label)
 
-                plot_half_window = max(1, args.plot_window_size)
-                df_alleles_around_cut=CRISPRessoShared.get_dataframe_around_cut(df_alleles.loc[df_alleles['Reference_Name'] == ref_name], cut_point, plot_half_window)
+                df_alleles_around_cut=CRISPRessoShared.get_dataframe_at_idxs(df_alleles.loc[df_alleles['Reference_Name'] == ref_name], plot_idxs)
                 count_total = counts_total[ref_name]
                 if args.allele_plot_pcts_only_for_assigned_reference:
                     df_alleles_around_cut['%AllReads']=df_alleles_around_cut['%Reads']
@@ -4166,7 +4181,7 @@ def main():
                 df_alleles_around_cut.to_csv(allele_filename, sep='\t', header=True)
                 crispresso2_info['results']['refs'][ref_name]['allele_frequency_files'].append(os.path.basename(allele_filename))
 
-                ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_half_window+1:cut_point+plot_half_window+1]
+                ref_seq_around_cut=refs[ref_name]['sequence'][plot_idxs[0]+1:plot_idxs[1]+1]
                 fig_filename_root = _jp('9.'+ref_plot_name+'Alleles_frequency_table_around_'+sgRNA_label)
                 n_good = df_alleles_around_cut[df_alleles_around_cut['%Reads']>=args.min_frequency_alleles_around_cut_to_plot].shape[0]
                 if not args.suppress_plots and n_good > 0:
@@ -4178,7 +4193,7 @@ def main():
 
                     new_sgRNA_intervals = []
                     #adjust coordinates of sgRNAs
-                    new_sel_cols_start = cut_point - plot_half_window
+                    new_sel_cols_start = plot_idxs[0]
                     for (int_start, int_end) in refs[ref_name]['sgRNA_intervals']:
                         new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1, int_end - new_sel_cols_start - 1)]
                     plot_9_input = {
@@ -4202,16 +4217,18 @@ def main():
                 if not args.crispresso1_mode and args.base_editor_output:
                     ###guide-specific base editor plots
                     plot_ref_seq = ref_seq_around_cut
-                    plot_nuc_pcts = df_nuc_pct_all.iloc[:, plot_idxs]
-                    plot_nuc_freqs = df_nuc_freq_all.iloc[:, plot_idxs]
+
+                    plot_col_idxs = list(range(plot_idxs[0], plot_idxs[1]))
+                    plot_nuc_pcts = df_nuc_pct_all.iloc[:, plot_col_idxs]
+                    plot_nuc_freqs = df_nuc_freq_all.iloc[:, plot_col_idxs]
 
                     #get computation window in plotted region
                     is_window = np.zeros(ref_len)
                     for ind in include_idxs_list:
                         is_window[ind] = 1
-                    plot_is_window = np.zeros(len(plot_idxs)) #binary array whether base should be plotted
+                    plot_is_window = np.zeros(len(plot_col_idxs)) #binary array whether base should be plotted
                     plot_quant_window_idxs = []
-                    for ind, loc in enumerate(plot_idxs):
+                    for ind, loc in enumerate(plot_col_idxs):
                         plot_is_window[ind] = is_window[loc]
                         if is_window[loc]:
                             plot_quant_window_idxs.append(ind-2)
@@ -4526,6 +4543,7 @@ def main():
                     cut_point = pe_sgRNA_cut_points[i]
                     sgRNA = pe_sgRNA_orig_sequences[i]
                     sgRNA_name = pe_sgRNA_names[i]
+                    sgRNA_plot_idx = pe_sgRNA_plot_idxs[i]
 
                     sgRNA_label = "sgRNA_"+sgRNA # for file names
                     sgRNA_legend = "sgRNA " + sgRNA # for legends
@@ -4536,9 +4554,8 @@ def main():
 
                     #get nucleotide columns to print for this sgRNA
                     sel_cols = [0, 1]
-                    plot_half_window = max(1, args.plot_window_size)
-                    new_sel_cols_start = max(2, cut_point-plot_half_window+1)
-                    new_sel_cols_end = min(pe_ref_len, cut_point+plot_half_window+1)
+                    new_sel_cols_start = sgRNA_plot_idx[0]
+                    new_sel_cols_end = sgRNA_plot_idx[1]
                     sel_cols.extend(list(range(new_sel_cols_start+2, new_sel_cols_end+2))) #+2 because the first two columns are Batch and Nucleotide
                     #get new intervals
                     new_sgRNA_intervals = []
@@ -4559,7 +4576,7 @@ def main():
                         'sgRNA_mismatches': sgRNA_mismatches,
                         'quantification_window_idxs': new_include_idx,
                     }
-                    plot(CRISPResssoPlot.plot_nucleotide_quilt, plot_11b_input)
+                    plot(CRISPRessoPlot.plot_nucleotide_quilt, plot_11b_input)
                     crispresso2_info['results']['refs'][ref_names_for_pe[0]]['plot_11b_roots'].append(os.path.basename(plot_root))
                     crispresso2_info['results']['refs'][ref_names_for_pe[0]]['plot_11b_captions'].append('Figure 11b: Nucleotide distribution around the ' + sgRNA_legend + '.')
                     crispresso2_info['results']['refs'][ref_names_for_pe[0]]['plot_11b_datas'].append([('Nucleotide frequency in quantification window for ' + ref_name, os.path.basename(crispresso2_info['results']['refs'][ref_name]['quant_window_nuc_freq_filename'])) for ref_name in ref_names_for_pe])
