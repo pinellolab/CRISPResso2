@@ -1378,6 +1378,9 @@ def main():
             if wrong_nt:
                 this_name = amplicon_name_arr[idx]
                 raise CRISPRessoShared.NTException('Reference amplicon sequence %d (%s) contains invalid characters: %s'%(idx, this_name, ' '.join(wrong_nt)))
+        amplicon_seq_set = set(amplicon_seq_arr)
+        if len(amplicon_seq_set) != len(amplicon_seq_arr):
+            raise CRISPRessoShared.BadParameterException('Provided amplicon sequences must be unique!')
 
 
 
