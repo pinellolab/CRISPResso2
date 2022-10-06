@@ -1299,6 +1299,10 @@ def main():
                     amplicon_min_alignment_score_arr.append(this_min_aln_score)
 
         if args.expected_hdr_amplicon_seq != "":
+            if args.expected_hdr_amplicon_seq in amplicon_seq_arr:
+                raise CRISPRessoShared.BadParameterException(
+                    "HDR expected amplicon sequence is the same as a reference amplicon. Check the --expected_hdr_amplicon_seq parameter")
+
             amplicon_seq_arr.append(args.expected_hdr_amplicon_seq)
             amplicon_name_arr.append('HDR')
             amplicon_min_alignment_score_arr.append(args.default_min_aln_score)
