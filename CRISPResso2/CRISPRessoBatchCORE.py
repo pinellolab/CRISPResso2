@@ -334,9 +334,8 @@ def main():
         if args.suppress_report:
             save_png = False
 
-        if not args.suppress_batch_summary_plots:
-            process_results = []
-            process_pool = ProcessPoolExecutor(n_processes_for_batch)
+        process_results = []
+        process_pool = ProcessPoolExecutor(n_processes_for_batch)
 
         plot = partial(
             CRISPRessoMultiProcessing.run_plot,
