@@ -2172,17 +2172,6 @@ def main():
 
             info('Done!', {'percent_complete': 6})
 
-            #for paired-end reads, merge them
-            # info('Estimating average read length...')
-            # if args.debug:
-            #     info('Checking average read length from ' + output_forward_paired_filename)
-            # if get_n_reads_fastq(output_forward_paired_filename):
-            #     avg_read_length=get_avg_read_length_fastq(output_forward_paired_filename)
-            #     if args.debug:
-            #         info('Average read length is ' + str(avg_read_length) + ' from ' + output_forward_paired_filename)
-            # else:
-            #    raise CRISPRessoShared.NoReadsAfterQualityFilteringException('No reads survived the average or single bp quality filtering.')
-
             if not os.path.isfile(processed_output_filename):
                 raise CRISPRessoShared.FlashException('Fastp failed to produce merged reads file, please check the log file.')
 
