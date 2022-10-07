@@ -19,6 +19,7 @@ import signal
 import subprocess as sb
 import unicodedata
 import logging
+from sys import platform
 
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoCOREResources
@@ -840,7 +841,7 @@ def get_command_output(command):
             break
 
 
-def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command, max_paired_end_reads_overlap, min_paired_end_reads_overlap, split_interleaved_input=False, debug=False):
+def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, fastp_command, min_paired_end_reads_overlap, split_interleaved_input=False, debug=False):
     """
     Get the most frequent amplicon from a fastq file (or after merging a r1 and r2 fastq file).
 
@@ -850,8 +851,7 @@ def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, fla
     fastq_r1: path to fastq r1 (can be gzipped)
     fastq_r2: path to fastq r2 (can be gzipped)
     number_of_reads_to_consider: number of reads from the top of the file to examine
-    min_paired_end_reads_overlap: min overlap in bp for flashing (merging) r1 and r2
-    max_paired_end_reads_overlap: max overlap in bp for flashing (merging) r1 and r2
+    min_paired_end_reads_overlap: min overlap in bp for fastp (merging) r1 and r2
 
     returns:
     list of amplicon strings sorted by order in format:
@@ -904,21 +904,36 @@ def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, fla
     view_cmd_1 = 'cat'
     if fastq_r1.endswith('.gz'):
         view_cmd_1 = 'zcat'
+        # For some reason on OSX `zcat` doesn't take a file as input
+        # Source: https://serverfault.com/questions/570024/zcat-gzcat-works-in-linux-not-on-osx-general-linux-osx-compatibility
+        if platform == 'darwin':
+            view_cmd_1 = 'zcat <'
     file_generation_command = "%s %s | head -n %d " % (view_cmd_1, fastq_r1, number_of_reads_to_consider * 4)
 
     if fastq_r2:
         view_cmd_2 = 'cat'
         if fastq_r2.endswith('.gz'):
             view_cmd_2 = 'zcat'
+            if platform == 'darwin':
+                view_cmd_2 = 'zcat <'
         max_overlap_param = ""
         min_overlap_param = ""
-        if max_paired_end_reads_overlap:
-            max_overlap_param = "--max-overlap=" + str(max_paired_end_reads_overlap)
         if min_paired_end_reads_overlap:
-            min_overlap_param = "--min-overlap=" + str(min_paired_end_reads_overlap)
-        file_generation_command = "bash -c 'paste <(%s \"%s\") <(%s \"%s\")' | head -n %d | paste - - - - | awk -v OFS=\"\\n\" -v FS=\"\\t\" '{print($1,$3,$5,$7,$2,$4,$6,$8)}' | %s - --interleaved-input --allow-outies %s %s --to-stdout 2>/dev/null " % (
-        view_cmd_1, fastq_r1, view_cmd_2, fastq_r2, number_of_reads_to_consider * 4, flash_command, max_overlap_param,
-        min_overlap_param)
+            min_overlap_param = "--overlap_len_require {0}".format(min_paired_end_reads_overlap)
+
+        file_generation_command = "{paste} | {head} | paste - - - - | {awk} | {fastp}".format(
+            paste="bash -c 'paste <({view_cmd_1} \"{fastq_r1}\") <({view_cmd_2} \"{fastq_r2}\")'".format(
+                view_cmd_1=view_cmd_1, fastq_r1=fastq_r1, view_cmd_2=view_cmd_2, fastq_r2=fastq_r2,
+            ),
+            head='head -n {num_reads}'.format(
+                num_reads=number_of_reads_to_consider * 4,
+            ),
+            awk="awk -v OFS=\"\\n\" -v FS=\"\\t\" '{{print($1,$3,$5,$7,$2,$4,$6,$8)}}'",
+            fastp='{fastp_command} --disable_adapter_trimming --disable_trim_poly_g --disable_quality_filtering --disable_length_filtering --stdin --interleaved_in --merge {min_overlap_param} --stdout 2>/dev/null'.format(
+                fastp_command=fastp_command,
+                min_overlap_param=min_overlap_param,
+            ),
+        )
     count_frequent_cmd = file_generation_command + " | awk '((NR-2)%4==0){print $1}' | sort | uniq -c | sort -nr "
 
     def default_sigpipe():
@@ -948,16 +963,15 @@ def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, fla
     return seq_lines
 
 
-def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,min_paired_end_reads_overlap,aln_matrix,needleman_wunsch_gap_open,needleman_wunsch_gap_extend,split_interleaved_input=False,min_freq_to_consider=0.2,amplicon_similarity_cutoff=0.95):
+def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,fastp_command,min_paired_end_reads_overlap,aln_matrix,needleman_wunsch_gap_open,needleman_wunsch_gap_extend,split_interleaved_input=False,min_freq_to_consider=0.2,amplicon_similarity_cutoff=0.95):
     """
     guesses the amplicons used in an experiment by examining the most frequent read (giant caveat -- most frequent read should be unmodified)
     input:
     fastq_r1: path to fastq r1 (can be gzipped)
     fastq_r2: path to fastq r2 (can be gzipped)
     number_of_reads_to_consider: number of reads from the top of the file to examine
-    flash_command: command to call flash
-    min_paired_end_reads_overlap: min overlap in bp for flashing (merging) r1 and r2
-    max_paired_end_reads_overlap: max overlap in bp for flashing (merging) r1 and r2
+    fastp_command: command to call fastp
+    min_paired_end_reads_overlap: min overlap in bp for fastp (merging) r1 and r2
     aln_matrix: matrix specifying alignment substitution scores in the NCBI format
     needleman_wunsch_gap_open: alignment penalty assignment used to determine similarity of two sequences
     needleman_wunsch_gap_extend: alignment penalty assignment used to determine similarity of two sequences
@@ -968,7 +982,7 @@ def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,
     returns:
     list of putative amplicons
     """
-    seq_lines = get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command, max_paired_end_reads_overlap, min_paired_end_reads_overlap, split_interleaved_input=split_interleaved_input)
+    seq_lines = get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, fastp_command, min_paired_end_reads_overlap, split_interleaved_input=split_interleaved_input)
 
     curr_amplicon_id = 1
 
@@ -1013,7 +1027,7 @@ def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,
     return amplicon_seq_arr
 
 
-def guess_guides(amplicon_sequence,fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,
+def guess_guides(amplicon_sequence,fastq_r1,fastq_r2,number_of_reads_to_consider,fastp_command,
             min_paired_end_reads_overlap,exclude_bp_from_left,exclude_bp_from_right,
             aln_matrix,needleman_wunsch_gap_open,needleman_wunsch_gap_extend,
             min_edit_freq_to_consider=0.1,min_edit_fold_change_to_consider=3,
@@ -1025,9 +1039,8 @@ def guess_guides(amplicon_sequence,fastq_r1,fastq_r2,number_of_reads_to_consider
     fastq_r1: path to fastq r1 (can be gzipped)
     fastq_r2: path to fastq r2 (can be gzipped)
     number_of_reads_to_consider: number of reads from the top of the file to examine
-    flash_command: command to call flash
-    min_paired_end_reads_overlap: min overlap in bp for flashing (merging) r1 and r2
-    max_paired_end_reads_overlap: max overlap in bp for flashing (merging) r1 and r2
+    fastp_command: command to call fastp
+    min_paired_end_reads_overlap: min overlap in bp for fastp (merging) r1 and r2
     exclude_bp_from_left: number of bp to exclude from the left side of the amplicon sequence for the quantification of the indels
     exclude_bp_from_right: number of bp to exclude from the right side of the amplicon sequence for the quantification of the indels
     aln_matrix: matrix specifying alignment substitution scores in the NCBI format
@@ -1043,7 +1056,7 @@ def guess_guides(amplicon_sequence,fastq_r1,fastq_r2,number_of_reads_to_consider
     tuple of (putative guide, boolean is_base_editor)
     or (None, None)
     """
-    seq_lines = get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command, max_paired_end_reads_overlap, min_paired_end_reads_overlap,split_interleaved_input=split_interleaved_input)
+    seq_lines = get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, fastp_command, min_paired_end_reads_overlap,split_interleaved_input=split_interleaved_input)
 
     amp_len = len(amplicon_sequence)
     gap_incentive = np.zeros(amp_len + 1, dtype=int)

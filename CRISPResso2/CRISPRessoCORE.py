@@ -127,7 +127,7 @@ import matplotlib.gridspec as gridspec
 
 pd=check_library('pandas')
 np=check_library('numpy')
-check_program('flash')
+check_program('fastp')
 
 #start = time.time()
 sns=check_library('seaborn')
@@ -1225,17 +1225,16 @@ def main():
                     sb.call('samtools view -h ' + args.bam_input + ' ' + args.bam_chr_loc + ' | head -n ' + str(number_of_reads_to_consider+100) + ' | samtools bam2fq -  2> /dev/null > ' + auto_fastq_r1, shell=True)
 
             amplicon_seq_arr = CRISPRessoShared.guess_amplicons(
-                        fastq_r1=auto_fastq_r1,
-                        fastq_r2=auto_fastq_r2,
-                        number_of_reads_to_consider=number_of_reads_to_consider,
-                        flash_command=args.flash_command,
-                        max_paired_end_reads_overlap=args.max_paired_end_reads_overlap,
-                        min_paired_end_reads_overlap=args.min_paired_end_reads_overlap,
-                        aln_matrix=aln_matrix,
-                        needleman_wunsch_gap_open=args.needleman_wunsch_gap_open,
-                        needleman_wunsch_gap_extend=args.needleman_wunsch_gap_extend,
-                        split_interleaved_input=args.split_interleaved_input
-                        )
+                fastq_r1=auto_fastq_r1,
+                fastq_r2=auto_fastq_r2,
+                number_of_reads_to_consider=number_of_reads_to_consider,
+                fastp_command=args.fastp_command,
+                min_paired_end_reads_overlap=args.min_paired_end_reads_overlap,
+                aln_matrix=aln_matrix,
+                needleman_wunsch_gap_open=args.needleman_wunsch_gap_open,
+                needleman_wunsch_gap_extend=args.needleman_wunsch_gap_extend,
+                split_interleaved_input=args.split_interleaved_input
+            )
             amp_dummy = ['']
             amp_dummy.extend(list(range(2, len(amplicon_seq_arr)+1)))
             amplicon_name_arr = ['Inferred'+str(x) for x in amp_dummy]
@@ -1252,21 +1251,20 @@ def main():
 
             if len(guides) == 0:
                 for amplicon_seq in amplicon_seq_arr:
-                    (potential_guide, is_base_editor) = CRISPRessoShared.guess_guides(
-                                    amplicon_sequence=amplicon_seq,
-                                    fastq_r1=auto_fastq_r1,
-                                    fastq_r2=auto_fastq_r2,
-                                    number_of_reads_to_consider=number_of_reads_to_consider,
-                                    flash_command=args.flash_command,
-                                    max_paired_end_reads_overlap=args.max_paired_end_reads_overlap,
-                                    min_paired_end_reads_overlap=args.min_paired_end_reads_overlap,
-                                    exclude_bp_from_left=args.exclude_bp_from_left,
-                                    exclude_bp_from_right=args.exclude_bp_from_right,
-                                    aln_matrix=aln_matrix,
-                                    needleman_wunsch_gap_open=args.needleman_wunsch_gap_open,
-                                    needleman_wunsch_gap_extend=args.needleman_wunsch_gap_extend,
-                                    split_interleaved_input=args.split_interleaved_input
-                                    )
+                    potential_guide, is_base_editor = CRISPRessoShared.guess_guides(
+                        amplicon_sequence=amplicon_seq,
+                        fastq_r1=auto_fastq_r1,
+                        fastq_r2=auto_fastq_r2,
+                        number_of_reads_to_consider=number_of_reads_to_consider,
+                        fastp_command=args.fastp_command,
+                        min_paired_end_reads_overlap=args.min_paired_end_reads_overlap,
+                        exclude_bp_from_left=args.exclude_bp_from_left,
+                        exclude_bp_from_right=args.exclude_bp_from_right,
+                        aln_matrix=aln_matrix,
+                        needleman_wunsch_gap_open=args.needleman_wunsch_gap_open,
+                        needleman_wunsch_gap_extend=args.needleman_wunsch_gap_extend,
+                        split_interleaved_input=args.split_interleaved_input
+                    )
                     if potential_guide is not None and potential_guide not in guides:
                         guides.append(potential_guide)
                         guide_names.append('Guessed sgRNA')
