@@ -195,11 +195,9 @@ def getCRISPRessoArgParser(parserTitle="CRISPResso Parameters", requiredParams={
                         help='Parameter for the fastp read merging step. Minimum required overlap length between two reads to provide a confident overlap. ',
                         default=10)
     parser.add_argument('--max_paired_end_reads_overlap', type=int,
-                        help='Parameter for the FLASH merging step.  Maximum overlap length expected in approximately 90%% of read pairs. Please see the FLASH manual for more information.',
+                        help='DEPRECATED in v2.2.11.',
                         default=100)
-    parser.add_argument('--stringent_flash_merging',
-                        help='Use stringent parameters for flash merging. In the case where flash could merge R1 and R2 reads ambiguously, the expected overlap is calculated as 2*average_read_length - amplicon_length. The flash parameters for --min-overlap and --max-overlap will be set to prefer merged reads with length within 10bp of the expected overlap. These values override the --min_paired_end_reads_overlap or --max_paired_end_reads_overlap CRISPResso parameters.',
-                        action='store_true')
+    parser.add_argument('--stringent_flash_merging', help='DEPRECATED in v2.2.11.', action='store_true')
     parser.add_argument('--force_merge_pairs', help=argparse.SUPPRESS,
                         action='store_true')  # help=Force-merges R1 and R2 if they cannot be merged using flash (use with caution -- may create non-biological apparent indels at the joining site)
 
