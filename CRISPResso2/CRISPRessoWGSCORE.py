@@ -245,7 +245,8 @@ def extract_reads(row):
 def extract_reads_chunk(df):
     new_df = pd.DataFrame(columns=df.columns)
     for i in range(len(df)):
-        new_df = new_df.append(extract_reads(df.iloc[i].copy()))
+        new_df.loc[i] = extract_reads(df.iloc[i].copy())
+    new_df.set_index(df.index,inplace=True)
     return(new_df)
 
 
@@ -620,7 +621,7 @@ def main():
         empty_line_els = [np.nan]*(header_el_count-1)
         n_reads_index = header_els.index('Reads_total') - 1
         for idx, row in df_regions.iterrows():
-            run_name = CRISPRessoShared.slugify(idx)
+            run_name = CRISPRessoShared.slugify(str(idx))
             folder_name = 'CRISPResso_on_%s' % run_name
 
             all_region_names.append(run_name)
