@@ -1130,7 +1130,7 @@ def main():
             fastq_output = _jp('CRISPResso_output.fastq.gz')
             crispresso2_info['fastq_output'] = fastq_output
             info('Writing fastq output file: ' + fastq_output)
-        if args.bam_output:
+        if args.bam_output or args.bam_input:
             if args.fastq_output:
                 raise CRISPRessoShared.BadParameterException('bam_output is not compatable with fastq_output! Please either use bam_output or fastq_output.')
             bam_output = _jp('CRISPResso_output.bam')
