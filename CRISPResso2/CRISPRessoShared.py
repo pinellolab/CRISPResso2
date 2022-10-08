@@ -22,7 +22,7 @@ import unicodedata
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoCOREResources
 
-__version__ = "2.2.10"
+__version__ = "2.2.11"
 
 
 ###EXCEPTIONS############################
@@ -879,7 +879,7 @@ def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, fla
     if pipes[-1].poll() != 0:
         raise AutoException('Cannot retrieve most frequent amplicon sequences. Got nonzero return code.')
     seq_lines = top_unaligned.decode('utf-8').strip().split("\n")
-    if len(seq_lines) == 0:
+    if len(seq_lines) == 0 or seq_lines == ['']:
         raise AutoException('Cannot parse any frequent amplicons sequences.')
 
     if split_interleaved_input:
