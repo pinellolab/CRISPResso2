@@ -1130,7 +1130,7 @@ def main():
             fastq_output = _jp('CRISPResso_output.fastq.gz')
             crispresso2_info['fastq_output'] = fastq_output
             info('Writing fastq output file: ' + fastq_output)
-        if args.bam_output:
+        if args.bam_output or args.bam_input:
             if args.fastq_output:
                 raise CRISPRessoShared.BadParameterException('bam_output is not compatable with fastq_output! Please either use bam_output or fastq_output.')
             bam_output = _jp('CRISPResso_output.bam')
@@ -1299,6 +1299,10 @@ def main():
                     amplicon_min_alignment_score_arr.append(this_min_aln_score)
 
         if args.expected_hdr_amplicon_seq != "":
+            if args.expected_hdr_amplicon_seq in amplicon_seq_arr:
+                raise CRISPRessoShared.BadParameterException(
+                    "HDR expected amplicon sequence is the same as a reference amplicon. Check the --expected_hdr_amplicon_seq parameter")
+
             amplicon_seq_arr.append(args.expected_hdr_amplicon_seq)
             amplicon_name_arr.append('HDR')
             amplicon_min_alignment_score_arr.append(args.default_min_aln_score)
@@ -1374,6 +1378,9 @@ def main():
             if wrong_nt:
                 this_name = amplicon_name_arr[idx]
                 raise CRISPRessoShared.NTException('Reference amplicon sequence %d (%s) contains invalid characters: %s'%(idx, this_name, ' '.join(wrong_nt)))
+        amplicon_seq_set = set(amplicon_seq_arr)
+        if len(amplicon_seq_set) != len(amplicon_seq_arr):
+            raise CRISPRessoShared.BadParameterException('Provided amplicon sequences must be unique!')
 
 
 
