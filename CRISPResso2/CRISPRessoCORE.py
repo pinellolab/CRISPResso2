@@ -2248,7 +2248,7 @@ def main():
                  merge_command = "cat %s %s > %s"%(processed_output_filename, new_merged_filename, new_output_filename)
                  MERGE_STATUS=sb.call(merge_command, shell=True)
                  if MERGE_STATUS:
-                     raise FlashException('Force-merging read pairs failed to run, please check the log file.')
+                     raise CRISPRessoShared.FlashException('Force-merging read pairs failed to run, please check the log file.')
                  processed_output_filename = new_output_filename
 
                  files_to_remove+=[new_merged_filename]
