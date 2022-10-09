@@ -1271,14 +1271,6 @@ def get_amplicon_info_for_guides(ref_seq, guides, quantification_window_coordina
 
     returns:
     this_sgRNA_sequences : list of sgRNAs that are in this amplicon
-    this_sgRNA_intervals : indices of each guide
-    this_sgRNA_orientations: whether each guide is aligned in the forward ('F') or reverse ('R') direction relative to the amplicon sequence
-    this_sgRNA_cut_points : cut points for each guide (defined by quantification_window_center)
-    this_sgRNA_plot_cut_points : whether or not a cut point is plotted
-    this_sgRNA_plot_idxs : list of indices to be plotted for each sgRNA
-    this_sgRNA_quantification_idxs : list of indices to be that are to be quantified for each sgRNA
-    this_sgRNA_mismatches: list of mismatches between the guide and the amplicon
-    this_sgRNA_names : list of names for each sgRNA (to disambiguate in case a sequence aligns to multiple positions)
     this_amplicon_include_idxs : list of indices to be included in quantification for the amplicon (based on all guide positions)
     this_amplicon_exclude_idxs : list of indices to be excluded from quantification for the amplicon
     """
@@ -1366,16 +1358,16 @@ def get_amplicon_info_for_guides(ref_seq, guides, quantification_window_coordina
                     if not shrink_quantification_window_to_included_bases and quantification_window_coordinates is None:
                         raise BadParameterException(error_message)
                     else:
-                        quant_start = exclude_bp_from_left + 1
-            if quant_end > ref_seq_length - 1 - exclude_bp_from_right:
+                        quant_start = exclude_bp_from_left
+            if quant_end > ref_seq_length - exclude_bp_from_right:
                     error_message = 'Quantification window around cut would be greater than reference sequence length. Please decrease quantification_window_size parameter. Cut point: ' + str(
                             cut_p) + ' window: ' + str(this_qw_around_cut_3prime) + ' reference: ' + str(ref_seq_length) + 'bp exclude_bp_from_right: ' + str(exclude_bp_from_right)
                     if not shrink_quantification_window_to_included_bases and quantification_window_coordinates is None:
                         raise BadParameterException(error_message)
                     else:
-                        quant_end = ref_seq_length - 1 - exclude_bp_from_right - 1
+                        quant_end = ref_seq_length - exclude_bp_from_right
 
-            if (this_qw_around_cut_3prime != 0 or this_qw_around_cut_3prime != 0) and quant_start != quant_end:
+            if (this_qw_around_cut_5prime != 0 or this_qw_around_cut_3prime != 0) and quant_start != quant_end:
                 this_sgRNA_quantification_idxs = list(range(quant_start,quant_end))
                 #apply sgRNA quantification indexes to the amplicon include indexes
                 this_amplicon_include_idxs.extend(range(quant_start, quant_end))
@@ -1444,22 +1436,22 @@ def get_amplicon_info_for_guides(ref_seq, guides, quantification_window_coordina
             # done setting plotting window
 
             #set this guide's quantification window
-            if quant_start < 0:
+            if quant_start < exclude_bp_from_left:
                     error_message = 'Quantifiation window around cut would extend to the left of the amplicon. Please decrease quantification_window_size parameter. Cut point: ' + str(
                                 cut_p) + ' window: ' + str(this_qw_around_cut_5prime) + ' reference: ' + str(ref_seq_length) + 'bp'
                     if not shrink_quantification_window_to_included_bases and quantification_window_coordinates is None:
                         raise BadParameterException(error_message)
                     else:
-                        quant_start = exclude_bp_from_left + 1
-            if quant_end > ref_seq_length - 1:
+                        quant_start = exclude_bp_from_left
+            if quant_end > ref_seq_length - exclude_bp_from_right:
                     error_message = 'Quantification window around cut would be greater than reference sequence length. Please decrease quantification_window_size parameter. Cut point: ' + str(
                             cut_p) + ' window: ' + str(this_qw_around_cut_3prime) + ' reference: ' + str(ref_seq_length) + 'bp'
                     if not shrink_quantification_window_to_included_bases and quantification_window_coordinates is None:
                         raise BadParameterException(error_message)
                     else:
-                        quant_end = ref_seq_length - 1 - exclude_bp_from_right - 1
+                        quant_end = ref_seq_length - exclude_bp_from_right
 
-            if (this_qw_around_cut_3prime != 0 or this_qw_around_cut_3prime != 0) and quant_start != quant_end:
+            if (this_qw_around_cut_5prime != 0 or this_qw_around_cut_3prime != 0) and quant_start != quant_end:
                 this_sgRNA_quantification_idxs = list(range(quant_start,quant_end))
                 this_amplicon_include_idxs.extend(range(quant_start, quant_end)) #extending with a range is just a list
             else:
