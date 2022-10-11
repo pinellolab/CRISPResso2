@@ -19,7 +19,6 @@ import signal
 import subprocess as sb
 import unicodedata
 import logging
-from sys import platform
 
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoCOREResources
@@ -901,19 +900,13 @@ def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, fas
 
     view_cmd_1 = 'cat'
     if fastq_r1.endswith('.gz'):
-        view_cmd_1 = 'zcat'
-        # For some reason on OSX `zcat` doesn't take a file as input
-        # Source: https://serverfault.com/questions/570024/zcat-gzcat-works-in-linux-not-on-osx-general-linux-osx-compatibility
-        if platform == 'darwin':
-            view_cmd_1 = 'zcat <'
+        view_cmd_1 = 'gunzip -c'
     file_generation_command = "%s %s | head -n %d " % (view_cmd_1, fastq_r1, number_of_reads_to_consider * 4)
 
     if fastq_r2:
         view_cmd_2 = 'cat'
         if fastq_r2.endswith('.gz'):
-            view_cmd_2 = 'zcat'
-            if platform == 'darwin':
-                view_cmd_2 = 'zcat <'
+            view_cmd_2 = 'gunzip -c'
         max_overlap_param = ""
         min_overlap_param = ""
         if min_paired_end_reads_overlap:
