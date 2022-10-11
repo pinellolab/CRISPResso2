@@ -2151,6 +2151,8 @@ def main():
             info('Processing sequences with fastp...')
             if not args.trim_sequences:
                 args.fastp_options_string += ' --disable_adapter_trimming --disable_trim_poly_g --disable_quality_filtering --disable_length_filtering'
+            else:
+                args.fastp_options_string += ' --detect_adapter_for_pe'
 
             cmd = '{command} -i {r1} -I {r2} --merge --merged_out {out_merged} --overlap_len_require {min_overlap} --thread {num_threads} --json {json_report} --html {html_report} {options} >> {log} 2>&1'.format(
                 command=args.fastp_command,
