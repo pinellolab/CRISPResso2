@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install gcc g++ bowtie2 samtools libsys-hostname-l
   && rm -rf /var/lib/apt/lists/* \
   && rm -rf /usr/share/man/* \
   && rm -rf /usr/share/doc/* \
-  && conda install -c defaults -c conda-forge -c bioconda -y -n base --debug -c bioconda trimmomatic flash numpy cython jinja2 tbb=2020.2 pyparsing=2.3.1 scipy matplotlib pandas plotly\
+  && conda install -c defaults -c conda-forge -c bioconda -y -n base --debug -c bioconda fastp numpy cython jinja2 tbb=2020.2 pyparsing=2.3.1 scipy matplotlib pandas plotly\
   && conda clean --all --yes
 
 #install ms fonts
