@@ -2127,14 +2127,15 @@ def main():
             else:
                 info('Trimming sequences with fastp...')
                 output_forward_filename=_jp('reads.trimmed.fq.gz')
-                cmd = '{command} -i {r1} -o {out} {options} >> {log} 2>&1'.format(
+                cmd = '{command} -i {r1} -o {out} {options} --json {json_report} --html {html_report} >> {log} 2>&1'.format(
                     command=args.fastp_command,
                     r1=args.fastq_r1,
                     out=output_forward_filename,
                     options=args.fastp_options_string, # is it okay to not do this .replace('NexteraPE-PE.fa', 'TruSeq3-SE.fa')?
+                    json_report=_jp('fastp_report.json'),
+                    html_report=_jp('fastp_report.html'),
                     log=log_filename,
                 )
-                #print cmd
                 fastp_status = sb.call(cmd, shell=True)
 
                 if fastp_status:
@@ -2146,20 +2147,20 @@ def main():
             processed_output_filename=output_forward_filename
 
         elif args.fastq_r1 != '' and args.fastq_r2 != '':#paired end reads
-            html_report = _jp('fastp_report.html')
             processed_output_filename = _jp('out.extendedFrags.fastq.gz')
             info('Processing sequences with fastp...')
             if not args.trim_sequences:
                 args.fastp_options_string += ' --disable_adapter_trimming --disable_trim_poly_g --disable_quality_filtering --disable_length_filtering'
 
-            cmd = '{command} -i {r1} -I {r2} --merge --merged_out {out_merged} --overlap_len_require {min_overlap} --html {html_report} --thread {num_threads} {options} >> {log} 2>&1'.format(
+            cmd = '{command} -i {r1} -I {r2} --merge --merged_out {out_merged} --overlap_len_require {min_overlap} --thread {num_threads} --json {json_report} --html {html_report} {options} >> {log} 2>&1'.format(
                 command=args.fastp_command,
                 r1=args.fastq_r1,
                 r2=args.fastq_r2,
                 out_merged=processed_output_filename,
                 min_overlap=args.min_paired_end_reads_overlap,
-                html_report=html_report,
                 num_threads=n_processes,
+                json_report=_jp('fastp_report.json'),
+                html_report=_jp('fastp_report.html'),
                 options=args.fastp_options_string,
                 log=log_filename,
             )

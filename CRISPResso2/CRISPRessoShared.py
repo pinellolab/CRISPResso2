@@ -930,7 +930,7 @@ def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, fas
     def default_sigpipe():
         signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
-    if (debug):
+    if debug:
         print('command used: ' + count_frequent_cmd)
 
     piped_commands = count_frequent_cmd.split("|")
@@ -946,6 +946,10 @@ def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, fas
     seq_lines = top_unaligned.decode('utf-8').strip().split("\n")
     if len(seq_lines) == 0 or seq_lines == ['']:
         raise AutoException('Cannot parse any frequent amplicons sequences.')
+
+    if fastq_r2:
+        os.remove('fastp.html')
+        os.remove('fastp.json')
 
     if split_interleaved_input:
         os.remove(output_r1)
