@@ -398,10 +398,10 @@ def process_fastq(fastq_filename, variantCache, ref_names, refs, args):
                 # 'plot_idxs' #sorted numpy array
                 # 'plot_name' #unique plotting name
                 # 'idx_cloned_from' #if this reference didn't contain a guide (or exon sequence), it was aligned to 'idx_cloned_from' reference, and cut_points, plot_cut_points, gap_incentive, sgRNA_intervals, inculde_idx, ane exon information were cloned from it (at the appropriate indices)
-           Examples of these seqences can include:
+           Examples of these sequences can include:
            -the amplicon sequence
            -the repaired CRISPR expected output
-           -allelic varaints if two variants are known to exist
+           -allelic variants if two variants are known to exist
 
         """
 
@@ -1125,15 +1125,15 @@ def main():
             files_to_remove.append(output_sam)
 
             if args.fastq_output:
-                raise CRISPRessoShared.BadParameterException('bam_input is not compatable with fastq_output! Please either use bam_input or fastq_output.')
+                raise CRISPRessoShared.BadParameterException('bam_input is not compatible with fastq_output! Please either use bam_input or fastq_output.')
 
         if args.fastq_output:
             fastq_output = _jp('CRISPResso_output.fastq.gz')
             crispresso2_info['fastq_output'] = fastq_output
             info('Writing fastq output file: ' + fastq_output)
-        if args.bam_output:
+        if args.bam_output or args.bam_input:
             if args.fastq_output:
-                raise CRISPRessoShared.BadParameterException('bam_output is not compatable with fastq_output! Please either use bam_output or fastq_output.')
+                raise CRISPRessoShared.BadParameterException('bam_output is not compatible with fastq_output! Please either use bam_output or fastq_output.')
             bam_output = _jp('CRISPResso_output.bam')
             crispresso2_info['bam_output'] = bam_output
             info('Writing bam output file: ' + bam_output)
@@ -1277,6 +1277,10 @@ def main():
 
         #add additional amplicon for hdr mode
         if args.expected_hdr_amplicon_seq != "":
+            if args.expected_hdr_amplicon_seq in amplicon_seq_arr:
+                raise CRISPRessoShared.BadParameterException(
+                    "HDR expected amplicon sequence is the same as a reference amplicon. Check the --expected_hdr_amplicon_seq parameter")
+
             amplicon_seq_arr.append(args.expected_hdr_amplicon_seq)
             amplicon_name_arr.append('HDR')
             amplicon_min_alignment_score_arr.append(args.default_min_aln_score)
@@ -1354,6 +1358,9 @@ def main():
             if wrong_nt:
                 this_name = amplicon_name_arr[idx]
                 raise CRISPRessoShared.NTException('Reference amplicon sequence %d (%s) contains invalid characters: %s'%(idx, this_name, ' '.join(wrong_nt)))
+        amplicon_seq_set = set(amplicon_seq_arr)
+        if len(amplicon_seq_set) != len(amplicon_seq_arr):
+            raise CRISPRessoShared.BadParameterException('Provided amplicon sequences must be unique!')
 
         def get_prime_editing_guides(this_amp_seq, this_amp_name, ref0_seq, prime_edited_seq, prime_editing_extension_seq_top_strand, prime_editing_extension_seq_dna, 
                                      prime_editing_pegRNA_extension_quantification_window_size, prime_editing_pegRNA_spacer_seq, prime_editing_nicking_guide_seq, 
