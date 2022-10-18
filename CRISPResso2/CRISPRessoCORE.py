@@ -2144,21 +2144,25 @@ def main():
 
                 files_to_remove += [output_forward_filename]
 
-            processed_output_filename=output_forward_filename
+            processed_output_filename = output_forward_filename
 
         elif args.fastq_r1 != '' and args.fastq_r2 != '':#paired end reads
             processed_output_filename = _jp('out.extendedFrags.fastq.gz')
+            not_combined_1_filename = _jp('out.notCombined_1.fastq.gz')
+            not_combined_2_filename = _jp('out.notCombined_2.fastq.gz')
             info('Processing sequences with fastp...')
             if not args.trim_sequences:
                 args.fastp_options_string += ' --disable_adapter_trimming --disable_trim_poly_g --disable_quality_filtering --disable_length_filtering'
             else:
                 args.fastp_options_string += ' --detect_adapter_for_pe'
 
-            cmd = '{command} -i {r1} -I {r2} --merge --merged_out {out_merged} --overlap_len_require {min_overlap} --thread {num_threads} --json {json_report} --html {html_report} {options} >> {log} 2>&1'.format(
+            cmd = '{command} -i {r1} -I {r2} --merge --merged_out {out_merged} --unpaired1 {unpaired1} --unpaired2 {unpaired2} --overlap_len_require {min_overlap} --thread {num_threads} --json {json_report} --html {html_report} {options} >> {log} 2>&1'.format(
                 command=args.fastp_command,
                 r1=args.fastq_r1,
                 r2=args.fastq_r2,
                 out_merged=processed_output_filename,
+                unpaired1=not_combined_1_filename,
+                unpaired2=not_combined_2_filename,
                 min_overlap=args.min_paired_end_reads_overlap,
                 num_threads=n_processes,
                 json_report=_jp('fastp_report.json'),
@@ -2169,30 +2173,46 @@ def main():
             fastp_status = sb.call(cmd, shell=True)
             if fastp_status:
                 raise CRISPRessoShared.FastpException('Fastp failed to run, please check the log file.')
-            crispresso2_info['fastp_command'] = cmd
+            crispresso2_info['running_info']['fastp_command'] = cmd
 
             info('Done!', {'percent_complete': 6})
 
             if not os.path.isfile(processed_output_filename):
-                raise CRISPRessoShared.FlashException('Fastp failed to produce merged reads file, please check the log file.')
+                raise CRISPRessoShared.FastpException('Fastp failed to produce merged reads file, please check the log file.')
 
-            files_to_remove += [processed_output_filename]
+            files_to_remove += [
+                processed_output_filename,
+                not_combined_1_filename,
+                not_combined_2_filename,
+            ]
 
             if args.force_merge_pairs:
-                 old_flashed_filename = processed_output_filename
-                 new_merged_filename=_jp('out.forcemerged_uncombined.fastq.gz')
-                 num_reads_force_merged = CRISPRessoShared.force_merge_pairs(flash_not_combined_1_filename, flash_not_combined_2_filename, new_merged_filename)
-                 new_output_filename=_jp('out.forcemerged.fastq.gz')
-                 merge_command = "cat %s %s > %s"%(processed_output_filename, new_merged_filename, new_output_filename)
-                 MERGE_STATUS=sb.call(merge_command, shell=True)
-                 if MERGE_STATUS:
-                     raise FlashException('Force-merging read pairs failed to run, please check the log file.')
-                 processed_output_filename = new_output_filename
+                new_merged_filename = _jp('out.forcemerged_uncombined.fastq.gz')
+                num_reads_force_merged = CRISPRessoShared.force_merge_pairs(
+                    not_combined_1_filename,
+                    not_combined_2_filename,
+                    new_merged_filename,
+                )
+                new_output_filename = _jp('out.forcemerged.fastq.gz')
+                merge_command = 'cat {0} {1} > {2}'.format(
+                    processed_output_filename,
+                    new_merged_filename,
+                    new_output_filename,
+                )
+                merge_status = sb.call(merge_command, shell=True)
+                if merge_status:
+                    raise CRISPRessoShared.FastpException(
+                        'Force-merging read pairs failed to run, please check the log file.',
+                    )
+                else:
+                    info('Forced {0} read pairs together.'.format(
+                        num_reads_force_merged,
+                    ))
+                processed_output_filename = new_output_filename
 
-                 files_to_remove+=[new_merged_filename]
-                 files_to_remove+=[new_output_filename]
-                 if args.debug:
-                     info('Wrote force-merged reads to ' + new_merged_filename)
+                files_to_remove += [new_merged_filename, new_output_filename]
+                if args.debug:
+                    info('Wrote force-merged reads to ' + new_merged_filename)
 
             info('Done!', {'percent_complete': 7})
 
@@ -4653,7 +4673,7 @@ def main():
         print_stacktrace_if_debug()
         error('Trimming error, please check your input.\n\nERROR: %s' % e)
         sys.exit(4)
-    except CRISPRessoShared.FlashException as e:
+    except CRISPRessoShared.FastpException as e:
         print_stacktrace_if_debug()
         error('Merging error, please check your input.\n\nERROR: %s' % e)
         sys.exit(5)
