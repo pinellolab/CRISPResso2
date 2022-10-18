@@ -238,12 +238,6 @@ pd=check_library('pandas')
 np=check_library('numpy')
 
 ###EXCEPTIONS############################
-class FlashException(Exception):
-    pass
-
-class TrimmomaticException(Exception):
-    pass
-
 class Bowtie2Exception(Exception):
     pass
 
@@ -323,7 +317,7 @@ def main():
         parser.add_argument('--compile_postrun_reference_allele_cutoff', type=float, help='Only alleles with at least this percentage frequency in the population will be reported in the postrun analysis. This parameter is given as a percent, so 30 is 30%%.', default=30)
         parser.add_argument('--alternate_alleles', type=str, help='Path to tab-separated file with alternate allele sequences for pooled experiments. This file has the columns "region_name","reference_seqs", and "reference_names" and gives the reference sequences of alternate alleles that will be passed to CRISPResso for each individual region for allelic analysis. Multiple reference alleles and reference names for a given region name are separated by commas (no spaces).', default='')
         parser.add_argument('--limit_open_files_for_demux', help='If set, only one file will be opened during demultiplexing of read alignment locations. This will be slightly slower as the reads must be sorted, but may be necessary if the number of amplicons is greater than the number of files that can be opened due to OS constraints.', action='store_true')
-        parser.add_argument('--aligned_pooled_bam', type=str, help='Path to aligned input for CRISPRessoPooled processing. If this parameter is specified, the alignments in the given bam will be used to demultiplex reads. If this parameter is not set (default), input reads provided by --fastq_r1 (and optionally --fastq_r2) will be aligned to the reference genome using bowtie2. If the input bam is given, the corresponding reference fasta must also be given to extract reference genomic sequences via the parameter --bowtie2_index. Note that if the aligned reads are paired-end sequenced, they should already be merged into 1 read (e.g. via Flash) before alignment.', default=None)
+        parser.add_argument('--aligned_pooled_bam', type=str, help='Path to aligned input for CRISPRessoPooled processing. If this parameter is specified, the alignments in the given bam will be used to demultiplex reads. If this parameter is not set (default), input reads provided by --fastq_r1 (and optionally --fastq_r2) will be aligned to the reference genome using bowtie2. If the input bam is given, the corresponding reference fasta must also be given to extract reference genomic sequences via the parameter --bowtie2_index. Note that if the aligned reads are paired-end sequenced, they should already be merged into 1 read (e.g. via Flash or fastp) before alignment.', default=None)
         parser.add_argument('--demultiplex_only_at_amplicons', help='If set, and an amplicon file (--amplicons_file) and reference sequence (--bowtie2_index) are provided, reads overlapping alignment positions of amplicons will be demultiplexed and assigned to that amplicon. If this flag is not set, the entire genome will be demultiplexed and reads with the same start and stop coordinates as an amplicon will be assigned to that amplicon.', action='store_true')
 
         args = parser.parse_args()
@@ -516,83 +510,76 @@ def main():
                 output_forward_filename = symlink_filename
             else:
                 output_forward_filename = _jp('reads.trimmed.fq.gz')
-                # Trimming with trimmomatic
-                info('Trimming sequences with Trimmomatic...', {'percent_complete': 7})
-                cmd = '%s SE -phred33 %s %s %s >>%s 2>&1'\
-                    % (args.trimmomatic_command, args.fastq_r1,
-                        output_forward_filename,
-                        args.trimmomatic_options_string,
-                        log_filename)
+                cmd = '{command} -i {r1} -o {out} {options} --json {json_report} --html {html_report} >> {log} 2>&1'.format(
+                    command=args.fastp_command,
+                    r1=args.fastq_r1,
+                    out=output_forward_filename,
+                    options=args.fastp_options_string,
+                    log=log_filename,
+                )
                 # print cmd
-                TRIMMOMATIC_STATUS = sb.call(cmd, shell=True)
+                fastp_status = sb.call(cmd, shell=True)
 
-                if TRIMMOMATIC_STATUS:
-                    raise TrimmomaticException('TRIMMOMATIC failed to run, please check the log file.')
+                if fastp_status:
+                    raise CRISPRessoShared.FastpException('FASTP failed to run, please check the log file.')
 
             processed_output_filename = output_forward_filename
 
         else:  # paired end reads case
             if not args.trim_sequences:
-                output_forward_paired_filename = args.fastq_r1
-                output_reverse_paired_filename = args.fastq_r2
+                args.fastp_options_string += ' --disable_adapter_trimming --disable_trim_poly_g --disable_quality_filtering --disable_length_filtering'
             else:
-                info('Trimming sequences with Trimmomatic...', {'percent_complete': 7})
-                output_forward_paired_filename = _jp('output_forward_paired.fq.gz')
-                output_forward_unpaired_filename = _jp('output_forward_unpaired.fq.gz')
-                output_reverse_paired_filename = _jp('output_reverse_paired.fq.gz')
-                output_reverse_unpaired_filename = _jp('output_reverse_unpaired.fq.gz')
+                args.fastp_options_string += ' --detect_adapter_for_pe'
+            processed_output_filename = _jp('out.extendedFrags.fastq.gz')
+            not_combined_1_filename = _jp('out.notCombined_1.fastq.gz')
+            not_combined_2_filename = _jp('out.notCombined_2.fastq.gz')
 
-                # Trimming with trimmomatic
-                cmd = '%s PE -phred33 %s  %s %s  %s  %s  %s %s >>%s 2>&1'\
-                    % (args.trimmomatic_command,
-                        args.fastq_r1, args.fastq_r2, output_forward_paired_filename,
-                        output_forward_unpaired_filename, output_reverse_paired_filename,
-                        output_reverse_unpaired_filename, args.trimmomatic_options_string, log_filename)
-                # print cmd
-                TRIMMOMATIC_STATUS = sb.call(cmd, shell=True)
-                if TRIMMOMATIC_STATUS:
-                    raise TrimmomaticException('TRIMMOMATIC failed to run, please check the log file.')
-
-                info('Done!')
-
-            max_overlap_string = ""
-            min_overlap_string = ""
-            if args.max_paired_end_reads_overlap:
-                max_overlap_string = "--max-overlap " + str(args.max_paired_end_reads_overlap)
-            if args.min_paired_end_reads_overlap:
-                min_overlap_string = "--min-overlap " + str(args.min_paired_end_reads_overlap)
-            # Merging with Flash
-            info('Merging paired sequences with Flash...', {'percent_complete': 10})
-            cmd = args.flash_command+' --allow-outies %s %s %s %s -z -d %s >>%s 2>&1' %\
-                (output_forward_paired_filename,
-                 output_reverse_paired_filename,
-                 max_overlap_string,
-                 min_overlap_string,
-                 OUTPUT_DIRECTORY, log_filename)
+            info('Merging paired sequences with fastp...')
+            cmd = '{command} -i {r1} -I {r2} --merge --merged_out {out_merged} --unpaired1 {unpaired1} --unpaired2 {unpaired2} --overlap_len_require {min_overlap} --thread {num_threads} --json {json_report} --html {html_report} {options} >> {log} 2>&1'.format(
+                command=args.fastp_command,
+                r1=args.fastq_r1,
+                r2=args.fastq_r2,
+                out_merged=processed_output_filename,
+                unpaired1=not_combined_1_filename,
+                unpaired2=not_combined_2_filename,
+                min_overlap=args.min_paired_end_reads_overlap,
+                num_threads=n_processes_for_pooled,
+                json_report=_jp('fastp_report.json'),
+                html_report=_jp('fastp_report.html'),
+                options=args.fastp_options_string,
+                log=log_filename,
+            )
+            fastp_status = sb.call(cmd, shell=True)
 
             if args.debug:
-                info('Flash command: %s'%cmd)
+                info('Fastp command: {0}'.format(cmd))
 
-            FLASH_STATUS = sb.call(cmd, shell=True)
-            if FLASH_STATUS:
-                raise FlashException('Flash failed to run, please check the log file.')
-
-            flash_hist_filename = _jp('out.hist')
-            flash_histogram_filename = _jp('out.histogram')
-            flash_not_combined_1_filename = _jp('out.notCombined_1.fastq.gz')
-            flash_not_combined_2_filename = _jp('out.notCombined_2.fastq.gz')
-
-            processed_output_filename = _jp('out.extendedFrags.fastq.gz')
+            if fastp_status:
+                raise CRISPRessoShared.FastpException('Fastp failed to run, please check the log file.')
+            crispresso2_info['running_info']['fastp_command'] = cmd
 
             if args.force_merge_pairs:
-                old_flashed_filename = processed_output_filename
                 new_merged_filename = _jp('out.forcemerged_uncombined.fastq.gz')
-                num_reads_force_merged = CRISPRessoShared.force_merge_pairs(flash_not_combined_1_filename, flash_not_combined_2_filename, new_merged_filename)
+                num_reads_force_merged = CRISPRessoShared.force_merge_pairs(
+                    not_combined_1_filename,
+                    not_combined_2_filename,
+                    new_merged_filename,
+                )
                 new_output_filename = _jp('out.forcemerged.fastq.gz')
-                merge_command = "cat %s %s > %s"%(processed_output_filename, new_merged_filename, new_output_filename)
-                MERGE_STATUS = sb.call(merge_command, shell=True)
-                if MERGE_STATUS:
-                    raise FlashException('Force-merging read pairs failed to run, please check the log file.')
+                merge_command = 'cat {0} {1} > {2}'.format(
+                    processed_output_filename,
+                    new_merged_filename,
+                    new_output_filename,
+                )
+                merge_status = sb.call(merge_command, shell=True)
+                if merge_status:
+                    raise CRISPRessoShared.FastpException(
+                        'Force-merging read pairs failed to run, please check the log file.',
+                    )
+                else:
+                    info('Forced {0} read pairs together.'.format(
+                         num_reads_force_merged,
+                    ))
                 processed_output_filename = new_output_filename
 
             info('Done!')
@@ -1546,41 +1533,41 @@ def main():
 
         #cleaning up
         if not args.keep_intermediate:
-             info('Removing Intermediate files...')
+            info('Removing Intermediate files...')
 
-             if not args.aligned_pooled_bam:
-                if args.fastq_r2!='':
-                    files_to_remove+=[processed_output_filename, flash_hist_filename, flash_histogram_filename,\
-                                flash_not_combined_1_filename, flash_not_combined_2_filename]
+            if not args.aligned_pooled_bam:
+                if args.fastq_r2 != '':
+                    files_to_remove += [
+                        processed_output_filename,
+                        not_combined_1_filename,
+                        not_combined_2_filename,
+                    ]
                     if args.force_merge_pairs:
                         files_to_remove.append(new_merged_filename)
-                        files_to_remove.append(old_flashed_filename)
                 else:
-                    files_to_remove+=[processed_output_filename]
+                    files_to_remove += [processed_output_filename]
 
-             if args.trim_sequences and args.fastq_r2!='':
-                 files_to_remove+=[output_forward_paired_filename, output_reverse_paired_filename,\
-                                                   output_forward_unpaired_filename, output_reverse_unpaired_filename]
+            if RUNNING_MODE == 'ONLY_GENOME' or RUNNING_MODE == 'AMPLICONS_AND_GENOME':
+                if args.aligned_pooled_bam is None:
+                    files_to_remove += [
+                        bam_filename_genome,
+                        bam_filename_genome + '.bai',
+                    ]
 
-             if RUNNING_MODE=='ONLY_GENOME' or RUNNING_MODE=='AMPLICONS_AND_GENOME':
-                 if args.aligned_pooled_bam is None:
-                     files_to_remove+=[bam_filename_genome]
-                     files_to_remove+=[bam_filename_genome+".bai"]
-
-             if RUNNING_MODE=='ONLY_AMPLICONS':
-                files_to_remove+=[bam_filename_amplicons, amplicon_fa_filename]
+            if RUNNING_MODE == 'ONLY_AMPLICONS':
+                files_to_remove += [bam_filename_amplicons, amplicon_fa_filename]
                 for bowtie2_file in glob.glob(_jp('CUSTOM_BOWTIE2_INDEX.*')):
                     files_to_remove.append(bowtie2_file)
 
-             for file_to_remove in files_to_remove:
-                 try:
-                         if os.path.islink(file_to_remove):
-                             #print 'LINK',file_to_remove
-                             os.unlink(file_to_remove)
-                         else:
-                             os.remove(file_to_remove)
-                 except:
-                         warn('Skipping:%s' %file_to_remove)
+            for file_to_remove in files_to_remove:
+                try:
+                    if os.path.islink(file_to_remove):
+                        #print 'LINK',file_to_remove
+                        os.unlink(file_to_remove)
+                    else:
+                        os.remove(file_to_remove)
+                except:
+                    warn('Skipping:{0}'.format(file_to_remove))
 
         if not args.suppress_report and not args.suppress_plots:
             if (args.place_report_in_output_folder):

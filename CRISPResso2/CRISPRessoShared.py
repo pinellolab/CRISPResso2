@@ -27,9 +27,6 @@ __version__ = "2.2.12"
 
 
 ###EXCEPTIONS############################
-class FlashException(Exception):
-    pass
-
 class FastpException(Exception):
     pass
 
