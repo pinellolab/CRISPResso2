@@ -195,7 +195,7 @@ def write_trimmed_fastq(in_bam_filename, bpstart, bpend, out_fastq_filename):
     with gzip.open(out_fastq_filename, 'wt') as outfile:
         for line in output.split('\n'):
             if line:
-                (name, pos, cigar, seq, qual)=line.split()
+                (name, pos, cigar, seq, qual)=line.split("\t")
                 #print name,pos,cigar,seq
                 pos=int(pos)
                 positions=get_reference_positions(pos, cigar)
