@@ -1228,6 +1228,7 @@ def main():
                 if potential_guide_seq is not None and potential_guide_seq not in existing_guide_seqs:
                     new_guide = CRISPRessoObjects.Guide.default_from_args(default_args=args)
                     new_guide.set_name('Guessed sgRNA')
+                    new_guide.set_sequence(potential_guide_seq)
                     guides.append(new_guide)
                     discovered_guides.append(new_guide)
 
