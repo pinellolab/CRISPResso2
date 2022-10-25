@@ -2179,7 +2179,7 @@ def main():
             output_prefix = "out"
             if clean_file_prefix != "":
                 output_prefix = clean_file_prefix + "out"
-            cmd='%s "%s" "%s" --min-overlap %d --max-overlap %d --allow-outies -z -d %s -o %s >>%s 2>&1' %\
+            cmd='%s "%s" "%s" --min-overlap %d --max-overlap %d --allow-outies -z -d "%s" -o "%s" >>"%s" 2>&1' %\
             (args.flash_command,
                  output_forward_paired_filename,
                  output_reverse_paired_filename,
