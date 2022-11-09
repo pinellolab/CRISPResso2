@@ -22,7 +22,7 @@ import unicodedata
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoCOREResources
 
-__version__ = "2.2.11"
+__version__ = "2.2.11a"
 
 
 ###EXCEPTIONS############################
