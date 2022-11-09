@@ -1339,13 +1339,19 @@ def main():
             f1,f2,fw_score=CRISPResso2Align.global_align(pegRNA_spacer_seq,amplicon_seq_arr[0].upper(),matrix=aln_matrix,gap_incentive=amp_incentive,gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
             r1,r2,rv_score=CRISPResso2Align.global_align(pegRNA_spacer_seq,CRISPRessoShared.reverse_complement(amplicon_seq_arr[0].upper()),matrix=aln_matrix,gap_incentive=amp_incentive,gap_open=args.needleman_wunsch_gap_open,gap_extend=args.needleman_wunsch_gap_extend,)
             if rv_score > fw_score:
-                raise CRISPRessoShared.BadParameterException('The prime editing pegRNA spacer sequence appears to be given in the 3\'->5\' order. The prime editing pegRNA spacer sequence (--prime_editing_pegRNA_spacer_seq) must be given in the RNA 5\'->3\' order.')
+                if args.prime_editing_override_sequence_checks:
+                    warn('The prime editing pegRNA spacer sequence appears to be given in the 3\'->5\' order. The prime editing pegRNA spacer sequence (--prime_editing_pegRNA_spacer_seq) must be given in the RNA 5\'->3\' order.')
+                else:
+                    raise CRISPRessoShared.BadParameterException('The prime editing pegRNA spacer sequence appears to be given in the 3\'->5\' order. The prime editing pegRNA spacer sequence (--prime_editing_pegRNA_spacer_seq) must be given in the RNA 5\'->3\' order.')
 
             ref_incentive = np.zeros(len(prime_editing_extension_seq_dna)+1, dtype=int)
             f1, f2, fw_score=CRISPResso2Align.global_align(pegRNA_spacer_seq, prime_editing_extension_seq_dna, matrix=aln_matrix, gap_incentive=ref_incentive, gap_open=args.needleman_wunsch_gap_open, gap_extend=0,)
             r1, r2, rv_score=CRISPResso2Align.global_align(pegRNA_spacer_seq, extension_seq_dna_top_strand, matrix=aln_matrix, gap_incentive=ref_incentive, gap_open=args.needleman_wunsch_gap_open, gap_extend=0,)
             if rv_score > fw_score:
-                raise CRISPRessoShared.BadParameterException("The pegRNA spacer aligns to the pegRNA extension sequence in 3'->5' direction. The prime editing pegRNA spacer sequence (--prime_editing_pegRNA_spacer_seq) must be given in the RNA 5'->3' order, and the pegRNA extension sequence (--prime_editing_pegRNA_extension_seq) must be given in the 5'->3' order. In other words, the pegRNA spacer sequence should be found in the given reference sequence, and the reverse complement of the pegRNA extension sequence should be found in the reference sequence.")
+                if args.prime_editing_override_sequence_checks:
+                    warn("The pegRNA spacer aligns to the pegRNA extension sequence in 3'->5' direction. The prime editing pegRNA spacer sequence (--prime_editing_pegRNA_spacer_seq) must be given in the RNA 5'->3' order, and the pegRNA extension sequence (--prime_editing_pegRNA_extension_seq) must be given in the 5'->3' order. In other words, the pegRNA spacer sequence should be found in the given reference sequence, and the reverse complement of the pegRNA extension sequence should be found in the reference sequence.")
+                else:
+                    raise CRISPRessoShared.BadParameterException("The pegRNA spacer aligns to the pegRNA extension sequence in 3'->5' direction. The prime editing pegRNA spacer sequence (--prime_editing_pegRNA_spacer_seq) must be given in the RNA 5'->3' order, and the pegRNA extension sequence (--prime_editing_pegRNA_extension_seq) must be given in the 5'->3' order. In other words, the pegRNA spacer sequence should be found in the given reference sequence, and the reverse complement of the pegRNA extension sequence should be found in the reference sequence.")
 
             #setting refs['Prime-edited']['sequence']
             #first, align the extension seq to the reference amplicon
