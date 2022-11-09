@@ -96,8 +96,8 @@ def main():
 
             if include_read and not exclude_read:
                 read_written_count += 1
-                f1_out.write("%s\n%s\n%s\n%s" % (r1_id_line,r1_seq_line,r1_plus_line,r1_qual_line))
-                f2_out.write("%s\n%s\n%s\n%s" % (r2_id_line,r2_seq_line,r2_plus_line,r2_qual_line))
+                f1_out.write("%s\n%s\n%s\n%s\n" % (r1_id_line,r1_seq_line,r1_plus_line,r1_qual_line))
+                f2_out.write("%s\n%s\n%s\n%s\n" % (r2_id_line,r2_seq_line,r2_plus_line,r2_qual_line))
 
         print('Printed %s/%s reads to %s and %s' % (read_written_count,read_read_count,fastq_r1_out,fastq_r2_out))
 
