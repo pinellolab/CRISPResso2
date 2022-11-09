@@ -276,6 +276,9 @@ def getCRISPRessoArgParser(parserTitle="CRISPResso Parameters", requiredParams={
     parser.add_argument('--prime_editing_override_prime_edited_ref_seq', type=str,
                         help="If given, this sequence will be used as the prime-edited reference sequence. This may be useful if the prime-edited reference sequence has large indels or the algorithm cannot otherwise infer the correct reference sequence.",
                         default='')
+    parser.add_argument('--prime_editing_override_sequence_checks',
+                        help="If set, checks to assert that the prime editing guides and extension sequence are in the proper orientation are not performed. This may be useful if the checks are failing inappropriately, but the user is confident that the sequences are correct.",
+                        action='store_true')
 
     # special running modes
     parser.add_argument('--crispresso1_mode', help='Parameter usage as in CRISPResso 1', action='store_true')
