@@ -1622,7 +1622,7 @@ def get_crispresso_header(description, header_str):
 
     output_line += '\n' + ('[CRISPResso version ' + __version__ + ']').center(term_width) + '\n' + (
         '[Note that starting in version 2.3.0 FLASh and Trimmomatic will be replaced by fastp for read merging and trimming. Accordingly, the --flash_command and --trimmomatic_command parameters will be replaced with --fastp_command. Also, --trimmomatic_options_string will be replaced with --fastp_options_string.]').center(
-        term_width) + "\n" + ('[For support contact kclement@mgh.harvard.edu]').center(term_width) + "\n"
+        term_width) + "\n" + ('[For support contact kclement@mgh.harvard.edu or support@edilytics.com]').center(term_width) + "\n"
 
     description_str = ""
     for str in description:
