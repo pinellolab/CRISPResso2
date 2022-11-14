@@ -1377,6 +1377,12 @@ def main():
             amplicon_quant_window_coordinates_arr.append('')
             prime_editing_edited_amp_seq = new_ref
 
+            #if the user specifies the prime_editing_override_prime_edited_ref_seq, it could not contain the extension seq (if they don't provide the extension seq in the appropriate orientation), so check that here. Extension sequence should be provided rc to the amplicon sequence
+            if prime_editing_extension_seq_dna not in prime_editing_edited_amp_seq:
+                if CRISPRessoShared.reverse_complement(prime_editing_extension_seq_dna) in prime_editing_edited_amp_seq:
+                    raise CRISPRessoShared.BadParameterException('The extension sequence must be provided in the 5\'->3\' orientation relative to the reference sequence.')
+                raise CRISPRessoShared.BadParameterException('The provided extension sequence is not in the prime edited reference sequence!')
+
         #finished prime editing bit
 
         for idx, this_seq in enumerate(amplicon_seq_arr):
