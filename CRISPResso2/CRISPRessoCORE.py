@@ -950,6 +950,25 @@ def split_interleaved_fastq(fastq_filename, output_filename_r1, output_filename_
     return output_filename_r1, output_filename_r2
 
 
+def normalize_name(args):
+    """Normalize the name according to the inputs and clean it."""
+    get_name_from_fasta = lambda x: os.path.basename(x).replace('.fastq', '').replace('.gz', '').replace('.fq', '')
+    get_name_from_bam = lambda x: os.path.basename(x).replace('.bam', '')
+
+    if not args.name:
+        if args.fastq_r2!='':
+            return '%s_%s' % (get_name_from_fasta(args.fastq_r1), get_name_from_fasta(args.fastq_r2))
+        elif args.fastq_r1 != '':
+            return '%s' % get_name_from_fasta(args.fastq_r1)
+        elif args.bam_input != '':
+            return '%s' % get_name_from_bam(args.bam_input)
+    else:
+        clean_name=CRISPRessoShared.slugify(args.name)
+        if args.name!= clean_name:
+            warn('The specified name %s contained invalid characters and was changed to: %s' % (args.name, clean_name))
+        return clean_name
+
+
 def main():
 
     def print_stacktrace_if_debug():
@@ -971,6 +990,37 @@ def main():
 
         arg_parser = CRISPRessoShared.getCRISPRessoArgParser()
         args = arg_parser.parse_args()
+
+        OUTPUT_DIRECTORY = 'CRISPResso_on_{0}'.format(normalize_name(args))
+
+        if args.output_folder:
+            OUTPUT_DIRECTORY = os.path.join(
+                os.path.abspath(args.output_folder), OUTPUT_DIRECTORY,
+            )
+        clean_file_prefix = ""
+        if args.file_prefix != "":
+            clean_file_prefix = CRISPRessoShared.slugify(args.file_prefix)
+            if not clean_file_prefix.endswith("."):
+                clean_file_prefix += "."
+        # handy function to put a file in the output directory
+        _jp = lambda filename: os.path.join(OUTPUT_DIRECTORY, clean_file_prefix + filename)
+        log_filename = _jp('CRISPResso_RUNNING_LOG.txt')
+        crispresso_cmd_to_write = ' '.join(sys.argv)
+        try:
+            os.makedirs(OUTPUT_DIRECTORY)
+            info('Creating Folder %s' % OUTPUT_DIRECTORY)
+#            info('Done!') #crispresso2 doesn't announce that the folder is created... save some electricity here
+        except:
+            warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
+
+        finally:
+            logger.addHandler(logging.FileHandler(log_filename))
+
+            with open(log_filename, 'w+') as outfile:
+                outfile.write('CRISPResso version %s\n[Command used]:\n%s\n\n[Execution log]:\n' %(CRISPRessoShared.__version__, crispresso_cmd_to_write))
+
+        status_handler = CRISPRessoShared.StatusHandler(_jp('status.txt'))
+        logger.addHandler(status_handler)
 
         aln_matrix_loc = os.path.join(_ROOT, "EDNAFULL")
         CRISPRessoShared.check_file(aln_matrix_loc)
@@ -1011,47 +1061,15 @@ def main():
 
 
         #create output directory
-        get_name_from_fasta=lambda  x: os.path.basename(x).replace('.fastq', '').replace('.gz', '').replace('.fq', '')
-        get_name_from_bam=lambda  x: os.path.basename(x).replace('.bam', '')
-
-        #normalize name and remove not allowed characters
-        if not args.name:
-            if args.fastq_r2!='':
-                database_id='%s_%s' % (get_name_from_fasta(args.fastq_r1), get_name_from_fasta(args.fastq_r2))
-            elif args.fastq_r1 != '':
-                database_id='%s' % get_name_from_fasta(args.fastq_r1)
-            elif args.bam_input != '':
-                database_id='%s' % get_name_from_bam(args.bam_input)
-        else:
-            clean_name=CRISPRessoShared.slugify(args.name)
-            if args.name!= clean_name:
-                warn('The specified name %s contained invalid characters and was changed to: %s' % (args.name, clean_name))
-            database_id=clean_name
-
-        clean_file_prefix = ""
-        if args.file_prefix != "":
-            clean_file_prefix = CRISPRessoShared.slugify(args.file_prefix)
-            if not clean_file_prefix.endswith("."):
-                clean_file_prefix += "."
-
-        OUTPUT_DIRECTORY='CRISPResso_on_%s' % database_id
-
-        if args.output_folder:
-            OUTPUT_DIRECTORY=os.path.join(os.path.abspath(args.output_folder), OUTPUT_DIRECTORY)
-
-        _jp=lambda filename: os.path.join(OUTPUT_DIRECTORY, clean_file_prefix + filename) #handy function to put a file in the output directory
-
         crispresso2_info_file = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso2_info.json')
         crispresso2_info = {'running_info': {}, 'results': {'alignment_stats': {}, 'general_plots': {}}} #keep track of all information for this run to be pickled and saved at the end of the run
         crispresso2_info['running_info']['version'] = CRISPRessoShared.__version__
         crispresso2_info['running_info']['args'] = deepcopy(args)
 
-        log_filename=_jp('CRISPResso_RUNNING_LOG.txt')
         crispresso2_info['running_info']['log_filename'] = os.path.basename(log_filename)
 
-        crispresso2_info['running_info']['name'] = database_id
+        crispresso2_info['running_info']['name'] = normalize_name(args)
 
-        crispresso_cmd_to_write = ' '.join(sys.argv)
         if args.write_cleaned_report:
             cmd_copy = sys.argv[:]
             cmd_copy[0] = 'CRISPResso'
@@ -1061,19 +1079,6 @@ def main():
 
             crispresso_cmd_to_write = ' '.join(cmd_copy) #clean command doesn't show the absolute path to the executable or other files
         crispresso2_info['running_info']['command_used'] = crispresso_cmd_to_write
-
-        try:
-            os.makedirs(OUTPUT_DIRECTORY)
-            info('Creating Folder %s' % OUTPUT_DIRECTORY)
-#            info('Done!') #crispresso2 doesn't announce that the folder is created... save some electricity here
-        except:
-            warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
-
-        finally:
-            logger.addHandler(logging.FileHandler(log_filename))
-
-            with open(log_filename, 'w+') as outfile:
-                outfile.write('CRISPResso version %s\n[Command used]:\n%s\n\n[Execution log]:\n' %(CRISPRessoShared.__version__, crispresso_cmd_to_write))
 
         files_to_remove = [] #these files will be deleted at the end of the run
 
