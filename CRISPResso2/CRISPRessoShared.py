@@ -18,6 +18,7 @@ import shutil
 import signal
 import subprocess as sb
 import unicodedata
+from logging import FileHandler, StreamHandler
 
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoCOREResources
@@ -66,6 +67,19 @@ class InstallationException(Exception):
     pass
 
 #########################################
+
+class StatusHandler(FileHandler):
+    def __init__(self, filename):
+        super().__init__(filename, 'w')
+
+    def emit(self, record):
+        """Overwrite the existing file and write the new log."""
+        if self.stream is None:  # log file is empty
+            self.stream = self._open()
+        else:  # log file is not empty, overwrite
+            self.stream.seek(0)
+        StreamHandler.emit(self, record)
+        self.stream.truncate()
 
 
 def getCRISPRessoArgParser(parserTitle="CRISPResso Parameters", requiredParams={}):
