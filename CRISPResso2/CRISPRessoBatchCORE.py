@@ -83,7 +83,7 @@ def main():
         CRISPRessoShared.check_file(args.batch_settings)
 
         if args.zip_output and not args.place_report_in_output_folder:
-            logger.warn('Invalid arguement combination: If zip_output is True then place_report_in_output_folder must also be True. Setting place_report_in_output_folder to True.')
+            warn('Invalid arguement combination: If zip_output is True then place_report_in_output_folder must also be True. Setting place_report_in_output_folder to True.')
             args.place_report_in_output_folder = True
 
         batch_folder_name = os.path.splitext(os.path.basename(args.batch_settings))[0]
@@ -113,6 +113,8 @@ def main():
 
         log_filename = _jp('CRISPRessoBatch_RUNNING_LOG.txt')
         logger.addHandler(logging.FileHandler(log_filename))
+        status_handler = CRISPRessoShared.StatusHandler(_jp('status.txt'))
+        logger.addHandler(status_handler)
 
         with open(log_filename, 'w+') as outfile:
             outfile.write('[Command used]:\n%s\n\n[Execution log]:\n' % ' '.join(sys.argv))
