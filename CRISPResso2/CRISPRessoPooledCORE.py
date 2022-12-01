@@ -197,6 +197,29 @@ def find_overlapping_genes(row, df_genes):
     return row
 
 
+def normalize_name(args):
+    """Normalize the name according to the inputs and clean it."""
+    get_name_from_fasta = lambda x: os.path.basename(x).replace('.fastq', '').replace('.gz', '').replace('.fq', '')
+    get_name_from_bam = lambda x: os.path.basename(x).replace('.bam', '')
+
+    if not args.name:
+        if args.aligned_pooled_bam is not None:
+            return get_name_from_bam(args.aligned_pooled_bam)
+        elif args.fastq_r2 != '':
+            return '%s_%s' % (get_name_from_fasta(args.fastq_r1), get_name_from_fasta(args.fastq_r2))
+        else:
+            return '%s' % get_name_from_fasta(args.fastq_r1)
+    else:
+        clean_name = CRISPRessoShared.slugify(args.name)
+        if args.name != clean_name:
+            warn(
+                'The specified name {0} contained invalid characters and was changed to: {1}'.format(
+                    args.name, clean_name,
+                ),
+            )
+        return clean_name
+
+
 pd=check_library('pandas')
 np=check_library('numpy')
 
@@ -287,6 +310,24 @@ def main():
 
         files_to_remove = []
 
+        OUTPUT_DIRECTORY = 'CRISPRessoPooled_on_{0}'.format(normalize_name(args))
+
+        if args.output_folder:
+            OUTPUT_DIRECTORY = os.path.join(os.path.abspath(args.output_folder), OUTPUT_DIRECTORY)
+
+        _jp = lambda filename: os.path.join(OUTPUT_DIRECTORY, filename) #handy function to put a file in the output directory
+
+        try:
+            info('Creating Folder %s' % OUTPUT_DIRECTORY)
+            os.makedirs(OUTPUT_DIRECTORY)
+            info('Done!')
+        except:
+            warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
+
+        log_filename = _jp('CRISPRessoPooled_RUNNING_LOG.txt')
+        logger.addHandler(logging.FileHandler(log_filename))
+        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('status.txt')))
+
         if args.zip_output and not args.place_report_in_output_folder:
             logger.warn('Invalid arguement combination: If zip_output is True then place_report_in_output_folder must also be True. Setting place_report_in_output_folder to True.')
             args.place_report_in_output_folder = True
@@ -370,44 +411,6 @@ def main():
         args.n_processes = 1
 
         ####TRIMMING AND MERGING
-        get_name_from_fasta=lambda  x: os.path.basename(x).replace('.fastq', '').replace('.gz', '').replace('.fq', '')
-
-        if not args.name:
-            if args.aligned_pooled_bam is not None:
-                database_id=os.path.basename(args.aligned_pooled_bam).replace(".bam","")
-            elif args.fastq_r2!='':
-                database_id='%s_%s' % (get_name_from_fasta(args.fastq_r1), get_name_from_fasta(args.fastq_r2))
-            else:
-                database_id='%s' % get_name_from_fasta(args.fastq_r1)
-
-        else:
-            clean_name = CRISPRessoShared.slugify(args.name)
-            if args.name != clean_name:
-                warn(
-                    'The specified name {0} contained invalid characters and was changed to: {1}'.format(
-                        args.name, clean_name,
-                    ),
-                )
-            database_id = clean_name
-
-
-
-        OUTPUT_DIRECTORY='CRISPRessoPooled_on_%s' % database_id
-
-        if args.output_folder:
-            OUTPUT_DIRECTORY=os.path.join(os.path.abspath(args.output_folder), OUTPUT_DIRECTORY)
-
-        _jp=lambda filename: os.path.join(OUTPUT_DIRECTORY, filename) #handy function to put a file in the output directory
-
-        try:
-            info('Creating Folder %s' % OUTPUT_DIRECTORY)
-            os.makedirs(OUTPUT_DIRECTORY)
-            info('Done!')
-        except:
-            warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
-
-        log_filename=_jp('CRISPRessoPooled_RUNNING_LOG.txt')
-        logger.addHandler(logging.FileHandler(log_filename))
 
         crispresso2_info_file = os.path.join(
             OUTPUT_DIRECTORY, 'CRISPResso2Pooled_info.json',
