@@ -64,6 +64,16 @@ import scipy.stats as stats
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
+def normalize_name(args):
+    get_name_from_folder = lambda x: os.path.basename(os.path.abspath(x)).replace('CRISPResso_on_', '')
+    if not args.name:
+        return '{0}_VS_{1}'.format(
+            get_name_from_folder(args.crispresso_output_folder_1),
+            get_name_from_folder(args.crispresso_output_folder_2),
+        )
+    else:
+        return args.name
+
 
 def main():
     try:
@@ -124,35 +134,27 @@ def main():
         if sample_1_name == sample_2_name:
             sample_2_name += '_2'
 
-        get_name_from_folder=lambda x: os.path.basename(os.path.abspath(x)).replace('CRISPResso_on_', '')
-
-        if not args.name:
-                 database_id='%s_VS_%s' % (get_name_from_folder(args.crispresso_output_folder_1), get_name_from_folder(args.crispresso_output_folder_2))
-        else:
-                 database_id=args.name
-
-
-        OUTPUT_DIRECTORY='CRISPRessoCompare_on_%s' % database_id
+        OUTPUT_DIRECTORY = 'CRISPRessoCompare_on_{0}'.format(normalize_name(args))
 
         if args.output_folder:
-                 OUTPUT_DIRECTORY=os.path.join(os.path.abspath(args.output_folder), OUTPUT_DIRECTORY)
+            OUTPUT_DIRECTORY=os.path.join(os.path.abspath(args.output_folder), OUTPUT_DIRECTORY)
 
-        _jp=lambda filename: os.path.join(OUTPUT_DIRECTORY, filename) #handy function to put a file in the output directory
-        log_filename=_jp('CRISPRessoCompare_RUNNING_LOG.txt')
-
+        _jp = lambda filename: os.path.join(OUTPUT_DIRECTORY, filename) #handy function to put a file in the output directory
+        log_filename = _jp('CRISPRessoCompare_RUNNING_LOG.txt')
 
         try:
-                 info('Creating Folder %s' % OUTPUT_DIRECTORY)
-                 os.makedirs(OUTPUT_DIRECTORY)
-                 info('Done!')
+            info('Creating Folder %s' % OUTPUT_DIRECTORY)
+            os.makedirs(OUTPUT_DIRECTORY)
+            info('Done!')
         except:
-                 warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
+            warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
 
-        log_filename=_jp('CRISPRessoCompare_RUNNING_LOG.txt')
+        log_filename = _jp('CRISPRessoCompare_RUNNING_LOG.txt')
         logger.addHandler(logging.FileHandler(log_filename))
+        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('status.txt')))
 
         with open(log_filename, 'w+') as outfile:
-                  outfile.write('[Command used]:\nCRISPRessoCompare %s\n\n[Execution log]:\n' % ' '.join(sys.argv))
+            outfile.write('[Command used]:\nCRISPRessoCompare %s\n\n[Execution log]:\n' % ' '.join(sys.argv))
 
         crispresso2Compare_info_file = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso2Compare_info.json')
         crispresso2_info = {'running_info': {}, 'results': {'alignment_stats': {}, 'general_plots': {}}} #keep track of all information for this run to be pickled and saved at the end of the run
@@ -439,7 +441,7 @@ def main():
         if args.zip_output:
             CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
 
-        info('Analysis Complete!')
+        info('Analysis Complete!', {'percent_complete': 100})
         print(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)
 
