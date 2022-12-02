@@ -230,6 +230,7 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
 
         log_filename = _jp('CRISPRessoPooledWGSCompare_RUNNING_LOG.txt')
         logger.addHandler(logging.FileHandler(log_filename))
+        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('status.txt')))
 
         with open(log_filename, 'w+') as outfile:
             outfile.write(
@@ -374,7 +375,7 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
         if args.zip_output:
             CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
 
-        info('All Done!')
+        info('All Done!', {'percent_complete': 100})
         print(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)
 
