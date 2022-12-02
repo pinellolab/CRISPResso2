@@ -1019,8 +1019,7 @@ def main():
             with open(log_filename, 'w+') as outfile:
                 outfile.write('CRISPResso version %s\n[Command used]:\n%s\n\n[Execution log]:\n' %(CRISPRessoShared.__version__, crispresso_cmd_to_write))
 
-        status_handler = CRISPRessoShared.StatusHandler(_jp('status.txt'))
-        logger.addHandler(status_handler)
+        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('status.txt')))
 
         aln_matrix_loc = os.path.join(_ROOT, "EDNAFULL")
         CRISPRessoShared.check_file(aln_matrix_loc)
@@ -4645,7 +4644,7 @@ def main():
         if args.zip_output:
             CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
 
-        info('Analysis Complete!')
+        info('Analysis Complete!', {'percent_complete': 100})
         print(CRISPRessoShared.get_crispresso_footer())
 
         sys.exit(0)

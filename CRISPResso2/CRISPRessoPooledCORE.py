@@ -1605,7 +1605,7 @@ def main():
         if args.zip_output:
             CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
 
-        info('All Done!')
+        info('All Done!', {'percent_complete': 100})
         print(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)
 

@@ -18,7 +18,7 @@ import shutil
 import signal
 import subprocess as sb
 import unicodedata
-from logging import FileHandler, StreamHandler
+from logging import FileHandler, Formatter, StreamHandler
 
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoCOREResources
@@ -68,9 +68,19 @@ class InstallationException(Exception):
 
 #########################################
 
+class StatusFormatter(Formatter):
+    def format(self, record):
+        record.percent_complete = ''
+        if record.args and 'percent_complete' in record.args:
+            print(record.args)
+            record.percent_complete = '{0}% complete '.format(record.args['percent_complete'])
+        return super().format(record)
+
+
 class StatusHandler(FileHandler):
     def __init__(self, filename):
         super().__init__(filename, 'w')
+        self.setFormatter(StatusFormatter('%(percent_complete)s%(message)s'))
 
     def emit(self, record):
         """Overwrite the existing file and write the new log."""

@@ -876,7 +876,7 @@ def main():
             crispresso2Batch_info_file,
             crispresso2_info,
         )
-        info('Analysis Complete!')
+        info('Analysis Complete!', {'percent_complete': 100})
         if args.zip_output:
             if args.output_folder == "":
                 path_value = os.path.split(OUTPUT_DIRECTORY)
