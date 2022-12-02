@@ -247,7 +247,23 @@ def extract_reads_chunk(df):
     for i in range(len(df)):
         new_df.loc[i] = extract_reads(df.iloc[i].copy())
     new_df.set_index(df.index,inplace=True)
-    return(new_df)
+    return new_df
+
+
+def normalize_name(args):
+    get_name_from_bam = lambda  x: os.path.basename(x).replace('.bam', '')
+
+    if not args.name:
+        return get_name_from_bam(args.bam_file)
+    else:
+        clean_name = CRISPRessoShared.slugify(args.name)
+        if args.name != clean_name:
+            warn(
+                'The specified name {0} contained invalid characters and was changed to: {1}'.format(
+                    args.name, clean_name,
+                ),
+            )
+        return clean_name
 
 
 ###EXCEPTIONS############################
@@ -306,6 +322,20 @@ def main():
         options_to_ignore = {'fastq_r1', 'fastq_r2', 'amplicon_seq', 'amplicon_name', 'output_folder', 'name', 'zip_output'}
         crispresso_options_for_wgs = list(crispresso_options-options_to_ignore)
 
+        OUTPUT_DIRECTORY='CRISPRessoWGS_on_%s' % normalize_name(args)
+        if args.output_folder:
+            OUTPUT_DIRECTORY=os.path.join(os.path.abspath(args.output_folder), OUTPUT_DIRECTORY)
+
+        _jp = lambda filename: os.path.join(OUTPUT_DIRECTORY, filename) #handy function to put a file in the output directory
+        try:
+            info('Creating Folder %s' % OUTPUT_DIRECTORY)
+            os.makedirs(OUTPUT_DIRECTORY)
+            info('Done!')
+        except:
+            warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
+
+        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('status.txt')))
+
         info('Checking dependencies...')
 
         if args.zip_output and not args.place_report_in_output_folder:
@@ -338,36 +368,8 @@ def main():
         args.n_processes = 1
 
         #INIT
-        get_name_from_bam=lambda  x: os.path.basename(x).replace('.bam', '')
 
-        if not args.name:
-            database_id='%s' % get_name_from_bam(args.bam_file)
-        else:
-            clean_name = CRISPRessoShared.slugify(args.name)
-            if args.name != clean_name:
-                warn(
-                     'The specified name {0} contained invalid characters and was changed to: {1}'.format(
-                         args.name, clean_name,
-                    ),
-                )
-            database_id = clean_name
-
-
-        OUTPUT_DIRECTORY='CRISPRessoWGS_on_%s' % database_id
-
-        if args.output_folder:
-                 OUTPUT_DIRECTORY=os.path.join(os.path.abspath(args.output_folder), OUTPUT_DIRECTORY)
-
-        _jp=lambda filename: os.path.join(OUTPUT_DIRECTORY, filename) #handy function to put a file in the output directory
-
-        try:
-                 info('Creating Folder %s' % OUTPUT_DIRECTORY)
-                 os.makedirs(OUTPUT_DIRECTORY)
-                 info('Done!')
-        except:
-                 warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
-
-        log_filename=_jp('CRISPRessoWGS_RUNNING_LOG.txt')
+        log_filename = _jp('CRISPRessoWGS_RUNNING_LOG.txt')
         logger.addHandler(logging.FileHandler(log_filename))
 
         crispresso2_info_file = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso2WGS_info.json')
@@ -670,7 +672,7 @@ def main():
                 good_region_names.append(run_name)
                 good_region_folders[run_name] = folder_name
                 good_region_display_names[run_name] = idx
-                
+
         samples_quantification_summary_filename = _jp('SAMPLES_QUANTIFICATION_SUMMARY.txt')
 
         df_summary_quantification=pd.DataFrame(quantification_summary, columns=header_els)
@@ -741,7 +743,7 @@ def main():
             crispresso2_info_file, crispresso2_info,
         )
 
-        info('Analysis Complete!')
+        info('Analysis Complete!', {'percent_complete': 100})
         if args.zip_output:
             CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
         print(CRISPRessoShared.get_crispresso_footer())
