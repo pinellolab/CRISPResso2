@@ -76,8 +76,7 @@ ___________________________________
         output_folder_name='CRISPRessoAggregate_on_%s' % args.name
         OUTPUT_DIRECTORY=os.path.abspath(output_folder_name)
 
-
-        _jp=lambda filename: os.path.join(OUTPUT_DIRECTORY, filename) #handy function to put a file in the output directory
+        _jp = lambda filename: os.path.join(OUTPUT_DIRECTORY, filename) #handy function to put a file in the output directory
 
         try:
              info('Creating Folder %s' % OUTPUT_DIRECTORY)
@@ -87,6 +86,7 @@ ___________________________________
 
         log_filename=_jp('CRISPRessoAggregate_RUNNING_LOG.txt')
         logger.addHandler(logging.FileHandler(log_filename))
+        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('status.txt')))
 
         with open(log_filename, 'w+') as outfile:
               outfile.write('[Command used]:\n%s\n\n[Execution log]:\n' % ' '.join(sys.argv))
@@ -845,7 +845,7 @@ ___________________________________
         wait(process_results)
         process_pool.shutdown()
 
-        info('Analysis Complete!')
+        info('Analysis Complete!', {'percent_complete': 100})
         print(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)
 
