@@ -784,7 +784,7 @@ although the least reliable in terms of quantification accuracy.
 
 -x or --bowtie2_index: Basename of Bowtie2 index for the reference genome. (default: '')
 
---bowtie2_options_string: Override options for the Bowtie2 alignment command. By default, this is " --end-to-end -N 0 --np 0 -mp 3,2 --score-min L,-5,-3(1-H)" where H is the default homology score. (default: '')
+--bowtie2_options_string: Override options for the Bowtie2 alignment command. By default, this is " --end-to-end -N 0 --np 0 -mp 3,2 --score-min L,-5,-3(1-H)" where H is the default homology score. (default: ' --end-to-end -N 0 --np 0 -mp 3,2 --score-min L,-5,-3(1-H)')
 
 --use_legacy_bowtie2_options_string: Use legacy (more stringent) Bowtie2 alignment parameters: " -k 1 --end-to-end -N 0 --np 0 ". (default: False)
 
