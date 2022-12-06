@@ -67,14 +67,16 @@ def main():
     read_exclude_count = defaultdict(int)
     if args.fastq_r2:
         while True:
-            r1_id_line = f1_in.readline().rstrip()
-            r2_id_line = f2_in.readline().rstrip()
+            r1_id_line   = f1_in.readline().rstrip()
             r1_seq_line  = f1_in.readline().rstrip()
             r1_plus_line = f1_in.readline().rstrip()
             r1_qual_line = f1_in.readline().rstrip()
+
+            r2_id_line   = f2_in.readline().rstrip()
             r2_seq_line  = f2_in.readline().rstrip()
             r2_plus_line = f2_in.readline().rstrip()
             r2_qual_line = f2_in.readline().rstrip()
+
             if not r1_id_line:
                 break
             read_read_count += 1
