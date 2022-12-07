@@ -113,7 +113,7 @@ def main():
 
         log_filename = _jp('CRISPRessoBatch_RUNNING_LOG.txt')
         logger.addHandler(logging.FileHandler(log_filename))
-        status_handler = CRISPRessoShared.StatusHandler(_jp('status.txt'))
+        status_handler = CRISPRessoShared.StatusHandler(_jp('CRISPResso_status.txt'))
         logger.addHandler(status_handler)
 
         with open(log_filename, 'w+') as outfile:

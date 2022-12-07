@@ -334,7 +334,7 @@ def main():
         except:
             warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
 
-        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('status.txt')))
+        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('CRISPResso_status.txt')))
 
         info('Checking dependencies...')
 

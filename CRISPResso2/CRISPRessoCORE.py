@@ -1019,7 +1019,7 @@ def main():
             with open(log_filename, 'w+') as outfile:
                 outfile.write('CRISPResso version %s\n[Command used]:\n%s\n\n[Execution log]:\n' %(CRISPRessoShared.__version__, crispresso_cmd_to_write))
 
-        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('status.txt')))
+        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('CRISPResso_status.txt')))
 
         aln_matrix_loc = os.path.join(_ROOT, "EDNAFULL")
         CRISPRessoShared.check_file(aln_matrix_loc)
