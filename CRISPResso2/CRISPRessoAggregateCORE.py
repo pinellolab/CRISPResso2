@@ -86,7 +86,7 @@ ___________________________________
 
         log_filename=_jp('CRISPRessoAggregate_RUNNING_LOG.txt')
         logger.addHandler(logging.FileHandler(log_filename))
-        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('CRISPResso_status.txt')))
+        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('CRISPRessoAggregate_status.txt')))
 
         with open(log_filename, 'w+') as outfile:
               outfile.write('[Command used]:\n%s\n\n[Execution log]:\n' % ' '.join(sys.argv))

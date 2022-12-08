@@ -151,7 +151,7 @@ def main():
 
         log_filename = _jp('CRISPRessoCompare_RUNNING_LOG.txt')
         logger.addHandler(logging.FileHandler(log_filename))
-        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('CRISPResso_status.txt')))
+        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('CRISPRessoCompare_status.txt')))
 
         with open(log_filename, 'w+') as outfile:
             outfile.write('[Command used]:\nCRISPRessoCompare %s\n\n[Execution log]:\n' % ' '.join(sys.argv))
