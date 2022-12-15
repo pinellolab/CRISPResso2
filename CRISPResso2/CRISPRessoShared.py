@@ -72,8 +72,7 @@ class StatusFormatter(Formatter):
     def format(self, record):
         record.percent_complete = ''
         if record.args and 'percent_complete' in record.args:
-            print(record.args)
-            record.percent_complete = '{0}% complete '.format(record.args['percent_complete'])
+            record.percent_complete = '{0:.2f}% '.format(record.args['percent_complete'])
         return super().format(record)
 
 
