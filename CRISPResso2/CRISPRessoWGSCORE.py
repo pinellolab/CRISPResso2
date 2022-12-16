@@ -608,7 +608,7 @@ def main():
             else:
                 info('\nThe region [%s] has too few reads mapped to it (%d)! Not running CRISPResso!' % (idx, row['n_reads']))
 
-        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_wgs, 'region', args.skip_failed)
+        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, logger, n_processes_for_wgs, 'region', args.skip_failed)
 
         quantification_summary=[]
         all_region_names = []

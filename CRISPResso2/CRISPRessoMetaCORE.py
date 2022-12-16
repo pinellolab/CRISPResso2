@@ -256,7 +256,7 @@ def main():
         crispresso2_info['meta_names_arr'] = meta_names_arr
         crispresso2_info['meta_input_names'] = meta_input_names
 
-        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, args.n_processes, 'meta', args.skip_failed)
+        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, logger, args.n_processes, 'meta', args.skip_failed)
 
         run_datas = [] #crispresso2 info from each row
 
