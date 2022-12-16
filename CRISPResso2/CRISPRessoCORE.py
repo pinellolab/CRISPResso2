@@ -3380,7 +3380,7 @@ def main():
                 'plot_root': plot_1a_root,
                 'save_png': save_png
             }
-            info('Plotting read bar plot', {'percent_complete': 42})
+            debug('Plotting read bar plot', {'percent_complete': 42})
             plot(CRISPRessoPlot.plot_read_barplot, plot_1a_input)
             crispresso2_info['results']['general_plots']['plot_1a_root'] = os.path.basename(plot_1a_root)
             crispresso2_info['results']['general_plots']['plot_1a_caption'] = "Figure 1a: The number of reads in input fastqs, after preprocessing, and after alignment to amplicons."
@@ -3407,7 +3407,7 @@ def main():
             crispresso2_info['results']['general_plots']['plot_1c_root'] = os.path.basename(plot_1c_root)
             crispresso2_info['results']['general_plots']['plot_1c_caption'] = "Figure 1c: Alignment and editing frequency of reads as determined by the percentage and number of sequence reads showing unmodified and modified alleles."
             crispresso2_info['results']['general_plots']['plot_1c_data'] = [('Quantification of editing', os.path.basename(quant_of_editing_freq_filename))]
-            info('Plotting read class pie chart and bar plot', {'percent_complete': 44})
+            debug('Plotting read class pie chart and bar plot', {'percent_complete': 44})
             plot(CRISPRessoPlot.plot_class_piechart_and_barplot, plot_1bc_input)
             # to test, run: plot_pool.apply_async(CRISPRessoPlot.plot_class_piechart_and_barplot, kwds=plot_1bc_input).get()
 
@@ -3428,7 +3428,7 @@ def main():
                     'plot_root': plot_root,
                     'save_also_png': save_png,
                 }
-                info('Plotting dsODN pie chart', {'percent_complete': 46})
+                debug('Plotting dsODN pie chart', {'percent_complete': 46})
                 plot(CRISPRessoPlot.plot_class_dsODN_piechart, plot_1d_input)
 
                 crispresso2_info['results']['general_plots']['plot_1d_root'] = os.path.basename(plot_root)
@@ -3464,13 +3464,7 @@ def main():
             #only show reference name in filenames if more than one reference
             ref_plot_name = refs[ref_name]['ref_plot_name']
 
-            # this is determined by the number of times the percent_complete is updated
-            num_sgRNA_steps = 5
-            num_ref_steps = 16 + (len(sgRNA_sequences) * num_sgRNA_steps)
-            ref_percent_complete_increment = ref_percent_complete_step / float(num_ref_steps)
-            percent_complete = ref_percent_complete_start + (ref_percent_complete_step * ref_index)
-            info('Begin processing amplicon {0}'.format(ref_name), {'percent_complete': percent_complete})
-
+            info('Begin processing plots for amplicon {0}'.format(ref_name), {'percent_complete': ref_percent_complete_start + (ref_percent_complete_step * ref_index)})
 
             if n_this_category < 1:
                 continue
@@ -3558,8 +3552,7 @@ def main():
                         'sgRNA_mismatches': sgRNA_mismatches,
                         'quantification_window_idxs': include_idxs_list,
                     }
-                    percent_complete += ref_percent_complete_increment
-                    info('Plotting nucleotide quilt across amplicon', {'percent_complete': percent_complete})
+                    debug('Plotting nucleotide quilt across amplicon')
                     plot(CRISPRessoPlot.plot_nucleotide_quilt, plot_2a_input)
                     crispresso2_info['results']['refs'][ref_name]['plot_2a_root'] = os.path.basename(plot_root)
                     crispresso2_info['results']['refs'][ref_name]['plot_2a_caption'] = "Figure 2a: Nucleotide distribution across amplicon. At each base in the reference amplicon, the percentage of each base as observed in sequencing reads is shown (A = green; C = orange; G = yellow; T = purple). Black bars show the percentage of reads for which that base was deleted. Brown bars between bases show the percentage of reads having an insertion at that position."
@@ -3605,8 +3598,7 @@ def main():
                             'sgRNA_mismatches': sgRNA_mismatches,
                             'quantification_window_idxs': new_include_idx,
                         }
-                        percent_complete += ((i + 1) / len(cut_points)) * ref_percent_complete_increment
-                        info('Plotting nucleotide distribuition around {0}'.format(sgRNA_legend), {'percent_complete': percent_complete})
+                        debug('Plotting nucleotide distribuition around {0}'.format(sgRNA_legend))
                         plot(CRISPRessoPlot.plot_nucleotide_quilt, plot_2b_input)
                         crispresso2_info['results']['refs'][ref_name]['plot_2b_roots'].append(os.path.basename(plot_root))
                         crispresso2_info['results']['refs'][ref_name]['plot_2b_captions'].append('Figure 2b: Nucleotide distribution around the ' + sgRNA_legend + '.')
@@ -3657,8 +3649,7 @@ def main():
                     'plot_root': plot_root,
                     'save_also_png': save_png,
                 }
-                percent_complete += ref_percent_complete_increment
-                info('Plotting indel size distribution', {'percent_complete': percent_complete})
+                debug('Plotting indel size distribution')
                 plot(CRISPRessoPlot.plot_indel_size_distribution, plot_3a_input)
                 clipped_string = ""
                 if xmax < max(hlengths):
@@ -3739,8 +3730,7 @@ def main():
                     'xmax_mut': xmax_mut,
                     'save_also_png': save_png,
                 }
-                percent_complete += ref_percent_complete_increment
-                info('Plotting frequency deletions/insertions', {'percent_complete': percent_complete})
+                debug('Plotting frequency deletions/insertions')
                 plot(CRISPRessoPlot.plot_frequency_deletions_insertions, plot_3b_input)
 
                 if clipped_string != "":
@@ -3786,8 +3776,7 @@ def main():
                     'plot_root': plot_root,
                     'save_also_png': save_png,
                 }
-                percent_complete += ref_percent_complete_increment
-                info('Plotting amplication modifications', {'percent_complete': percent_complete})
+                debug('Plotting amplication modifications')
                 plot(CRISPRessoPlot.plot_amplicon_modifications, plot_4a_input)
                 crispresso2_info['results']['refs'][ref_name]['plot_4a_root'] = os.path.basename(plot_root)
                 crispresso2_info['results']['refs'][ref_name]['plot_4a_caption'] = "Figure 4a: Combined frequency of any modification across the amplicon. Modifications outside of the quantification window are also shown."
@@ -3816,8 +3805,7 @@ def main():
                     'plot_root': plot_root,
                     'save_also_png': save_png,
                 }
-                percent_complete += ref_percent_complete_increment
-                info('Plotting modification frequency', {'percent_complete': percent_complete})
+                debug('Plotting modification frequency')
                 plot(CRISPRessoPlot.plot_modification_frequency, plot_4b_input)
                 crispresso2_info['results']['refs'][ref_name]['plot_4b_root'] = os.path.basename(plot_root)
                 crispresso2_info['results']['refs'][ref_name]['plot_4b_caption'] = "Figure 4b: Frequency of insertions (red), deletions (purple), and substitutions (green) across the entire amplicon, including modifications outside of the quantification window."
@@ -3845,8 +3833,7 @@ def main():
                     'plot_root': plot_root,
                     'save_also_png': save_png,
                 }
-                percent_complete += ref_percent_complete_increment
-                info('Plotting quantification window locations', {'percent_complete': percent_complete})
+                debug('Plotting quantification window locations')
                 plot(
                     CRISPRessoPlot.plot_quantification_window_locations,
                     plot_4c_input,
@@ -3876,8 +3863,7 @@ def main():
                     'plot_root': plot_root,
                     'save_also_png': save_png,
                 }
-                percent_complete += ref_percent_complete_increment
-                info('Plotting position dependent indel', {'percent_complete': percent_complete})
+                debug('Plotting position dependent indel')
                 plot(
                     CRISPRessoPlot.plot_position_dependent_indels,
                     plot_4d_input,
@@ -3917,8 +3903,7 @@ def main():
                         crispresso2_info['results']['refs'][ref_names[0]]['plot_4f_root'] = os.path.basename(plot_root)
                         crispresso2_info['results']['refs'][ref_names[0]]['plot_4f_caption'] = "Figure 4f: Positions of modifications in HDR reads with respect to the reference sequence ("+ref_names[0]+"). Insertions: red, deletions: purple, substitutions: green. All modifications (including those outside the quantification window) are shown."
                         crispresso2_info['results']['refs'][ref_names[0]]['plot_4f_data'] = []
-                    percent_complete += ref_percent_complete_increment
-                    info('Plotting global modifications with respect to reference', {'percent_complete': percent_complete})
+                    debug('Plotting global modifications with respect to reference')
                     plot(
                         CRISPRessoPlot.plot_global_modifications_reference,
                         plot_4e_input,
@@ -3972,8 +3957,7 @@ def main():
                         'sgRNA_names': sgRNA_names,
                         'sgRNA_mismatches': sgRNA_mismatches,
                     }
-                    percent_complete += ref_percent_complete_increment
-                    info('Plotting HDR nucleotide quilt', {'percent_complete': percent_complete})
+                    debug('Plotting HDR nucleotide quilt')
                     plot(CRISPRessoPlot.plot_nucleotide_quilt, plot_4g_input)
                     crispresso2_info['results']['refs'][ref_names_for_hdr[0]]['plot_4g_root'] = os.path.basename(plot_root)
                     crispresso2_info['results']['refs'][ref_names_for_hdr[0]]['plot_4g_caption'] = "Figure 4g: Nucleotide distribution across all amplicons. At each base in the reference amplicon, the percentage of each base as observed in sequencing reads is shown (A = green; C = orange; G = yellow; T = purple). Black bars show the percentage of reads for which that base was deleted. Brown bars between bases show the percentage of reads having an insertion at that position."
@@ -4021,8 +4005,7 @@ def main():
                             'plot_root': plot_root,
                             'save_also_png': save_png,
                         }
-                        percent_complete += ref_percent_complete_increment
-                        info('Plotting frameshift analysis', {'percent_complete': percent_complete})
+                        debug('Plotting frameshift analysis')
                         plot(CRISPRessoPlot.plot_frameshift_analysis, plot_5_input)
                         crispresso2_info['results']['refs'][ref_name]['plot_5_root'] = os.path.basename(plot_root)
                         crispresso2_info['results']['refs'][ref_name]['plot_5_caption'] = "Figure 5: Frameshift analysis of coding sequence reads affected by modifications (unmodified reads are excluded from this analysis)."
@@ -4047,8 +4030,7 @@ def main():
                         'plot_root': plot_root,
                         'save_also_png': save_png,
                     }
-                    percent_complete += ref_percent_complete_increment
-                    info('Plotting frameshift frequency', {'percent_complete': percent_complete})
+                    debug('Plotting frameshift frequency')
                     plot(CRISPRessoPlot.plot_frameshift_frequency, plot_6_input)
                     crispresso2_info['results']['refs'][ref_name]['plot_6_root'] = os.path.basename(plot_root)
                     crispresso2_info['results']['refs'][ref_name]['plot_6_caption'] = "Figure 6: Frameshift and in-frame mutagenesis profiles indicating position affected by modification. The y axis shows the number of reads and percentage of all reads in that category (frameshifted (top) or in-frame (bottom)). %d reads with no length modifications are not shown."%hists_inframe[ref_name][0]
@@ -4076,8 +4058,7 @@ def main():
                         'plot_root': plot_root,
                         'save_also_png': save_png,
                     }
-                    percent_complete += ref_percent_complete_increment
-                    info('Plotting non-coding mutation positions', {'percent_complete': percent_complete})
+                    debug('Plotting non-coding mutation positions')
                     plot(CRISPRessoPlot.plot_non_coding_mutations, plot_7_input)
                     crispresso2_info['results']['refs'][ref_name]['plot_7_root'] = os.path.basename(plot_root)
                     crispresso2_info['results']['refs'][ref_name]['plot_7_caption'] = "Figure 7: Reads with insertions (red), deletions (purple), and substitutions (green) mapped to reference amplicon position exclusively in noncoding region/s (that is, without mutations affecting coding sequences). The predicted cleavage site is indicated by a vertical dashed line. Only sequence positions directly adjacent to insertions or directly affected by deletions or substitutions are plotted."
@@ -4090,8 +4071,7 @@ def main():
                         'plot_root': plot_root,
                         'save_also_png': save_png,
                     }
-                    percent_complete += ref_percent_complete_increment
-                    info('Plotting potential splice sites', {'percent_complete': percent_complete})
+                    debug('Plotting potential splice sites')
                     plot(CRISPRessoPlot.plot_potential_splice_sites, plot_8_input)
                     crispresso2_info['results']['refs'][ref_name]['plot_8_root'] = os.path.basename(plot_root)
                     crispresso2_info['results']['refs'][ref_name]['plot_8_caption'] = "Figure 8: Predicted impact on splice sites. Potential splice sites modified refers to reads in which the either of the two intronic positions adjacent to exon junctions are disrupted."
@@ -4116,8 +4096,7 @@ def main():
                         'save_also_png': save_png,
                         'quantification_window_idxs': include_idxs_list,
                     }
-                    percent_complete += ref_percent_complete_increment
-                    info('Plotting substitutions across reference', {'percent_complete': percent_complete})
+                    debug('Plotting substitutions across reference')
                     plot(CRISPRessoPlot.plot_subs_across_ref, plot_10a_input)
                     crispresso2_info['results']['refs'][ref_name]['plot_10a_root'] = os.path.basename(fig_filename_root)
                     crispresso2_info['results']['refs'][ref_name]['plot_10a_caption'] = "Figure 10a: Substitution frequencies across the amplicon."
@@ -4135,8 +4114,7 @@ def main():
                         'fig_filename_root': fig_filename_root,
                         'save_also_png': save_png
                     }
-                    percent_complete += ref_percent_complete_increment
-                    info('Plotting substitution frequency barplot', {'percent_complete': percent_complete})
+                    debug('Plotting substitution frequency barplot')
                     plot(CRISPRessoPlot.plot_sub_freqs, plot_10b_input)
                     crispresso2_info['results']['refs'][ref_name]['plot_10b_root'] = os.path.basename(fig_filename_root)
                     crispresso2_info['results']['refs'][ref_name]['plot_10b_caption'] = "Figure 10b: Substitution frequencies across the amplicon."
@@ -4150,8 +4128,7 @@ def main():
                         'fig_filename_root': fig_filename_root,
                         'save_also_png': save_png
                     }
-                    percent_complete += ref_percent_complete_increment
-                    info('Plotting substitution frequency barplot in quantification window', {'percent_complete': percent_complete})
+                    debug('Plotting substitution frequency barplot in quantification window')
                     plot(CRISPRessoPlot.plot_sub_freqs, plot_10c_input)
                     crispresso2_info['results']['refs'][ref_name]['plot_10c_root'] = os.path.basename(fig_filename_root)
                     crispresso2_info['results']['refs'][ref_name]['plot_10c_caption'] = "Figure 10c: Substitution frequencies in the quantification window"
@@ -4241,8 +4218,7 @@ def main():
                         'sgRNA_mismatches': sgRNA_mismatches,
                         'annotate_wildtype_allele': args.annotate_wildtype_allele,
                     }
-                    percent_complete += ref_percent_complete_increment
-                    info('Plotting allele distribution around cut', {'percent_complete': percent_complete})
+                    debug('Plotting allele distribution around cut')
                     plot(CRISPRessoPlot.plot_alleles_table, plot_9_input)
                     crispresso2_info['results']['refs'][ref_name]['plot_9_roots'].append(os.path.basename(fig_filename_root))
                     crispresso2_info['results']['refs'][ref_name]['plot_9_captions'].append("Figure 9: Visualization of the distribution of identified alleles around the cleavage site for the " + sgRNA_legend + ". Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site.")
@@ -4307,8 +4283,7 @@ def main():
                             'save_also_png': save_png,
                             'quantification_window_idxs': plot_quant_window_idxs,
                         }
-                        percent_complete += ref_percent_complete_increment
-                        info('Plotting log2 nucleotide frequency', {'percent_complete': percent_complete})
+                        debug('Plotting log2 nucleotide frequency')
                         plot(CRISPRessoPlot.plot_log_nuc_freqs, plot_10d_input)
                         crispresso2_info['results']['refs'][ref_name]['plot_10d_roots'].append(os.path.basename(fig_filename_root))
                         crispresso2_info['results']['refs'][ref_name]['plot_10d_captions'].append("Figure 10d: Log2 nucleotide frequencies for each position in the plotting window around the " + sgRNA_legend + ". The quantification window is outlined by the dotted box.")
@@ -4329,8 +4304,7 @@ def main():
                             'fig_filename_root': fig_filename_root,
                             'save_also_png': save_png,
                         }
-                        percent_complete += ref_percent_complete_increment
-                        info('Plotting conversion at {0}s around the {1}'.format(args.conversion_nuc_from, sgRNA_legend), {'percent_complete': percent_complete})
+                        debug('Plotting conversion at {0}s around the {1}'.format(args.conversion_nuc_from, sgRNA_legend))
                         plot(
                             CRISPRessoPlot.plot_conversion_at_sel_nucs,
                             plot_10e_input,
@@ -4349,8 +4323,7 @@ def main():
                             'fig_filename_root': fig_filename_root,
                             'save_also_png': save_png,
                         }
-                        percent_complete += ref_percent_complete_increment
-                        info('Plotting non-reference conversion at {0}s around the {1}'.format(args.conversion_nuc_from, sgRNA_legend), {'percent_complete': percent_complete})
+                        debug('Plotting non-reference conversion at {0}s around the {1}'.format(args.conversion_nuc_from, sgRNA_legend))
                         plot(
                             CRISPRessoPlot.plot_conversion_at_sel_nucs_not_include_ref,
                             plot_10f_input,
@@ -4372,8 +4345,7 @@ def main():
                             'fig_filename_root': fig_filename_root,
                             'save_also_png': save_png
                         }
-                        percent_complete += ref_percent_complete_increment
-                        info('Plotting scaled non-reference conversion at {0}s around the {1}'.format(args.conversion_nuc_from, sgRNA_legend), {'percent_complete': percent_complete})
+                        debug('Plotting scaled non-reference conversion at {0}s around the {1}'.format(args.conversion_nuc_from, sgRNA_legend))
                         plot(
                             CRISPRessoPlot.plot_conversion_at_sel_nucs_not_include_ref_scaled,
                             plot_10g_input,
@@ -4381,6 +4353,8 @@ def main():
                         crispresso2_info['results']['refs'][ref_name]['plot_10g_roots'].append(os.path.basename(fig_filename_root))
                         crispresso2_info['results']['refs'][ref_name]['plot_10g_captions'].append("Figure 10g: Non-reference base counts. For target nucleotides in the plotting window, this plot shows the number of non-reference (non-" + args.conversion_nuc_from + ") bases. The number of each target base is annotated on the reference sequence at the bottom of the plot.")
                         crispresso2_info['results']['refs'][ref_name]['plot_10g_datas'].append([('Nucleotide frequencies at ' + args.conversion_nuc_from +'s', os.path.basename(quant_window_sel_nuc_freq_filename))])
+
+            info('Done!')
 
             #END GUIDE SPECIFIC PLOTS
 
@@ -4437,7 +4411,7 @@ def main():
                         'plot_root': plot_root,
                         'save_also_png': save_png,
                     }
-                    info('Plotting global frameshift in-frame mutations pie chart', {'percent_complete': 90})
+                    debug('Plotting global frameshift in-frame mutations pie chart', {'percent_complete': 90})
                     plot(
                         CRISPRessoPlot.plot_global_frameshift_analysis,
                         plot_5a_input,
@@ -4454,7 +4428,7 @@ def main():
                     'plot_root': plot_root,
                     'save_also_png': save_png,
                 }
-                info('Plotting global frameshift in-frame mutation profiles', {'percent_complete': 92})
+                debug('Plotting global frameshift in-frame mutation profiles', {'percent_complete': 92})
                 plot(
                     CRISPRessoPlot.plot_global_frameshift_in_frame_mutations,
                     plot_6a_input,
@@ -4476,7 +4450,7 @@ def main():
                     'plot_root': plot_root,
                     'save_also_png': save_png,
                 }
-                info('Plotting global potential splice sites pie chart', {'percent_complete': 94})
+                debug('Plotting global potential splice sites pie chart', {'percent_complete': 94})
                 plot(CRISPRessoPlot.plot_impact_on_splice_sites, plot_8a_input)
                 crispresso2_info['results']['general_plots']['plot_8a_root'] = os.path.basename(plot_root)
                 crispresso2_info['results']['general_plots']['plot_8a_caption'] = "Figure 8a: Predicted impact on splice sites for all reads. Potential splice sites modified refers to reads in which the either of the two intronic positions adjacent to exon junctions are disrupted."
