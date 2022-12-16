@@ -73,6 +73,9 @@ class StatusFormatter(logging.Formatter):
         record.percent_complete = ''
         if record.args and 'percent_complete' in record.args:
             record.percent_complete = '{0:.2f}% '.format(record.args['percent_complete'])
+            self.last_percent_complete = record.percent_complete
+        elif hasattr(self, 'last_percent_complete'): # if we don't have a percent complete, use the last one
+            record.percent_complete = self.last_percent_complete
         return super().format(record)
 
 
