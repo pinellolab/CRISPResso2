@@ -18,7 +18,7 @@ import shutil
 import signal
 import subprocess as sb
 import unicodedata
-from logging import FileHandler, Formatter, StreamHandler
+from logging import FileHandler, Formatter, INFO, StreamHandler
 
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoCOREResources
@@ -89,6 +89,17 @@ class StatusHandler(FileHandler):
             self.stream.seek(0)
         StreamHandler.emit(self, record)
         self.stream.truncate()
+
+
+class LogStreamHandler(StreamHandler):
+    def __init__(self, stream=None):
+        super().__init__(stream)
+        self.setFormatter(Formatter(
+            '%(levelname)-5s @ %(asctime)s:\n\t %(message)s \n',
+            datefmt='%a, %d %b %Y %H:%M:%S',
+        ))
+        self.setLevel(INFO)
+        self.name = 'LogStreamHandler'
 
 
 def getCRISPRessoArgParser(parserTitle="CRISPResso Parameters", requiredParams={}):
