@@ -69,6 +69,8 @@ ___________________________________
 
         args = parser.parse_args()
 
+        CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
+
         output_folder_name='CRISPRessoAggregate_on_%s' % args.name
         OUTPUT_DIRECTORY=os.path.abspath(output_folder_name)
 

@@ -96,6 +96,8 @@ def main():
 
         args = parser.parse_args()
 
+        CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
+
         debug_flag = args.debug
 
         crispresso_options = CRISPRessoShared.get_crispresso_options()

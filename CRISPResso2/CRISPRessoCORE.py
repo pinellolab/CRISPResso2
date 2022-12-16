@@ -987,6 +987,8 @@ def main():
         arg_parser = CRISPRessoShared.getCRISPRessoArgParser()
         args = arg_parser.parse_args()
 
+        CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
+
         OUTPUT_DIRECTORY = 'CRISPResso_on_{0}'.format(normalize_name(args))
 
         if args.output_folder:

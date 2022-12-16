@@ -18,7 +18,7 @@ import shutil
 import signal
 import subprocess as sb
 import unicodedata
-from logging import FileHandler, Formatter, INFO, StreamHandler
+import logging
 
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoCOREResources
@@ -68,7 +68,7 @@ class InstallationException(Exception):
 
 #########################################
 
-class StatusFormatter(Formatter):
+class StatusFormatter(logging.Formatter):
     def format(self, record):
         record.percent_complete = ''
         if record.args and 'percent_complete' in record.args:
@@ -76,7 +76,7 @@ class StatusFormatter(Formatter):
         return super().format(record)
 
 
-class StatusHandler(FileHandler):
+class StatusHandler(logging.FileHandler):
     def __init__(self, filename):
         super().__init__(filename, 'w')
         self.setFormatter(StatusFormatter('%(percent_complete)s%(message)s'))
@@ -87,19 +87,32 @@ class StatusHandler(FileHandler):
             self.stream = self._open()
         else:  # log file is not empty, overwrite
             self.stream.seek(0)
-        StreamHandler.emit(self, record)
+        logging.StreamHandler.emit(self, record)
         self.stream.truncate()
 
 
-class LogStreamHandler(StreamHandler):
+class LogStreamHandler(logging.StreamHandler):
     def __init__(self, stream=None):
         super().__init__(stream)
-        self.setFormatter(Formatter(
+        self.setFormatter(logging.Formatter(
             '%(levelname)-5s @ %(asctime)s:\n\t %(message)s \n',
             datefmt='%a, %d %b %Y %H:%M:%S',
         ))
-        self.setLevel(INFO)
-        self.name = 'LogStreamHandler'
+        self.setLevel(logging.INFO)
+
+
+def set_console_log_level(logger, level, debug=False):
+    for handler in logger.handlers:
+        if isinstance(handler, LogStreamHandler):
+            if level == 4 or debug:
+                handler.setLevel(logging.DEBUG)
+            elif level == 3:
+                handler.setLevel(logging.INFO)
+            elif level == 2:
+                handler.setLevel(logging.WARNING)
+            elif level == 1:
+                handler.setLevel(logging.ERROR)
+            break
 
 
 def getCRISPRessoArgParser(parserTitle="CRISPResso Parameters", requiredParams={}):
@@ -159,6 +172,7 @@ def getCRISPRessoArgParser(parserTitle="CRISPResso Parameters", requiredParams={
                         default='')
     parser.add_argument('-o', '--output_folder', help='Output folder to use for the analysis (default: current folder)',
                         default='')
+    parser.add_argument('-v', '--verbosity', type=int, help='Verbosity level of output to the console (1-4)', default=3)
 
     ## read preprocessing params
     parser.add_argument('--split_interleaved_input', '--split_paired_end',

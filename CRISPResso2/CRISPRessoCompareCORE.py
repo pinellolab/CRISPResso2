@@ -103,6 +103,9 @@ def main():
         parser.add_argument('--debug', help='Show debug messages', action='store_true')
 
         args = parser.parse_args()
+
+        CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
+
         debug_flag = args.debug
 
         if args.zip_output and not args.place_report_in_output_folder:
