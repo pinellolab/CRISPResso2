@@ -812,7 +812,7 @@ def process_single_fastq_write_bam_out(fastq_input, bam_output, bam_header, vari
                     '*',             # aln chr
                     '0',             # aln loc
                     '0',             # quality
-                    '0',             # cigar
+                    '*',             # cigar
                     '*',             # next
                     '0',             # next
                     '0',             # tlen
