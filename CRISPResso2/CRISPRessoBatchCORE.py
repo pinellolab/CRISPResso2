@@ -280,7 +280,7 @@ def main():
         crispresso2_info['results']['batch_names_arr'] = batch_names_arr
         crispresso2_info['results']['batch_input_names'] = batch_input_names
 
-        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, logger, n_processes_for_batch, 'batch', args.skip_failed)
+        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, logger, n_processes_for_batch, 'batch', args.skip_failed, start_end_percent=[10, 90])
 
         run_datas = [] # crispresso2 info from each row
 
@@ -364,6 +364,8 @@ def main():
         crispresso2_info['results']['general_plots']['allele_modification_line_plot_labels'] = {}
         crispresso2_info['results']['general_plots']['allele_modification_line_plot_datas'] = {}
 
+        percent_complete_start, percent_complete_end = 90, 99
+        percent_complete_step = (percent_complete_end - percent_complete_start) / len(all_amplicons)
         # report for amplicons
         for amplicon_index, amplicon_seq in enumerate(all_amplicons):
             # only perform comparison if amplicon seen in more than one sample
@@ -371,7 +373,8 @@ def main():
                 continue
 
             amplicon_name = amplicon_names[amplicon_seq]
-            info('Reporting summary for amplicon: "' + amplicon_name + '"')
+            percent_complete = percent_complete_start + (amplicon_index * percent_complete_step)
+            info('Reporting summary for amplicon: "' + amplicon_name + '"', {'percent_complete': percent_complete})
 
             consensus_sequence = ""
             nucleotide_frequency_summary = []
@@ -577,6 +580,7 @@ def main():
                                 'sgRNA_intervals': sub_sgRNA_intervals,
                                 'quantification_window_idxs': include_idxs,
                             }
+                            debug('Plotting nucleotide percentage quilt for amplicon {0}, sgRNA {1}'.format(amplicon_name, sgRNA))
                             plot(
                                 CRISPRessoPlot.plot_nucleotide_quilt,
                                 nucleotide_quilt_input,
@@ -600,6 +604,7 @@ def main():
                                     'sgRNA_intervals': sub_sgRNA_intervals,
                                     'quantification_window_idxs': include_idxs,
                                 }
+                                debug('Plotting nucleotide conversion map for amplicon {0}, sgRNA {1}'.format(amplicon_name, sgRNA))
                                 plot(
                                     CRISPRessoPlot.plot_conversion_map,
                                     conversion_map_input,
@@ -625,6 +630,7 @@ def main():
                             'sgRNA_intervals': consensus_sgRNA_intervals,
                             'quantification_window_idxs': include_idxs,
                         }
+                        debug('Plotting nucleotide quilt for {0}'.format(amplicon_name))
                         plot(
                             CRISPRessoPlot.plot_nucleotide_quilt,
                             nucleotide_quilt_input,
@@ -647,6 +653,7 @@ def main():
                                 'sgRNA_intervals': consensus_sgRNA_intervals,
                                 'quantification_window_idxs': include_idxs,
                             }
+                            debug('Plotting nucleotide conversion map for {0}'.format(amplicon_name))
                             plot(
                                 CRISPRessoPlot.plot_conversion_map,
                                 conversion_map_input,
@@ -669,6 +676,7 @@ def main():
                             'fig_filename_root': this_nuc_pct_quilt_plot_name,
                             'save_also_png': save_png,
                         }
+                        debug('Plotting nucleotide quilt for {0}'.format(amplicon_name))
                         plot(
                             CRISPRessoPlot.plot_nucleotide_quilt,
                             nucleotide_quilt_input,
@@ -686,6 +694,7 @@ def main():
                                 'conversion_nuc_to': args.conversion_nuc_to,
                                 'save_also_png': save_png,
                             }
+                            debug('Plotting BE nucleotide conversion map for {0}'.format(amplicon_name))
                             plot(
                                 CRISPRessoPlot.plot_conversion_map,
                                 conversion_map_input,
@@ -728,6 +737,7 @@ def main():
                             'plot_path': plot_path,
                             'title': modification_type,
                         }
+                        debug('Plotting allele modification heatmap for {0}'.format(amplicon_name))
                         plot(
                             CRISPRessoPlot.plot_allele_modification_heatmap,
                             allele_modification_heatmap_input,
@@ -758,6 +768,7 @@ def main():
                             'plot_path': plot_path,
                             'title': modification_type,
                         }
+                        debug('Plotting allele modification line plot for {0}'.format(amplicon_name))
                         plot(
                             CRISPRessoPlot.plot_allele_modification_line,
                             allele_modification_line_input,
