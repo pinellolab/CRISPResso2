@@ -1491,14 +1491,15 @@ def main():
         if not args.keep_intermediate:
              info('Removing Intermediate files...')
 
-             if args.fastq_r2!='':
-                 files_to_remove+=[processed_output_filename, flash_hist_filename, flash_histogram_filename,\
-                              flash_not_combined_1_filename, flash_not_combined_2_filename]
-                 if args.force_merge_pairs:
-                    files_to_remove.append(new_merged_filename)
-                    files_to_remove.append(old_flashed_filename)
-             else:
-                 files_to_remove+=[processed_output_filename]
+             if not args.aligned_pooled_bam:
+                if args.fastq_r2!='':
+                    files_to_remove+=[processed_output_filename, flash_hist_filename, flash_histogram_filename,\
+                                flash_not_combined_1_filename, flash_not_combined_2_filename]
+                    if args.force_merge_pairs:
+                        files_to_remove.append(new_merged_filename)
+                        files_to_remove.append(old_flashed_filename)
+                else:
+                    files_to_remove+=[processed_output_filename]
 
              if args.trim_sequences and args.fastq_r2!='':
                  files_to_remove+=[output_forward_paired_filename, output_reverse_paired_filename,\
