@@ -334,7 +334,7 @@ def main():
         info('Checking dependencies...')
 
         if check_samtools() and check_bowtie2():
-            info('All the required dependencies are present!')
+            info('All the required dependencies are present!', {'percent_complete': 0})
         else:
             sys.exit(1)
 
@@ -473,7 +473,7 @@ def main():
         with open(log_filename, 'w+') as outfile:
             outfile.write('CRISPResso version %s\n[Command used]:\n%s\n\n[Execution log]:\n' %(CRISPRessoShared.__version__, crispresso_cmd_to_write))
 
-        info('Processing input')
+        info('Processing input', {'percent_complete': 5})
 
         # perform read trimming if necessary
         if args.aligned_pooled_bam is not None:
@@ -490,6 +490,7 @@ def main():
             else:
                 output_forward_filename = _jp('reads.trimmed.fq.gz')
                 # Trimming with trimmomatic
+                info('Trimming sequences with Trimmomatic...', {'percent_complete': 7})
                 cmd = '%s SE -phred33 %s %s %s >>%s 2>&1'\
                     % (args.trimmomatic_command, args.fastq_r1,
                         output_forward_filename,
@@ -508,7 +509,7 @@ def main():
                 output_forward_paired_filename = args.fastq_r1
                 output_reverse_paired_filename = args.fastq_r2
             else:
-                info('Trimming sequences with Trimmomatic...')
+                info('Trimming sequences with Trimmomatic...', {'percent_complete': 7})
                 output_forward_paired_filename = _jp('output_forward_paired.fq.gz')
                 output_forward_unpaired_filename = _jp('output_forward_unpaired.fq.gz')
                 output_reverse_paired_filename = _jp('output_reverse_paired.fq.gz')
@@ -534,7 +535,7 @@ def main():
             if args.min_paired_end_reads_overlap:
                 min_overlap_string = "--min-overlap " + str(args.min_paired_end_reads_overlap)
             # Merging with Flash
-            info('Merging paired sequences with Flash...')
+            info('Merging paired sequences with Flash...', {'percent_complete': 10})
             cmd = args.flash_command+' --allow-outies %s %s %s %s -z -d %s >>%s 2>&1' %\
                 (output_forward_paired_filename,
                  output_reverse_paired_filename,
@@ -727,7 +728,7 @@ def main():
             aligner_command= 'bowtie2 -x %s -p %s %s -U %s 2>>%s | samtools view -bS - > %s' %(custom_index_filename, n_processes_for_pooled, bowtie2_options_string, processed_output_filename, log_filename, bam_filename_amplicons)
 
 
-            info('Alignment command: ' + aligner_command)
+            info('Alignment command: ' + aligner_command, {'percent_complete': 15})
             sb.call(aligner_command, shell=True)
 
             N_READS_ALIGNED = get_n_aligned_bam(bam_filename_amplicons)
@@ -823,7 +824,7 @@ def main():
                 else:
                     warn('Skipping amplicon [%s] because no reads align to it\n'% idx)
 
-            CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, logger, n_processes_for_pooled, 'amplicon', args.skip_failed)
+            CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, logger, n_processes_for_pooled, 'amplicon', args.skip_failed, start_end_percent=(16, 80))
 
             df_template['n_reads']=n_reads_aligned_amplicons
             df_template['n_reads_aligned_%']=df_template['n_reads']/float(N_READS_ALIGNED)*100
@@ -1113,7 +1114,7 @@ def main():
                         fout.write("\n\n\n".join(chr_commands))
                     info('Wrote demultiplexing commands to ' + demux_file)
 
-                info('Demultiplexing reads by location (%d genomic regions)...'%len(chr_commands))
+                info('Demultiplexing reads by location (%d genomic regions)...'%len(chr_commands), {'percent_complete': 85})
                 CRISPRessoMultiProcessing.run_parallel_commands(chr_commands, n_processes=n_processes_for_pooled, descriptor='Demultiplexing reads by location', continue_on_fail=args.skip_failed)
 
                 df_all_demux = pd.read_csv(REPORT_ALL_DEPTH, sep='\t')
@@ -1194,7 +1195,7 @@ def main():
                         n_reads_aligned_genome.append(0)
                         warn("The amplicon %s doesn't have any reads mapped to it!\n Please check your amplicon sequence." %  idx)
 
-                CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, logger, n_processes_for_pooled, 'amplicon', args.skip_failed)
+                CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, logger, n_processes_for_pooled, 'amplicon', args.skip_failed, start_end_percent=(15, 85))
 
                 crispresso2_info['running_info']['finished_steps']['crispresso_amplicons_and_genome'] = (n_reads_aligned_genome, fastq_region_filenames, files_to_match)
                 CRISPRessoShared.write_crispresso_info(
@@ -1302,7 +1303,7 @@ def main():
                         crispresso_cmds.append(crispresso_cmd)
                     else:
                         info('Skipping region: %s-%d-%d , not enough reads (%d)' %(row.chr_id, row.bpstart, row.bpend, row.n_reads))
-                CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, logger, n_processes_for_pooled, 'region', args.skip_failed)
+                CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, logger, n_processes_for_pooled, 'region', args.skip_failed, start_end_percent=(15, 85))
 
                 crispresso2_info['running_info']['finished_steps']['crispresso_genome_only'] = True
                 CRISPRessoShared.write_crispresso_info(
@@ -1433,6 +1434,7 @@ def main():
         if not args.suppress_plots:
             plot_root = _jp("CRISPRessoPooled_reads_summary")
 
+            debug('Plotting reads summary', {'percent_complete': 90})
             CRISPRessoPlot.plot_reads_total(plot_root, df_summary_quantification, save_png, args.min_reads_to_use_region)
             plot_name = os.path.basename(plot_root)
             crispresso2_info['results']['general_plots']['summary_plot_root'] = plot_name
@@ -1442,6 +1444,7 @@ def main():
             crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('CRISPRessoPooled summary', os.path.basename(samples_quantification_summary_filename))]
 
             plot_root = _jp("CRISPRessoPooled_modification_summary")
+            debug('Plotting modification summary', {'percent_complete': 95})
             CRISPRessoPlot.plot_unmod_mod_pcts(plot_root, df_summary_quantification, save_png, args.min_reads_to_use_region)
             plot_name = os.path.basename(plot_root)
             crispresso2_info['results']['general_plots']['summary_plot_root'] = plot_name
