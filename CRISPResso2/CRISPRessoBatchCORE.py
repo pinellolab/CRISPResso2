@@ -451,7 +451,7 @@ def main():
 
                 mod_pcts = {}
                 for key in mod_freqs:
-                    mod_pcts[key] = np.array(mod_freqs[key]).astype(np.float)/float(mod_freqs['Total'][0])
+                    mod_pcts[key] = np.array(mod_freqs[key]).astype(float)/float(mod_freqs['Total'][0])
 
                 amp_found_count += 1
 

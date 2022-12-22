@@ -166,14 +166,14 @@ def global_align(str pystr_seqj, str pystr_seqi, np.ndarray[DTYPE_INT, ndim=2] m
     #init i matrix
     for i in range(1,max_j+1):
         iScore[0,i] = gap_extend * i + gap_incentive[0]
-#    iScore[0,1:] = [gap_extend * np.arange(1, max_j+1, dtype=np.int)]
+#    iScore[0,1:] = [gap_extend * np.arange(1, max_j+1, dtype=int)]
     iScore[0:,0] = min_score
     iPointer[0,1:] = IARRAY
 
     #init j matrix
     for i in range(1,max_i+1):
         jScore[i,0] = gap_extend * i + gap_incentive[0]
-    #jScore[1:,0] = np.vectorize(gap_extend * np.arange(1, max_i+1, dtype=np.int))
+    #jScore[1:,0] = np.vectorize(gap_extend * np.arange(1, max_i+1, dtype=int))
     jScore[0,0:] = min_score
     jPointer[1:,0] = JARRAY
 
