@@ -3514,11 +3514,11 @@ def main():
                 if not args.suppress_plots:
                     mod_pcts = []
                     tot = float(counts_total[ref_name])
-                    mod_pcts.append(np.concatenate((['Insertions'], np.array(all_insertion_count_vectors[ref_name]).astype(np.float)/tot)))
-                    mod_pcts.append(np.concatenate((['Insertions_Left'], np.array(all_insertion_left_count_vectors[ref_name]).astype(np.float)/tot)))
-                    mod_pcts.append(np.concatenate((['Deletions'], np.array(all_deletion_count_vectors[ref_name]).astype(np.float)/tot)))
-                    mod_pcts.append(np.concatenate((['Substitutions'], np.array(all_substitution_count_vectors[ref_name]).astype(np.float)/tot)))
-                    mod_pcts.append(np.concatenate((['All_modifications'], np.array(all_indelsub_count_vectors[ref_name]).astype(np.float)/tot)))
+                    mod_pcts.append(np.concatenate((['Insertions'], np.array(all_insertion_count_vectors[ref_name]).astype(float)/tot)))
+                    mod_pcts.append(np.concatenate((['Insertions_Left'], np.array(all_insertion_left_count_vectors[ref_name]).astype(float)/tot)))
+                    mod_pcts.append(np.concatenate((['Deletions'], np.array(all_deletion_count_vectors[ref_name]).astype(float)/tot)))
+                    mod_pcts.append(np.concatenate((['Substitutions'], np.array(all_substitution_count_vectors[ref_name]).astype(float)/tot)))
+                    mod_pcts.append(np.concatenate((['All_modifications'], np.array(all_indelsub_count_vectors[ref_name]).astype(float)/tot)))
                     mod_pcts.append(np.concatenate((['Total'], [counts_total[ref_name]]*refs[ref_name]['sequence_length'])))
                     colnames = ['Modification']+list(ref_seq)
                     modification_percentage_summary_df = pd.DataFrame(mod_pcts, columns=colnames).apply(pd.to_numeric, errors='ignore')
@@ -3897,18 +3897,18 @@ def main():
                     for ref_name_for_hdr in ref_names_for_hdr:
                         tot = float(counts_total[ref_name_for_hdr])
                         for nuc in ['A', 'C', 'G', 'T', 'N', '-']:
-                            nuc_pcts.append(np.concatenate(([ref_name_for_hdr, nuc], np.array(ref1_all_base_count_vectors[ref_name_for_hdr+"_"+nuc]).astype(np.float)/tot)))
+                            nuc_pcts.append(np.concatenate(([ref_name_for_hdr, nuc], np.array(ref1_all_base_count_vectors[ref_name_for_hdr+"_"+nuc]).astype(float)/tot)))
                     colnames = ['Batch', 'Nucleotide']+list(refs[ref_names_for_hdr[0]]['sequence'])
                     hdr_nucleotide_percentage_summary_df = pd.DataFrame(nuc_pcts, columns=colnames).apply(pd.to_numeric, errors='ignore')
 
                     mod_pcts = []
                     for ref_name_for_hdr in ref_names_for_hdr:
                         tot = float(counts_total[ref_name_for_hdr])
-                        mod_pcts.append(np.concatenate(([ref_name_for_hdr, 'Insertions'], np.array(ref1_all_insertion_count_vectors[ref_name_for_hdr]).astype(np.float)/tot)))
-                        mod_pcts.append(np.concatenate(([ref_name_for_hdr, 'Insertions_Left'], np.array(ref1_all_insertion_left_count_vectors[ref_name_for_hdr]).astype(np.float)/tot)))
-                        mod_pcts.append(np.concatenate(([ref_name_for_hdr, 'Deletions'], np.array(ref1_all_deletion_count_vectors[ref_name_for_hdr]).astype(np.float)/tot)))
-                        mod_pcts.append(np.concatenate(([ref_name_for_hdr, 'Substitutions'], np.array(ref1_all_substitution_count_vectors[ref_name_for_hdr]).astype(np.float)/tot)))
-                        mod_pcts.append(np.concatenate(([ref_name_for_hdr, 'All_modifications'], np.array(ref1_all_indelsub_count_vectors[ref_name_for_hdr]).astype(np.float)/tot)))
+                        mod_pcts.append(np.concatenate(([ref_name_for_hdr, 'Insertions'], np.array(ref1_all_insertion_count_vectors[ref_name_for_hdr]).astype(float)/tot)))
+                        mod_pcts.append(np.concatenate(([ref_name_for_hdr, 'Insertions_Left'], np.array(ref1_all_insertion_left_count_vectors[ref_name_for_hdr]).astype(float)/tot)))
+                        mod_pcts.append(np.concatenate(([ref_name_for_hdr, 'Deletions'], np.array(ref1_all_deletion_count_vectors[ref_name_for_hdr]).astype(float)/tot)))
+                        mod_pcts.append(np.concatenate(([ref_name_for_hdr, 'Substitutions'], np.array(ref1_all_substitution_count_vectors[ref_name_for_hdr]).astype(float)/tot)))
+                        mod_pcts.append(np.concatenate(([ref_name_for_hdr, 'All_modifications'], np.array(ref1_all_indelsub_count_vectors[ref_name_for_hdr]).astype(float)/tot)))
                         mod_pcts.append(np.concatenate(([ref_name_for_hdr, 'Total'], [counts_total[ref_name_for_hdr]]*refs[ref_names_for_hdr[0]]['sequence_length'])))
                     colnames = ['Batch', 'Modification']+list(refs[ref_names_for_hdr[0]]['sequence'])
                     hdr_modification_percentage_summary_df = pd.DataFrame(mod_pcts, columns=colnames).apply(pd.to_numeric, errors='ignore')
@@ -4465,18 +4465,18 @@ def main():
                 for ref_name in ref_names_for_pe:
                     tot = float(counts_total[ref_name])
                     for nuc in ['A', 'C', 'G', 'T', 'N', '-']:
-                        nuc_pcts.append(np.concatenate(([ref_name, nuc], np.array(ref1_all_base_count_vectors[ref_name+"_"+nuc]).astype(np.float)/tot)))
+                        nuc_pcts.append(np.concatenate(([ref_name, nuc], np.array(ref1_all_base_count_vectors[ref_name+"_"+nuc]).astype(float)/tot)))
                 colnames = ['Batch', 'Nucleotide']+list(refs[ref_names[0]]['sequence'])
                 pe_nucleotide_percentage_summary_df = pd.DataFrame(nuc_pcts, columns=colnames).apply(pd.to_numeric,errors='ignore')
 
                 mod_pcts = []
                 for ref_name in ref_names_for_pe:
                     tot = float(counts_total[ref_name])
-                    mod_pcts.append(np.concatenate(([ref_name, 'Insertions'], np.array(ref1_all_insertion_count_vectors[ref_name]).astype(np.float)/tot)))
-                    mod_pcts.append(np.concatenate(([ref_name, 'Insertions_Left'], np.array(ref1_all_insertion_left_count_vectors[ref_name]).astype(np.float)/tot)))
-                    mod_pcts.append(np.concatenate(([ref_name, 'Deletions'], np.array(ref1_all_deletion_count_vectors[ref_name]).astype(np.float)/tot)))
-                    mod_pcts.append(np.concatenate(([ref_name, 'Substitutions'], np.array(ref1_all_substitution_count_vectors[ref_name]).astype(np.float)/tot)))
-                    mod_pcts.append(np.concatenate(([ref_name, 'All_modifications'], np.array(ref1_all_indelsub_count_vectors[ref_name]).astype(np.float)/tot)))
+                    mod_pcts.append(np.concatenate(([ref_name, 'Insertions'], np.array(ref1_all_insertion_count_vectors[ref_name]).astype(float)/tot)))
+                    mod_pcts.append(np.concatenate(([ref_name, 'Insertions_Left'], np.array(ref1_all_insertion_left_count_vectors[ref_name]).astype(float)/tot)))
+                    mod_pcts.append(np.concatenate(([ref_name, 'Deletions'], np.array(ref1_all_deletion_count_vectors[ref_name]).astype(float)/tot)))
+                    mod_pcts.append(np.concatenate(([ref_name, 'Substitutions'], np.array(ref1_all_substitution_count_vectors[ref_name]).astype(float)/tot)))
+                    mod_pcts.append(np.concatenate(([ref_name, 'All_modifications'], np.array(ref1_all_indelsub_count_vectors[ref_name]).astype(float)/tot)))
                     mod_pcts.append(np.concatenate(([ref_name, 'Total'], [counts_total[ref_name]]*refs[ref_names_for_pe[0]]['sequence_length'])))
                 colnames = ['Batch', 'Modification']+list(refs[ref_names_for_pe[0]]['sequence'])
                 pe_modification_percentage_summary_df = pd.DataFrame(mod_pcts, columns=colnames).apply(pd.to_numeric,errors='ignore')
