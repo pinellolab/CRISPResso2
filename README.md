@@ -24,7 +24,7 @@ CRISPResso2 can be used to analyze genome editing outcomes using cleaving nuclea
 
 In addition, CRISPResso can be run as part of a larger tool suite:
 - [CRISPRessoBatch](#crispressobatch) - for analyzing and comparing multiple experimental conditions at the same site
-- [CRISPRessoPooled](#crispressopooled) - for analyzing multiple amplicons from a pooled amplicon sequencing experiment 
+- [CRISPRessoPooled](#crispressopooled) - for analyzing multiple amplicons from a pooled amplicon sequencing experiment
 - [CRISPRessoWGS](#crispressowgs) - for analyzing specific sites in whole-genome sequencing samples
 - [CRISPRessoCompare](#crispressocompare) - for comparing editing between two samples (e.g., treated vs control)
 - [CRISPRessoAggregate](#crispressoaggregate) - for aggregating results from previously-run CRISPResso analyses
@@ -87,6 +87,24 @@ Verify that CRISPResso is installed using the command:
 ```
 CRISPResso -h
 ```
+
+#### Bioconda for Apple Silicon
+
+If you would like to install CRISPResso using bioconda on a Mac with Apple silicon ([aren't sure?](https://support.apple.com/en-us/HT211814)), then there is a slight change you need to make. First, ensure that you have [Rosetta installed](https://support.apple.com/en-us/HT211861). Next, you must tell bioconda to install the Intel versions of the packages. If you would like to do this system wide, which we recommend, run the command:
+
+``` shell
+conda config --add subdirs osx-64
+```
+
+Then you can proceed with the installation instructions above.
+
+If you would like to use the Intel versions in a single environment, then run:
+
+``` shell
+CONDA_SUBDIR=osx-64 conda create -n crispresso2_env -c bioconda crispresso2
+```
+
+If you choose to use the `CONDA_SUBDIR=osx-64` method, note that if you install additional packages into the environment you will need to add the `CONDA_SUBDIR=osx-64` to the beginning of each command. Alternatively, you could set this environment variable in your shell, but we recommend to use the `conda config --add subdirs osx-64` method because it is less error prone.
 
 ### Docker
 CRISPResso2 can be used via the Docker containerization system. This system allows CRISPResso2 to run on your system without configuring and installing additional packages. To run CRISPResso2, first download and install docker: https://docs.docker.com/engine/installation/
