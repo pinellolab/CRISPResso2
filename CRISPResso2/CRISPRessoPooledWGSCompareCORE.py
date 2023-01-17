@@ -159,6 +159,7 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
             action='store_true',
         )
         parser.add_argument('--zip_output', help="If set, the output will be placed in a zip folder.", action='store_true')
+        parser.add_argument('-v', '--verbosity', type=int, help='Verbosity level of output to the console (1-4)', default=3)
 
         args = parser.parse_args()
 
