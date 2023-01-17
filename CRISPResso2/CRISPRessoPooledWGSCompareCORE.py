@@ -222,7 +222,7 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
         log_filename = _jp('CRISPRessoPooledWGSCompare_RUNNING_LOG.txt')
 
         try:
-            info('Creating Folder %s' % OUTPUT_DIRECTORY)
+            info('Creating Folder %s' % OUTPUT_DIRECTORY, {'percent_complete': 0})
             os.makedirs(OUTPUT_DIRECTORY)
             info('Done!')
         except:
@@ -265,7 +265,7 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
             rsuffix='_{0}'.format(sample_2_name),
         )
 
-        print('looking for ' + '({0}-{1})_Unmodified%'.format(sample_1_name, sample_2_name))
+        debug('looking for ' + '({0}-{1})_Unmodified%'.format(sample_1_name, sample_2_name))
         df_comp[
             '({0}-{1})_Unmodified%'.format(sample_1_name, sample_2_name)
         ] = df_comp['Unmodified%_{0}'.format(sample_1_name)] - df_comp[
@@ -326,7 +326,7 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
                 processed_region_html_files[idx] = this_sub_html_file
                 processed_region_folder_names[idx] = compare_output_name
 
-        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, logger, n_processes, 'Comparison')
+        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, logger, n_processes, 'Comparison', start_end_percent=(10, 90))
         crispresso2_info['results']['processed_regions'] = processed_regions
         crispresso2_info['results']['processed_region_folder_names'] = processed_region_folder_names
 
