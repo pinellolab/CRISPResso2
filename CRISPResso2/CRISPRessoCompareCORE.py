@@ -143,7 +143,7 @@ def main():
         log_filename = _jp('CRISPRessoCompare_RUNNING_LOG.txt')
 
         try:
-            info('Creating Folder %s' % OUTPUT_DIRECTORY)
+            info('Creating Folder %s' % OUTPUT_DIRECTORY, {'percent_complete': 0})
             os.makedirs(OUTPUT_DIRECTORY)
             info('Done!')
         except:
@@ -182,7 +182,11 @@ def main():
 
         sig_counts = {}  # number of bp significantly modified (bonferonni corrected fisher pvalue)
         sig_counts_quant_window = {}
+        percent_complete_start, percent_complete_end = 10, 90
+        percent_complete_step = (percent_complete_end - percent_complete_start) / len(amplicon_names_in_both)
         for amplicon_name in amplicon_names_in_both:
+            percent_complete = percent_complete_start + percent_complete_step * amplicon_names_in_both.index(amplicon_name)
+            info('Loading data for amplicon %s' % amplicon_name, {'percent_complete': percent_complete})
             profile_1=parse_profile(amplicon_info_1[amplicon_name]['quantification_file'])
             profile_2=parse_profile(amplicon_info_2[amplicon_name]['quantification_file'])
 
@@ -411,6 +415,7 @@ def main():
                         'The proportion and number of reads is shown for each sample on the right, with the values for ' + sample_1_name + ' followed by the values for ' + sample_2_name +'. Alleles are sorted for enrichment in ' + sample_2_name+'.'
                         crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Allele comparison table', os.path.basename(allele_comparison_file))]
 
+        debug('Calculating significant base counts...', {'percent_complete': 95})
         sig_counts_filename = _jp('CRISPRessoCompare_significant_base_counts.txt')
         with open(sig_counts_filename, 'w') as fout:
             fout.write('Amplicon\tModification\tsig_base_count\tsig_base_count_quant_window\n')
