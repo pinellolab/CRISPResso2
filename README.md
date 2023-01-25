@@ -185,7 +185,7 @@ docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso --fast
 
 This should produce a folder called 'CRISPResso_on_base_editor'. Open the file called CRISPResso_on_base_editor/CRISPResso2_report.html in a web browser, and you should see an output like this: [CRISPResso2_report.html](https://crispresso.pinellolab.partners.org/static/demo/CRISPResso_on_base_editor/CRISPResso2_report.html).
 
-### Parameter list
+### Parameter List
 -h or --help: show a help message and exit.
 
 -r1 or --fastq_r1: The first fastq file.
