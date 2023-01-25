@@ -616,7 +616,8 @@ def main():
             head_lookup['name'] = 'amplicon_name'
 
             headers = []
-            has_header = True
+            has_header = False
+            no_header_match = False
             for head in header_els:
                 # Header based on header provided
                 # Look up long name (e.g. qwc -> quantification_window_coordinates)
@@ -626,13 +627,15 @@ def main():
 
                 match = difflib.get_close_matches(long_head, amplicon_input_column_names, n=1)
                 if not match:
-                    has_header = False
+                    no_header_match = True
                     warn('Unable to find matches for header values. Using the default header values and order.')
-                    break
-                if args.debug:
+                else:
+                    has_header = True
+                    headers.append(match[0])
+                if args.debug and match:
                     info(f'Matching header {head} with {match[0]}.')
-                headers.append(match[0])
-            if not has_header:
+                
+            if not has_header or no_header_match:
                 # Default header
                 headers = []
                 for i in range(len(header_els)):
@@ -646,7 +649,7 @@ def main():
             # load and validate template file
             df_template = pd.read_csv(args.amplicons_file, names=headers, comment='#', sep='\t', dtype={'amplicon_name':str})
 
-            if has_header or str(df_template.iloc[0, 1]).lower() == "amplicon_sequence":
+            if has_header:
                 df_template.drop(0, axis=0, inplace=True)
                 info('Detected header in amplicon file.')
 
