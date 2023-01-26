@@ -605,7 +605,7 @@ def main():
                 info('Failed to load the gene annotations file.')
 
         # possible column names accepted in amplicon input file
-        amplicon_input_column_names = ['amplicon_name', 'amplicon_seq', 'guide_seq', 'expected_hdr_amplicon_seq', 'coding_seq',
+        default_input_amplicon_headers = ['amplicon_name', 'amplicon_seq', 'guide_seq', 'expected_hdr_amplicon_seq', 'coding_seq',
                      'prime_editing_pegRNA_spacer_seq', 'prime_editing_nicking_guide_seq',
                      'prime_editing_pegRNA_extension_seq', 'prime_editing_pegRNA_scaffold_seq',
                      'prime_editing_pegRNA_scaffold_min_match_length', 'prime_editing_override_prime_edited_ref_seq',
@@ -635,7 +635,7 @@ def main():
                 if head in head_lookup:
                     long_head = head_lookup[head]
 
-                match = difflib.get_close_matches(long_head, amplicon_input_column_names, n=1)
+                match = difflib.get_close_matches(long_head, default_input_amplicon_headers, n=1)
                 if not match:
                     has_unmatched_header_el = True
                     warn('Unable to find matches for header values. Using the default header values and order.')
@@ -649,7 +649,7 @@ def main():
                 # Default header
                 headers = []
                 for i in range(len(header_els)):
-                    headers.append(amplicon_input_column_names[i])
+                    headers.append(default_input_amplicon_headers[i])
                 if len(headers) > 5:
                     raise CRISPRessoShared.BadParameterException('Incorrect number of columns provided without header.')
 
@@ -823,7 +823,7 @@ def main():
 
                 if n_reads_aligned_amplicons[-1] > args.min_reads_to_use_region:
                     this_run_args = deepcopy(args)
-                    for column_name in amplicon_input_column_names:
+                    for column_name in default_input_amplicon_headers:
                         if column_name in df_template.columns and row[column_name] and not pd.isnull(row[column_name]):
                             setattr(this_run_args, column_name, row[column_name])
 
@@ -1190,7 +1190,7 @@ def main():
                             crispresso_cmd = args.crispresso_command + ' -r1 %s -o %s --name %s' % (fastq_filename_region, OUTPUT_DIRECTORY, idx)
 
                             this_run_args = deepcopy(args)
-                            for column_name in amplicon_input_column_names:
+                            for column_name in default_input_amplicon_headers:
                                 if column_name in df_template.columns and row[column_name] and not pd.isnull(row[column_name]):
                                     setattr(this_run_args, column_name, row[column_name])
 
