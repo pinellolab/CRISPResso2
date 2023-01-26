@@ -251,12 +251,22 @@ def main():
         print(CRISPRessoShared.get_crispresso_header(description, pooled_string))
 
         parser = CRISPRessoShared.getCRISPRessoArgParser(parserTitle = 'CRISPRessoPooled Parameters')
-        parser.add_argument('-f', '--amplicons_file', type=str,  help='Amplicons description file. This file is a tab-delimited text file with up to 5 columns (2 required):\
-        \nAMPLICON_NAME:  an identifier for the amplicon (must be unique)\nAMPLICON_SEQUENCE:  amplicon sequence used in the experiment\n\
-        \nsgRNA_SEQUENCE (OPTIONAL):  sgRNA sequence used for this amplicon without the PAM sequence. Multiple guides can be given separated by commas and not spaces. If not available enter NA.\
-        \nEXPECTED_AMPLICON_AFTER_HDR (OPTIONAL): expected amplicon sequence in case of HDR. If not available enter NA.\
-        \nCODING_SEQUENCE (OPTIONAL): Subsequence(s) of the amplicon corresponding to coding sequences. If more than one separate them by commas and not spaces. If not available enter NA.', default='')
-
+        parser.add_argument('-f', '--amplicons_file', type=str,  help='Amplicons description file. This file is a tab-delimited text file with up to 14 columns (2 required):\
+        \namplicon_name:  an identifier for the amplicon (must be unique).\
+        \namplicon_seq:  amplicon sequence used in the experiment.\
+        \nguide_seq (OPTIONAL):  sgRNA sequence used for this amplicon without the PAM sequence. Multiple guides can be given separated by commas and not spaces.\
+        \nexpected_hdr_amplicon_seq (OPTIONAL): expected amplicon sequence in case of HDR.\
+        \ncoding_seq (OPTIONAL): Subsequence(s) of the amplicon corresponding to coding sequences. If more than one separate them by commas and not spaces.\
+        \nprime_editing_pegRNA_spacer_seq (OPTIONAL): pegRNA spacer sgRNA sequence used in prime editing. The spacer should not include the PAM sequence. The sequence should be given in the RNA 5\'->3\' order, so for Cas9, the PAM would be on the right side of the given sequence.\
+        \nprime_editing_nicking_guide_seq (OPTIONAL): Nicking sgRNA sequence used in prime editing. The sgRNA should not include the PAM sequence. The sequence should be given in the RNA 5\'->3\' order, so for Cas9, the PAM would be on the right side of the sequence.\
+        \nprime_editing_pegRNA_extension_seq (OPTIONAL): Extension sequence used in prime editing. The sequence should be given in the RNA 5\'->3\' order, such that the sequence starts with the RT template including the edit, followed by the Primer-binding site (PBS).\
+        \nprime_editing_pegRNA_scaffold_seq (OPTIONAL): If given, reads containing any of this scaffold sequence before extension sequence (provided by --prime_editing_extension_seq) will be classified as \'Scaffold-incorporated\'. The sequence should be given in the 5\'->3\' order such that the RT template directly follows this sequence. A common value ends with \'GGCACCGAGUCGGUGC\'.\
+        \nprime_editing_pegRNA_scaffold_min_match_length (OPTIONAL): Minimum number of bases matching scaffold sequence for the read to be counted as \'Scaffold-incorporated\'. If the scaffold sequence matches the reference sequence at the incorporation site, the minimum number of bases to match will be minimally increased (beyond this parameter) to disambiguate between prime-edited and scaffold-incorporated sequences.\
+        \nprime_editing_override_prime_edited_ref_seq (OPTIONAL): If given, this sequence will be used as the prime-edited reference sequence. This may be useful if the prime-edited reference sequence has large indels or the algorithm cannot otherwise infer the correct reference sequence.\
+        \nquantification_window_coordinates (OPTIONAL): Bp positions in the amplicon sequence specifying the quantification window. This parameter overrides values of the "--quantification_window_center", "-- cleavage_offset", "--window_around_sgrna" or "-- window_around_sgrna" values. Any indels/substitutions outside this window are excluded. Indexes are 0-based, meaning that the first nucleotide is position 0. Ranges are separated by the dash sign like "start-stop", and multiple ranges can be separated by the underscore (\_). A value of 0 disables this filter. (can be comma-separated list of values, corresponding to amplicon sequences given in --amplicon_seq e.g. 5-10,5-10_20-30 would specify the 5th-10th bp in the first reference and the 5th-10th and 20th-30th bp in the second reference) (default: None)\
+        \nquantification_window_size (OPTIONAL): Defines the size (in bp) of the quantification window extending from the position specified by the "--cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence(s) (--sgRNA). Mutations within this number of bp from the quantification window center are used in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 1, 1bp on each side of the cleavage position for a total length of 2bp.\
+        \nquantification_window_center (OPTIONAL): Center of quantification window to use within respect to the 3\' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17.', default='')
+        
         #tool specific optional
         parser.add_argument('--gene_annotations', type=str, help='Gene Annotation Table from UCSC Genome Browser Tables (http://genome.ucsc.edu/cgi-bin/hgTables?command=start), \
         please select as table "knownGene", as output format "all fields from selected table" and as file returned "gzip compressed"', default='')
@@ -595,7 +605,7 @@ def main():
                 info('Failed to load the gene annotations file.')
 
         # possible column names accepted in amplicon input file
-        amplicon_input_column_names = ['amplicon_name', 'amplicon_seq', 'guide_seq', 'expected_hdr_amplicon_seq', 'coding_seq',
+        default_input_amplicon_headers = ['amplicon_name', 'amplicon_seq', 'guide_seq', 'expected_hdr_amplicon_seq', 'coding_seq',
                      'prime_editing_pegRNA_spacer_seq', 'prime_editing_nicking_guide_seq',
                      'prime_editing_pegRNA_extension_seq', 'prime_editing_pegRNA_scaffold_seq',
                      'prime_editing_pegRNA_scaffold_min_match_length', 'prime_editing_override_prime_edited_ref_seq',
@@ -616,7 +626,8 @@ def main():
             head_lookup['name'] = 'amplicon_name'
 
             headers = []
-            has_header = True
+            has_header = False
+            has_unmatched_header_el = False
             for head in header_els:
                 # Header based on header provided
                 # Look up long name (e.g. qwc -> quantification_window_coordinates)
@@ -624,19 +635,21 @@ def main():
                 if head in head_lookup:
                     long_head = head_lookup[head]
 
-                match = difflib.get_close_matches(long_head, amplicon_input_column_names, n=1)
+                match = difflib.get_close_matches(long_head, default_input_amplicon_headers, n=1)
                 if not match:
-                    has_header = False
+                    has_unmatched_header_el = True
                     warn('Unable to find matches for header values. Using the default header values and order.')
-                    break
-                if args.debug:
+                else:
+                    has_header = True
+                    headers.append(match[0])
+                if args.debug and match:
                     info(f'Matching header {head} with {match[0]}.')
-                headers.append(match[0])
-            if not has_header:
+                
+            if not has_header or has_unmatched_header_el:
                 # Default header
                 headers = []
                 for i in range(len(header_els)):
-                    headers.append(amplicon_input_column_names[i])
+                    headers.append(default_input_amplicon_headers[i])
                 if len(headers) > 5:
                     raise CRISPRessoShared.BadParameterException('Incorrect number of columns provided without header.')
 
@@ -646,7 +659,7 @@ def main():
             # load and validate template file
             df_template = pd.read_csv(args.amplicons_file, names=headers, comment='#', sep='\t', dtype={'amplicon_name':str})
 
-            if has_header or str(df_template.iloc[0, 1]).lower() == "amplicon_sequence":
+            if has_header:
                 df_template.drop(0, axis=0, inplace=True)
                 info('Detected header in amplicon file.')
 
@@ -810,7 +823,7 @@ def main():
 
                 if n_reads_aligned_amplicons[-1] > args.min_reads_to_use_region:
                     this_run_args = deepcopy(args)
-                    for column_name in amplicon_input_column_names:
+                    for column_name in default_input_amplicon_headers:
                         if column_name in df_template.columns and row[column_name] and not pd.isnull(row[column_name]):
                             setattr(this_run_args, column_name, row[column_name])
 
@@ -1177,7 +1190,7 @@ def main():
                             crispresso_cmd = args.crispresso_command + ' -r1 %s -o %s --name %s' % (fastq_filename_region, OUTPUT_DIRECTORY, idx)
 
                             this_run_args = deepcopy(args)
-                            for column_name in amplicon_input_column_names:
+                            for column_name in default_input_amplicon_headers:
                                 if column_name in df_template.columns and row[column_name] and not pd.isnull(row[column_name]):
                                     setattr(this_run_args, column_name, row[column_name])
 
