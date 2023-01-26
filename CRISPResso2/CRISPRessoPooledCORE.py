@@ -252,8 +252,8 @@ def main():
 
         parser = CRISPRessoShared.getCRISPRessoArgParser(parserTitle = 'CRISPRessoPooled Parameters')
         parser.add_argument('-f', '--amplicons_file', type=str,  help='Amplicons description file. This file is a tab-delimited text file with up to 14 columns (2 required):\
-        \namplicon_name:  an identifier for the amplicon (must be unique)\
-        \namplicon_seq:  amplicon sequence used in the experiment\n\
+        \namplicon_name:  an identifier for the amplicon (must be unique).\
+        \namplicon_seq:  amplicon sequence used in the experiment.\
         \nguide_seq (OPTIONAL):  sgRNA sequence used for this amplicon without the PAM sequence. Multiple guides can be given separated by commas and not spaces.\
         \nexpected_hdr_amplicon_seq (OPTIONAL): expected amplicon sequence in case of HDR.\
         \ncoding_seq (OPTIONAL): Subsequence(s) of the amplicon corresponding to coding sequences. If more than one separate them by commas and not spaces.\
