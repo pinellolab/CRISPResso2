@@ -627,7 +627,7 @@ def main():
 
             headers = []
             has_header = False
-            no_header_match = False
+            has_unmatched_header_el = False
             for head in header_els:
                 # Header based on header provided
                 # Look up long name (e.g. qwc -> quantification_window_coordinates)
@@ -637,7 +637,7 @@ def main():
 
                 match = difflib.get_close_matches(long_head, amplicon_input_column_names, n=1)
                 if not match:
-                    no_header_match = True
+                    has_unmatched_header_el = True
                     warn('Unable to find matches for header values. Using the default header values and order.')
                 else:
                     has_header = True
@@ -645,7 +645,7 @@ def main():
                 if args.debug and match:
                     info(f'Matching header {head} with {match[0]}.')
                 
-            if not has_header or no_header_match:
+            if not has_header or has_unmatched_header_el:
                 # Default header
                 headers = []
                 for i in range(len(header_els)):
