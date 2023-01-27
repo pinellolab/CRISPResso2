@@ -944,22 +944,39 @@ def split_interleaved_fastq(fastq_filename, output_filename_r1, output_filename_
     return output_filename_r1, output_filename_r2
 
 
-def normalize_name(args):
-    """Normalize the name according to the inputs and clean it."""
+def normalize_name(name, fastq_r1, fastq_r2, bam_input):
+    """Normalize the name according to the inputs and clean it.
+
+    Parameters
+    ----------
+    name : str
+        The name optionally provided by the user.
+    fastq_r1 : str
+        The path to the first fastq file.
+    fastq_r2 : str
+        The path to the second fastq file.
+    bam_input : str
+        The path to the bam file.
+
+    Returns
+    -------
+    str
+        The normalized name.
+    """
     get_name_from_fasta = lambda x: os.path.basename(x).replace('.fastq', '').replace('.gz', '').replace('.fq', '')
     get_name_from_bam = lambda x: os.path.basename(x).replace('.bam', '')
 
-    if not args.name:
-        if args.fastq_r2!='':
-            return '%s_%s' % (get_name_from_fasta(args.fastq_r1), get_name_from_fasta(args.fastq_r2))
-        elif args.fastq_r1 != '':
-            return '%s' % get_name_from_fasta(args.fastq_r1)
-        elif args.bam_input != '':
-            return '%s' % get_name_from_bam(args.bam_input)
+    if not name:
+        if fastq_r2:
+            return '%s_%s' % (get_name_from_fasta(fastq_r1), get_name_from_fasta(fastq_r2))
+        elif fastq_r1:
+            return '%s' % get_name_from_fasta(fastq_r1)
+        elif bam_input != '':
+            return '%s' % get_name_from_bam(bam_input)
     else:
-        clean_name=CRISPRessoShared.slugify(args.name)
-        if args.name!= clean_name:
-            warn('The specified name %s contained invalid characters and was changed to: %s' % (args.name, clean_name))
+        clean_name=CRISPRessoShared.slugify(name)
+        if name!= clean_name:
+            warn('The specified name %s contained invalid characters and was changed to: %s' % (name, clean_name))
         return clean_name
 
 
@@ -989,7 +1006,7 @@ def main():
 
         CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
 
-        OUTPUT_DIRECTORY = 'CRISPResso_on_{0}'.format(normalize_name(args))
+        OUTPUT_DIRECTORY = 'CRISPResso_on_{0}'.format(normalize_name(args.name, args.fastq_r1, args.fastq_r2, args.bam_input))
 
         if args.output_folder:
             OUTPUT_DIRECTORY = os.path.join(
@@ -1065,7 +1082,7 @@ def main():
 
         crispresso2_info['running_info']['log_filename'] = os.path.basename(log_filename)
 
-        crispresso2_info['running_info']['name'] = normalize_name(args)
+        crispresso2_info['running_info']['name'] = normalize_name(args.name, args.fastq_r1, args.fastq_r2, args.bam_input)
 
         if args.write_cleaned_report:
             cmd_copy = sys.argv[:]
