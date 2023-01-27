@@ -827,7 +827,11 @@ def main():
                         if column_name in df_template.columns and row[column_name] and not pd.isnull(row[column_name]):
                             setattr(this_run_args, column_name, row[column_name])
 
-                    crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, this_run_args)
+                    #first, set the general CRISPResso options for this sub-run (e.g. plotting options, etc)
+                    #note that the crispresso_options_for_pooled doesn't include e.g. amplicon_seq so when someone calls CRISPRessoPooled with -a that won't get passed on here
+                    crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, args)
+                    #next set the per-amplicon options we read from the Amplicons file (and are stored in this_run_args)
+                    crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, default_input_amplicon_headers, this_run_args)
 
                     crispresso_cmds.append(crispresso_cmd)
 
@@ -1194,7 +1198,11 @@ def main():
                                 if column_name in df_template.columns and row[column_name] and not pd.isnull(row[column_name]):
                                     setattr(this_run_args, column_name, row[column_name])
 
-                            crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, this_run_args)
+                            #first, set the general CRISPResso options for this sub-run (e.g. plotting options, etc)
+                            #note that the crispresso_options_for_pooled doesn't include e.g. amplicon_seq so when someone calls CRISPRessoPooled with -a that won't get passed on here
+                            crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, args)
+                            #next set the per-amplicon options we read from the Amplicons file (and are stored in this_run_args)
+                            crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, default_input_amplicon_headers, this_run_args)
                             info('Running CRISPResso:%s' % crispresso_cmd)
                             crispresso_cmds.append(crispresso_cmd)
 
