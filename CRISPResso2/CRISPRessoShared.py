@@ -175,7 +175,7 @@ def getCRISPRessoArgParser(parserTitle="CRISPResso Parameters", requiredParams={
                         default='')
     parser.add_argument('-o', '--output_folder', help='Output folder to use for the analysis (default: current folder)',
                         default='')
-    parser.add_argument('-v', '--verbosity', type=int, help='Verbosity level of output to the console (1-4)', default=3)
+    parser.add_argument('-v', '--verbosity', type=int, help='Verbosity level of output to the console (1-4), 4 is the most verbose', default=3)
 
     ## read preprocessing params
     parser.add_argument('--split_interleaved_input', '--split_paired_end',
