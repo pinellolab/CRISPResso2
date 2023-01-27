@@ -346,7 +346,10 @@ def propagate_crispresso_options(cmd, options, params, paramInd=None):
         if option:
             if option in params:
                 if paramInd is None:
-                    val = getattr(params, option)
+                    if type(params) == dict:
+                        val = params[option]
+                    else:
+                        val = getattr(params, option)
                 else:
                     val = params.loc[paramInd, option]
                 if val is None:

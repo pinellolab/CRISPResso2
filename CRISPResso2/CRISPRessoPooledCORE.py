@@ -266,7 +266,7 @@ def main():
         \nquantification_window_coordinates (OPTIONAL): Bp positions in the amplicon sequence specifying the quantification window. This parameter overrides values of the "--quantification_window_center", "-- cleavage_offset", "--window_around_sgrna" or "-- window_around_sgrna" values. Any indels/substitutions outside this window are excluded. Indexes are 0-based, meaning that the first nucleotide is position 0. Ranges are separated by the dash sign like "start-stop", and multiple ranges can be separated by the underscore (\_). A value of 0 disables this filter. (can be comma-separated list of values, corresponding to amplicon sequences given in --amplicon_seq e.g. 5-10,5-10_20-30 would specify the 5th-10th bp in the first reference and the 5th-10th and 20th-30th bp in the second reference) (default: None)\
         \nquantification_window_size (OPTIONAL): Defines the size (in bp) of the quantification window extending from the position specified by the "--cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence(s) (--sgRNA). Mutations within this number of bp from the quantification window center are used in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 1, 1bp on each side of the cleavage position for a total length of 2bp.\
         \nquantification_window_center (OPTIONAL): Center of quantification window to use within respect to the 3\' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17.', default='')
-        
+
         #tool specific optional
         parser.add_argument('--gene_annotations', type=str, help='Gene Annotation Table from UCSC Genome Browser Tables (http://genome.ucsc.edu/cgi-bin/hgTables?command=start), \
         please select as table "knownGene", as output format "all fields from selected table" and as file returned "gzip compressed"', default='')
@@ -644,7 +644,7 @@ def main():
                     headers.append(match[0])
                 if args.debug and match:
                     info(f'Matching header {head} with {match[0]}.')
-                
+
             if not has_header or has_unmatched_header_el:
                 # Default header
                 headers = []
@@ -825,7 +825,7 @@ def main():
                     this_run_args_from_amplicons_file = {}
                     for column_name in default_input_amplicon_headers:
                         if column_name in df_template.columns and row[column_name] and not pd.isnull(row[column_name]):
-                            setattr(this_run_args_from_amplicons_file, column_name, row[column_name])
+                            this_run_args_from_amplicons_file[column_name] = row[column_name]
 
                     #first, set the general CRISPResso options for this sub-run (e.g. plotting options, etc)
                     #note that the crispresso_options_for_pooled doesn't include e.g. amplicon_seq so when someone calls CRISPRessoPooled with -a that won't get passed on here
@@ -1196,7 +1196,7 @@ def main():
                             this_run_args_from_amplicons_file = {}
                             for column_name in default_input_amplicon_headers:
                                 if column_name in df_template.columns and row[column_name] and not pd.isnull(row[column_name]):
-                                    setattr(this_run_args_from_amplicons_file, column_name, row[column_name])
+                                    this_run_args_from_amplicons_file[column_name] = row[column_name]
 
                             #first, set the general CRISPResso options for this sub-run (e.g. plotting options, etc)
                             #note that the crispresso_options_for_pooled doesn't include e.g. amplicon_seq so when someone calls CRISPRessoPooled with -a that won't get passed on here
