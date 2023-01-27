@@ -8,6 +8,7 @@ import difflib
 import os
 import sys
 from copy import deepcopy
+from collections import defaultdict
 from datetime import datetime
 import subprocess as sb
 import glob
@@ -1449,6 +1450,12 @@ def main():
             crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('CRISPRessoPooled summary', os.path.basename(samples_quantification_summary_filename))]
 
 
+        if RUNNING_MODE!='ONLY_GENOME':
+            if RUNNING_MODE=='AMPLICONS_AND_GENOME':
+                filename_for_tx = bam_filename_genome
+            if RUNNING_MODE=='ONLY_AMPLICONS':
+                filename_for_tx = bam_filename_amplicons
+            detect_possible_translocations(df_template,filename_for_tx)
 
 
         #if many reads weren't aligned, print those out for the user
@@ -1616,6 +1623,132 @@ def main():
 
         error('\n\nERROR: %s' % e)
         sys.exit(-1)
+
+def detect_possible_translocations(amplicon_info, unaligned_bam_file,min_tx_primer_match_len = 10, min_tx_reads_for_crispresso_analysis = 10, sgRNA_cut_offset = -3):
+    """Detects possible translocations in reads from the bam file, by looking for reads that have amplicon sequence from two different amplicons.
+
+    Args:
+        amplicon_info (pandas df): pandas df with columns "amplicon_name", "amplicon_seq", and "guide_seq"
+        unaligned_bam_file (path to bam file): bam file with reads
+        min_tx_primer_match_len (int, optional): Num of bases of primer to check to see if a read was primed with that amplicon's primer. Defaults to 10.
+        min_tx_reads_for_crispresso_analysis (int, optional): Min number of reads to perform tx analysis with CRISPResso. Defaults to 10.
+        sgRNA_cut_offset (int, optional): Cleavage position bp after guide. Defaults to -3.
+    """
+    print('amplicon info:')
+    print(amplicon_info)
+    if 'amplicon_seq' not in amplicon_info.columns:
+        debug('In trying to find tranlocations, amplicon_info does not have column "amplicon_seq"')
+        return None
+    if 'guide_seq' not in amplicon_info.columns:
+        debug('In trying to find tranlocations, amplicon_info does not have column "guide_seq"')
+        return None
+
+    info('Detecting possible translocations...')
+
+    #first, initialize possible primers from input amplicon sequences
+    possible_primers = {}
+    amplicon_arms = {} #sequence of amplicon arms on the left and right side of cut sites
+    guide_arms = {} #sequence of guide arms (e.g 17bp on the left, 3bp on the right if the cut is at -3) 
+    #iter through this df because we don't expect more than a few/few hundred amplicons
+    for index, row in amplicon_info.iterrows():
+        amplicon_name = index
+        amplicon_seq = row['amplicon_seq']
+        guide_seq = row['guide_seq']
+
+        if guide_seq in amplicon_seq:
+            cut_site = amplicon_seq.index(guide_seq)+len(guide_seq)+sgRNA_cut_offset
+            left_arm = amplicon_seq[0:cut_site]
+            right_arm = amplicon_seq[cut_site:]
+            amplicon_arms[(amplicon_name,'L')] = left_arm
+            guide_arms[(amplicon_name,'L')] = guide_seq[0:sgRNA_cut_offset]
+            amplicon_arms[(amplicon_name,'R')] = right_arm
+            guide_arms[(amplicon_name,'R')] = guide_seq[sgRNA_cut_offset:]
+        elif CRISPRessoShared.reverse_complement(guide_seq) in amplicon_seq:
+            guide_rc = CRISPRessoShared.reverse_complement(guide_seq)
+            cut_site = amplicon_seq.index(guide_rc)-sgRNA_cut_offset
+            left_arm = amplicon_seq[0:cut_site]
+            right_arm = amplicon_seq[cut_site:]
+            amplicon_arms[(amplicon_name,'L')] = left_arm
+            guide_arms[(amplicon_name,'L')] = guide_seq[0:-sgRNA_cut_offset]
+            amplicon_arms[(amplicon_name,'R')] = right_arm
+            guide_arms[(amplicon_name,'R')] = guide_seq[-sgRNA_cut_offset:]
+        else:
+            debug('WARNING: guide "' + guide_seq + '" cannot be found in amplicon sequence "' + amplicon_seq + '"')
+            return None
+
+
+        left_primer = amplicon_seq[0:min_tx_primer_match_len]
+        if left_primer in possible_primers:
+            debug('WARNING: ambiguous primer "' + left_primer + '" exists for amplicon' + str(possible_primers[left_primer]) + ' and ' + amplicon_name)
+        else:
+            possible_primers[left_primer] = (amplicon_name, "L")
+
+        right_primer = amplicon_seq[min_tx_primer_match_len:]
+        if right_primer in possible_primers:
+            debug('WARNING: ambiguous primer "' + right_primer + '" exists for amplicon' + str(possible_primers[right_primer]) + ' and ' + amplicon_name)
+        else:
+            possible_primers[right_primer] = (amplicon_name, "R")
+
+        left_rc_primer = CRISPRessoShared.reverse_complement(left_primer)
+        if left_rc_primer in possible_primers:
+            debug('WARNING: ambiguous primer "' + left_rc_primer + '" exists for amplicon' + str(possible_primers[left_rc_primer]) + ' and ' + amplicon_name)
+        else:
+            possible_primers[left_rc_primer] = (amplicon_name, "L_rc")
+
+        right_rc_primer = CRISPRessoShared.reverse_complement(right_primer)
+        if right_rc_primer in possible_primers:
+            debug('WARNING: ambiguous primer "' + right_rc_primer + '" exists for amplicon' + str(possible_primers[right_rc_primer]) + ' and ' + amplicon_name)
+        else:
+            possible_primers[right_rc_primer] = (amplicon_name, "R_rc")
+
+    ok_matches = {
+        "L":"R",
+        "R":"L",
+        "L_rc":"R_rc",
+        "R_rc":"L_rc"
+    }
+
+    # iterate through reads and look for reads that have amplicon sequence from two different amplicons
+    possible_tx_counts = defaultdict(int)
+    for bam_line in read_command_output('samtools view ' + unaligned_bam_file):
+        bam_line_els = bam_line.strip().split('\t')
+        read_seq = bam_line_els[9]
+        read_primer_left = read_seq[0:min_tx_primer_match_len]
+        read_primer_right = read_seq[min_tx_primer_match_len:]
+        if read_primer_left in possible_primers and read_primer_right in possible_primers:
+            read_primer_left_id = possible_primers[read_primer_left]
+            read_primer_right_id = possible_primers[read_primer_right]
+            #test for translocation
+            if read_primer_left_id[0] != read_primer_right_id[0]:
+                possible_tx_counts[(read_primer_left_id,read_primer_right_id)] += 1
+            #also include chimeras here (reads with unexpected orientations)
+            elif ok_matches[read_primer_left_id[1]] != read_primer_right_id[1]:
+                possible_tx_counts[(read_primer_left_id,read_primer_right_id)] += 1
+    
+
+
+
+def read_command_output(command):
+    """
+    Runs a shell command and returns an iter to read the output
+
+    param:
+        command: shell command to run
+
+    returns:
+        iter to read the output
+    """
+
+    p = sb.Popen(command,
+            stdout=sb.PIPE,
+            stderr=sb.STDOUT,shell=True,
+#            encoding='utf-8',universal_newlines=True)
+            universal_newlines=True,
+            bufsize=-1) #bufsize system default
+    return iter(p.stdout.readline, b'')
+
+
+
 
 if __name__ == '__main__':
     main()
