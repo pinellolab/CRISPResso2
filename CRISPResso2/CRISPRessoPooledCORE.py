@@ -194,24 +194,41 @@ def find_overlapping_genes(row, df_genes):
     return row
 
 
-def normalize_name(args):
-    """Normalize the name according to the inputs and clean it."""
-    get_name_from_fasta = lambda x: os.path.basename(x).replace('.fastq', '').replace('.gz', '').replace('.fq', '')
+def normalize_name(name, fastq_r1, fastq_r2, aligned_pooled_bam):
+    """Normalize the name according to the inputs and clean it.
+
+    Parameters
+    ----------
+    name : str
+        The name optionally given by the user.
+    fastq_r1 : str
+        The path to the first fastq file.
+    fastq_r2 : str
+        The path to the second fastq file.
+    aligned_pooled_bam : str
+        The path to the aligned bam file.
+
+    Returns
+    -------
+    str
+        The normalized name.
+    """
+    get_name_from_fastq = lambda x: os.path.basename(x).replace('.fastq', '').replace('.gz', '').replace('.fq', '')
     get_name_from_bam = lambda x: os.path.basename(x).replace('.bam', '')
 
-    if not args.name:
-        if args.aligned_pooled_bam is not None:
-            return get_name_from_bam(args.aligned_pooled_bam)
-        elif args.fastq_r2 != '':
-            return '%s_%s' % (get_name_from_fasta(args.fastq_r1), get_name_from_fasta(args.fastq_r2))
+    if not name:
+        if aligned_pooled_bam is not None:
+            return get_name_from_bam(aligned_pooled_bam)
+        elif fastq_r2:
+            return '%s_%s' % (get_name_from_fastq(fastq_r1), get_name_from_fastq(fastq_r2))
         else:
-            return '%s' % get_name_from_fasta(args.fastq_r1)
+            return '%s' % get_name_from_fastq(fastq_r1)
     else:
-        clean_name = CRISPRessoShared.slugify(args.name)
-        if args.name != clean_name:
+        clean_name = CRISPRessoShared.slugify(name)
+        if name != clean_name:
             warn(
                 'The specified name {0} contained invalid characters and was changed to: {1}'.format(
-                    args.name, clean_name,
+                    name, clean_name,
                 ),
             )
         return clean_name
@@ -309,7 +326,7 @@ def main():
 
         files_to_remove = []
 
-        OUTPUT_DIRECTORY = 'CRISPRessoPooled_on_{0}'.format(normalize_name(args))
+        OUTPUT_DIRECTORY = 'CRISPRessoPooled_on_{0}'.format(normalize_name(args.name, args.fastq_r1, args.fastq_r2, args.aligned_pooled_bam))
 
         if args.output_folder:
             OUTPUT_DIRECTORY = os.path.join(os.path.abspath(args.output_folder), OUTPUT_DIRECTORY)
