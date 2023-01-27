@@ -515,6 +515,8 @@ def main():
                     r1=args.fastq_r1,
                     out=output_forward_filename,
                     options=args.fastp_options_string,
+                    json_report=_jp('fastp_report.json'),
+                    html_report=_jp('fastp_report.html'),
                     log=log_filename,
                 )
                 # print cmd
