@@ -247,17 +247,31 @@ def extract_reads_chunk(df):
     return new_df
 
 
-def normalize_name(args):
+def normalize_name(name, bam_file):
+    """Normalize the name of the bam file such thta it doesn't include invalid characters.
+
+    Parameters
+    ----------
+    name : str
+        The name optionally provided by the user.
+    bam_file : str
+        The name of the bam file.
+
+    Returns
+    -------
+    str
+        The normalized name.
+    """
     get_name_from_bam = lambda  x: os.path.basename(x).replace('.bam', '')
 
-    if not args.name:
-        return get_name_from_bam(args.bam_file)
+    if not name:
+        return get_name_from_bam(bam_file)
     else:
-        clean_name = CRISPRessoShared.slugify(args.name)
-        if args.name != clean_name:
+        clean_name = CRISPRessoShared.slugify(name)
+        if name != clean_name:
             warn(
                 'The specified name {0} contained invalid characters and was changed to: {1}'.format(
-                    args.name, clean_name,
+                    name, clean_name,
                 ),
             )
         return clean_name
@@ -321,7 +335,7 @@ def main():
         options_to_ignore = {'fastq_r1', 'fastq_r2', 'amplicon_seq', 'amplicon_name', 'output_folder', 'name', 'zip_output'}
         crispresso_options_for_wgs = list(crispresso_options-options_to_ignore)
 
-        OUTPUT_DIRECTORY='CRISPRessoWGS_on_%s' % normalize_name(args)
+        OUTPUT_DIRECTORY='CRISPRessoWGS_on_%s' % normalize_name(args.name, args.bam_file)
         if args.output_folder:
             OUTPUT_DIRECTORY=os.path.join(os.path.abspath(args.output_folder), OUTPUT_DIRECTORY)
 
