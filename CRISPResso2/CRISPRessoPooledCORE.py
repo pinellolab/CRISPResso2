@@ -822,16 +822,16 @@ def main():
                 crispresso_cmd= args.crispresso_command + ' -r1 %s -a %s %s -o %s --name %s' % (row['Demultiplexed_fastq.gz_filename'], this_amp_seq, this_amp_name_string, OUTPUT_DIRECTORY, idx)
 
                 if n_reads_aligned_amplicons[-1] > args.min_reads_to_use_region:
-                    this_run_args = deepcopy(args)
+                    this_run_args_from_amplicons_file = {}
                     for column_name in default_input_amplicon_headers:
                         if column_name in df_template.columns and row[column_name] and not pd.isnull(row[column_name]):
-                            setattr(this_run_args, column_name, row[column_name])
+                            setattr(this_run_args_from_amplicons_file, column_name, row[column_name])
 
                     #first, set the general CRISPResso options for this sub-run (e.g. plotting options, etc)
                     #note that the crispresso_options_for_pooled doesn't include e.g. amplicon_seq so when someone calls CRISPRessoPooled with -a that won't get passed on here
                     crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, args)
-                    #next set the per-amplicon options we read from the Amplicons file (and are stored in this_run_args)
-                    crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, default_input_amplicon_headers, this_run_args)
+                    #next set the per-amplicon options we read from the Amplicons file (and are stored in this_run_args_from_amplicons_file)
+                    crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, default_input_amplicon_headers, this_run_args_from_amplicons_file)
 
                     crispresso_cmds.append(crispresso_cmd)
 
@@ -1193,16 +1193,16 @@ def main():
 
                             crispresso_cmd = args.crispresso_command + ' -r1 %s -o %s --name %s' % (fastq_filename_region, OUTPUT_DIRECTORY, idx)
 
-                            this_run_args = deepcopy(args)
+                            this_run_args_from_amplicons_file = {}
                             for column_name in default_input_amplicon_headers:
                                 if column_name in df_template.columns and row[column_name] and not pd.isnull(row[column_name]):
-                                    setattr(this_run_args, column_name, row[column_name])
+                                    setattr(this_run_args_from_amplicons_file, column_name, row[column_name])
 
                             #first, set the general CRISPResso options for this sub-run (e.g. plotting options, etc)
                             #note that the crispresso_options_for_pooled doesn't include e.g. amplicon_seq so when someone calls CRISPRessoPooled with -a that won't get passed on here
                             crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, args)
-                            #next set the per-amplicon options we read from the Amplicons file (and are stored in this_run_args)
-                            crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, default_input_amplicon_headers, this_run_args)
+                            #next set the per-amplicon options we read from the Amplicons file (and are stored in this_run_args_from_amplicons_file)
+                            crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, default_input_amplicon_headers, this_run_args_from_amplicons_file)
                             info('Running CRISPResso:%s' % crispresso_cmd)
                             crispresso_cmds.append(crispresso_cmd)
 
