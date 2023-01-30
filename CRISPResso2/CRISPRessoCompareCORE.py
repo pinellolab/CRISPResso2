@@ -61,15 +61,15 @@ import scipy.stats as stats
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
-def normalize_name(args):
+def normalize_name(name, output_folder_1, output_folder_2):
     get_name_from_folder = lambda x: os.path.basename(os.path.abspath(x)).replace('CRISPResso_on_', '')
-    if not args.name:
+    if not name:
         return '{0}_VS_{1}'.format(
-            get_name_from_folder(args.crispresso_output_folder_1),
-            get_name_from_folder(args.crispresso_output_folder_2),
+            get_name_from_folder(output_folder_1),
+            get_name_from_folder(output_folder_2),
         )
     else:
-        return args.name
+        return name
 
 
 def main():
@@ -135,10 +135,12 @@ def main():
         if sample_1_name == sample_2_name:
             sample_2_name += '_2'
 
-        OUTPUT_DIRECTORY = 'CRISPRessoCompare_on_{0}'.format(normalize_name(args))
+        OUTPUT_DIRECTORY = 'CRISPRessoCompare_on_{0}'.format(normalize_name(
+            args.name, args.crispresso_output_folder_1, args.crispresso_output_folder_2,
+        ))
 
         if args.output_folder:
-            OUTPUT_DIRECTORY=os.path.join(os.path.abspath(args.output_folder), OUTPUT_DIRECTORY)
+            OUTPUT_DIRECTORY = os.path.join(os.path.abspath(args.output_folder), OUTPUT_DIRECTORY)
 
         _jp = lambda filename: os.path.join(OUTPUT_DIRECTORY, filename) #handy function to put a file in the output directory
         log_filename = _jp('CRISPRessoCompare_RUNNING_LOG.txt')
