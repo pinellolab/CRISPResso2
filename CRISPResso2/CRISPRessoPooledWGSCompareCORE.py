@@ -327,7 +327,7 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
                 processed_region_html_files[idx] = this_sub_html_file
                 processed_region_folder_names[idx] = compare_output_name
 
-        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, logger, n_processes, 'Comparison', start_end_percent=(10, 90))
+        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes, 'Comparison', start_end_percent=(10, 90))
         crispresso2_info['results']['processed_regions'] = processed_regions
         crispresso2_info['results']['processed_region_folder_names'] = processed_region_folder_names
 

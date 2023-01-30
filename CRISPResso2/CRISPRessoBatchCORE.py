@@ -280,7 +280,7 @@ def main():
         crispresso2_info['results']['batch_names_arr'] = batch_names_arr
         crispresso2_info['results']['batch_input_names'] = batch_input_names
 
-        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, logger, n_processes_for_batch, 'batch', args.skip_failed, start_end_percent=[10, 90])
+        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_batch, 'batch', args.skip_failed, start_end_percent=[10, 90])
 
         run_datas = [] # crispresso2 info from each row
 

@@ -11,6 +11,7 @@ import multiprocessing as mp
 import signal
 import subprocess as sb
 from functools import partial
+from inspect import getmodule, stack
 import numpy as np
 import pandas as pd
 
@@ -46,11 +47,42 @@ def wrapper(func, args):
     return (idx, func(args))
 
 
-def run_crispresso_cmds(crispresso_cmds, logger, n_processes="1", descriptor = 'region', continue_on_fail=False, start_end_percent=None):
+def run_crispresso_cmds(crispresso_cmds, n_processes="1", descriptor = 'region', continue_on_fail=False, start_end_percent=None, logger=None):
+    """Run multiple CRISPResso commands in parallel.
+
+    Parameters
+    ----------
+    crispresso_cmds: list
+        The list of CRISPResso commands to run.
+    n_processes: str
+        The number of processes to use, if `max` it will use the maximum number
+        of processors.
+    descriptor: str
+        The label printed out describing a command e.g. "Could not process
+        'region' 5" or "Could not process 'batch' 5".
+    continue_on_fail: bool
+        If True, CRISPResso will continue to run even if one of the commands fails.
+    start_end_percent: tuple
+        The start and end percent of the commands to run. For example, if you
+        have 10 commands to run and `start_end_percent` is (0, 100), then the
+        percent_complete will be 10 when the first command is finished and 20
+        when the second command is finished, etc.
+    logger: logging.Logger | None
+        The logger to use for logging. If None, the logger of the calling module
+        is used.
+
+    Returns
+    -------
+    None
     """
-    input: crispresso_cmds: list of crispresso commands to run
-    descriptor: label printed out describing a command e.g. "Could not process 'region' 5" or "Could not process 'batch' 5"
-    """
+    if not crispresso_cmds:
+        return
+
+    if logger is None:
+        # this line noise will get the name of the module from which this
+        # function was called, and thereby the correct logger
+        logger = logging.getLogger(getmodule(stack()[1][0]).__name__)
+
     int_n_processes = 1
     if n_processes == "max":
         int_n_processes = get_max_processes()
