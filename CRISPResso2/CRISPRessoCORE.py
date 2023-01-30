@@ -3613,7 +3613,7 @@ def main():
                             'sgRNA_mismatches': sgRNA_mismatches,
                             'quantification_window_idxs': new_include_idx,
                         }
-                        debug('Plotting nucleotide distribuition around {0}'.format(sgRNA_legend))
+                        debug('Plotting nucleotide distribuition around {0} for {1}'.format(sgRNA_legend, ref_name))
                         plot(CRISPRessoPlot.plot_nucleotide_quilt, plot_2b_input)
                         crispresso2_info['results']['refs'][ref_name]['plot_2b_roots'].append(os.path.basename(plot_root))
                         crispresso2_info['results']['refs'][ref_name]['plot_2b_captions'].append('Figure 2b: Nucleotide distribution around the ' + sgRNA_legend + '.')
@@ -3664,7 +3664,7 @@ def main():
                     'plot_root': plot_root,
                     'save_also_png': save_png,
                 }
-                debug('Plotting indel size distribution')
+                debug('Plotting indel size distribution for {0}'.format(ref_name))
                 plot(CRISPRessoPlot.plot_indel_size_distribution, plot_3a_input)
                 clipped_string = ""
                 if xmax < max(hlengths):
@@ -3745,7 +3745,7 @@ def main():
                     'xmax_mut': xmax_mut,
                     'save_also_png': save_png,
                 }
-                debug('Plotting frequency deletions/insertions')
+                debug('Plotting frequency deletions/insertions for {0}'.format(ref_name))
                 plot(CRISPRessoPlot.plot_frequency_deletions_insertions, plot_3b_input)
 
                 if clipped_string != "":
@@ -3791,7 +3791,7 @@ def main():
                     'plot_root': plot_root,
                     'save_also_png': save_png,
                 }
-                debug('Plotting amplication modifications')
+                debug('Plotting amplication modifications for {0}'.format(ref_name))
                 plot(CRISPRessoPlot.plot_amplicon_modifications, plot_4a_input)
                 crispresso2_info['results']['refs'][ref_name]['plot_4a_root'] = os.path.basename(plot_root)
                 crispresso2_info['results']['refs'][ref_name]['plot_4a_caption'] = "Figure 4a: Combined frequency of any modification across the amplicon. Modifications outside of the quantification window are also shown."
@@ -3820,7 +3820,7 @@ def main():
                     'plot_root': plot_root,
                     'save_also_png': save_png,
                 }
-                debug('Plotting modification frequency')
+                debug('Plotting modification frequency for {0}'.format(ref_name))
                 plot(CRISPRessoPlot.plot_modification_frequency, plot_4b_input)
                 crispresso2_info['results']['refs'][ref_name]['plot_4b_root'] = os.path.basename(plot_root)
                 crispresso2_info['results']['refs'][ref_name]['plot_4b_caption'] = "Figure 4b: Frequency of insertions (red), deletions (purple), and substitutions (green) across the entire amplicon, including modifications outside of the quantification window."
@@ -3848,7 +3848,7 @@ def main():
                     'plot_root': plot_root,
                     'save_also_png': save_png,
                 }
-                debug('Plotting quantification window locations')
+                debug('Plotting quantification window locations for {0}'.format(ref_name))
                 plot(
                     CRISPRessoPlot.plot_quantification_window_locations,
                     plot_4c_input,
@@ -3878,7 +3878,7 @@ def main():
                     'plot_root': plot_root,
                     'save_also_png': save_png,
                 }
-                debug('Plotting position dependent indel')
+                debug('Plotting position dependent indel for {0}'.format(ref_name))
                 plot(
                     CRISPRessoPlot.plot_position_dependent_indels,
                     plot_4d_input,
@@ -4020,7 +4020,7 @@ def main():
                             'plot_root': plot_root,
                             'save_also_png': save_png,
                         }
-                        debug('Plotting frameshift analysis')
+                        debug('Plotting frameshift analysis for {0}'.format(ref_name))
                         plot(CRISPRessoPlot.plot_frameshift_analysis, plot_5_input)
                         crispresso2_info['results']['refs'][ref_name]['plot_5_root'] = os.path.basename(plot_root)
                         crispresso2_info['results']['refs'][ref_name]['plot_5_caption'] = "Figure 5: Frameshift analysis of coding sequence reads affected by modifications (unmodified reads are excluded from this analysis)."
@@ -4045,7 +4045,7 @@ def main():
                         'plot_root': plot_root,
                         'save_also_png': save_png,
                     }
-                    debug('Plotting frameshift frequency')
+                    debug('Plotting frameshift frequency for {0}'.format(ref_name))
                     plot(CRISPRessoPlot.plot_frameshift_frequency, plot_6_input)
                     crispresso2_info['results']['refs'][ref_name]['plot_6_root'] = os.path.basename(plot_root)
                     crispresso2_info['results']['refs'][ref_name]['plot_6_caption'] = "Figure 6: Frameshift and in-frame mutagenesis profiles indicating position affected by modification. The y axis shows the number of reads and percentage of all reads in that category (frameshifted (top) or in-frame (bottom)). %d reads with no length modifications are not shown."%hists_inframe[ref_name][0]
@@ -4073,7 +4073,7 @@ def main():
                         'plot_root': plot_root,
                         'save_also_png': save_png,
                     }
-                    debug('Plotting non-coding mutation positions')
+                    debug('Plotting non-coding mutation positions for {0}'.format(ref_name))
                     plot(CRISPRessoPlot.plot_non_coding_mutations, plot_7_input)
                     crispresso2_info['results']['refs'][ref_name]['plot_7_root'] = os.path.basename(plot_root)
                     crispresso2_info['results']['refs'][ref_name]['plot_7_caption'] = "Figure 7: Reads with insertions (red), deletions (purple), and substitutions (green) mapped to reference amplicon position exclusively in noncoding region/s (that is, without mutations affecting coding sequences). The predicted cleavage site is indicated by a vertical dashed line. Only sequence positions directly adjacent to insertions or directly affected by deletions or substitutions are plotted."
@@ -4111,7 +4111,7 @@ def main():
                         'save_also_png': save_png,
                         'quantification_window_idxs': include_idxs_list,
                     }
-                    debug('Plotting substitutions across reference')
+                    debug('Plotting substitutions across reference for {0}'.format(ref_name))
                     plot(CRISPRessoPlot.plot_subs_across_ref, plot_10a_input)
                     crispresso2_info['results']['refs'][ref_name]['plot_10a_root'] = os.path.basename(fig_filename_root)
                     crispresso2_info['results']['refs'][ref_name]['plot_10a_caption'] = "Figure 10a: Substitution frequencies across the amplicon."
@@ -4129,7 +4129,7 @@ def main():
                         'fig_filename_root': fig_filename_root,
                         'save_also_png': save_png
                     }
-                    debug('Plotting substitution frequency barplot')
+                    debug('Plotting substitution frequency barplot for {0}'.format(ref_name))
                     plot(CRISPRessoPlot.plot_sub_freqs, plot_10b_input)
                     crispresso2_info['results']['refs'][ref_name]['plot_10b_root'] = os.path.basename(fig_filename_root)
                     crispresso2_info['results']['refs'][ref_name]['plot_10b_caption'] = "Figure 10b: Substitution frequencies across the amplicon."
@@ -4143,7 +4143,7 @@ def main():
                         'fig_filename_root': fig_filename_root,
                         'save_also_png': save_png
                     }
-                    debug('Plotting substitution frequency barplot in quantification window')
+                    debug('Plotting substitution frequency barplot in quantification window for {0}'.format(ref_name))
                     plot(CRISPRessoPlot.plot_sub_freqs, plot_10c_input)
                     crispresso2_info['results']['refs'][ref_name]['plot_10c_root'] = os.path.basename(fig_filename_root)
                     crispresso2_info['results']['refs'][ref_name]['plot_10c_caption'] = "Figure 10c: Substitution frequencies in the quantification window"
@@ -4233,7 +4233,7 @@ def main():
                         'sgRNA_mismatches': sgRNA_mismatches,
                         'annotate_wildtype_allele': args.annotate_wildtype_allele,
                     }
-                    debug('Plotting allele distribution around cut')
+                    debug('Plotting allele distribution around cut for {0}'.format(ref_name))
                     plot(CRISPRessoPlot.plot_alleles_table, plot_9_input)
                     crispresso2_info['results']['refs'][ref_name]['plot_9_roots'].append(os.path.basename(fig_filename_root))
                     crispresso2_info['results']['refs'][ref_name]['plot_9_captions'].append("Figure 9: Visualization of the distribution of identified alleles around the cleavage site for the " + sgRNA_legend + ". Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site.")
@@ -4298,7 +4298,7 @@ def main():
                             'save_also_png': save_png,
                             'quantification_window_idxs': plot_quant_window_idxs,
                         }
-                        debug('Plotting log2 nucleotide frequency')
+                        debug('Plotting log2 nucleotide frequency for {0}'.format(ref_name))
                         plot(CRISPRessoPlot.plot_log_nuc_freqs, plot_10d_input)
                         crispresso2_info['results']['refs'][ref_name]['plot_10d_roots'].append(os.path.basename(fig_filename_root))
                         crispresso2_info['results']['refs'][ref_name]['plot_10d_captions'].append("Figure 10d: Log2 nucleotide frequencies for each position in the plotting window around the " + sgRNA_legend + ". The quantification window is outlined by the dotted box.")
@@ -4319,7 +4319,7 @@ def main():
                             'fig_filename_root': fig_filename_root,
                             'save_also_png': save_png,
                         }
-                        debug('Plotting conversion at {0}s around the {1}'.format(args.conversion_nuc_from, sgRNA_legend))
+                        debug('Plotting conversion at {0}s around the {1} for {21}'.format(args.conversion_nuc_from, sgRNA_legend, ref_name))
                         plot(
                             CRISPRessoPlot.plot_conversion_at_sel_nucs,
                             plot_10e_input,
@@ -4338,7 +4338,7 @@ def main():
                             'fig_filename_root': fig_filename_root,
                             'save_also_png': save_png,
                         }
-                        debug('Plotting non-reference conversion at {0}s around the {1}'.format(args.conversion_nuc_from, sgRNA_legend))
+                        debug('Plotting non-reference conversion at {0}s around the {1} for {2}'.format(args.conversion_nuc_from, sgRNA_legend, ref_name))
                         plot(
                             CRISPRessoPlot.plot_conversion_at_sel_nucs_not_include_ref,
                             plot_10f_input,
@@ -4360,7 +4360,7 @@ def main():
                             'fig_filename_root': fig_filename_root,
                             'save_also_png': save_png
                         }
-                        debug('Plotting scaled non-reference conversion at {0}s around the {1}'.format(args.conversion_nuc_from, sgRNA_legend))
+                        debug('Plotting scaled non-reference conversion at {0}s around the {1} for {2}'.format(args.conversion_nuc_from, sgRNA_legend, ref_name))
                         plot(
                             CRISPRessoPlot.plot_conversion_at_sel_nucs_not_include_ref_scaled,
                             plot_10g_input,
