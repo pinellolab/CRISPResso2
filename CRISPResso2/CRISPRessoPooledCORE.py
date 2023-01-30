@@ -935,7 +935,9 @@ def main():
 
         # align reads to the genome in an unbiased way
         if RUNNING_MODE=='ONLY_GENOME' or RUNNING_MODE=='AMPLICONS_AND_GENOME':
-            bam_filename_genome = _jp('%s_GENOME_ALIGNED.bam' % database_id)
+            bam_filename_genome = _jp('{0}_GENOME_ALIGNED.bam'.format(normalize_name(
+                args.name, args.fastq_r1, args.fastq_r2, args.aligned_pooled_bam,
+            )))
             # if input bam is provided, don't align reads to the genome and use that bam
             if args.aligned_pooled_bam is not None:
                 bam_filename_genome = args.aligned_pooled_bam
