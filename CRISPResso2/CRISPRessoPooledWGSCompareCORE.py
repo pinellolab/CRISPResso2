@@ -16,14 +16,11 @@ import traceback
 
 
 import logging
-logging.basicConfig(
-    format='%(levelname)-5s @ %(asctime)s:\n\t %(message)s \n',
-    datefmt='%a, %d %b %Y %H:%M:%S',
-    stream=sys.stderr,
-    filemode="w"
-)
+
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(CRISPRessoShared.LogStreamHandler())
+
 error   = logger.critical
 warn    = logger.warning
 debug   = logger.debug
@@ -162,8 +159,12 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
             action='store_true',
         )
         parser.add_argument('--zip_output', help="If set, the output will be placed in a zip folder.", action='store_true')
+        parser.add_argument('-v', '--verbosity', type=int, help='Verbosity level of output to the console (1-4)', default=3)
 
         args = parser.parse_args()
+
+        CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
+
         debug_flag = args.debug
 
         crispresso_compare_options = [
@@ -222,7 +223,7 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
         log_filename = _jp('CRISPRessoPooledWGSCompare_RUNNING_LOG.txt')
 
         try:
-            info('Creating Folder %s' % OUTPUT_DIRECTORY)
+            info('Creating Folder %s' % OUTPUT_DIRECTORY, {'percent_complete': 0})
             os.makedirs(OUTPUT_DIRECTORY)
             info('Done!')
         except:
@@ -230,6 +231,7 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
 
         log_filename = _jp('CRISPRessoPooledWGSCompare_RUNNING_LOG.txt')
         logger.addHandler(logging.FileHandler(log_filename))
+        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('CRISPRessoPooledWGSCompare_status.txt')))
 
         with open(log_filename, 'w+') as outfile:
             outfile.write(
@@ -264,7 +266,7 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
             rsuffix='_{0}'.format(sample_2_name),
         )
 
-        print('looking for ' + '({0}-{1})_Unmodified%'.format(sample_1_name, sample_2_name))
+        debug('looking for ' + '({0}-{1})_Unmodified%'.format(sample_1_name, sample_2_name))
         df_comp[
             '({0}-{1})_Unmodified%'.format(sample_1_name, sample_2_name)
         ] = df_comp['Unmodified%_{0}'.format(sample_1_name)] - df_comp[
@@ -325,9 +327,7 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
                 processed_region_html_files[idx] = this_sub_html_file
                 processed_region_folder_names[idx] = compare_output_name
 
-        CRISPRessoMultiProcessing.run_crispresso_cmds(
-            crispresso_cmds, n_processes, 'Comparison',
-        )
+        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes, 'Comparison', start_end_percent=(10, 90))
         crispresso2_info['results']['processed_regions'] = processed_regions
         crispresso2_info['results']['processed_region_folder_names'] = processed_region_folder_names
 
@@ -374,7 +374,7 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
         if args.zip_output:
             CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
 
-        info('All Done!')
+        info('All Done!', {'percent_complete': 100})
         print(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)
 

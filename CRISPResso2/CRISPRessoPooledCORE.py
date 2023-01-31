@@ -23,14 +23,11 @@ from CRISPResso2 import CRISPRessoPlot
 import traceback
 
 import logging
-logging.basicConfig(
-                     format='%(levelname)-5s @ %(asctime)s:\n\t %(message)s \n',
-                     datefmt='%a, %d %b %Y %H:%M:%S',
-                     stream=sys.stderr,
-                     filemode="w"
-                     )
+
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(CRISPRessoShared.LogStreamHandler())
+
 error   = logger.critical
 warn    = logger.warning
 debug   = logger.debug
@@ -197,6 +194,46 @@ def find_overlapping_genes(row, df_genes):
     return row
 
 
+def normalize_name(name, fastq_r1, fastq_r2, aligned_pooled_bam):
+    """Normalize the name according to the inputs and clean it.
+
+    Parameters
+    ----------
+    name : str
+        The name optionally given by the user.
+    fastq_r1 : str
+        The path to the first fastq file.
+    fastq_r2 : str
+        The path to the second fastq file.
+    aligned_pooled_bam : str
+        The path to the aligned bam file.
+
+    Returns
+    -------
+    str
+        The normalized name.
+    """
+    get_name_from_fastq = lambda x: os.path.basename(x).replace('.fastq', '').replace('.gz', '').replace('.fq', '')
+    get_name_from_bam = lambda x: os.path.basename(x).replace('.bam', '')
+
+    if not name:
+        if aligned_pooled_bam is not None:
+            return get_name_from_bam(aligned_pooled_bam)
+        elif fastq_r2:
+            return '%s_%s' % (get_name_from_fastq(fastq_r1), get_name_from_fastq(fastq_r2))
+        else:
+            return '%s' % get_name_from_fastq(fastq_r1)
+    else:
+        clean_name = CRISPRessoShared.slugify(name)
+        if name != clean_name:
+            warn(
+                'The specified name {0} contained invalid characters and was changed to: {1}'.format(
+                    name, clean_name,
+                ),
+            )
+        return clean_name
+
+
 pd=check_library('pandas')
 np=check_library('numpy')
 
@@ -291,11 +328,31 @@ def main():
 
         args = parser.parse_args()
 
+        CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
+
         crispresso_options = CRISPRessoShared.get_crispresso_options()
         options_to_ignore = {'fastq_r1', 'fastq_r2', 'amplicon_seq', 'amplicon_name', 'output_folder', 'name', 'zip_output'}
         crispresso_options_for_pooled = list(crispresso_options-options_to_ignore)
 
         files_to_remove = []
+
+        OUTPUT_DIRECTORY = 'CRISPRessoPooled_on_{0}'.format(normalize_name(args.name, args.fastq_r1, args.fastq_r2, args.aligned_pooled_bam))
+
+        if args.output_folder:
+            OUTPUT_DIRECTORY = os.path.join(os.path.abspath(args.output_folder), OUTPUT_DIRECTORY)
+
+        _jp = lambda filename: os.path.join(OUTPUT_DIRECTORY, filename) #handy function to put a file in the output directory
+
+        try:
+            info('Creating Folder %s' % OUTPUT_DIRECTORY)
+            os.makedirs(OUTPUT_DIRECTORY)
+            info('Done!')
+        except:
+            warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
+
+        log_filename = _jp('CRISPRessoPooled_RUNNING_LOG.txt')
+        logger.addHandler(logging.FileHandler(log_filename))
+        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('CRISPRessoPooled_status.txt')))
 
         if args.zip_output and not args.place_report_in_output_folder:
             logger.warn('Invalid arguement combination: If zip_output is True then place_report_in_output_folder must also be True. Setting place_report_in_output_folder to True.')
@@ -304,7 +361,7 @@ def main():
         info('Checking dependencies...')
 
         if check_samtools() and check_bowtie2():
-            info('All the required dependencies are present!')
+            info('All the required dependencies are present!', {'percent_complete': 0})
         else:
             sys.exit(1)
 
@@ -380,44 +437,6 @@ def main():
         args.n_processes = 1
 
         ####TRIMMING AND MERGING
-        get_name_from_fasta=lambda  x: os.path.basename(x).replace('.fastq', '').replace('.gz', '').replace('.fq', '')
-
-        if not args.name:
-            if args.aligned_pooled_bam is not None:
-                database_id=os.path.basename(args.aligned_pooled_bam).replace(".bam","")
-            elif args.fastq_r2!='':
-                database_id='%s_%s' % (get_name_from_fasta(args.fastq_r1), get_name_from_fasta(args.fastq_r2))
-            else:
-                database_id='%s' % get_name_from_fasta(args.fastq_r1)
-
-        else:
-            clean_name = CRISPRessoShared.slugify(args.name)
-            if args.name != clean_name:
-                warn(
-                    'The specified name {0} contained invalid characters and was changed to: {1}'.format(
-                        args.name, clean_name,
-                    ),
-                )
-            database_id = clean_name
-
-
-
-        OUTPUT_DIRECTORY='CRISPRessoPooled_on_%s' % database_id
-
-        if args.output_folder:
-            OUTPUT_DIRECTORY=os.path.join(os.path.abspath(args.output_folder), OUTPUT_DIRECTORY)
-
-        _jp=lambda filename: os.path.join(OUTPUT_DIRECTORY, filename) #handy function to put a file in the output directory
-
-        try:
-            info('Creating Folder %s' % OUTPUT_DIRECTORY)
-            os.makedirs(OUTPUT_DIRECTORY)
-            info('Done!')
-        except:
-            warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
-
-        log_filename=_jp('CRISPRessoPooled_RUNNING_LOG.txt')
-        logger.addHandler(logging.FileHandler(log_filename))
 
         crispresso2_info_file = os.path.join(
             OUTPUT_DIRECTORY, 'CRISPResso2Pooled_info.json',
@@ -481,7 +500,7 @@ def main():
         with open(log_filename, 'w+') as outfile:
             outfile.write('CRISPResso version %s\n[Command used]:\n%s\n\n[Execution log]:\n' %(CRISPRessoShared.__version__, crispresso_cmd_to_write))
 
-        info('Processing input')
+        info('Processing input', {'percent_complete': 5})
 
         # perform read trimming if necessary
         if args.aligned_pooled_bam is not None:
@@ -498,6 +517,7 @@ def main():
             else:
                 output_forward_filename = _jp('reads.trimmed.fq.gz')
                 # Trimming with trimmomatic
+                info('Trimming sequences with Trimmomatic...', {'percent_complete': 7})
                 cmd = '%s SE -phred33 %s %s %s >>%s 2>&1'\
                     % (args.trimmomatic_command, args.fastq_r1,
                         output_forward_filename,
@@ -516,7 +536,7 @@ def main():
                 output_forward_paired_filename = args.fastq_r1
                 output_reverse_paired_filename = args.fastq_r2
             else:
-                info('Trimming sequences with Trimmomatic...')
+                info('Trimming sequences with Trimmomatic...', {'percent_complete': 7})
                 output_forward_paired_filename = _jp('output_forward_paired.fq.gz')
                 output_forward_unpaired_filename = _jp('output_forward_unpaired.fq.gz')
                 output_reverse_paired_filename = _jp('output_reverse_paired.fq.gz')
@@ -542,7 +562,7 @@ def main():
             if args.min_paired_end_reads_overlap:
                 min_overlap_string = "--min-overlap " + str(args.min_paired_end_reads_overlap)
             # Merging with Flash
-            info('Merging paired sequences with Flash...')
+            info('Merging paired sequences with Flash...', {'percent_complete': 10})
             cmd = args.flash_command+' --allow-outies %s %s %s %s -z -d %s >>%s 2>&1' %\
                 (output_forward_paired_filename,
                  output_reverse_paired_filename,
@@ -738,7 +758,7 @@ def main():
             aligner_command= 'bowtie2 -x %s -p %s %s -U %s 2>>%s | samtools view -bS - > %s' %(custom_index_filename, n_processes_for_pooled, bowtie2_options_string, processed_output_filename, log_filename, bam_filename_amplicons)
 
 
-            info('Alignment command: ' + aligner_command)
+            info('Alignment command: ' + aligner_command, {'percent_complete': 15})
             sb.call(aligner_command, shell=True)
 
             N_READS_ALIGNED = get_n_aligned_bam(bam_filename_amplicons)
@@ -834,7 +854,7 @@ def main():
                 else:
                     warn('Skipping amplicon [%s] because no reads align to it\n'% idx)
 
-            CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_pooled, 'amplicon', args.skip_failed)
+            CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_pooled, 'amplicon', args.skip_failed, start_end_percent=(16, 80))
 
             df_template['n_reads']=n_reads_aligned_amplicons
             df_template['n_reads_aligned_%']=df_template['n_reads']/float(N_READS_ALIGNED)*100
@@ -928,7 +948,9 @@ def main():
 
         # align reads to the genome in an unbiased way
         if RUNNING_MODE=='ONLY_GENOME' or RUNNING_MODE=='AMPLICONS_AND_GENOME':
-            bam_filename_genome = _jp('%s_GENOME_ALIGNED.bam' % database_id)
+            bam_filename_genome = _jp('{0}_GENOME_ALIGNED.bam'.format(normalize_name(
+                args.name, args.fastq_r1, args.fastq_r2, args.aligned_pooled_bam,
+            )))
             # if input bam is provided, don't align reads to the genome and use that bam
             if args.aligned_pooled_bam is not None:
                 bam_filename_genome = args.aligned_pooled_bam
@@ -1124,7 +1146,7 @@ def main():
                         fout.write("\n\n\n".join(chr_commands))
                     info('Wrote demultiplexing commands to ' + demux_file)
 
-                info('Demultiplexing reads by location (%d genomic regions)...'%len(chr_commands))
+                info('Demultiplexing reads by location (%d genomic regions)...'%len(chr_commands), {'percent_complete': 85})
                 CRISPRessoMultiProcessing.run_parallel_commands(chr_commands, n_processes=n_processes_for_pooled, descriptor='Demultiplexing reads by location', continue_on_fail=args.skip_failed)
 
                 df_all_demux = pd.read_csv(REPORT_ALL_DEPTH, sep='\t')
@@ -1205,7 +1227,7 @@ def main():
                         n_reads_aligned_genome.append(0)
                         warn("The amplicon %s doesn't have any reads mapped to it!\n Please check your amplicon sequence." %  idx)
 
-                CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_pooled, 'amplicon', args.skip_failed)
+                CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_pooled, 'amplicon', args.skip_failed, start_end_percent=(15, 85))
 
                 crispresso2_info['running_info']['finished_steps']['crispresso_amplicons_and_genome'] = (n_reads_aligned_genome, fastq_region_filenames, files_to_match)
                 CRISPRessoShared.write_crispresso_info(
@@ -1313,7 +1335,7 @@ def main():
                         crispresso_cmds.append(crispresso_cmd)
                     else:
                         info('Skipping region: %s-%d-%d , not enough reads (%d)' %(row.chr_id, row.bpstart, row.bpend, row.n_reads))
-                CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_pooled, 'region', args.skip_failed)
+                CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_pooled, 'region', args.skip_failed, start_end_percent=(15, 85))
 
                 crispresso2_info['running_info']['finished_steps']['crispresso_genome_only'] = True
                 CRISPRessoShared.write_crispresso_info(
@@ -1444,6 +1466,7 @@ def main():
         if not args.suppress_plots:
             plot_root = _jp("CRISPRessoPooled_reads_summary")
 
+            debug('Plotting reads summary', {'percent_complete': 90})
             CRISPRessoPlot.plot_reads_total(plot_root, df_summary_quantification, save_png, args.min_reads_to_use_region)
             plot_name = os.path.basename(plot_root)
             crispresso2_info['results']['general_plots']['summary_plot_root'] = plot_name
@@ -1453,6 +1476,7 @@ def main():
             crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('CRISPRessoPooled summary', os.path.basename(samples_quantification_summary_filename))]
 
             plot_root = _jp("CRISPRessoPooled_modification_summary")
+            debug('Plotting modification summary', {'percent_complete': 95})
             CRISPRessoPlot.plot_unmod_mod_pcts(plot_root, df_summary_quantification, save_png, args.min_reads_to_use_region)
             plot_name = os.path.basename(plot_root)
             crispresso2_info['results']['general_plots']['summary_plot_root'] = plot_name
@@ -1615,7 +1639,7 @@ def main():
         if args.zip_output:
             CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
 
-        info('All Done!')
+        info('All Done!', {'percent_complete': 100})
         print(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)
 

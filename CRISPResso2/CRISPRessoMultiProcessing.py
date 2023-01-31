@@ -11,6 +11,7 @@ import multiprocessing as mp
 import signal
 import subprocess as sb
 from functools import partial
+from inspect import getmodule, stack
 import numpy as np
 import pandas as pd
 
@@ -40,28 +41,81 @@ def run_crispresso(crispresso_cmds, descriptor, idx):
         logging.info('Finished CRISPResso %s #%d' %(descriptor, idx))
     return return_value
 
-def run_crispresso_cmds(crispresso_cmds,n_processes="1",descriptor = 'region',continue_on_fail=False):
+
+def wrapper(func, args):
+    idx, args = args
+    return (idx, func(args))
+
+
+def run_crispresso_cmds(crispresso_cmds, n_processes="1", descriptor = 'region', continue_on_fail=False, start_end_percent=None, logger=None):
+    """Run multiple CRISPResso commands in parallel.
+
+    Parameters
+    ----------
+    crispresso_cmds: list
+        The list of CRISPResso commands to run.
+    n_processes: str
+        The number of processes to use, if `max` it will use the maximum number
+        of processors.
+    descriptor: str
+        The label printed out describing a command e.g. "Could not process
+        'region' 5" or "Could not process 'batch' 5".
+    continue_on_fail: bool
+        If True, CRISPResso will continue to run even if one of the commands fails.
+    start_end_percent: tuple
+        The start and end percent of the commands to run. For example, if you
+        have 10 commands to run and `start_end_percent` is (0, 100), then the
+        percent_complete will be 10 when the first command is finished and 20
+        when the second command is finished, etc.
+    logger: logging.Logger | None
+        The logger to use for logging. If None, the logger of the calling module
+        is used.
+
+    Returns
+    -------
+    None
     """
-    input: crispresso_cmds: list of crispresso commands to run
-    descriptor: label printed out describing a command e.g. "Could not process 'region' 5" or "Could not process 'batch' 5"
-    """
+    if not crispresso_cmds:
+        return
+
+    if logger is None:
+        # this line noise will get the name of the module from which this
+        # function was called, and thereby the correct logger
+        logger = logging.getLogger(getmodule(stack()[1][0]).__name__)
+
     int_n_processes = 1
     if n_processes == "max":
         int_n_processes = get_max_processes()
     else:
         int_n_processes = int(n_processes)
 
-    logging.info("Running CRISPResso with %d processes" % int_n_processes)
+    logger.info("Running CRISPResso with %d processes" % int_n_processes)
     pool = mp.Pool(processes=int_n_processes)
     idxs = range(len(crispresso_cmds))
+    ret_vals = [None] * len(crispresso_cmds)
     pFunc = partial(run_crispresso, crispresso_cmds, descriptor)
+    p_wrapper = partial(wrapper, pFunc)
+    if start_end_percent is not None:
+        percent_complete_increment = start_end_percent[1] - start_end_percent[0]
+        percent_complete_step = percent_complete_increment / len(crispresso_cmds)
+        percent_complete = start_end_percent[0]
+    else:
+        percent_complete_step = 1 / len(crispresso_cmds)
+        percent_complete = 0
 
     #handle signals -- bug in python 2.7 (https://stackoverflow.com/questions/11312525/catch-ctrlc-sigint-and-exit-multiprocesses-gracefully-in-python)
     original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGINT, original_sigint_handler)
     try:
-        res = pool.map_async(pFunc, idxs)
-        ret_vals = res.get(60*60*60) # Without the timeout this blocking call ignores all signals.
+        completed = 0
+        for idx, res in pool.imap_unordered(p_wrapper, enumerate(idxs)):
+            ret_vals[idx] = res
+            completed += 1
+            percent_complete += percent_complete_step
+            logger.info(
+                "Completed {0}/{1} runs".format(completed, len(crispresso_cmds)),
+                {'percent_complete': percent_complete},
+            )
         for idx, ret in enumerate(ret_vals):
             if ret == 137:
                 raise Exception('CRISPResso %s #%d was killed by your system. Please decrease the number of processes (-p) and run again.'%(descriptor, idx))
@@ -69,7 +123,7 @@ def run_crispresso_cmds(crispresso_cmds,n_processes="1",descriptor = 'region',co
                 raise Exception('CRISPResso %s #%d failed. For more information, try running the command: "%s"'%(descriptor, idx, crispresso_cmds[idx]))
     except KeyboardInterrupt:
         pool.terminate()
-        logging.warn('Caught SIGINT. Program Terminated')
+        logger.warn('Caught SIGINT. Program Terminated')
         raise Exception('CRISPResso2 Terminated')
         exit (0)
     except Exception as e:
@@ -79,7 +133,7 @@ def run_crispresso_cmds(crispresso_cmds,n_processes="1",descriptor = 'region',co
         plural = descriptor+"s"
         if descriptor.endswith("ch") or descriptor.endswith("sh"):
             plural = descriptor+"es"
-        logging.info("Finished all " + plural)
+        logger.info("Finished all " + plural)
         pool.close()
     pool.join()
 
