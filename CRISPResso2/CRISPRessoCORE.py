@@ -4319,7 +4319,7 @@ def main():
                             'fig_filename_root': fig_filename_root,
                             'save_also_png': save_png,
                         }
-                        debug('Plotting conversion at {0}s around the {1} for {21}'.format(args.conversion_nuc_from, sgRNA_legend, ref_name))
+                        debug('Plotting conversion at {0}s around the {1} for {2}'.format(args.conversion_nuc_from, sgRNA_legend, ref_name))
                         plot(
                             CRISPRessoPlot.plot_conversion_at_sel_nucs,
                             plot_10e_input,
