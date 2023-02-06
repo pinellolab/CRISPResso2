@@ -641,9 +641,17 @@ def main():
                 header_els = head_line.split('\t')
 
             head_lookup = CRISPRessoShared.get_crispresso_options_lookup()  # dict of qwc -> quantification_window_coordinates
-            head_lookup['sgRNA'] = 'guide_seq'
-            head_lookup['Expected_HDR'] = 'expected_hdr_amplicon_seq'
+
+            # add legacy CRISPRessoPooled headers to the head_lookup
+            # lowercase input header names for matching - they'll get fixed in the matching to default_input_amplicon_headers
+            head_lookup['sgrna'] = 'guide_seq'
+            head_lookup['expected_hdr'] = 'expected_hdr_amplicon_seq'
             head_lookup['name'] = 'amplicon_name'
+            head_lookup['sgrna_sequence'] = 'guide_seq'
+            head_lookup['expected_amplicon_after_hdr'] = 'expected_hdr_amplicon_seq'
+            head_lookup['coding_sequence'] = 'coding_seq'
+
+            lowercase_default_amplicon_headers = {h.lower(): h for h in default_input_amplicon_headers}
 
             headers = []
             has_header = False
@@ -651,19 +659,23 @@ def main():
             for head in header_els:
                 # Header based on header provided
                 # Look up long name (e.g. qwc -> quantification_window_coordinates)
+                #   as well as custom legacy headers above
                 long_head = head
                 if head in head_lookup:
                     long_head = head_lookup[head]
+                if head.lower() in head_lookup:
+                    long_head = head_lookup[head.lower()]
+                long_head = long_head.lower()
 
-                match = difflib.get_close_matches(long_head, default_input_amplicon_headers, n=1)
+                match = difflib.get_close_matches(long_head, lowercase_default_amplicon_headers, n=1)
                 if not match:
                     has_unmatched_header_el = True
-                    warn('Unable to find matches for header values. Using the default header values and order.')
+                    warn(f'Unable to find matches for header value "{head}". Using the default header values and order.')
                 else:
                     has_header = True
-                    headers.append(match[0])
-                if args.debug and match:
-                    info(f'Matching header {head} with {match[0]}.')
+                    headers.append(lowercase_default_amplicon_headers[match[0]])
+                    if args.debug:
+                        info(f'Matching header {head} with {lowercase_default_amplicon_headers[match[0]]}.')
 
             if not has_header or has_unmatched_header_el:
                 # Default header
