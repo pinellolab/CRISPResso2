@@ -64,7 +64,6 @@ def check_library(library_name):
         sys.exit(1)
 
 def which(program):
-    import os
     def is_exe(fpath):
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
@@ -109,29 +108,19 @@ def get_n_reads_bam(bam_filename,bam_chr_loc=""):
         raise CRISPRessoShared.InstallationException('Error when running the command:' + cmd + '\nCheck that samtools is installed correctly.')
     return retval
 
-#import time
-#start = time.time()
-matplotlib=check_library('matplotlib')
-#end = time.time()
-#start = time.time()
+matplotlib = check_library('matplotlib')
 from matplotlib import font_manager as fm
 CRISPRessoPlot.setMatplotlibDefaults()
-#end = time.time()
 
-#start = time.time()
-plt=check_library('pylab')
-#end = time.time()
+plt = check_library('pylab')
 
-from matplotlib import font_manager as fm
 import matplotlib.gridspec as gridspec
 
-pd=check_library('pandas')
-np=check_library('numpy')
-check_program('fastp')
+pd = check_library('pandas')
+np = check_library('numpy')
+check_program('fastp', download_url='http://opengene.org/fastp/fastp', version_flag='--version', version_regex=r'fastp (\d+)\.(\d+)\.(\d+)', version=(0, 19, 8))
 
-#start = time.time()
-sns=check_library('seaborn')
-#end = time.time()
+sns = check_library('seaborn')
 sns.set_context('poster')
 sns.set(font_scale=2.2)
 sns.set_style('white')
