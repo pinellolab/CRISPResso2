@@ -30,7 +30,7 @@ __version__ = "2.2.12"
 class FlashException(Exception):
     pass
 
-class TrimmomaticException(Exception):
+class FastpException(Exception):
     pass
 
 class NoReadsAlignedException(Exception):
@@ -181,15 +181,17 @@ def getCRISPRessoArgParser(parserTitle="CRISPResso Parameters", requiredParams={
     parser.add_argument('--split_interleaved_input', '--split_paired_end',
                         help='Splits a single fastq file containing paired end reads into two files before running CRISPResso',
                         action='store_true')
-    parser.add_argument('--trim_sequences', help='Enable the trimming of Illumina adapters with Trimmomatic',
+    parser.add_argument('--trim_sequences', help='Enable the trimming of Illumina adapters with fastp',
                         action='store_true')
-    parser.add_argument('--trimmomatic_command', type=str, help='Command to run trimmomatic', default='trimmomatic')
-    parser.add_argument('--trimmomatic_options_string', type=str,
-                        help='Override options for Trimmomatic, e.g. "ILLUMINACLIP:/data/NexteraPE-PE.fa:0:90:10:0:true"',
+    parser.add_argument('--trimmomatic_command', type=str, help='DEPRECATED in v2.2.11, use `--fastp_command`')
+    parser.add_argument('--fastp_command', type=str, help='Command to run fast', default='fastp')
+    parser.add_argument('--trimmomatic_options_string', type=str, help='DEPRECATED in v2.2.11, use `--fastp_options_string`')
+    parser.add_argument('--fastp_options_string', type=str,
+                        help='Override options for fastp, e.g. "--length_required 70 --umi"',
                         default='')
-    parser.add_argument('--flash_command', type=str, help='Command to run flash', default='flash')
+    parser.add_argument('--flash_command', type=str, help='DEPRECATED in v2.2.11, use `--fastp_command`')
     parser.add_argument('--min_paired_end_reads_overlap', type=int,
-                        help='Parameter for the FLASH read merging step. Minimum required overlap length between two reads to provide a confident overlap. ',
+                        help='Parameter for the fastp read merging step. Minimum required overlap length between two reads to provide a confident overlap. ',
                         default=10)
     parser.add_argument('--max_paired_end_reads_overlap', type=int,
                         help='Parameter for the FLASH merging step.  Maximum overlap length expected in approximately 90%% of read pairs. Please see the FLASH manual for more information.',
