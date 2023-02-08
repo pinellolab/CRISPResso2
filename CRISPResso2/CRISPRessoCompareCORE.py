@@ -14,14 +14,11 @@ from CRISPResso2 import CRISPRessoPlot
 from CRISPResso2 import CRISPRessoReport
 
 import logging
-logging.basicConfig(
-                     format='%(levelname)-5s @ %(asctime)s:\n\t %(message)s \n',
-                     datefmt='%a, %d %b %Y %H:%M:%S',
-                     stream=sys.stderr,
-                     filemode="w"
-                     )
+
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(CRISPRessoShared.LogStreamHandler())
+
 error   = logger.critical
 warn    = logger.warning
 debug   = logger.debug
@@ -64,6 +61,16 @@ import scipy.stats as stats
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
+def normalize_name(name, output_folder_1, output_folder_2):
+    get_name_from_folder = lambda x: os.path.basename(os.path.abspath(x)).replace('CRISPResso_on_', '')
+    if not name:
+        return '{0}_VS_{1}'.format(
+            get_name_from_folder(output_folder_1),
+            get_name_from_folder(output_folder_2),
+        )
+    else:
+        return name
+
 
 def main():
     try:
@@ -92,12 +99,19 @@ def main():
         parser.add_argument('--max_rows_alleles_around_cut_to_plot',  type=int, help='Maximum number of rows to report in the alleles table plot. ', default=50)
         parser.add_argument('--suppress_report',  help='Suppress output report', action='store_true')
         parser.add_argument('--place_report_in_output_folder',  help='If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output.', action='store_true')
+        parser.add_argument('--zip_output', help="If set, the output will be placed in a zip folder.", action='store_true')
         parser.add_argument('--debug', help='Show debug messages', action='store_true')
+        parser.add_argument('-v', '--verbosity', type=int, help='Verbosity level of output to the console (1-4)', default=3)
 
         args = parser.parse_args()
+
+        CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
+
         debug_flag = args.debug
 
-
+        if args.zip_output and not args.place_report_in_output_folder:
+            logger.warn('Invalid arguement combination: If zip_output is True then place_report_in_output_folder must also be True. Setting place_report_in_output_folder to True.')
+            args.place_report_in_output_folder = True
         #check that the CRISPResso output is present and fill amplicon_info
         quantification_file_1, amplicon_names_1, amplicon_info_1=CRISPRessoShared.check_output_folder(args.crispresso_output_folder_1)
         quantification_file_2, amplicon_names_2, amplicon_info_2=CRISPRessoShared.check_output_folder(args.crispresso_output_folder_2)
@@ -118,35 +132,32 @@ def main():
             if 'running_info' in run_info_2 and 'name' in run_info_2['running_info'] and run_info_2['running_info']['name']:
                 sample_2_name = run_info_2['running_info']['name']
 
-        get_name_from_folder=lambda x: os.path.basename(os.path.abspath(x)).replace('CRISPResso_on_', '')
+        if sample_1_name == sample_2_name:
+            sample_2_name += '_2'
 
-        if not args.name:
-                 database_id='%s_VS_%s' % (get_name_from_folder(args.crispresso_output_folder_1), get_name_from_folder(args.crispresso_output_folder_2))
-        else:
-                 database_id=args.name
-
-
-        OUTPUT_DIRECTORY='CRISPRessoCompare_on_%s' % database_id
+        OUTPUT_DIRECTORY = 'CRISPRessoCompare_on_{0}'.format(normalize_name(
+            args.name, args.crispresso_output_folder_1, args.crispresso_output_folder_2,
+        ))
 
         if args.output_folder:
-                 OUTPUT_DIRECTORY=os.path.join(os.path.abspath(args.output_folder), OUTPUT_DIRECTORY)
+            OUTPUT_DIRECTORY = os.path.join(os.path.abspath(args.output_folder), OUTPUT_DIRECTORY)
 
-        _jp=lambda filename: os.path.join(OUTPUT_DIRECTORY, filename) #handy function to put a file in the output directory
-        log_filename=_jp('CRISPRessoCompare_RUNNING_LOG.txt')
-
+        _jp = lambda filename: os.path.join(OUTPUT_DIRECTORY, filename) #handy function to put a file in the output directory
+        log_filename = _jp('CRISPRessoCompare_RUNNING_LOG.txt')
 
         try:
-                 info('Creating Folder %s' % OUTPUT_DIRECTORY)
-                 os.makedirs(OUTPUT_DIRECTORY)
-                 info('Done!')
+            info('Creating Folder %s' % OUTPUT_DIRECTORY, {'percent_complete': 0})
+            os.makedirs(OUTPUT_DIRECTORY)
+            info('Done!')
         except:
-                 warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
+            warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
 
-        log_filename=_jp('CRISPRessoCompare_RUNNING_LOG.txt')
+        log_filename = _jp('CRISPRessoCompare_RUNNING_LOG.txt')
         logger.addHandler(logging.FileHandler(log_filename))
+        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('CRISPRessoCompare_status.txt')))
 
         with open(log_filename, 'w+') as outfile:
-                  outfile.write('[Command used]:\nCRISPRessoCompare %s\n\n[Execution log]:\n' % ' '.join(sys.argv))
+            outfile.write('[Command used]:\nCRISPRessoCompare %s\n\n[Execution log]:\n' % ' '.join(sys.argv))
 
         crispresso2Compare_info_file = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso2Compare_info.json')
         crispresso2_info = {'running_info': {}, 'results': {'alignment_stats': {}, 'general_plots': {}}} #keep track of all information for this run to be pickled and saved at the end of the run
@@ -174,7 +185,11 @@ def main():
 
         sig_counts = {}  # number of bp significantly modified (bonferonni corrected fisher pvalue)
         sig_counts_quant_window = {}
+        percent_complete_start, percent_complete_end = 10, 90
+        percent_complete_step = (percent_complete_end - percent_complete_start) / len(amplicon_names_in_both)
         for amplicon_name in amplicon_names_in_both:
+            percent_complete = percent_complete_start + percent_complete_step * amplicon_names_in_both.index(amplicon_name)
+            info('Loading data for amplicon %s' % amplicon_name, {'percent_complete': percent_complete})
             profile_1=parse_profile(amplicon_info_1[amplicon_name]['quantification_file'])
             profile_2=parse_profile(amplicon_info_2[amplicon_name]['quantification_file'])
 
@@ -403,6 +418,7 @@ def main():
                         'The proportion and number of reads is shown for each sample on the right, with the values for ' + sample_1_name + ' followed by the values for ' + sample_2_name +'. Alleles are sorted for enrichment in ' + sample_2_name+'.'
                         crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Allele comparison table', os.path.basename(allele_comparison_file))]
 
+        debug('Calculating significant base counts...', {'percent_complete': 95})
         sig_counts_filename = _jp('CRISPRessoCompare_significant_base_counts.txt')
         with open(sig_counts_filename, 'w') as fout:
             fout.write('Amplicon\tModification\tsig_base_count\tsig_base_count_quant_window\n')
@@ -430,7 +446,10 @@ def main():
 
         CRISPRessoShared.write_crispresso_info(crispresso2Compare_info_file, crispresso2_info)
 
-        info('Analysis Complete!')
+        if args.zip_output:
+            CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
+
+        info('Analysis Complete!', {'percent_complete': 100})
         print(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)
 

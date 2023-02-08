@@ -19,14 +19,9 @@ from CRISPResso2 import CRISPRessoReport
 
 
 import logging
-logging.basicConfig(
-                     format='%(levelname)-5s @ %(asctime)s:\n\t %(message)s \n',
-                     datefmt='%a, %d %b %Y %H:%M:%S',
-                     stream=sys.stderr,
-                     filemode="w"
-                     )
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(CRISPRessoShared.LogStreamHandler())
 
 error   = logger.critical
 warn    = logger.warning
@@ -100,6 +95,8 @@ def main():
         parser.add_argument('--crispresso_command', help='CRISPResso command to call', default='CRISPResso')
 
         args = parser.parse_args()
+
+        CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
 
         debug_flag = args.debug
 
@@ -225,13 +222,14 @@ def main():
         _jp=lambda filename: os.path.join(OUTPUT_DIRECTORY, filename) #handy function to put a file in the output directory
 
         try:
-            info('Creating Folder %s' % OUTPUT_DIRECTORY)
+            info('Creating Folder %s' % OUTPUT_DIRECTORY, {'percent_complete': 0})
             os.makedirs(OUTPUT_DIRECTORY)
         except:
             warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
 
         log_filename=_jp('CRISPRessoMeta_RUNNING_LOG.txt')
         logger.addHandler(logging.FileHandler(log_filename))
+        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('CRISPRessoMeta_status.txt')))
 
         with open(log_filename, 'w+') as outfile:
             outfile.write('[Command used]:\n%s\n\n[Execution log]:\n' % ' '.join(sys.argv))
@@ -259,7 +257,7 @@ def main():
         crispresso2_info['meta_names_arr'] = meta_names_arr
         crispresso2_info['meta_input_names'] = meta_input_names
 
-        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, args.n_processes, 'meta', args.skip_failed)
+        CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, args.n_processes, 'meta', args.skip_failed, start_end_percent=(10, 90))
 
         run_datas = [] #crispresso2 info from each row
 
@@ -363,7 +361,7 @@ def main():
         CRISPRessoShared.write_crispresso_info(
             crispresso2Meta_info_file, crispresso2_info,
         )
-        info('Analysis Complete!')
+        info('Analysis Complete!', {'percent_complete': 100})
         print(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)
 

@@ -22,6 +22,13 @@ CRISPResso2 can be used to analyze genome editing outcomes using cleaving nuclea
 - visualization of distribution and position of substitutions (for base editors)
 - visualization of alleles and their frequencies
 
+In addition, CRISPResso can be run as part of a larger tool suite:
+- [CRISPRessoBatch](#crispressobatch) - for analyzing and comparing multiple experimental conditions at the same site
+- [CRISPRessoPooled](#crispressopooled) - for analyzing multiple amplicons from a pooled amplicon sequencing experiment
+- [CRISPRessoWGS](#crispressowgs) - for analyzing specific sites in whole-genome sequencing samples
+- [CRISPRessoCompare](#crispressocompare) - for comparing editing between two samples (e.g., treated vs control)
+- [CRISPRessoAggregate](#crispressoaggregate) - for aggregating results from previously-run CRISPResso analyses
+
 ## CRISPResso2 processing
 ![CRISPResso2 Schematic](https://github.com/pinellolab/CRISPResso2/blob/master/crispresso_schematic.png "CRISPResso2 Schematic")
 
@@ -81,12 +88,30 @@ Verify that CRISPResso is installed using the command:
 CRISPResso -h
 ```
 
+#### Bioconda for Apple Silicon
+
+If you would like to install CRISPResso using bioconda on a Mac with Apple silicon ([aren't sure?](https://support.apple.com/en-us/HT211814)), then there is a slight change you need to make. First, ensure that you have [Rosetta installed](https://support.apple.com/en-us/HT211861). Next, you must tell bioconda to install the Intel versions of the packages. If you would like to do this system wide, which we recommend, run the command:
+
+``` shell
+conda config --add subdirs osx-64
+```
+
+Then you can proceed with the installation instructions above.
+
+If you would like to use the Intel versions in a single environment, then run:
+
+``` shell
+CONDA_SUBDIR=osx-64 conda create -n crispresso2_env -c bioconda crispresso2
+```
+
+If you choose to use the `CONDA_SUBDIR=osx-64` method, note that if you install additional packages into the environment you will need to add the `CONDA_SUBDIR=osx-64` to the beginning of each command. Alternatively, you could set this environment variable in your shell, but we recommend to use the `conda config --add subdirs osx-64` method because it is less error prone.
+
 ### Docker
 CRISPResso2 can be used via the Docker containerization system. This system allows CRISPResso2 to run on your system without configuring and installing additional packages. To run CRISPResso2, first download and install docker: https://docs.docker.com/engine/installation/
 
 Next, Docker must be configured to access your hard drive and to run with sufficient memory. These parameters can be found in the Docker settings menu. To allow Docker to access your hard drive, select 'Shared Drives' and make sure your drive name is selected. To adjust the memory allocation, select the 'Advanced' tab and allocate at least 4G of memory.
 
-To run CRISPresso2, make sure Docker is running, then open a command prompt (Mac) or Powershell (Windows). Change directories to the location where your data is, and run the following command:
+To run CRISPResso2, make sure Docker is running, then open a command prompt (Mac) or Powershell (Windows). Change directories to the location where your data is, and run the following command:
 
 ```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso -h
@@ -101,9 +126,9 @@ docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso -r1 sa
 ```
 
 ## CRISPResso2 usage
-CRISPResso2 is designed be run on a single amplicon. For experiments involving multiple amplicons in the same fastq, see the instructions for CRISPRessoPooled or CRISPRessoWGS below.
+CRISPResso2 is designed be run on a single amplicon. For experiments involving multiple amplicons in the same fastq, see the instructions for [CRISPRessoPooled](#crispressopooled) or [CRISPRessoWGS](#crispressoWGS) below.
 
-CRISPresso2 requires only two parameters: input sequences in the form of fastq files (given by the `--fastq_r1` and `--fastq_r2`) parameters, and the amplicon sequence to align to (given by the `--amplicon_seq` parameter). For example:
+CRISPResso2 requires only two parameters: input sequences in the form of fastq files (given by the `--fastq_r1` and `--fastq_r2`) parameters, and the amplicon sequence to align to (given by the `--amplicon_seq` parameter). For example:
 
 *Using Bioconda:*
 ```
@@ -160,7 +185,7 @@ docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso --fast
 
 This should produce a folder called 'CRISPResso_on_base_editor'. Open the file called CRISPResso_on_base_editor/CRISPResso2_report.html in a web browser, and you should see an output like this: [CRISPResso2_report.html](https://crispresso.pinellolab.partners.org/static/demo/CRISPResso_on_base_editor/CRISPResso2_report.html).
 
-### Parameter list
+### Parameter List
 -h or --help: show a help message and exit.
 
 -r1 or --fastq_r1: The first fastq file.
@@ -300,6 +325,10 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --fastq_output: If set, a fastq file with annotations for each read will be produced. (default: False)
 
+--bam_output': If set, a bam file with alignments for each read will be produced. Setting this parameter will produce a file called 'CRISPResso_output.bam' with the alignments in bam format. If the `bowtie2_index` is provided, alignments will be reported in reference to that genome. If the `bowtie2_index` is not provided, alignments will be reported in reference to a custom reference created by the amplicon sequence(s) and written to the file 'CRISPResso_output.fa'. (default: False)
+
+-x or --bowtie2_index: Basename of Bowtie2 index for the reference genome. Optionally used in the creation of a bam file. See `bam_output`. (default: '')
+
 --keep_intermediate: Keep all the intermediate files (default: False)
 
 --dump: Dump numpy arrays and pandas dataframes to file for debugging purposes (default: False)
@@ -311,6 +340,8 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 --suppress_plots: Suppress output plots (default: False)
 
 --place_report_in_output_folder: If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output. (default: False)
+
+--zip_output: If true, the output folder will be zipped upon completion. If --zip_output is true --place_report_in_output_folder should be true otherwise --place_report_in_output_folder is automatically set to true as well. (default: False)
 
 #### Miscellaneous parameters
 
@@ -410,7 +441,7 @@ If your amplicon sequence is longer than your sequenced read length, the R1 and 
 Especially in repetitive regions, multiple alignments may have the best score. If you want to investigate alternate best-scoring alignments, you can view all alignments using this tool: http://rna.informatik.uni-freiburg.de/Teaching/index.jsp?toolName=Gotoh. As input, sequences from the 'Alleles_frequency_table.txt' can be used. Specifically, for a given row, the value in the 'Aligned_Sequence' should be entered into the 'Sequence a' box after removing any dashes, and the value in the 'Reference_Sequence' should be entered into the 'Sequence b' box after removing any dashes. The alternate alignments can be selected in the 'Results' panel in the Output section.
 
 ## Alternate running modes
-CRISPResso2 can be run for many fastqs (CRISPRessoBatch), for many amplicons in the same fastq (CRISPRessoPooled), or for whole-genome sequencing (CRISPRessoWGS).
+CRISPResso2 can be run for many fastqs ([CRISPRessoBatch](#crispressobatch)), for many amplicons in the same fastq ([CRISPRessoPooled](#crispressopooled)), or for whole-genome sequencing ([CRISPRessoWGS](#crispressowgs)).
 
 ### CRISPRessoBatch
 CRISPRessoBatch allows users to specify input files and other command line arguments in a single file, and then to run CRISPResso2 analysis on each file in parallel. Samples for which the amplicon and guide sequences are the same will be compared between batches, producing useful summary tables and coomparison plots.
@@ -542,9 +573,9 @@ To run the tool in this mode the user must provide:
     the first nucleotide is position 0. Ranges are separated by the dash sign like "start-stop",
     and multiple ranges can be separated by the underscore (_). A value of 0 disables this filter.
     If not available, enter *NA.*
-  *W or QUANTIFICATION\_WINDOW\_SIZE (OPTIONAL)*: Defines the size (in bp) of the quantification window extending from the position specified by the "--cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence(s) (--sgRNA). Mutations within this number of bp from the quantification window center are used in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 1, 1bp on each side of the cleavage position for a total length of 2bp. (default: 1) If not available, enter *NA.*
+- *W or QUANTIFICATION\_WINDOW\_SIZE (OPTIONAL)*: Defines the size (in bp) of the quantification window extending from the position specified by the "--cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence(s) (--sgRNA). Mutations within this number of bp from the quantification window center are used in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 1, 1bp on each side of the cleavage position for a total length of 2bp. (default: 1) If not available, enter *NA.*
 
-  *WC or QUANTIFICATION\_WINDOW\_CENTER (OPTIONAL)*: Center of quantification window to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17. (default: -3) If not available, enter *NA.*
+- *WC or QUANTIFICATION\_WINDOW\_CENTER (OPTIONAL)*: Center of quantification window to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17. (default: -3) If not available, enter *NA.*
 
 A file in the correct format should look like this:
 
@@ -759,19 +790,27 @@ his may be time consuming). Finally the Amplicon mode is the fastest,
 although the least reliable in terms of quantification accuracy.
 
 #### Parameter List
-
--f or --amplicons_file: Amplicons description file (default: ''). This file is a tab-delimited text file with up to 5 columns (2 required):
-        AMPLICON_NAME:  an identifier for the amplicon (must be unique)
-        AMPLICON_SEQUENCE:  amplicon sequence used in the experiment
-        sgRNA_SEQUENCE (OPTIONAL):  sgRNA sequence used for this amplicon without the PAM sequence. Multiple guides can be given separated by commas and not spaces. If not available enter NA.
-        EXPECTED_AMPLICON_AFTER_HDR (OPTIONAL): expected amplicon sequence in case of HDR. If not available enter NA.
-        CODING_SEQUENCE (OPTIONAL): Subsequence(s) of the amplicon corresponding to coding sequences. If more than one separate them by commas and not spaces. If not available enter NA.
+-f or --amplicons_file: Amplicons description file (default: ''). This file is a tab-delimited text file with up to 14 columns (2 required):
+        amplicon_name:  an identifier for the amplicon (must be unique)
+        amplicon_seq:  amplicon sequence used in the experiment
+        guide_seq (OPTIONAL):  sgRNA sequence used for this amplicon without the PAM sequence. Multiple guides can be given separated by commas and not spaces.
+        expected_hdr_amplicon_seq (OPTIONAL): expected amplicon sequence in case of HDR.
+        coding_seq (OPTIONAL): Subsequence(s) of the amplicon corresponding to coding sequences. If more than one separate them by commas and not spaces.
+        prime_editing_pegRNA_spacer_seq (OPTIONAL): pegRNA spacer sgRNA sequence used in prime editing. The spacer should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the given sequence.
+        prime_editing_nicking_guide_seq (OPTIONAL): Nicking sgRNA sequence used in prime editing. The sgRNA should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the sequence.
+        prime_editing_pegRNA_extension_seq (OPTIONAL): Extension sequence used in prime editing. The sequence should be given in the RNA 5'->3' order, such that the sequence starts with the RT template including the edit, followed by the Primer-binding site (PBS). 
+        prime_editing_pegRNA_scaffold_seq (OPTIONAL): If given, reads containing any of this scaffold sequence before extension sequence (provided by --prime_editing_extension_seq) will be classified as 'Scaffold-incorporated'. The sequence should be given in the 5'->3' order such that the RT template directly follows this sequence. A common value ends with 'GGCACCGAGUCGGUGC'.
+        prime_editing_pegRNA_scaffold_min_match_length (OPTIONAL): Minimum number of bases matching scaffold sequence for the read to be counted as 'Scaffold-incorporated'. If the scaffold sequence matches the reference sequence at the incorporation site, the minimum number of bases to match will be minimally increased (beyond this parameter) to disambiguate between prime-edited and scaffold-incorporated sequences.
+        prime_editing_override_prime_edited_ref_seq (OPTIONAL): If given, this sequence will be used as the prime-edited reference sequence. This may be useful if the prime-edited reference sequence has large indels or the algorithm cannot otherwise infer the correct reference sequence.
+        quantification_window_coordinates (OPTIONAL): Bp positions in the amplicon sequence specifying the quantification window. This parameter overrides values of the "--quantification_window_center", "-- cleavage_offset", "--window_around_sgrna" or "-- window_around_sgrna" values. Any indels/substitutions outside this window are excluded. Indexes are 0-based, meaning that the first nucleotide is position 0. Ranges are separated by the dash sign like "start-stop", and multiple ranges can be separated by the underscore (\_). A value of 0 disables this filter. (can be comma-separated list of values, corresponding to amplicon sequences given in --amplicon_seq e.g. 5-10,5-10_20-30 would specify the 5th-10th bp in the first reference and the 5th-10th and 20th-30th bp in the second reference) (default: None)
+        quantification_window_size (OPTIONAL): Defines the size (in bp) of the quantification window extending from the position specified by the "--cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence(s) (--sgRNA). Mutations within this number of bp from the quantification window center are used in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 1, 1bp on each side of the cleavage position for a total length of 2bp.
+        quantification_window_center (OPTIONAL): Center of quantification window to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17.
 
 --gene_annotations: Gene Annotation Table from UCSC Genome Browser Tables <http://genome.ucsc.edu/cgi-bin/hgTables?command=start>, please select as table "knownGene", as output format "all fields from selected table" and as file returned "gzip compressed". (default: '')
 
 -x or --bowtie2_index: Basename of Bowtie2 index for the reference genome. (default: '')
 
---bowtie2_options_string: Override options for the Bowtie2 alignment command. By default, this is " --end-to-end -N 0 --np 0 -mp 3,2 --score-min L,-5,-3(1-H)" where H is the default homology score. (default: '')
+--bowtie2_options_string: Override options for the Bowtie2 alignment command. By default, this is " --end-to-end -N 0 --np 0 -mp 3,2 --score-min L,-5,-3(1-H)" where H is the default homology score. (default: ' --end-to-end -N 0 --np 0 -mp 3,2 --score-min L,-5,-3(1-H)')
 
 --use_legacy_bowtie2_options_string: Use legacy (more stringent) Bowtie2 alignment parameters: " -k 1 --end-to-end -N 0 --np 0 ". (default: False)
 
@@ -1009,7 +1048,7 @@ crispresso_pooled_wgs_output_folder_2: Second output folder with CRISPRessoPoole
 
 ### CRISPRessoAggregate
 
-CRISPRessoAggregate is a utility to combine the analysis of several CRISPResso runs. The are summarized and editing rates are optionally visualized in a summary report.
+CRISPRessoAggregate is a utility to combine the analysis of several CRISPResso runs. The analyses are summarized and editing rates are optionally visualized in a summary report.
 
 #### Usage
 

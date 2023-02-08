@@ -62,6 +62,44 @@ def read_matrix(path):
 
     return a
 
+def make_matrix(match_score=5, mismatch_score=-4, n_mismatch_score=-2, n_match_score=-1):
+    """
+    Create a score matrix for matches/mismatches.
+    The default values here are those represented in the EDNAFULL matrix
+
+    match_score: score for matching nucleotide values
+    mismatch_score: score for mismatching nucleotide values
+    n_mismatch_score: score for matching a nucleotide with 'N'
+    n_match_score: score for 'N' matching an 'N'
+    """
+    cdef np.ndarray[DTYPE_INT, ndim=2] a
+    cdef size_t ai = 0, i
+    cdef int v, mat_size
+
+    letters = ['A','T','C','G','N']
+    headers = [ord(x) for x in letters]
+    mat_size = max(headers) + 1
+
+    nuc_ords = [ord(x) for x in ['A','T','C','G']]
+
+    a = np.zeros((mat_size, mat_size), dtype=int)
+
+    for nuc in nuc_ords:
+      for nuc2 in nuc_ords:
+        if nuc == nuc2:
+          a[nuc,nuc2] = match_score
+        else:
+          a[nuc,nuc2] = mismatch_score
+
+    for nuc in nuc_ords:
+      a[nuc,ord('N')] = n_mismatch_score
+      a[ord('N'),nuc] = n_mismatch_score
+
+
+    a[ord('N'),ord('N')] = n_match_score
+
+    return a
+
 @cython.boundscheck(False)
 @cython.nonecheck(False)
 def global_align(str pystr_seqj, str pystr_seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
@@ -128,14 +166,14 @@ def global_align(str pystr_seqj, str pystr_seqi, np.ndarray[DTYPE_INT, ndim=2] m
     #init i matrix
     for i in range(1,max_j+1):
         iScore[0,i] = gap_extend * i + gap_incentive[0]
-#    iScore[0,1:] = [gap_extend * np.arange(1, max_j+1, dtype=np.int)]
+#    iScore[0,1:] = [gap_extend * np.arange(1, max_j+1, dtype=int)]
     iScore[0:,0] = min_score
     iPointer[0,1:] = IARRAY
 
     #init j matrix
     for i in range(1,max_i+1):
         jScore[i,0] = gap_extend * i + gap_incentive[0]
-    #jScore[1:,0] = np.vectorize(gap_extend * np.arange(1, max_i+1, dtype=np.int))
+    #jScore[1:,0] = np.vectorize(gap_extend * np.arange(1, max_i+1, dtype=int))
     jScore[0,0:] = min_score
     jPointer[1:,0] = JARRAY
 

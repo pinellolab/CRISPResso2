@@ -9,6 +9,7 @@ import os
 import glob
 from copy import deepcopy
 from concurrent.futures import ProcessPoolExecutor, wait
+from functools import partial
 import sys
 import argparse
 import numpy as np
@@ -18,19 +19,15 @@ from datetime import datetime
 from CRISPResso2 import CRISPRessoShared
 from CRISPResso2 import CRISPRessoPlot
 from CRISPResso2 import CRISPRessoReport
-from CRISPResso2.CRISPRessoMultiProcessing import get_max_processes
+from CRISPResso2.CRISPRessoMultiProcessing import get_max_processes, run_plot
 
 
 import logging
-logging.basicConfig(
-                     format='%(levelname)-5s @ %(asctime)s:\n\t %(message)s \n',
-                     datefmt='%a, %d %b %Y %H:%M:%S',
-                     stream=sys.stderr,
-                     filemode="w"
-                     )
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(CRISPRessoShared.LogStreamHandler())
+
 error   = logger.critical
 warn    = logger.warning
 debug   = logger.debug
@@ -54,7 +51,7 @@ ___________________________________
         '''
         print(CRISPRessoShared.get_crispresso_header(description, aggregate_string))
 
-        parser = argparse.ArgumentParser(description="Aggreate CRISPResso2 Runs")
+        parser = argparse.ArgumentParser(description="Aggregate CRISPResso2 Runs")
         parser.add_argument("-p", "--prefix", action='append', help="Prefix for CRISPResso folders to aggregate (may be specified multiple times)", default=[])
         parser.add_argument("-s", "--suffix", type=str, help="Suffix for CRISPResso folders to aggregate", default="")
 
@@ -72,11 +69,12 @@ ___________________________________
 
         args = parser.parse_args()
 
+        CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
+
         output_folder_name='CRISPRessoAggregate_on_%s' % args.name
         OUTPUT_DIRECTORY=os.path.abspath(output_folder_name)
 
-
-        _jp=lambda filename: os.path.join(OUTPUT_DIRECTORY, filename) #handy function to put a file in the output directory
+        _jp = lambda filename: os.path.join(OUTPUT_DIRECTORY, filename) #handy function to put a file in the output directory
 
         try:
              info('Creating Folder %s' % OUTPUT_DIRECTORY)
@@ -86,6 +84,7 @@ ___________________________________
 
         log_filename=_jp('CRISPRessoAggregate_RUNNING_LOG.txt')
         logger.addHandler(logging.FileHandler(log_filename))
+        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('CRISPRessoAggregate_status.txt')))
 
         with open(log_filename, 'w+') as outfile:
               outfile.write('[Command used]:\n%s\n\n[Execution log]:\n' % ' '.join(sys.argv))
@@ -107,6 +106,13 @@ ___________________________________
 
         process_pool = ProcessPoolExecutor(n_processes)
         process_results = []
+
+        plot = partial(
+            run_plot,
+            num_processes=n_processes,
+            process_pool=process_pool,
+            process_results=process_results,
+        )
 
         #glob returns paths including the original prefix
         all_files = []
@@ -180,7 +186,7 @@ ___________________________________
                     wgs_data = CRISPRessoShared.load_crispresso_info(
                         folder, 'CRISPResso2WGS_info.json',
                     )
-                    if 'good_region_folders' in wgs_data:
+                    if 'good_region_folders' in wgs_data['results']:
                         run_names = wgs_data['results']['good_region_folders']
                         for run_name in run_names:
                             run_folder_loc = os.path.join(folder, 'CRISPResso_on_%s'%run_name)
@@ -188,14 +194,14 @@ ___________________________________
                                 run_data = CRISPRessoShared.load_crispresso_info(run_folder_loc)
                                 crispresso2_folder_infos[run_folder_loc] = run_data
                                 successfully_imported_count += 1
-                            except Exception as e:
+                            except Exception:
                                 warn('Could not open CRISPResso2 info file in ' + run_folder_loc)
                                 not_imported_count += 1
                     else:
                         warn('Could not process WGS folder ' + folder)
                         not_imported_count += 1
 
-        info('Read ' + str(successfully_imported_count) + ' folders (' + str(not_imported_count) + ' not imported)')
+        info('Read ' + str(successfully_imported_count) + ' folders (' + str(not_imported_count) + ' not imported)', {'percent_complete': 10})
 
         save_png = True
         if args.suppress_report:
@@ -274,6 +280,8 @@ ___________________________________
             window_nuc_conv_plot_names = []
             nuc_conv_plot_names = []
 
+            percent_complete_start, percent_complete_end = 11, 90
+            percent_complete_step = (percent_complete_end - percent_complete_start) / len(all_amplicons)
             #report for amplicons that appear multiple times
             for amplicon_index, amplicon_seq in enumerate(all_amplicons):
                 amplicon_name = amplicon_names[amplicon_seq]
@@ -282,7 +290,8 @@ ___________________________________
                 if amplicon_counts[amplicon_seq] < 2:
                     continue
 
-                info('Reporting summary for amplicon: "' + amplicon_name + '"')
+                percent_complete = percent_complete_start + (amplicon_index * percent_complete_step)
+                info('Reporting summary for amplicon: "' + amplicon_name + '"', {'percent_complete': percent_complete})
 
                 consensus_sequence = ""
                 nucleotide_frequency_summary = []
@@ -491,13 +500,10 @@ ___________________________________
                                     'quantification_window_idxs': include_idxs,
                                     'group_column': 'Folder',
                                 }
-                                if n_processes > 1:
-                                    process_results.append(process_pool.submit(
-                                        CRISPRessoPlot.plot_nucleotide_quilt,
-                                        **nucleotide_quilt_input,
-                                    ))
-                                else:
-                                    CRISPRessoPlot.plot_nucleotide_quilt(**nucleotide_quilt_input)
+                                plot(
+                                    CRISPRessoPlot.plot_nucleotide_quilt,
+                                    nucleotide_quilt_input,
+                                )
 
                                 plot_name = os.path.basename(this_window_nuc_pct_quilt_plot_name)
                                 window_nuc_pct_quilt_plot_names.append(plot_name)
@@ -529,13 +535,10 @@ ___________________________________
                                     'quantification_window_idxs': include_idxs,
                                     'group_column': 'Folder',
                                 }
-                                if n_processes > 1:
-                                    process_results.append(process_pool.submit(
-                                        CRISPRessoPlot.plot_nucleotide_quilt,
-                                        **nucleotide_quilt_input,
-                                    ))
-                                else:
-                                    CRISPRessoPlot.plot_nucleotide_quilt(**nucleotide_quilt_input)
+                                plot(
+                                    CRISPRessoPlot.plot_nucleotide_quilt,
+                                    nucleotide_quilt_input,
+                                )
 
                                 plot_name = os.path.basename(this_nuc_pct_quilt_plot_name)
                                 nuc_pct_quilt_plot_names.append(plot_name)
@@ -571,13 +574,10 @@ ___________________________________
                                     'quantification_window_idxs': consensus_include_idxs,
                                     'group_column': 'Folder',
                                 }
-                                if n_processes > 1:
-                                    process_results.append(process_pool.submit(
-                                        CRISPRessoPlot.plot_nucleotide_quilt,
-                                        **nucleotide_quilt_input,
-                                    ))
-                                else:
-                                    CRISPRessoPlot.plot_nucleotide_quilt(**nucleotide_quilt_input)
+                                plot(
+                                    CRISPRessoPlot.plot_nucleotide_quilt,
+                                    nucleotide_quilt_input,
+                                )
 
                                 plot_name = os.path.basename(this_nuc_pct_quilt_plot_name)
                                 nuc_pct_quilt_plot_names.append(plot_name)
@@ -633,15 +633,10 @@ ___________________________________
                                 'plot_path': plot_path,
                                 'title': modification_type,
                             }
-                            if n_processes > 1:
-                                process_results.append(process_pool.submit(
-                                    CRISPRessoPlot.plot_allele_modification_heatmap,
-                                    **allele_modification_heatmap_input,
-                                ))
-                            else:
-                                CRISPRessoPlot.plot_allele_modification_heatmap(
-                                    **allele_modification_heatmap_input,
-                                )
+                            plot(
+                                CRISPRessoPlot.plot_allele_modification_heatmap,
+                                allele_modification_heatmap_input,
+                            )
 
                             crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_names'].append(plot_name)
                             crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_paths'][plot_name] = plot_path
@@ -668,15 +663,10 @@ ___________________________________
                                 'plot_path': plot_path,
                                 'title': modification_type,
                             }
-                            if n_processes > 1:
-                                process_results.append(process_pool.submit(
-                                    CRISPRessoPlot.plot_allele_modification_line,
-                                    **allele_modification_line_input,
-                                ))
-                            else:
-                                CRISPRessoPlot.plot_allele_modification_line(
-                                    **allele_modification_line_input
-                                )
+                            plot(
+                                CRISPRessoPlot.plot_allele_modification_line,
+                                allele_modification_line_input,
+                            )
                             crispresso2_info['results']['general_plots']['allele_modification_line_plot_names'].append(plot_name)
                             crispresso2_info['results']['general_plots']['allele_modification_line_plot_paths'][plot_name] = plot_path
                             crispresso2_info['results']['general_plots']['allele_modification_line_plot_titles'][plot_name] = 'CRISPRessoAggregate {0} Across Samples for {1}'.format(
@@ -700,6 +690,7 @@ ___________________________________
 
             quantification_summary=[]
             #summarize amplicon modifications
+            debug('Summarizing amplicon modifications...', {'percent_complete': 92})
             samples_quantification_summary_by_amplicon_filename = _jp('CRISPRessoAggregate_quantification_of_editing_frequency_by_amplicon.txt') #this file has separate lines for each amplicon in each run
             with open(samples_quantification_summary_by_amplicon_filename, 'w') as outfile:
                 wrote_header = False
@@ -771,20 +762,14 @@ ___________________________________
 
             if not args.suppress_plots:
                 plot_root = _jp("CRISPRessoAggregate_reads_summary")
-
+                debug('Plotting reads summary...', {'percent_complete': 94})
                 reads_total_input = {
                     'fig_filename_root': plot_root,
                     'df_summary_quantification': df_summary_quantification,
                     'save_png': save_png,
                     'cutoff': args.min_reads_for_inclusion,
                 }
-                if n_processes > 1:
-                    process_results.append(process_pool.submit(
-                        CRISPRessoPlot.plot_reads_total,
-                        **reads_total_input,
-                    ))
-                else:
-                    CRISPRessoPlot.plot_reads_total(**reads_total_input)
+                plot(CRISPRessoPlot.plot_reads_total, reads_total_input)
 
                 plot_name = os.path.basename(plot_root)
                 crispresso2_info['results']['general_plots']['summary_plot_root'] = plot_name
@@ -801,13 +786,7 @@ ___________________________________
                     'save_png': save_png,
                     'cutoff': args.min_reads_for_inclusion,
                 }
-                if n_processes > 1:
-                    process_results.append(process_pool.submit(
-                        CRISPRessoPlot.plot_unmod_mod_pcts,
-                        **unmod_mod_pcts_input,
-                    ))
-                else:
-                    CRISPRessoPlot.plot_unmod_mod_pcts(**unmod_mod_pcts_input)
+                plot(CRISPRessoPlot.plot_unmod_mod_pcts, unmod_mod_pcts_input)
 
                 plot_name = os.path.basename(plot_root)
                 crispresso2_info['results']['general_plots']['summary_plot_root'] = plot_name
@@ -817,6 +796,7 @@ ___________________________________
                 crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('CRISPRessoAggregate summary', os.path.basename(samples_quantification_summary_filename)), ('CRISPRessoAggregate summary by amplicon', os.path.basename(samples_quantification_summary_by_amplicon_filename))]
 
             #summarize alignment
+            debug('Summarizing alignment...', {'percent_complete': 96})
             with open(_jp('CRISPRessoAggregate_mapping_statistics.txt'), 'w') as outfile:
                 wrote_header = False
                 for crispresso2_folder in crispresso2_folders:
@@ -842,6 +822,12 @@ ___________________________________
                                                        quilt_plots_to_show)
                 crispresso2_info['running_info']['report_location'] = report_filename
                 crispresso2_info['running_info']['report_filename'] = os.path.basename(report_filename)
+        else: #no files successfully imported
+            files_in_curr_dir = os.listdir('.')
+            if len(files_in_curr_dir) > 15:
+                files_in_curr_dir = files_in_curr_dir[0:15]
+                files_in_curr_dir.append("(Complete listing truncated)")
+            info('No CRISPResso runs could be imported.\nFiles in current directory:\n\t' + "\n\t".join(files_in_curr_dir))
 
         end_time = datetime.now()
         end_time_string = end_time.strftime('%Y-%m-%d %H:%M:%S')
@@ -862,7 +848,7 @@ ___________________________________
         wait(process_results)
         process_pool.shutdown()
 
-        info('Analysis Complete!')
+        info('Analysis Complete!', {'percent_complete': 100})
         print(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)
 
