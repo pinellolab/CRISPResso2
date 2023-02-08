@@ -80,13 +80,24 @@ def which(program):
 
     return None
 
-def check_program(binary_name,download_url=None):
+
+def check_program(binary_name, download_url=None, version_flag=None, version_regex=None, version=None):
     if not which(binary_name):
-        error('You need to install and have the command #####%s##### in your PATH variable to use CRISPResso!\n Please read the documentation!' % binary_name)
+        error('You need to install and have the command #####{0}##### in your PATH variable to use CRISPResso!\n Please read the documentation!'.format(binary_name))
         if download_url:
-            error('You can download it here:%s' % download_url)
+            error('You can download it here: {0}'.format(download_url))
         sys.exit(1)
 
+    if version_flag:
+        p = sb.Popen('{0} {1}'.format(binary_name, version_flag), shell=True, stdout=sb.PIPE, stderr=sb.STDOUT)
+        p_output = p.communicate()[1].decode('utf-8')
+        major_version, minor_version, patch_version = map(int, re.search(version_regex, p_output).groups())
+        if major_version <= version[0] and minor_version <= version[1] and patch_version < version[2]:
+            error('You need to install version {0} of {1} to use CRISPResso!'.format(version, binary_name))
+            error('You have version {0}.{1}.{2} installed'.format(major_version, minor_version, patch_version))
+            if download_url:
+                error('You can download it here: {0}'.format(download_url))
+            sys.exit(1)
 
 
 def get_avg_read_length_fastq(fastq_filename):
@@ -118,7 +129,9 @@ import matplotlib.gridspec as gridspec
 
 pd = check_library('pandas')
 np = check_library('numpy')
-check_program('fastp', download_url='http://opengene.org/fastp/fastp', version_flag='--version', version_regex=r'fastp (\d+)\.(\d+)\.(\d+)', version=(0, 19, 8))
+
+
+check_fastp = lambda: check_program('fastp', download_url='http://opengene.org/fastp/fastp', version_flag='--version', version_regex=r'fastp (\d+)\.(\d+)\.(\d+)', version=(0, 19, 8))
 
 sns = check_library('seaborn')
 sns.set_context('poster')
@@ -1195,6 +1208,7 @@ def main():
 
             info('Inferring reference amplicon sequence..', {'percent_complete': 1})
 
+            check_fastp()
             auto_fastq_r1 = args.fastq_r1 #paths to fastq files for performing auto functions
             auto_fastq_r2 = args.fastq_r2
             if args.bam_input != "": #if input is a bam, create temp files with reads for processing here
@@ -2114,6 +2128,7 @@ def main():
             if not args.trim_sequences: #no trimming or merging required
                 output_forward_filename=args.fastq_r1
             else:
+                check_fastp()
                 info('Trimming sequences with fastp...')
                 output_forward_filename=_jp('reads.trimmed.fq.gz')
                 cmd = '{command} -i {r1} -o {out} {options} --json {json_report} --html {html_report} >> {log} 2>&1'.format(
@@ -2139,6 +2154,7 @@ def main():
             processed_output_filename = _jp('out.extendedFrags.fastq.gz')
             not_combined_1_filename = _jp('out.notCombined_1.fastq.gz')
             not_combined_2_filename = _jp('out.notCombined_2.fastq.gz')
+            check_fastp()
             info('Processing sequences with fastp...')
             if not args.trim_sequences:
                 args.fastp_options_string += ' --disable_adapter_trimming --disable_trim_poly_g --disable_quality_filtering --disable_length_filtering'
