@@ -82,6 +82,25 @@ def which(program):
 
 
 def check_program(binary_name, download_url=None, version_flag=None, version_regex=None, version=None):
+    """Check if a program is installed and accessible.
+
+    Parameters
+    ----------
+    binary_name : str
+        Name of the binary to check.
+    download_url : str, optional
+        URL to download the program from that is displayed if not installed.
+    version_flag : str, optional
+        Flag to pass to the program to get the version.
+    version_regex : str, optional
+        Regex to extract the version from the output of the program.
+    version : str, optional
+        Version to check against.
+
+    Returns
+    -------
+    None, will exit if program is not installed.
+    """
     if not which(binary_name):
         error('You need to install and have the command #####{0}##### in your PATH variable to use CRISPResso!\n Please read the documentation!'.format(binary_name))
         if download_url:
