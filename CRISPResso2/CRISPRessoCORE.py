@@ -3164,24 +3164,28 @@ def main():
 
 
         #set unique plot name to appear as prefix to files for each reference
-        seen_ref_names = {}
+        seen_ref_names = {} #dict to track unique ref names
         for ref_name in ref_names:
             #only show reference name in filenames if more than one reference
             ref_plot_name = ref_name
+
             if len(ref_names) == 1 and ref_names[0] == "Reference":
                 ref_plot_name = ""
                 seen_ref_names[ref_plot_name] = 1
                 refs[ref_name]['ref_plot_name'] = ref_plot_name
                 continue
-            if len(ref_plot_name) > 21:
-                ref_plot_name = ref_plot_name[0:21]
-            #make sure it is unique
+
+            if len(ref_plot_name) > 21 and not args.suppress_amplicon_name_truncation: 
+                ref_plot_name = ref_plot_name[0:21] #truncate to 21 characters if too long to avoid filename issues
+
+            #make sure (truncated) ref plot name is unique
             orig_ref_plot_name = ref_plot_name
             ind = 2
-            while(ref_plot_name in seen_ref_names):
-                ref_plot_name = orig_ref_plot_name+"_"+ind
+            while(ref_plot_name + "." in seen_ref_names):
+                ref_plot_name = orig_ref_plot_name + "_" + str(ind)
                 ind+=1
-            ref_plot_name += "."
+
+            ref_plot_name += "." # add period to end of the ref_plot_name to be used as a file prefix
             seen_ref_names[ref_plot_name] = 1
             refs[ref_name]['ref_plot_name'] = ref_plot_name
 
