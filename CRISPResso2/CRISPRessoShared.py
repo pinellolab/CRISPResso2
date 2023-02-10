@@ -173,6 +173,8 @@ def getCRISPRessoArgParser(parserTitle="CRISPResso Parameters", requiredParams={
     parser.add_argument('-n', '--name',
                         help='Output name of the report (default: the name is obtained from the filename of the fastq file/s used in input)',
                         default='')
+    parser.add_argument("--suppress_amplicon_name_truncation",help="If set, amplicon names will not be truncated when creating output filename prefixes. If not set, amplicon names longer than 21 characters will be truncated when creating filename prefixes.",
+                        action='store_true')
     parser.add_argument('-o', '--output_folder', help='Output folder to use for the analysis (default: current folder)',
                         default='')
     parser.add_argument('-v', '--verbosity', type=int, help='Verbosity level of output to the console (1-4), 4 is the most verbose', default=3)

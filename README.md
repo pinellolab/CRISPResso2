@@ -194,7 +194,7 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 -a or --amplicon_seq: The amplicon sequence used for the experiment.
 
--an or --amplicon_name: A name for the reference amplicon can be given. If multiple amplicons are given, multiple names can be specified here. (default: Reference)
+-an or --amplicon_name: A name for the reference amplicon can be given. If multiple amplicons are given, multiple names can be specified here. Because amplicon names are used as output filename prefixes, amplicon names are truncated to 21bp unless the parameter `--suppress_amplicon_name_truncation` is set. (default: Reference)
 
 -g or --guide_seq: sgRNA sequence, if more than one, please separate by commas. Note that the sgRNA needs to be input as the guide RNA sequence (usually 20 nt) immediately adjacent to but not including the PAM sequence (5' of NGG for SpCas9). If the PAM is found on the opposite strand with respect to the Amplicon Sequence, ensure the sgRNA sequence is also found on the opposite strand. The CRISPResso convention is to depict the expected cleavage position using the value of the parameter '--quantification_window_center' nucleotides from the 3' end of the guide. In addition, the use of alternate nucleases besides SpCas9 is supported. For example, if using the Cpf1 system, enter the sequence (usually 20 nt) immediately 3' of the PAM sequence and explicitly set the '--cleavage_offset' parameter to 1, since the default setting of -3 is suitable only for SpCas9. (default: )
 
@@ -323,6 +323,8 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --write_detailed_allele_table: If set, a detailed allele table will be written including alignment scores for each read sequence. (default: False)
 
+--suppress_amplicon_name_truncation: If set, amplicon names will not be truncated when creating output filename prefixes. If not set, amplicon names longer than 21 characters will be truncated when creating filename prefixes. (default: False)
+
 --fastq_output: If set, a fastq file with annotations for each read will be produced. (default: False)
 
 --bam_output': If set, a bam file with alignments for each read will be produced. Setting this parameter will produce a file called 'CRISPResso_output.bam' with the alignments in bam format. If the `bowtie2_index` is provided, alignments will be reported in reference to that genome. If the `bowtie2_index` is not provided, alignments will be reported in reference to a custom reference created by the amplicon sequence(s) and written to the file 'CRISPResso_output.fa'. (default: False)
@@ -350,6 +352,8 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 --dsODN: dsODN sequence -- Reads containing the dsODN are labeled and quantified. (default: '')
 
 --debug: Show debug messages (default: False)
+
+-v or --verbosity: Verbosity level of output to the console (1-4), 4 is the most verbose. If parameter `--debug` is set `--verbosity` is overridden and set to 4. (default=3)
 
 --no_rerun: Don't rerun CRISPResso2 if a run using the same parameters has already been finished. (default: False)
 
