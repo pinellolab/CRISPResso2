@@ -273,6 +273,5 @@ def run_plot(plot_func, plot_args, num_processes, process_futures, process_pool)
     """
     if num_processes > 1:
         process_futures.append(process_pool.submit(plot_func, **plot_args))
-
     else:
         plot_func(**plot_args)
