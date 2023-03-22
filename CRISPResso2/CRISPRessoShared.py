@@ -1191,7 +1191,7 @@ def force_merge_pairs(r1_filename, r2_filename, output_filename):
         id2 = f2.readline()
         seq2 = reverse_complement(f2.readline().strip()) + "\n"
         plus2 = f2.readline()
-        qual2 = f2.readline()
+        qual2 = f2.readline().strip()[::-1]
 
         f_out.write(id1 + seq1 + seq2 + plus1 + qual1 + qual2)
 
