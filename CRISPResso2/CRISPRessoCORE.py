@@ -822,9 +822,9 @@ def process_paired_fastq(fastq1_filename, fastq2_filename, variantCache, ref_nam
         fastq1_qual = fastq1_handle.readline().strip()
 
         fastq2_id = fastq2_handle.readline()
-        fastq2_seq = fastq2_handle.readline().strip()
+        fastq2_seq = CRISPRessoShared.reverse_complement(fastq2_handle.readline().strip())
         fastq2_plus = fastq2_handle.readline()
-        fastq2_qual = fastq2_handle.readline().strip()
+        fastq2_qual = fastq2_handle.readline().strip()[::-1]
 
         if (N_TOT_READS % 10000 == 0):
             info("Processing reads; N_TOT_READS: %d N_COMPUTED_ALN: %d N_CACHED_ALN: %d N_COMPUTED_NOTALN: %d N_CACHED_NOTALN: %d"%(N_TOT_READS, N_COMPUTED_ALN, N_CACHED_ALN, N_COMPUTED_NOTALN, N_CACHED_NOTALN))
@@ -857,6 +857,8 @@ def process_paired_fastq(fastq1_filename, fastq2_filename, variantCache, ref_nam
             # 2) get_new_variant_object_from_paired returns a bool if it had to choose between two bases based on quality - meaning that we couldn't cache future alignements?
 
             # if we shouldn't cache it, change the lookup from the R1 + R2 seqs to "R1 R2 num" where num makes the key unique
+            #TODO: Remove this line if not necessary
+            new_variant['id'] = fastq2_id.split(" ")[0]
             if not new_variant['caching_is_ok']:
                 inc_counter = 0
                 orig_lookup_fastq_seq = lookup_fastq_seq
@@ -2556,7 +2558,7 @@ def main():
                    output_forward_filename,
                    args.trimmomatic_options_string.replace('NexteraPE-PE.fa', 'TruSeq3-SE.fa'),
                    log_filename)
-                #print cmd
+                #print(cmd)
                 TRIMMOMATIC_STATUS=sb.call(cmd, shell=True)
 
                 if TRIMMOMATIC_STATUS:
@@ -2587,7 +2589,7 @@ def main():
                         args.fastq_r1, args.fastq_r2, output_forward_paired_filename,
                         output_forward_unpaired_filename, output_reverse_paired_filename,
                         output_reverse_unpaired_filename, args.trimmomatic_options_string, log_filename)
-                #print cmd
+                print(cmd)
                 TRIMMOMATIC_STATUS = sb.call(cmd, shell=True)
                 if TRIMMOMATIC_STATUS:
                     raise CRISPRessoShared.TrimmomaticException('TRIMMOMATIC failed to run, please check the log file.')
@@ -2615,7 +2617,7 @@ def main():
                         args.fastq_r1, args.fastq_r2, output_forward_paired_filename,
                         output_forward_unpaired_filename, output_reverse_paired_filename,
                         output_reverse_unpaired_filename, args.trimmomatic_options_string, log_filename)
-                #print cmd
+                print(cmd)
                 TRIMMOMATIC_STATUS=sb.call(cmd, shell=True)
                 if TRIMMOMATIC_STATUS:
                     raise CRISPRessoShared.TrimmomaticException('TRIMMOMATIC failed to run, please check the log file.')
@@ -2966,15 +2968,13 @@ def main():
 
             #check to see if this sequence's reverse complement is in the variant
             if variant.count('+'):
-                rc_variant = '{0}+{1}'.format(
-                    *[
-                        CRISPRessoShared.reverse_complement(v)
-                        for v in reversed(variant.split('+'))
-                    ],
-                )
+                variants = variant.split('+')
+                rc_variant = '{0}+{1}'.format(CRISPRessoShared.reverse_complement(variants[1]), CRISPRessoShared.reverse_complement(variants[0]))
             else:
                 rc_variant = CRISPRessoShared.reverse_complement(variant)
-            if rc_variant in variantCache and variantCache[rc_variant]['count'] > 0:
+            if variant == rc_variant:
+                print(variant)
+            if rc_variant in variantCache and variantCache[rc_variant]['count'] > 0 and variant != rc_variant:
                 variant_count += variantCache[rc_variant]['count']
                 variantCache[rc_variant]['count'] = 0
                 variantCache[variant]['count'] = variant_count
@@ -3189,7 +3189,6 @@ def main():
                         counts_modified_frameshift[ref_name] += variant_count
                         hists_frameshift[ref_name][effective_length] += variant_count
         #done iterating through variant cache objects
-
 
 
         for ref_name in ref_names:
