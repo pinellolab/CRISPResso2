@@ -23,7 +23,7 @@ def main():
     parser.add_argument("-f","--CRISPResso2_folder",type=str,help="CRISPResso output folder containing finished analysis",required=True)
     parser.add_argument("-o","--output_root",type=str,help="Plot output root (should not include '.pdf' or '.png')",required=True)
     parser.add_argument("--min_freq","--min_frequency_alleles_around_cut_to_plot",type=float,help="Minimum frequency of alleles to plot")
-    parser.add_argument("--max_rows","--max_rows_alleles_around_cut_to_plot",type=float,help="Maximum number of rows to plot")
+    parser.add_argument("--max_rows","--max_rows_alleles_around_cut_to_plot",type=int,help="Maximum number of rows to plot")
     parser.add_argument("--plot_cut_point",help="If set, a line at the cut point will be plotted.",action="store_true")
     parser.add_argument("--save_png",help="If set, pngs will also be produced (as well as pdfs).",action="store_true")
     parser.add_argument("--plot_left",help="Number of bases to plot to the left of the cut site",type=int,default=20)
@@ -155,7 +155,7 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,p
                     new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1,int_end - new_sel_cols_start - 1)]
 
                 fig_filename_root = fig_filename_root+"_"+ref_name+"_"+sgRNA_label
-                plot_alleles_table(ref_seq_around_cut,df_alleles=df_alleles_around_cut,fig_filename_root=fig_filename_root,cut_point_ind=cut_point-new_sel_cols_start, MIN_FREQUENCY=MIN_FREQUENCY,MAX_N_ROWS=MAX_N_ROWS,SAVE_ALSO_PNG=SAVE_ALSO_PNG,plot_cut_point=plot_cut_point,sgRNA_intervals=new_sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,annotate_wildtype_allele=crispresso2_info['args'].annotate_wildtype_allele)
+                plot_alleles_table(ref_seq_around_cut,df_alleles=df_alleles_around_cut,fig_filename_root=fig_filename_root,cut_point_ind=cut_point-new_sel_cols_start, MIN_FREQUENCY=MIN_FREQUENCY,MAX_N_ROWS=MAX_N_ROWS,SAVE_ALSO_PNG=SAVE_ALSO_PNG,plot_cut_point=plot_cut_point,sgRNA_intervals=new_sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,annotate_wildtype_allele=crispresso2_info['running_info']['args'].annotate_wildtype_allele)
 
                 plot_count += 1
     print('Plotted ' + str(plot_count) + ' plots')
