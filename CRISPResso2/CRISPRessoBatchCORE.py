@@ -219,8 +219,6 @@ def main():
             curr_amplicon_seq_arr = str(curr_amplicon_seq_str).split(',')
             curr_amplicon_quant_window_coordinates_arr = [None]*len(curr_amplicon_seq_arr)
             if row.quantification_window_coordinates is not None:
-                print(f'{row.quantification_window_coordinates =}')
-                print(f'{row =}')
                 for idx, coords in enumerate(row.quantification_window_coordinates.strip("'").strip('"').split(",")):
                     if coords != "":
                         curr_amplicon_quant_window_coordinates_arr[idx] = coords
