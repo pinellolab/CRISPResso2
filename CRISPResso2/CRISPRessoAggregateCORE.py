@@ -105,13 +105,13 @@ ___________________________________
             n_processes = int(args.n_processes)
 
         process_pool = ProcessPoolExecutor(n_processes)
-        process_results = []
+        process_futures = []
 
         plot = partial(
             run_plot,
             num_processes=n_processes,
             process_pool=process_pool,
-            process_results=process_results,
+            process_futures=process_futures,
         )
 
         #glob returns paths including the original prefix
@@ -845,7 +845,12 @@ ___________________________________
             crispresso2Aggregate_info_file, crispresso2_info,
         )
 
-        wait(process_results)
+        wait(process_futures)
+        if args.debug:
+            debug('Plot pool results:')
+            for future in process_futures:
+                debug('future: ' + str(future))
+        future_results = [f.result() for f in process_futures] #required to raise exceptions thrown from within future
         process_pool.shutdown()
 
         info('Analysis Complete!', {'percent_complete': 100})

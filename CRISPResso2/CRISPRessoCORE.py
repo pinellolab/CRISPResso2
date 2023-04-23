@@ -3380,13 +3380,13 @@ def main():
 
             ############
 
-        plot_pool = ProcessPoolExecutor(n_processes)
-        plot_results = []
+        process_pool = ProcessPoolExecutor(n_processes)
+        process_futures = []
         plot = partial(
             CRISPRessoMultiProcessing.run_plot,
             num_processes=n_processes,
-            process_pool=plot_pool,
-            process_results=plot_results,
+            process_pool=process_pool,
+            process_futures=process_futures,
         )
         ###############################################################################################################################################
         ### FIGURE 1: Alignment
@@ -3454,9 +3454,6 @@ def main():
                 crispresso2_info['results']['general_plots']['plot_1d_caption'] = "Figure 1d: Frequency of detection of dsODN " + args.dsODN
                 crispresso2_info['results']['general_plots']['plot_1d_data'] = [('Allele table', os.path.basename(allele_frequency_table_filename))]
         ###############################################################################################################################################
-
-        #hold mod pct dfs for each amplicon/guide
-        mod_pct_dfs = {}
 
         ref_percent_complete_start, ref_percent_complete_end = 48, 88
         ref_percent_complete_step = (ref_percent_complete_end - ref_percent_complete_start) / float(len(ref_names))
@@ -4636,8 +4633,13 @@ def main():
                     crispresso2_info['results']['general_plots']['plot_11c_data'] = [('Scaffold insertion alleles with insertion sizes', os.path.basename(scaffold_insertion_sizes_filename))]
 
         # join plotting pool
-        wait(plot_results)
-        plot_pool.shutdown()
+        wait(process_futures)
+        if args.debug:
+            debug('Plot pool results:')
+            for future in process_futures:
+                debug('future: ' + str(future))
+        future_results = [f.result() for f in process_futures] #required to raise exceptions thrown from within future
+        process_pool.shutdown()
 
         info('Done!')
 
