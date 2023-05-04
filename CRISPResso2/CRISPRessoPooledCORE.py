@@ -162,13 +162,6 @@ def get_n_aligned_bam_region(bam_filename, chr_name, chr_start, chr_end):
     p = sb.Popen("samtools view -F 0x904 -c %s %s:%d-%d" %(bam_filename, chr_name, chr_start, chr_end), shell=True, stdout=sb.PIPE)
     return int(p.communicate()[0])
 
-#get a clean name that we can use for a filename
-validFilenameChars = "+-_.() %s%s" % (string.ascii_letters, string.digits)
-
-def clean_filename(filename):
-    cleanedFilename = unicodedata.normalize('NFKD', filename)
-    return ''.join(c for c in cleanedFilename if c in validFilenameChars)
-
 def find_overlapping_genes(row, df_genes):
     df_genes_overlapping=df_genes.loc[(df_genes.chrom==row.chr_id) &
                                      (df_genes.txStart<=row.bpend) &
@@ -752,10 +745,10 @@ def main():
             with open(amplicon_fa_filename, 'w+') as outfile:
                 for idx, row in df_template.iterrows():
                     if row['amplicon_seq']:
-                        outfile.write('>%s\n%s\n' %(clean_filename('AMPL_'+idx), row['amplicon_seq']))
+                        outfile.write('>%s\n%s\n' %(CRISPRessoShared.clean_filename('AMPL_'+idx), row['amplicon_seq']))
 
                         #create place-holder fastq files
-                        fastq_gz_amplicon_filenames.append(_jp('%s.fastq.gz' % clean_filename('AMPL_'+idx)))
+                        fastq_gz_amplicon_filenames.append(_jp('%s.fastq.gz' % CRISPRessoShared.clean_filename('AMPL_'+idx)))
                         open(fastq_gz_amplicon_filenames[-1], 'w+').close()
 
             df_template['Demultiplexed_fastq.gz_filename']=fastq_gz_amplicon_filenames

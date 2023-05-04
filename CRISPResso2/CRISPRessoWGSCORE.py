@@ -109,15 +109,6 @@ def get_region_from_fa(chr_id, bpstart, bpend, uncompressed_reference):
     p = sb.Popen("samtools faidx %s %s |   grep -v ^\> | tr -d '\n'" %(uncompressed_reference, region), shell=True, stdout=sb.PIPE)
     return p.communicate()[0].decode('utf-8').upper()
 
-
-#get a clean name that we can use for a filename
-validFilenameChars = "+-_.() %s%s" % (string.ascii_letters, string.digits)
-
-def clean_filename(filename):
-    cleanedFilename = unicodedata.normalize('NFKD', filename)
-    return ''.join(c for c in cleanedFilename if c in validFilenameChars)
-
-
 def find_overlapping_genes(row, df_genes):
     df_genes_overlapping=df_genes.loc[(df_genes.chrom==row.chr_id) &
                                      (df_genes.txStart<=row.bpend) &
@@ -554,8 +545,8 @@ def main():
 
         def set_filenames(row):
             row_fastq_exists = False
-            fastq_gz_filename=os.path.join(ANALYZED_REGIONS, '%s.fastq.gz' % clean_filename('REGION_'+str(row.region_number)))
-            bam_region_filename=os.path.join(ANALYZED_REGIONS, '%s.bam' % clean_filename('REGION_'+str(row.region_number)))
+            fastq_gz_filename=os.path.join(ANALYZED_REGIONS, '%s.fastq.gz' % CRISPRessoShared.clean_filename('REGION_'+str(row.region_number)))
+            bam_region_filename=os.path.join(ANALYZED_REGIONS, '%s.bam' % CRISPRessoShared.clean_filename('REGION_'+str(row.region_number)))
             #if bam file already exists, don't regenerate it
             if os.path.isfile(fastq_gz_filename):
                 row_fastq_exists = True
