@@ -449,12 +449,13 @@ def capitalize_sequence(x):
     return str(x).upper() if not pd.isnull(x) else x
 
 
-def slugify(value):  # adapted from the Django project
-
+def slugify(value):
+    print('slugify incoming strinG: ' + str(value))
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
-    value = re.sub(rb'[^\w\s-]', b'_', value).strip()
-    value = re.sub(rb'[-\s]+', b'-', value)
+    value = re.sub(rb'[\s\'*"/\\\[\]:;|,<>?]', b'_', value).strip()
+    value = re.sub(rb'_{2,}', b'_', value)
 
+    print('slugify outgoing string: ' + str(value.decode('utf-8')))
     return value.decode('utf-8')
 
 
@@ -516,13 +517,10 @@ def get_ref_length_from_cigar(cigar_string):
 
 def clean_filename(filename):
     # get a clean name that we can use for a filename
-    # validFilenameChars = "+-_.() %s%s" % (string.ascii_letters, string.digits)
+    validFilenameChars = "+-_.()%s%s" % (string.ascii_letters, string.digits)
     filename = str(filename).replace(' ', '_')
-    validFilenameChars = "_.%s%s" % (string.ascii_letters, string.digits)
-
     cleanedFilename = unicodedata.normalize('NFKD', filename)
-    return ''.join(c for c in cleanedFilename if c in validFilenameChars)
-
+    return(''.join(c for c in cleanedFilename if c in validFilenameChars))
 
 def check_file(filename):
     try:
