@@ -450,12 +450,10 @@ def capitalize_sequence(x):
 
 
 def slugify(value):
-    print('slugify incoming strinG: ' + str(value))
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
     value = re.sub(rb'[\s\'*"/\\\[\]:;|,<>?]', b'_', value).strip()
     value = re.sub(rb'_{2,}', b'_', value)
 
-    print('slugify outgoing string: ' + str(value.decode('utf-8')))
     return value.decode('utf-8')
 
 
