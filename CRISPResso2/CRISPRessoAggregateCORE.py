@@ -104,8 +104,12 @@ ___________________________________
         else:
             n_processes = int(args.n_processes)
 
-        process_pool = ProcessPoolExecutor(n_processes)
-        process_futures = []
+        if n_processes > 1:
+            process_pool = ProcessPoolExecutor(n_processes)
+            process_futures = []
+        else:
+            process_pool = None
+            process_futures = None
 
         plot = partial(
             run_plot,
@@ -845,13 +849,14 @@ ___________________________________
             crispresso2Aggregate_info_file, crispresso2_info,
         )
 
-        wait(process_futures)
-        if args.debug:
-            debug('Plot pool results:')
-            for future in process_futures:
-                debug('future: ' + str(future))
-        future_results = [f.result() for f in process_futures] #required to raise exceptions thrown from within future
-        process_pool.shutdown()
+        if n_processes > 1:
+            wait(process_futures)
+            if args.debug:
+                debug('Plot pool results:')
+                for future in process_futures:
+                    debug('future: ' + str(future))
+            future_results = [f.result() for f in process_futures] #required to raise exceptions thrown from within future
+            process_pool.shutdown()
 
         info('Analysis Complete!', {'percent_complete': 100})
         print(CRISPRessoShared.get_crispresso_footer())

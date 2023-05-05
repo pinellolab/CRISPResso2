@@ -332,8 +332,12 @@ def main():
         if args.suppress_report:
             save_png = False
 
-        process_futures = []
-        process_pool = ProcessPoolExecutor(n_processes_for_batch)
+        if n_processes_for_batch > 1:
+            process_pool = ProcessPoolExecutor(n_processes_for_batch)
+            process_futures = []
+        else:
+            process_pool = None
+            process_futures = None
 
         plot = partial(
             CRISPRessoMultiProcessing.run_plot,
@@ -854,7 +858,7 @@ def main():
                     for line in infile:
                         outfile.write(batch_name + "\t" + line)
 
-        if not args.suppress_batch_summary_plots:
+        if not args.suppress_batch_summary_plots and n_processes_for_batch > 1:
             wait(process_futures)
             if args.debug:
                 debug('CRISPResso batch results:')
