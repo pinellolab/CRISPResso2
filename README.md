@@ -851,11 +851,13 @@ although the least reliable in terms of quantification accuracy.
 CRISPRessoWGS is a utility for the analysis of genome editing experiment
 from whole genome sequencing (WGS) data. CRISPRessoWGS allows exploring
 any region of the genome to quantify targeted editing or potentially
-off-target effects. The intended use case for CRISPRessoWGS is analyzing
-small (40-50bp) targeted regions, where the reads are re-aligned at each
-region, making it inefficient for a large number of regions. To scan the
-entire genome for modifications, we recommend using [VarScan](http://dkoboldt.github.io/varscan/)
-or [MuTect](https://github.com/broadinstitute/mutect).
+off-target effects. The intended use case for CRISPRessoWGS is the analysis
+of targeted regions, and WGS reads from those regions will be realigned using
+CRISPResso's alignment aligorithm for more accurate genome editing 
+quantification. To scan the entire genome for mutations 
+[VarScan](http://dkoboldt.github.io/varscan/) or [MuTect](https://github.com/broadinstitute/mutect) 
+are more suitable, and identified regions can be analyzed and visualized using
+CRISPRessoWGS.
 
 #### Usage
 To run CRISPRessoWGS you must provide:
