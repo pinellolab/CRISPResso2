@@ -3175,7 +3175,7 @@ def main():
                 refs[ref_name]['ref_plot_name'] = ref_plot_name
                 continue
 
-            if len(ref_plot_name) > 21 and not args.suppress_amplicon_name_truncation: 
+            if len(ref_plot_name) > 21 and not args.suppress_amplicon_name_truncation:
                 ref_plot_name = ref_plot_name[0:21] #truncate to 21 characters if too long to avoid filename issues
 
             #make sure (truncated) ref plot name is unique
@@ -3380,8 +3380,12 @@ def main():
 
             ############
 
-        process_pool = ProcessPoolExecutor(n_processes)
-        process_futures = []
+        if n_processes > 1:
+            process_pool = ProcessPoolExecutor(n_processes)
+            process_futures = []
+        else:
+            process_pool = None
+            process_futures = None
         plot = partial(
             CRISPRessoMultiProcessing.run_plot,
             num_processes=n_processes,
@@ -3428,7 +3432,7 @@ def main():
             crispresso2_info['results']['general_plots']['plot_1c_data'] = [('Quantification of editing', os.path.basename(quant_of_editing_freq_filename))]
             debug('Plotting read class pie chart and bar plot', {'percent_complete': 44})
             plot(CRISPRessoPlot.plot_class_piechart_and_barplot, plot_1bc_input)
-            # to test, run: plot_pool.apply_async(CRISPRessoPlot.plot_class_piechart_and_barplot, kwds=plot_1bc_input).get()
+            # to test, run: process_pool.apply_async(CRISPRessoPlot.plot_class_piechart_and_barplot, kwds=plot_1bc_input).get()
 
 
             #1d for dsODN
@@ -4633,13 +4637,14 @@ def main():
                     crispresso2_info['results']['general_plots']['plot_11c_data'] = [('Scaffold insertion alleles with insertion sizes', os.path.basename(scaffold_insertion_sizes_filename))]
 
         # join plotting pool
-        wait(process_futures)
-        if args.debug:
-            debug('Plot pool results:')
-            for future in process_futures:
-                debug('future: ' + str(future))
-        future_results = [f.result() for f in process_futures] #required to raise exceptions thrown from within future
-        process_pool.shutdown()
+        if n_processes > 1:
+            wait(process_futures)
+            if args.debug:
+                debug('Plot pool results:')
+                for future in process_futures:
+                    debug('future: ' + str(future))
+            future_results = [f.result() for f in process_futures] #required to raise exceptions thrown from within future
+            process_pool.shutdown()
 
         info('Done!')
 
