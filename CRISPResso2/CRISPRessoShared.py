@@ -361,7 +361,7 @@ def getCRISPRessoArgParser(parser_title="CRISPResso Parameters", required_params
 
 
 def get_crispresso_options():
-    parser = getCRISPRessoArgParser(parserTitle="Temp Params", required_params=[])
+    parser = getCRISPRessoArgParser(parser_title="Temp Params", required_params=[])
     crispresso_options = set()
     d = parser.__dict__['_option_string_actions']
     for key in d.keys():
