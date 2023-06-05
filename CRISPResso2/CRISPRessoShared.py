@@ -23,7 +23,7 @@ import logging
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoCOREResources
 
-__version__ = "2.2.12"
+__version__ = "2.2.13"
 
 
 ###EXCEPTIONS############################
@@ -118,15 +118,15 @@ def set_console_log_level(logger, level, debug=False):
             break
 
 
-def getCRISPRessoArgParser(parserTitle="CRISPResso Parameters", requiredParams={}):
-    parser = argparse.ArgumentParser(description=parserTitle, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+def getCRISPRessoArgParser(parser_title="CRISPResso Parameters", required_params=[], suppress_params=[]):
+    parser = argparse.ArgumentParser(description=parser_title, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--version', action='version', version='%(prog)s ' + __version__)
     parser.add_argument('-r1', '--fastq_r1', type=str, help='First fastq file', default='',
-                        required='fastq_r1' in requiredParams)
+                        required='fastq_r1' in required_params)
     parser.add_argument('-r2', '--fastq_r2', type=str, help='Second fastq file for paired end reads', default='')
     parser.add_argument('-a', '--amplicon_seq', type=str,
                         help='Amplicon Sequence (can be comma-separated list of multiple sequences)',
-                        required='amplicon_seq' in requiredParams)
+                        required='amplicon_seq' in required_params)
     parser.add_argument('-an', '--amplicon_name', type=str,
                         help='Amplicon Name (can be comma-separated list of multiple names, corresponding to amplicon sequences given in --amplicon_seq',
                         default='Reference')
@@ -346,8 +346,10 @@ def getCRISPRessoArgParser(parserTitle="CRISPResso Parameters", requiredParams={
                         default='1')
 
     # processing of aligned bam files
-    parser.add_argument('--bam_input', type=str, help='Aligned reads for processing in bam format', default='')
-    parser.add_argument('--bam_chr_loc', type=str,
+    if 'bam_input' not in suppress_params:
+        parser.add_argument('--bam_input', type=str, help='Aligned reads for processing in bam format', default='')
+    if 'bam_chr_loc' not in suppress_params:
+        parser.add_argument('--bam_chr_loc', type=str,
                         help='Chromosome location in bam for reads to process. For example: "chr1:50-100" or "chrX".',
                         default='')
 
@@ -359,7 +361,7 @@ def getCRISPRessoArgParser(parserTitle="CRISPResso Parameters", requiredParams={
 
 
 def get_crispresso_options():
-    parser = getCRISPRessoArgParser(parserTitle="Temp Params", requiredParams={})
+    parser = getCRISPRessoArgParser(parserTitle="Temp Params", required_params=[])
     crispresso_options = set()
     d = parser.__dict__['_option_string_actions']
     for key in d.keys():
@@ -379,7 +381,7 @@ def get_crispresso_options_lookup():
     #    .....
     # }
     crispresso_options_lookup = {}
-    parser = getCRISPRessoArgParser(parserTitle="Temp Params", requiredParams={})
+    parser = getCRISPRessoArgParser(parser_title="Temp Params", required_params=[])
     d = parser.__dict__['_option_string_actions']
     for key in d.keys():
         d2 = d[key].__dict__['dest']
@@ -1640,6 +1642,10 @@ def get_crispresso_header(description, header_str):
     Creates the CRISPResso header string with the header_str between two crispresso mugs
     """
     term_width = 80
+    try:
+        term_width = os.get_terminal_size().columns
+    except:
+        pass
 
     logo = get_crispresso_logo()
     logo_lines = logo.splitlines()
@@ -1674,7 +1680,7 @@ def get_crispresso_header(description, header_str):
 
     output_line += '\n' + ('[CRISPResso version ' + __version__ + ']').center(term_width) + '\n' + (
         '[Note that starting in version 2.3.0 FLASh and Trimmomatic will be replaced by fastp for read merging and trimming. Accordingly, the --flash_command and --trimmomatic_command parameters will be replaced with --fastp_command. Also, --trimmomatic_options_string will be replaced with --fastp_options_string.\n\nAlso in version 2.3.0, when running CRISPRessoPooled in mixed-mode (amplicon file and genome are provided) the default behavior will be as if the --demultiplex_only_at_amplicons parameter is provided. This change means that reads and amplicons do not need to align to the exact locations.]').center(
-        term_width) + "\n" + ('[For support contact kclement@mgh.harvard.edu or support@edilytics.com]').center(term_width) + "\n"
+        term_width) + "\n" + ('[For support contact k.clement@utah.edu or support@edilytics.com]').center(term_width) + "\n"
 
     description_str = ""
     for str in description:
@@ -1697,6 +1703,38 @@ def get_crispresso_footer():
         output_line = pad_string + logo_lines[i].ljust(max_logo_width) + pad_string + "\n" + output_line
 
     return output_line
+
+def format_cl_text(text, max_chars=None, spaces_to_tab=4):
+    """
+    Formats text for command line output
+    params:
+        text: text to format
+        max_chars: maximum number of characters per line
+        spaces_to_tab: number of spaces to add at the beginning of wrapped lines
+    """
+    if max_chars is None:
+        try:
+            max_chars = os.get_terminal_size().columns
+        except:
+            max_chars = 80
+
+    broken_lines = []
+    for line in text.split('\n'):
+        if len(line) > max_chars:
+            broken_line = ''
+            while len(line) > max_chars:
+                # Find the last space before max_chars characters
+                last_space_index = line.rfind(' ', spaces_to_tab, max_chars)
+                if last_space_index == -1:
+                    # If no space found, break the line at max_chars characters
+                    last_space_index = max_chars
+                broken_line += line[:last_space_index] + '\n'
+                line = ' ' * spaces_to_tab + line[last_space_index:].strip()
+            broken_line += line
+            broken_lines.append(broken_line)
+        else:
+            broken_lines.append(line)
+    return '\n'.join(broken_lines)
 
 
 def zip_results(results_folder):

@@ -87,7 +87,7 @@ def main():
         '''
         print(CRISPRessoShared.get_crispresso_header(description, meta_string))
 
-        parser = CRISPRessoShared.getCRISPRessoArgParser(parserTitle = 'CRISPRessoMeta Parameters')
+        parser = CRISPRessoShared.getCRISPRessoArgParser(parser_title = 'CRISPRessoMeta Parameters')
 
         #batch specific params
         parser.add_argument('--metadata', type=str, help='Metadata file according to NIST specification', required=True)

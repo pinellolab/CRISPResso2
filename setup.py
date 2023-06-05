@@ -65,8 +65,8 @@ def main():
 
     setup(name="CRISPResso2",
           version=version,
-          author='Kendell Clement',
-          author_email='kclement@mgh.harvard.edu',
+          author='Edilytics, Inc.',
+          author_email='support@edilytics.com',
           url='http://github.com/pinellolab/CRISPResso2',
           package_dir={'CRISPResso2' : 'CRISPResso2'},
           include_package_data = True,
