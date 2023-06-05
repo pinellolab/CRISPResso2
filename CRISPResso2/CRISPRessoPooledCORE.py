@@ -280,7 +280,21 @@ def main():
         '''
         print(CRISPRessoShared.get_crispresso_header(description, pooled_string))
 
-        parser = CRISPRessoShared.getCRISPRessoArgParser(parserTitle = 'CRISPRessoPooled Parameters')
+        # if no args are given, print a simplified help message
+        if len(sys.argv) == 1:
+            print(CRISPRessoShared.format_cl_text('usage: CRISPRessoPooled [-r1 FASTQ_R1] [-r2 FASTQ_R2] [-f AMPLICONS_FILE] [-x GENOME_ROOT] [-n NAME]\n' + \
+                'commonly-used arguments:\n' + \
+                '-h, --help            show the full list of arguments\n' + \
+                '-v, --version         show program\'s version number and exit\n' + \
+                '-r1 FASTQ_R1          Input fastq file R1 (default: None)\n' + \
+                '-r2 FASTQ_R2          Input fastq file R2 (default: None)\n' + \
+                '-f AMPLICONS_FILE     Tab-separated file containing information for each amplicon, including at least columns for the amplicon_name and amplicon_seq (default: None)\n' + \
+                '-x GENOME_ROOT        Folder that contains the bowtie2-indexed genome for optional unbiased alignment of reads (default: None, reads are only aligned to provided amplicon sequences)\n' + \
+                '-n NAME, --name NAME  Name for the analysis (default: name based on input file name)\n'
+            ))
+            sys.exit()
+
+        parser = CRISPRessoShared.getCRISPRessoArgParser(parser_title = 'CRISPRessoPooled Parameters')
         parser.add_argument('-f', '--amplicons_file', type=str,  help='Amplicons description file. This file is a tab-delimited text file with up to 14 columns (2 required):\
         \namplicon_name:  an identifier for the amplicon (must be unique).\
         \namplicon_seq:  amplicon sequence used in the experiment.\

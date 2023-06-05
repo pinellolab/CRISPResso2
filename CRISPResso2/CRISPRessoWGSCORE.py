@@ -305,7 +305,27 @@ def main():
         '''
         print(CRISPRessoShared.get_crispresso_header(description, wgs_string))
 
-        parser = CRISPRessoShared.getCRISPRessoArgParser(parserTitle = 'CRISPRessoWGS Parameters', requiredParams={})
+        # if no args are given, print a simplified help message
+        if len(sys.argv) == 1:
+            print(CRISPRessoShared.format_cl_text('usage: CRISPRessoWGS [-b BAM_FILE] [-f REGION_FILE] [-r REFERENCE_FILE] [-n NAME]\n' + \
+                'commonly-used arguments:\n' + \
+                '-h, --help            show the full list of arguments\n' + \
+                '-v, --version         show program\'s version number and exit\n' + \
+                '-b BAM_FILE           WGS aligned bam file (required)\n' + \
+                '-f REGION_FILE        Regions description file. A BED format file containing the regions to analyze, one per line. The required columns are: chr_id(chromosome name), bpstart(start position), bpend(end position). (required)\n' + \
+                '-r REFERENCE_FILE     Reference genome in fasta format (required)\n' + \
+                '-n NAME, --name NAME  Name for the analysis (default: name based on input file name)'
+            ))
+            sys.exit()
+
+        parser = CRISPRessoShared.getCRISPRessoArgParser(parser_title = 'CRISPRessoWGS Parameters', required_params=[], 
+                    suppress_params=['bam_input',
+                                   'bam_chr_loc'
+                                   'fastq_r1', 
+                                   'fastq_r2', 
+                                   'amplicon_seq', 
+                                   'amplicon_name', 
+                                   ])
 
         #tool specific optional
         parser.add_argument('-b', '--bam_file', type=str,  help='WGS aligned bam file', required=True, default='bam filename' )
