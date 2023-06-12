@@ -1067,8 +1067,10 @@ def main():
         #check files and get output name
         if args.fastq_r1:
             CRISPRessoShared.check_file(args.fastq_r1)
+            CRISPRessoShared.assert_fastq_format(args.fastq_r1)
             if args.fastq_r2:
                 CRISPRessoShared.check_file(args.fastq_r2)
+                CRISPRessoShared.assert_fastq_format(args.fastq_r2)
         elif args.bam_input:
             CRISPRessoShared.check_file(args.bam_input)
         else:
