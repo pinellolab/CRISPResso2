@@ -66,6 +66,9 @@ class OutputFolderIncompleteException(Exception):
 class InstallationException(Exception):
     pass
 
+class InputFileFormatException(Exception):
+    pass
+
 #########################################
 
 class StatusFormatter(logging.Formatter):
@@ -600,6 +603,59 @@ def parse_alignment_file(fileName):
     else:
         print("Cannot find output file '%s'" % fileName)
         return None, None
+
+def assert_fastq_format(file_path, max_lines_to_check=100):
+    """
+    Checks to see that the fastq file is in the correct format
+    Accepts files in gzipped format if they end in .gz.
+    Raises a InputFileFormatException if the file is not in the correct format.
+    params:
+        file_path: path to fastq file
+        max_lines_to_check: number of lines to check in the file
+    returns:   
+        True if the file is in the correct format
+    """
+
+    try:
+        if file_path.endswith('.gz'):
+            # Read gzipped file
+            with gzip.open(file_path, 'rt') as file:
+                for line_num, line in enumerate(file):
+                    if line_num >= max_lines_to_check:
+                        break
+
+                    if line_num % 4 == 0:
+                        if not line.startswith('@'):
+                            raise InputFileFormatException('File %s is not in fastq format! Line %d does not start with @ \n%s: %s' % (file_path, line_num, line_num, line))
+                    elif line_num % 4 == 1 or line_num % 4 == 3:
+                        if len(line.strip()) == 0:
+                            raise InputFileFormatException('File %s is not in fastq format! Line %d is empty \n%s: %s' % (file_path, line_num, line_num, line))
+                    elif line_num % 4 == 2:
+                        if not line.startswith('+'):
+                            raise InputFileFormatException('File %s is not in fastq format! Line %d does not start with + \n%s: %s' % (file_path, line_num, line_num, line))
+        else:
+            # Read uncompressed file
+            with open(file_path, 'r') as file:
+                for line_num, line in enumerate(file):
+                    if line_num >= max_lines_to_check:
+                        break
+
+                    if line_num % 4 == 0:
+                        if not line.startswith('@'):
+                            raise InputFileFormatException('File %s is not in fastq format! Line %d does not start with @ \n%s: %s' % (file_path, line_num, line_num, line))
+                    elif line_num % 4 == 1 or line_num % 4 == 3:
+                        if len(line.strip()) == 0:
+                            raise InputFileFormatException('File %s is not in fastq format! Line %d is empty \n%s: %s' % (file_path, line_num, line_num, line))
+                    elif line_num % 4 == 2:
+                        if not line.startswith('+'):
+                            raise InputFileFormatException('File %s is not in fastq format! Line %d does not start with + \n%s: %s' % (file_path, line_num, line_num, line))
+
+        return True
+
+    except UnicodeDecodeError as e:
+        raise InputFileFormatException('File %s is not in fastq format! Perhaps it is a gzipped file but does not end in .gz?' % (file_path)) from e
+    except Exception as e:
+        raise InputFileFormatException('File %s is not in fastq format! \n%s' % (file_path)) from e
 
 
 def check_output_folder(output_folder):

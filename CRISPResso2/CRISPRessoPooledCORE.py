@@ -387,8 +387,10 @@ def main():
             if args.fastq_r1 == '':
                 raise CRISPRessoShared.BadParameterException('')
             CRISPRessoShared.check_file(args.fastq_r1)
+            CRISPRessoShared.assert_fastq_format(args.fastq_r1)
             if args.fastq_r2:
                 CRISPRessoShared.check_file(args.fastq_r2)
+                CRISPRessoShared.assert_fastq_format(args.fastq_r2)
         else:
             parser.print_help()
             raise CRISPRessoShared.BadParameterException('Please provide input data for pooled analysis e.g. using the --fastq_r1 parameter.')
