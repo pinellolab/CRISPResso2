@@ -521,7 +521,7 @@ def get_ref_length_from_cigar(cigar_string):
 def clean_filename(filename):
     # get a clean name that we can use for a filename
     validFilenameChars = "+-_.()%s%s" % (string.ascii_letters, string.digits)
-    filename = str(filename).replace(' ', '_')
+    filename = slugify(str(filename).replace(' ', '_'))
     cleanedFilename = unicodedata.normalize('NFKD', filename)
     return(''.join(c for c in cleanedFilename if c in validFilenameChars))
 
