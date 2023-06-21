@@ -1378,13 +1378,16 @@ def get_amplicon_info_for_guides(ref_seq, guides, guide_mismatches, guide_names,
         offset_rc = (-quantification_window_centers[guide_idx]) - 1
 
         # .. run once with findall to get number of matches
-        fw_matches = re.findall(current_guide_seq, ref_seq, flags=re.IGNORECASE)
-        rv_matches = re.findall(reverse_complement(current_guide_seq), ref_seq, flags=re.IGNORECASE)
+        fw_regex = r'(?=(' + re.escape(current_guide_seq) + r'))'
+        fw_matches = re.findall(fw_regex, ref_seq, flags=re.IGNORECASE)
+        rv_regex = r'(?=(' + re.escape(reverse_complement(current_guide_seq)) + r'))'
+        rv_matches = re.findall(rv_regex, ref_seq, flags=re.IGNORECASE)
         match_count = len(fw_matches) + len(rv_matches)
 
         # and now create the iter which will keep track of the locations of matches
-        fw_matches = re.finditer(current_guide_seq, ref_seq, flags=re.IGNORECASE)
-        rv_matches = re.finditer(reverse_complement(current_guide_seq), ref_seq, flags=re.IGNORECASE)
+        # (you can't get the length of an iter, and the findall only gives an array of matched strings and doesn't give locations of matches)
+        fw_matches = re.finditer(fw_regex, ref_seq, flags=re.IGNORECASE)
+        rv_matches = re.finditer(rv_regex, ref_seq, flags=re.IGNORECASE)
 
         # for every match, append:
         # this_sgRNA_cut_points, this_sgRNA_intervals,this_sgRNA_mismatches,this_sgRNA_names,this_sgRNA_sequences,include_idxs
