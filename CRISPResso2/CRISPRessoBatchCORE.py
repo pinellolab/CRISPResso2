@@ -10,6 +10,7 @@ from copy import deepcopy
 from concurrent.futures import ProcessPoolExecutor, wait
 from functools import partial
 import sys
+import re
 import traceback
 from datetime import datetime
 from CRISPResso2 import CRISPRessoShared
@@ -247,7 +248,7 @@ def main():
 
                 # iterate through guides
                 curr_guide_seq_string = row.guide_seq
-                if curr_guide_seq_string is not None and curr_guide_seq_string != "":
+                if curr_guide_seq_string is not None and re.match(r'(?i)^$|^nan?$', str(curr_guide_seq_string)) is None:
                     guides = str(curr_guide_seq_string).strip().upper().split(',')
                     for curr_guide_seq in guides:
                         wrong_nt = CRISPRessoShared.find_wrong_nt(curr_guide_seq)
@@ -282,8 +283,11 @@ def main():
 
             crispresso_cmd = args.crispresso_command + ' -o "%s" --name %s' % (OUTPUT_DIRECTORY, batch_name)
             crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_batch, batch_params, idx)
-            if row.amplicon_seq == "":
+            if re.match(r'(?i)^$|^nan?$', str(row.amplicon_seq)) is not None:
                 crispresso_cmd += ' --auto '
+                crispresso_cmd = re.sub(r'--amplicon_seq\s+[^ ]+\s*', '', crispresso_cmd)
+            if re.match(r'(?i)^$|^nan?$', str(row.guide_seq)) is not None:
+                crispresso_cmd = re.sub(r'--guide_seq\s+[^ ]+\s*', '', crispresso_cmd)
             crispresso_cmds.append(crispresso_cmd)
 
         crispresso2_info['results']['batch_names_arr'] = batch_names_arr

@@ -66,6 +66,7 @@ ___________________________________
         Please use with caution since increasing this parameter will significantly increase the memory required to run CRISPResso. Can be set to \'max\'.', default='1')
 
         parser.add_argument('--debug', help='Show debug messages', action='store_true')
+        parser.add_argument('-v', '--verbosity', type=int, help='Verbosity level of output to the console (1-4), 4 is the most verbose', default=3)
 
         args = parser.parse_args()
 
