@@ -655,7 +655,7 @@ def assert_fastq_format(file_path, max_lines_to_check=100):
     except UnicodeDecodeError as e:
         raise InputFileFormatException('File %s is not in fastq format! Perhaps it is a gzipped file but does not end in .gz?' % (file_path)) from e
     except Exception as e:
-        raise InputFileFormatException('File %s is not in fastq format! \n%s' % (file_path)) from e
+        raise InputFileFormatException('File %s is not in fastq format!' % (file_path)) from e
 
 
 def check_output_folder(output_folder):
