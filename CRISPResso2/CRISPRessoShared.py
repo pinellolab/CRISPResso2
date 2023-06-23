@@ -627,9 +627,6 @@ def assert_fastq_format(file_path, max_lines_to_check=100):
                     if line_num % 4 == 0:
                         if not line.startswith('@'):
                             raise InputFileFormatException('File %s is not in fastq format! Line %d does not start with @ \n%s: %s' % (file_path, line_num, line_num, line))
-                    elif line_num % 4 == 1 or line_num % 4 == 3:
-                        if len(line.strip()) == 0:
-                            raise InputFileFormatException('File %s is not in fastq format! Line %d is empty \n%s: %s' % (file_path, line_num, line_num, line))
                     elif line_num % 4 == 2:
                         if not line.startswith('+'):
                             raise InputFileFormatException('File %s is not in fastq format! Line %d does not start with + \n%s: %s' % (file_path, line_num, line_num, line))
@@ -643,9 +640,6 @@ def assert_fastq_format(file_path, max_lines_to_check=100):
                     if line_num % 4 == 0:
                         if not line.startswith('@'):
                             raise InputFileFormatException('File %s is not in fastq format! Line %d does not start with @ \n%s: %s' % (file_path, line_num, line_num, line))
-                    elif line_num % 4 == 1 or line_num % 4 == 3:
-                        if len(line.strip()) == 0:
-                            raise InputFileFormatException('File %s is not in fastq format! Line %d is empty \n%s: %s' % (file_path, line_num, line_num, line))
                     elif line_num % 4 == 2:
                         if not line.startswith('+'):
                             raise InputFileFormatException('File %s is not in fastq format! Line %d does not start with + \n%s: %s' % (file_path, line_num, line_num, line))
