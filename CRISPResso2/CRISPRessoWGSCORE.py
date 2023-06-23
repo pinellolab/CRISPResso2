@@ -135,6 +135,34 @@ def find_overlapping_genes(row, df_genes):
 def find_last(mylist, myvalue):
     return len(mylist) - mylist[::-1].index(myvalue) -1
 
+
+def find_first_or_higher(my_list, my_value):
+    """Find the index of the first element in my_list that is equal to or higher than my_value
+    This function is used to find the start index for creating an array slice of a sequence, where the items in my_list are the indices of the reference sequence that correspond to that base in the sequence
+    If the item is found in the list, the index of the item is returned
+    If the item is not found in the list, the index of the next higher item is returned
+    """
+    for idx, val in enumerate(my_list):
+        if val >= my_value:
+            return idx
+
+def find_last_or_higher(my_list, my_value):
+    """Find the first element in my_list that is higher than my_value
+    This function is used to find the end index for creating an array slice of a sequence
+    If the item is found in the list, the index of the item is returned
+    If the item is not found in the list, the index of the next higher item is returned
+
+    Args:
+        my_list (_type_): _description_
+        my_value (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    for idx, val in enumerate(my_list):
+        if val >= my_value:
+            return idx
+
 def get_reference_positions( pos, cigar,full_length=True):
     positions = []
 
@@ -188,13 +216,13 @@ def write_trimmed_fastq(in_bam_filename, bpstart, bpend, out_fastq_filename):
                 pos=int(pos)
                 positions=get_reference_positions(pos, cigar)
 
-                if bpstart in positions and bpend in positions:# and positions[0]<=bpstart and  positions[-1]>=bpend:
-
-                    st=positions.index(bpstart)
-                    en=find_last(positions, bpend)
-                    #print st,en,seq,seq[st:en]
+                if positions[0] <= bpstart and positions[-1] >= bpend:
+                    # st and en may equal each other, in which case an empty read is written
+                    st = find_first_or_higher(positions, bpstart)
+                    en = find_last_or_higher(positions, bpend)
+                    print(st,en,seq,seq[st:en])
                     n_reads+=1
-                    #print '>%s\n%s\n+\n%s\n' %(name,seq[st:en],qual[st:en])
+                    #print('>%s\n%s\n+\n%s\n' %(name,seq[st:en],qual[st:en]))
                     outfile.write('@%s_%d\n%s\n+\n%s\n' %(name, n_reads, seq[st:en], qual[st:en]))
     return n_reads
 
