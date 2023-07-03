@@ -1051,21 +1051,23 @@ def main():
                       close(fastq_filename); \
                       system("gzip -f "fastq_filename);  \
                       record_log_str = "__REGIONCHR__\t__REGIONSTART__\t__REGIONEND__\t"num_records"\t"fastq_filename".gz\n"; \
-                        print(record_log_str); \
-                    } \
-                    ' >> __DEMUX_LOGFILENAME__ '''
+                      print record_log_str > "__DEMUX_CHR_LOGFILENAME__"; \
+                    } '''
                     cmd = (s1).replace('__OUTPUTPATH__', MAPPED_REGIONS)
                     cmd = cmd.replace("__MIN_READS__", str(args.min_reads_to_use_region))
                     with open(REPORT_ALL_DEPTH, 'w') as f:
                         f.write('chr_id\tstart\tend\tnumber of reads\toutput filename\n')
-                    cmd = cmd.replace("__DEMUX_LOGFILENAME__", REPORT_ALL_DEPTH)
 
                     info('Preparing to demultiplex reads aligned to positions overlapping amplicons in the genome...')
                     # make command for each amplicon
 
                     chr_commands = []
+                    chr_output_filenames = []
                     for idx, row in df_template.iterrows():
-                        chr_commands.append(cmd.replace('__REGIONCHR__', str(row.chr_id)).replace('__REGIONSTART__',str(row.bpstart)).replace('__REGIONEND__',str(row.bpend)))
+                        chr_output_filename = _jp('MAPPED_REGIONS/chr%s_%s_%s.info' % (row.chr_id, row.bpstart, row.bpend))
+                        sub_chr_command = cmd.replace('__REGIONCHR__', str(row.chr_id)).replace('__REGIONSTART__',str(row.bpstart)).replace('__REGIONEND__',str(row.bpend)).replace("__DEMUX_CHR_LOGFILENAME__", chr_output_filename)
+                        chr_commands.append(sub_chr_command)
+                        chr_output_filenames.append(chr_output_filename)
 
                 # if we should demultiplex everwhere (not just where amplicons aligned)
                 else:
@@ -1112,14 +1114,10 @@ def main():
                             record_log_str = record_log_str chr_id"\t"bpstart"\t"bpend"\t"num_records"\tNA\n"} \
                     else{printf("%s",fastq_records)>fastq_filename;close(fastq_filename); system("gzip -f "fastq_filename); record_log_str = record_log_str chr_id"\t"bpstart"\t"bpend"\t"num_records"\t"fastq_filename".gz\n"} \
                         }\
-                        print(record_log_str) \
-                    }\
-                    ' >> __DEMUX_LOGFILENAME__ '''
+                        print record_log_str > "__DEMUX_CHR_LOGFILENAME__" \
+                    }' '''
                     cmd = (s1+s2).replace('__OUTPUTPATH__', MAPPED_REGIONS)
                     cmd = cmd.replace("__MIN_READS__", str(args.min_reads_to_use_region))
-                    with open(REPORT_ALL_DEPTH, 'w') as f:
-                        f.write('chr_id\tstart\tend\tnumber of reads\toutput filename\n')
-                    cmd = cmd.replace("__DEMUX_LOGFILENAME__", REPORT_ALL_DEPTH)
 
                     info('Preparing to demultiplex reads aligned to the genome...')
                     # next, get all of the chromosome names (for parallelization)
@@ -1135,6 +1133,7 @@ def main():
                             chr_lens[m.group(1)] = int(m.group(2))
 
                     chr_commands = []
+                    chr_output_filenames = []
                     for chr_str in chrs:
                         chr_cmd = cmd.replace('__CHR__', chr_str)
                         # if we have a lot of reads, split up the chrs too
@@ -1155,15 +1154,24 @@ def main():
                                         break
                                     n_reads_at_end = get_n_aligned_bam_region(bam_filename_genome, chr_str, curr_end-5, curr_end+5)
 
-                                chr_commands.append(chr_cmd.replace("__REGION__", ":%d-%d "%(curr_pos, curr_end)))
+                                sub_chr_command = chr_cmd.replace("__REGION__", ":%d-%d "%(curr_pos, curr_end))
+                                chr_output_filename = _jp('MAPPED_REGIONS/%s_%s_%s.info' % (chr_str, curr_pos, chr_end))
+                                chr_commands.append(sub_chr_command)
+                                chr_output_filenames.append(chr_output_filename)
                                 curr_pos = curr_end
                                 curr_end = curr_pos + chr_step_size
                             if curr_end < chr_len:
-                                chr_commands.append(chr_cmd.replace("__REGION__", ":%d-%d "%(curr_pos, chr_len)))
+                                chr_output_filename = _jp('MAPPED_REGIONS/%s_%s_%s.info' % (chr_str, curr_pos, chr_len))
+                                sub_chr_command = chr_cmd.replace("__REGION__", ":%d-%d "%(curr_pos, chr_len)).replace("__DEMUX_CHR_LOGFILENAME__",chr_output_filename)
+                                chr_commands.append(sub_chr_command)
+                                chr_output_filenames.append(chr_output_filename)
 
                         else:
                             # otherwise do the whole chromosome
-                            chr_commands.append(chr_cmd.replace("__REGION__", ""))
+                            chr_output_filename = _jp('MAPPED_REGIONS/%s.info' % (chr_str))
+                            sub_chr_command = chr_cmd.replace("__REGION__", "").replace("__DEMUX_CHR_LOGFILENAME__",chr_output_filename)
+                            chr_commands.append(sub_chr_command)
+                            chr_output_filenames.append(chr_output_filename)
 
                 if args.debug:
                     demux_file = _jp('DEMUX_COMMANDS.txt')
@@ -1173,6 +1181,13 @@ def main():
 
                 info('Demultiplexing reads by location (%d genomic regions)...'%len(chr_commands), {'percent_complete': 85})
                 CRISPRessoMultiProcessing.run_parallel_commands(chr_commands, n_processes=n_processes_for_pooled, descriptor='Demultiplexing reads by location', continue_on_fail=args.skip_failed)
+
+                with open(REPORT_ALL_DEPTH, 'w') as f:
+                    f.write('chr_id\tstart\tend\tnumber of reads\toutput filename\n')
+                    for chr_output_filename in chr_output_filenames:
+                        with open(chr_output_filename, 'r') as f_in:
+                            for line in f_in:
+                                f.write(line)
 
                 df_all_demux = pd.read_csv(REPORT_ALL_DEPTH, sep='\t')
                 df_all_demux.sort_values(by=['chr_id', 'start'], inplace=True)
