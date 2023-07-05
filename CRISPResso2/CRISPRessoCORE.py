@@ -89,6 +89,14 @@ def check_program(binary_name,download_url=None):
         sys.exit(1)
 
 
+def zero():
+    """Return a zero.
+
+    This function is as simple as it looks. It is used instead of a lambda
+    because only top-level functiosn can be pickled for multiprocessing.
+    """
+    return 0
+
 
 def get_avg_read_length_fastq(fastq_filename):
      cmd=('z' if fastq_filename.endswith('.gz') else '' ) +('cat < \"%s\"' % fastq_filename)+\
@@ -3405,7 +3413,7 @@ def main():
 
         if n_processes > 1:
             process_pool = ProcessPoolExecutor(n_processes)
-            process_futures = []
+            process_futures = {}
         else:
             process_pool = None
             process_futures = None
@@ -4408,9 +4416,9 @@ def main():
             global_NON_MODIFIED_NON_FRAMESHIFT = 0
             global_SPLICING_SITES_MODIFIED = 0
 
-            global_hists_frameshift = defaultdict(lambda :0)
+            global_hists_frameshift = defaultdict(zero)
             global_hists_frameshift[0] = 0  # fill with at least the zero value (in case there are no others)
-            global_hists_inframe = defaultdict(lambda :0)
+            global_hists_inframe = defaultdict(zero)
             global_hists_inframe[0] = 0
 
             global_count_total = 0
