@@ -13,7 +13,7 @@ if sys.version_info > (3, 0):
     running_python3 = True
 
 import argparse
-from collections import defaultdict
+from collections import Counter
 from copy import deepcopy
 from concurrent.futures import ProcessPoolExecutor, wait
 from functools import partial
@@ -87,16 +87,6 @@ def check_program(binary_name,download_url=None):
         if download_url:
             error('You can download it here:%s' % download_url)
         sys.exit(1)
-
-
-def zero():
-    """Return a zero.
-
-    This function is as simple as it looks. It is used instead of a lambda
-    because only top-level functiosn can be pickled for multiprocessing.
-    """
-    return 0
-
 
 def get_avg_read_length_fastq(fastq_filename):
      cmd=('z' if fastq_filename.endswith('.gz') else '' ) +('cat < \"%s\"' % fastq_filename)+\
@@ -2464,14 +2454,14 @@ def main():
             deletion_length_vectors              [ref_name] = np.zeros(this_len_amplicon)
 
 
-            inserted_n_dicts                    [ref_name] = defaultdict(int)
-            deleted_n_dicts                     [ref_name] = defaultdict(int)
-            substituted_n_dicts                 [ref_name] = defaultdict(int)
-            effective_len_dicts                 [ref_name] = defaultdict(int)
+            inserted_n_dicts                    [ref_name] = Counter()
+            deleted_n_dicts                     [ref_name] = Counter()
+            substituted_n_dicts                 [ref_name] = Counter()
+            effective_len_dicts                 [ref_name] = Counter()
 
-            hists_inframe                       [ref_name] = defaultdict(int)
+            hists_inframe                       [ref_name] = Counter()
             hists_inframe                       [ref_name][0] = 0
-            hists_frameshift                    [ref_name] = defaultdict(int)
+            hists_frameshift                    [ref_name] = Counter()
             hists_frameshift                    [ref_name][0] = 0
         #end initialize data structures for each ref
         def get_allele_row(reference_name, variant_count, aln_ref_names_str, aln_ref_scores_str, variant_payload, write_detailed_allele_table):
@@ -4416,9 +4406,9 @@ def main():
             global_NON_MODIFIED_NON_FRAMESHIFT = 0
             global_SPLICING_SITES_MODIFIED = 0
 
-            global_hists_frameshift = defaultdict(zero)
+            global_hists_frameshift = Counter()
             global_hists_frameshift[0] = 0  # fill with at least the zero value (in case there are no others)
-            global_hists_inframe = defaultdict(zero)
+            global_hists_inframe = Counter()
             global_hists_inframe[0] = 0
 
             global_count_total = 0
