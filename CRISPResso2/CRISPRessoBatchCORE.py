@@ -349,7 +349,7 @@ def main():
 
         if n_processes_for_batch > 1:
             process_pool = ProcessPoolExecutor(n_processes_for_batch)
-            process_futures = []
+            process_futures = {}
         else:
             process_pool = None
             process_futures = None
