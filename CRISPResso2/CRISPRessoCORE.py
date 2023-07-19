@@ -2877,7 +2877,7 @@ def main():
         df_alleles['%Reads']=df_alleles['#Reads']/N_TOTAL*100
         df_alleles[['n_deleted', 'n_inserted', 'n_mutated']] = df_alleles[['n_deleted', 'n_inserted', 'n_mutated']].astype(int)
 
-        df_alleles.sort_values(by=['%Reads', 'Aligned_Sequence', 'Reference_Sequence'], inplace=True, ascending=[False, True, True])
+        df_alleles.sort_values(by=['#Reads', 'Aligned_Sequence', 'Reference_Sequence'], inplace=True, ascending=[False, True, True])
 
         def calculate_99_max(d):
             """
@@ -4239,7 +4239,7 @@ def main():
                     df_to_plot = df_alleles_around_cut
                     if not args.expand_allele_plots_by_quantification:
                         df_to_plot = df_alleles_around_cut.groupby(['Aligned_Sequence', 'Reference_Sequence']).sum().reset_index().set_index('Aligned_Sequence')
-                        df_to_plot.sort_values(by=['%Reads', 'Aligned_Sequence', 'Reference_Sequence'], inplace=True, ascending=[False, True, True])
+                        df_to_plot.sort_values(by=['#Reads', 'Aligned_Sequence', 'Reference_Sequence'], inplace=True, ascending=[False, True, True])
 
                     new_sgRNA_intervals = []
                     #adjust coordinates of sgRNAs

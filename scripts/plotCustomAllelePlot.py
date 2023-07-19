@@ -54,7 +54,7 @@ def get_dataframe_around_cut_assymetrical(df_alleles, cut_point,plot_left,plot_r
 
     df_alleles_around_cut=df_alleles_around_cut.groupby(['Aligned_Sequence','Reference_Sequence','Unedited','n_deleted','n_inserted','n_mutated']).sum().reset_index().set_index('Aligned_Sequence')
 
-    df_alleles_around_cut.sort_values(by=['%Reads', 'Aligned_Sequence', 'Reference_Sequence'], inplace=True, ascending=[False, True, True])
+    df_alleles_around_cut.sort_values(by=['#Reads', 'Aligned_Sequence', 'Reference_Sequence'], inplace=True, ascending=[False, True, True])
     df_alleles_around_cut['Unedited']=df_alleles_around_cut['Unedited']>0
     return df_alleles_around_cut
 
