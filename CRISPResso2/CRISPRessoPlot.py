@@ -174,8 +174,9 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=
                             ax.text(x_start+0.55, y_start + obs_pct/2.0, format(pct*100, '.1f'), horizontalalignment='center', verticalalignment='center', rotation=90)
                         y_start += obs_pct
 
+    mod_pct_df_indexed = mod_pct_df.set_index([group_column,'Modification'])
     #add insertions
-    for pos_ind in range(2, amp_len+1): #iterate over all nucleotide positions in the sequence (0=Batch, 1=Nucleotide, so start at 2)
+    for pos_ind in range(2, amp_len+1): #iterate over all nucleotide positions in the sequence (0=Batch, 1=Modification, so start at 2)
         x_start = pos_ind + 0.7
         x_end = pos_ind + 1.3
         for i in range(nSamples): #iterate over all samples
@@ -184,9 +185,8 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=
             sample_row_start = nNucs * i
             y_start = nSamples - i
 
+            ins_pct = float(mod_pct_df_indexed.loc[sampleName,'Insertions_Left'][pos_ind-2])
 
-            ins_pct = float(mod_pct_df.loc[(mod_pct_df[group_column] == sampleName) &
-                    (mod_pct_df['Modification'] == "Insertions_Left")].iloc[:, pos_ind])
             if ins_pct > min_plot_pct:
                 obs_pct = ins_pct * plotPct
                 ax.add_patch(

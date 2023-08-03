@@ -23,7 +23,7 @@ import logging
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoCOREResources
 
-__version__ = "2.2.12"
+__version__ = "2.2.13"
 
 
 ###EXCEPTIONS############################
@@ -61,6 +61,9 @@ class OutputFolderIncompleteException(Exception):
     pass
 
 class InstallationException(Exception):
+    pass
+
+class InputFileFormatException(Exception):
     pass
 
 #########################################
@@ -115,15 +118,15 @@ def set_console_log_level(logger, level, debug=False):
             break
 
 
-def getCRISPRessoArgParser(parserTitle="CRISPResso Parameters", requiredParams={}):
-    parser = argparse.ArgumentParser(description=parserTitle, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+def getCRISPRessoArgParser(parser_title="CRISPResso Parameters", required_params=[], suppress_params=[]):
+    parser = argparse.ArgumentParser(description=parser_title, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--version', action='version', version='%(prog)s ' + __version__)
     parser.add_argument('-r1', '--fastq_r1', type=str, help='First fastq file', default='',
-                        required='fastq_r1' in requiredParams)
+                        required='fastq_r1' in required_params)
     parser.add_argument('-r2', '--fastq_r2', type=str, help='Second fastq file for paired end reads', default='')
     parser.add_argument('-a', '--amplicon_seq', type=str,
                         help='Amplicon Sequence (can be comma-separated list of multiple sequences)',
-                        required='amplicon_seq' in requiredParams)
+                        required='amplicon_seq' in required_params)
     parser.add_argument('-an', '--amplicon_name', type=str,
                         help='Amplicon Name (can be comma-separated list of multiple names, corresponding to amplicon sequences given in --amplicon_seq',
                         default='Reference')
@@ -169,8 +172,10 @@ def getCRISPRessoArgParser(parserTitle="CRISPResso Parameters", requiredParams={
     parser.add_argument('--file_prefix', help='File prefix for output plots and tables', default='')
     parser.add_argument('-n', '--name',
                         help='Output name of the report (default: the name is obtained from the filename of the fastq file/s used in input)',
-                        default='',
-                        required='name' in requiredParams)
+                        required='name' in requiredParams,
+                        default='')
+    parser.add_argument("--suppress_amplicon_name_truncation",help="If set, amplicon names will not be truncated when creating output filename prefixes. If not set, amplicon names longer than 21 characters will be truncated when creating filename prefixes.",
+                        action='store_true')
     parser.add_argument('-o', '--output_folder', help='Output folder to use for the analysis (default: current folder)',
                         default='')
     parser.add_argument('-v', '--verbosity', type=int, help='Verbosity level of output to the console (1-4), 4 is the most verbose', default=3)
@@ -342,8 +347,10 @@ def getCRISPRessoArgParser(parserTitle="CRISPResso Parameters", requiredParams={
                         default='1')
 
     # processing of aligned bam files
-    parser.add_argument('--bam_input', type=str, help='Aligned reads for processing in bam format', default='')
-    parser.add_argument('--bam_chr_loc', type=str,
+    if 'bam_input' not in suppress_params:
+        parser.add_argument('--bam_input', type=str, help='Aligned reads for processing in bam format', default='')
+    if 'bam_chr_loc' not in suppress_params:
+        parser.add_argument('--bam_chr_loc', type=str,
                         help='Chromosome location in bam for reads to process. For example: "chr1:50-100" or "chrX".',
                         default='')
 
@@ -355,7 +362,7 @@ def getCRISPRessoArgParser(parserTitle="CRISPResso Parameters", requiredParams={
 
 
 def get_crispresso_options():
-    parser = getCRISPRessoArgParser(parserTitle="Temp Params", requiredParams={})
+    parser = getCRISPRessoArgParser(parser_title="Temp Params", required_params=[])
     crispresso_options = set()
     d = parser.__dict__['_option_string_actions']
     for key in d.keys():
@@ -375,7 +382,7 @@ def get_crispresso_options_lookup():
     #    .....
     # }
     crispresso_options_lookup = {}
-    parser = getCRISPRessoArgParser(parserTitle="Temp Params", requiredParams={})
+    parser = getCRISPRessoArgParser(parser_title="Temp Params", required_params=[])
     d = parser.__dict__['_option_string_actions']
     for key in d.keys():
         d2 = d[key].__dict__['dest']
@@ -445,11 +452,10 @@ def capitalize_sequence(x):
     return str(x).upper() if not pd.isnull(x) else x
 
 
-def slugify(value):  # adapted from the Django project
-
+def slugify(value):
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
-    value = re.sub(rb'[^\w\s-]', b'_', value).strip()
-    value = re.sub(rb'[-\s]+', b'-', value)
+    value = re.sub(rb'[\s\'*"/\\\[\]:;|,<>?]', b'_', value).strip()
+    value = re.sub(rb'_{2,}', b'_', value)
 
     return value.decode('utf-8')
 
@@ -512,13 +518,10 @@ def get_ref_length_from_cigar(cigar_string):
 
 def clean_filename(filename):
     # get a clean name that we can use for a filename
-    # validFilenameChars = "+-_.() %s%s" % (string.ascii_letters, string.digits)
-    filename = str(filename).replace(' ', '_')
-    validFilenameChars = "_.%s%s" % (string.ascii_letters, string.digits)
-
+    validFilenameChars = "+-_.()%s%s" % (string.ascii_letters, string.digits)
+    filename = slugify(str(filename).replace(' ', '_'))
     cleanedFilename = unicodedata.normalize('NFKD', filename)
-    return ''.join(c for c in cleanedFilename if c in validFilenameChars)
-
+    return(''.join(c for c in cleanedFilename if c in validFilenameChars))
 
 def check_file(filename):
     try:
@@ -598,6 +601,59 @@ def parse_alignment_file(fileName):
     else:
         print("Cannot find output file '%s'" % fileName)
         return None, None
+
+def assert_fastq_format(file_path, max_lines_to_check=100):
+    """
+    Checks to see that the fastq file is in the correct format
+    Accepts files in gzipped format if they end in .gz.
+    Raises a InputFileFormatException if the file is not in the correct format.
+    params:
+        file_path: path to fastq file
+        max_lines_to_check: number of lines to check in the file
+    returns:
+        True if the file is in the correct format
+    """
+
+    try:
+        if file_path.endswith('.gz'):
+            # Read gzipped file
+            with gzip.open(file_path, 'rt') as file:
+                for line_num, line in enumerate(file):
+                    if line_num >= max_lines_to_check:
+                        break
+
+                    if line_num % 4 == 0:
+                        if not line.startswith('@'):
+                            raise InputFileFormatException('File %s is not in fastq format! Line %d does not start with @ \n%s: %s' % (file_path, line_num, line_num, line))
+                    elif line_num % 4 == 1 or line_num % 4 == 3:
+                        if len(line.strip()) == 0:
+                            raise InputFileFormatException('File %s is not in fastq format! Line %d is empty \n%s: %s' % (file_path, line_num, line_num, line))
+                    elif line_num % 4 == 2:
+                        if not line.startswith('+'):
+                            raise InputFileFormatException('File %s is not in fastq format! Line %d does not start with + \n%s: %s' % (file_path, line_num, line_num, line))
+        else:
+            # Read uncompressed file
+            with open(file_path, 'r') as file:
+                for line_num, line in enumerate(file):
+                    if line_num >= max_lines_to_check:
+                        break
+
+                    if line_num % 4 == 0:
+                        if not line.startswith('@'):
+                            raise InputFileFormatException('File %s is not in fastq format! Line %d does not start with @ \n%s: %s' % (file_path, line_num, line_num, line))
+                    elif line_num % 4 == 1 or line_num % 4 == 3:
+                        if len(line.strip()) == 0:
+                            raise InputFileFormatException('File %s is not in fastq format! Line %d is empty \n%s: %s' % (file_path, line_num, line_num, line))
+                    elif line_num % 4 == 2:
+                        if not line.startswith('+'):
+                            raise InputFileFormatException('File %s is not in fastq format! Line %d does not start with + \n%s: %s' % (file_path, line_num, line_num, line))
+
+        return True
+
+    except UnicodeDecodeError as e:
+        raise InputFileFormatException('File %s is not in fastq format! Perhaps it is a gzipped file but does not end in .gz?' % (file_path)) from e
+    except Exception as e:
+        raise InputFileFormatException('File %s is not in fastq format!' % (file_path)) from e
 
 
 def check_output_folder(output_folder):
@@ -1241,7 +1297,7 @@ def get_dataframe_around_cut(df_alleles, cut_point, offset, collapse_by_sequence
         ['Aligned_Sequence', 'Reference_Sequence', 'Unedited', 'n_deleted', 'n_inserted',
          'n_mutated']).sum().reset_index().set_index('Aligned_Sequence')
 
-    df_alleles_around_cut.sort_values(by='%Reads', inplace=True, ascending=False)
+    df_alleles_around_cut.sort_values(by=['#Reads', 'Aligned_Sequence', 'Reference_Sequence'], inplace=True, ascending=[False, True, True])
     df_alleles_around_cut['Unedited'] = df_alleles_around_cut['Unedited'] > 0
     return df_alleles_around_cut
 
@@ -1264,7 +1320,7 @@ def get_dataframe_around_cut_debug(df_alleles, cut_point, offset):
         ['Aligned_Sequence', 'Reference_Sequence', 'Unedited', 'n_deleted', 'n_inserted', 'n_mutated', 'oSeq',
          'oRef']).sum().reset_index().set_index('Aligned_Sequence')
 
-    df_alleles_around_cut.sort_values(by='%Reads', inplace=True, ascending=False)
+    df_alleles_around_cut.sort_values(by=['#Reads', 'Aligned_Sequence', 'Reference_Sequence'], inplace=True, ascending=[False, True, True])
     df_alleles_around_cut['Unedited'] = df_alleles_around_cut['Unedited'] > 0
     return df_alleles_around_cut
 
@@ -1330,13 +1386,16 @@ def get_amplicon_info_for_guides(ref_seq, guides, guide_mismatches, guide_names,
         offset_rc = (-quantification_window_centers[guide_idx]) - 1
 
         # .. run once with findall to get number of matches
-        fw_matches = re.findall(current_guide_seq, ref_seq, flags=re.IGNORECASE)
-        rv_matches = re.findall(reverse_complement(current_guide_seq), ref_seq, flags=re.IGNORECASE)
+        fw_regex = r'(?=(' + re.escape(current_guide_seq) + r'))'
+        fw_matches = re.findall(fw_regex, ref_seq, flags=re.IGNORECASE)
+        rv_regex = r'(?=(' + re.escape(reverse_complement(current_guide_seq)) + r'))'
+        rv_matches = re.findall(rv_regex, ref_seq, flags=re.IGNORECASE)
         match_count = len(fw_matches) + len(rv_matches)
 
         # and now create the iter which will keep track of the locations of matches
-        fw_matches = re.finditer(current_guide_seq, ref_seq, flags=re.IGNORECASE)
-        rv_matches = re.finditer(reverse_complement(current_guide_seq), ref_seq, flags=re.IGNORECASE)
+        # (you can't get the length of an iter, and the findall only gives an array of matched strings and doesn't give locations of matches)
+        fw_matches = re.finditer(fw_regex, ref_seq, flags=re.IGNORECASE)
+        rv_matches = re.finditer(rv_regex, ref_seq, flags=re.IGNORECASE)
 
         # for every match, append:
         # this_sgRNA_cut_points, this_sgRNA_intervals,this_sgRNA_mismatches,this_sgRNA_names,this_sgRNA_sequences,include_idxs
@@ -1650,6 +1709,10 @@ def get_crispresso_header(description, header_str):
     Creates the CRISPResso header string with the header_str between two crispresso mugs
     """
     term_width = 80
+    try:
+        term_width = os.get_terminal_size().columns
+    except:
+        pass
 
     logo = get_crispresso_logo()
     logo_lines = logo.splitlines()
@@ -1684,7 +1747,7 @@ def get_crispresso_header(description, header_str):
 
     output_line += '\n' + ('[CRISPResso version ' + __version__ + ']').center(term_width) + '\n' + (
         '[Note that starting in version 2.3.0 FLASh and Trimmomatic will be replaced by fastp for read merging and trimming. Accordingly, the --flash_command and --trimmomatic_command parameters will be replaced with --fastp_command. Also, --trimmomatic_options_string will be replaced with --fastp_options_string.\n\nAlso in version 2.3.0, when running CRISPRessoPooled in mixed-mode (amplicon file and genome are provided) the default behavior will be as if the --demultiplex_only_at_amplicons parameter is provided. This change means that reads and amplicons do not need to align to the exact locations.]').center(
-        term_width) + "\n" + ('[For support contact kclement@mgh.harvard.edu or support@edilytics.com]').center(term_width) + "\n"
+        term_width) + "\n" + ('[For support contact k.clement@utah.edu or support@edilytics.com]').center(term_width) + "\n"
 
     description_str = ""
     for str in description:
@@ -1707,6 +1770,38 @@ def get_crispresso_footer():
         output_line = pad_string + logo_lines[i].ljust(max_logo_width) + pad_string + "\n" + output_line
 
     return output_line
+
+def format_cl_text(text, max_chars=None, spaces_to_tab=4):
+    """
+    Formats text for command line output
+    params:
+        text: text to format
+        max_chars: maximum number of characters per line
+        spaces_to_tab: number of spaces to add at the beginning of wrapped lines
+    """
+    if max_chars is None:
+        try:
+            max_chars = os.get_terminal_size().columns
+        except:
+            max_chars = 80
+
+    broken_lines = []
+    for line in text.split('\n'):
+        if len(line) > max_chars:
+            broken_line = ''
+            while len(line) > max_chars:
+                # Find the last space before max_chars characters
+                last_space_index = line.rfind(' ', spaces_to_tab, max_chars)
+                if last_space_index == -1:
+                    # If no space found, break the line at max_chars characters
+                    last_space_index = max_chars
+                broken_line += line[:last_space_index] + '\n'
+                line = ' ' * spaces_to_tab + line[last_space_index:].strip()
+            broken_line += line
+            broken_lines.append(broken_line)
+        else:
+            broken_lines.append(line)
+    return '\n'.join(broken_lines)
 
 
 def zip_results(results_folder):

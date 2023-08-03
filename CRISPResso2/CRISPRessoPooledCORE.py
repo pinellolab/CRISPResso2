@@ -162,13 +162,6 @@ def get_n_aligned_bam_region(bam_filename, chr_name, chr_start, chr_end):
     p = sb.Popen("samtools view -F 0x904 -c %s %s:%d-%d" %(bam_filename, chr_name, chr_start, chr_end), shell=True, stdout=sb.PIPE)
     return int(p.communicate()[0])
 
-#get a clean name that we can use for a filename
-validFilenameChars = "+-_.() %s%s" % (string.ascii_letters, string.digits)
-
-def clean_filename(filename):
-    cleanedFilename = unicodedata.normalize('NFKD', filename)
-    return ''.join(c for c in cleanedFilename if c in validFilenameChars)
-
 def find_overlapping_genes(row, df_genes):
     df_genes_overlapping=df_genes.loc[(df_genes.chrom==row.chr_id) &
                                      (df_genes.txStart<=row.bpend) &
@@ -281,7 +274,21 @@ def main():
         '''
         print(CRISPRessoShared.get_crispresso_header(description, pooled_string))
 
-        parser = CRISPRessoShared.getCRISPRessoArgParser(parserTitle = 'CRISPRessoPooled Parameters')
+        # if no args are given, print a simplified help message
+        if len(sys.argv) == 1:
+            print(CRISPRessoShared.format_cl_text('usage: CRISPRessoPooled [-r1 FASTQ_R1] [-r2 FASTQ_R2] [-f AMPLICONS_FILE] [-x GENOME_ROOT] [-n NAME]\n' + \
+                'commonly-used arguments:\n' + \
+                '-h, --help            show the full list of arguments\n' + \
+                '-v, --version         show program\'s version number and exit\n' + \
+                '-r1 FASTQ_R1          Input fastq file R1 (default: None)\n' + \
+                '-r2 FASTQ_R2          Input fastq file R2 (default: None)\n' + \
+                '-f AMPLICONS_FILE     Tab-separated file containing information for each amplicon, including at least columns for the amplicon_name and amplicon_seq (default: None)\n' + \
+                '-x GENOME_ROOT        Folder that contains the bowtie2-indexed genome for optional unbiased alignment of reads (default: None, reads are only aligned to provided amplicon sequences)\n' + \
+                '-n NAME, --name NAME  Name for the analysis (default: name based on input file name)\n'
+            ))
+            sys.exit()
+
+        parser = CRISPRessoShared.getCRISPRessoArgParser(parser_title = 'CRISPRessoPooled Parameters')
         parser.add_argument('-f', '--amplicons_file', type=str,  help='Amplicons description file. This file is a tab-delimited text file with up to 14 columns (2 required):\
         \namplicon_name:  an identifier for the amplicon (must be unique).\
         \namplicon_seq:  amplicon sequence used in the experiment.\
@@ -374,8 +381,10 @@ def main():
             if args.fastq_r1 == '':
                 raise CRISPRessoShared.BadParameterException('')
             CRISPRessoShared.check_file(args.fastq_r1)
+            CRISPRessoShared.assert_fastq_format(args.fastq_r1)
             if args.fastq_r2:
                 CRISPRessoShared.check_file(args.fastq_r2)
+                CRISPRessoShared.assert_fastq_format(args.fastq_r2)
         else:
             parser.print_help()
             raise CRISPRessoShared.BadParameterException('Please provide input data for pooled analysis e.g. using the --fastq_r1 parameter.')
@@ -643,8 +652,8 @@ def main():
             lowercase_default_amplicon_headers = {h.lower(): h for h in default_input_amplicon_headers}
 
             headers = []
+            unmatched_headers = []
             has_header = False
-            has_unmatched_header_el = False
             for head in header_els:
                 # Header based on header provided
                 # Look up long name (e.g. qwc -> quantification_window_coordinates)
@@ -658,21 +667,23 @@ def main():
 
                 match = difflib.get_close_matches(long_head, lowercase_default_amplicon_headers, n=1)
                 if not match:
-                    has_unmatched_header_el = True
-                    warn(f'Unable to find matches for header value "{head}". Using the default header values and order.')
+                    unmatched_headers.append(head)
                 else:
                     has_header = True
                     headers.append(lowercase_default_amplicon_headers[match[0]])
                     if args.debug:
                         info(f'Matching header {head} with {lowercase_default_amplicon_headers[match[0]]}.')
 
-            if not has_header or has_unmatched_header_el:
+            if len(headers) > 5 and not has_header:
+                raise CRISPRessoShared.BadParameterException('Incorrect number of columns provided without header.')
+            elif has_header and len(unmatched_headers) > 0:
+                raise CRISPRessoShared.BadParameterException('Unable to match headers: ' + str(unmatched_headers))
+            
+            if not has_header:
                 # Default header
                 headers = []
                 for i in range(len(header_els)):
                     headers.append(default_input_amplicon_headers[i])
-                if len(headers) > 5:
-                    raise CRISPRessoShared.BadParameterException('Incorrect number of columns provided without header.')
 
             if args.debug:
                 info(f'Header variable names in order: {headers}')
@@ -741,10 +752,10 @@ def main():
             with open(amplicon_fa_filename, 'w+') as outfile:
                 for idx, row in df_template.iterrows():
                     if row['amplicon_seq']:
-                        outfile.write('>%s\n%s\n' %(clean_filename('AMPL_'+idx), row['amplicon_seq']))
+                        outfile.write('>%s\n%s\n' %(CRISPRessoShared.clean_filename('AMPL_'+idx), row['amplicon_seq']))
 
                         #create place-holder fastq files
-                        fastq_gz_amplicon_filenames.append(_jp('%s.fastq.gz' % clean_filename('AMPL_'+idx)))
+                        fastq_gz_amplicon_filenames.append(_jp('%s.fastq.gz' % CRISPRessoShared.clean_filename('AMPL_'+idx)))
                         open(fastq_gz_amplicon_filenames[-1], 'w+').close()
 
             df_template['Demultiplexed_fastq.gz_filename']=fastq_gz_amplicon_filenames
@@ -1031,21 +1042,23 @@ def main():
                       close(fastq_filename); \
                       system("gzip -f "fastq_filename);  \
                       record_log_str = "__REGIONCHR__\t__REGIONSTART__\t__REGIONEND__\t"num_records"\t"fastq_filename".gz\n"; \
-                        print(record_log_str); \
-                    } \
-                    ' >> __DEMUX_LOGFILENAME__ '''
+                      print record_log_str > "__DEMUX_CHR_LOGFILENAME__"; \
+                    } '''
                     cmd = (s1).replace('__OUTPUTPATH__', MAPPED_REGIONS)
                     cmd = cmd.replace("__MIN_READS__", str(args.min_reads_to_use_region))
                     with open(REPORT_ALL_DEPTH, 'w') as f:
                         f.write('chr_id\tstart\tend\tnumber of reads\toutput filename\n')
-                    cmd = cmd.replace("__DEMUX_LOGFILENAME__", REPORT_ALL_DEPTH)
 
                     info('Preparing to demultiplex reads aligned to positions overlapping amplicons in the genome...')
                     # make command for each amplicon
 
                     chr_commands = []
+                    chr_output_filenames = []
                     for idx, row in df_template.iterrows():
-                        chr_commands.append(cmd.replace('__REGIONCHR__', str(row.chr_id)).replace('__REGIONSTART__',str(row.bpstart)).replace('__REGIONEND__',str(row.bpend)))
+                        chr_output_filename = _jp('MAPPED_REGIONS/chr%s_%s_%s.info' % (row.chr_id, row.bpstart, row.bpend))
+                        sub_chr_command = cmd.replace('__REGIONCHR__', str(row.chr_id)).replace('__REGIONSTART__',str(row.bpstart)).replace('__REGIONEND__',str(row.bpend)).replace("__DEMUX_CHR_LOGFILENAME__", chr_output_filename)
+                        chr_commands.append(sub_chr_command)
+                        chr_output_filenames.append(chr_output_filename)
 
                 # if we should demultiplex everwhere (not just where amplicons aligned)
                 else:
@@ -1092,14 +1105,10 @@ def main():
                             record_log_str = record_log_str chr_id"\t"bpstart"\t"bpend"\t"num_records"\tNA\n"} \
                     else{printf("%s",fastq_records)>fastq_filename;close(fastq_filename); system("gzip -f "fastq_filename); record_log_str = record_log_str chr_id"\t"bpstart"\t"bpend"\t"num_records"\t"fastq_filename".gz\n"} \
                         }\
-                        print(record_log_str) \
-                    }\
-                    ' >> __DEMUX_LOGFILENAME__ '''
+                        print record_log_str > "__DEMUX_CHR_LOGFILENAME__" \
+                    }' '''
                     cmd = (s1+s2).replace('__OUTPUTPATH__', MAPPED_REGIONS)
                     cmd = cmd.replace("__MIN_READS__", str(args.min_reads_to_use_region))
-                    with open(REPORT_ALL_DEPTH, 'w') as f:
-                        f.write('chr_id\tstart\tend\tnumber of reads\toutput filename\n')
-                    cmd = cmd.replace("__DEMUX_LOGFILENAME__", REPORT_ALL_DEPTH)
 
                     info('Preparing to demultiplex reads aligned to the genome...')
                     # next, get all of the chromosome names (for parallelization)
@@ -1115,6 +1124,7 @@ def main():
                             chr_lens[m.group(1)] = int(m.group(2))
 
                     chr_commands = []
+                    chr_output_filenames = []
                     for chr_str in chrs:
                         chr_cmd = cmd.replace('__CHR__', chr_str)
                         # if we have a lot of reads, split up the chrs too
@@ -1135,15 +1145,24 @@ def main():
                                         break
                                     n_reads_at_end = get_n_aligned_bam_region(bam_filename_genome, chr_str, curr_end-5, curr_end+5)
 
-                                chr_commands.append(chr_cmd.replace("__REGION__", ":%d-%d "%(curr_pos, curr_end)))
+                                sub_chr_command = chr_cmd.replace("__REGION__", ":%d-%d "%(curr_pos, curr_end))
+                                chr_output_filename = _jp('MAPPED_REGIONS/%s_%s_%s.info' % (chr_str, curr_pos, chr_end))
+                                chr_commands.append(sub_chr_command)
+                                chr_output_filenames.append(chr_output_filename)
                                 curr_pos = curr_end
                                 curr_end = curr_pos + chr_step_size
                             if curr_end < chr_len:
-                                chr_commands.append(chr_cmd.replace("__REGION__", ":%d-%d "%(curr_pos, chr_len)))
+                                chr_output_filename = _jp('MAPPED_REGIONS/%s_%s_%s.info' % (chr_str, curr_pos, chr_len))
+                                sub_chr_command = chr_cmd.replace("__REGION__", ":%d-%d "%(curr_pos, chr_len)).replace("__DEMUX_CHR_LOGFILENAME__",chr_output_filename)
+                                chr_commands.append(sub_chr_command)
+                                chr_output_filenames.append(chr_output_filename)
 
                         else:
                             # otherwise do the whole chromosome
-                            chr_commands.append(chr_cmd.replace("__REGION__", ""))
+                            chr_output_filename = _jp('MAPPED_REGIONS/%s.info' % (chr_str))
+                            sub_chr_command = chr_cmd.replace("__REGION__", "").replace("__DEMUX_CHR_LOGFILENAME__",chr_output_filename)
+                            chr_commands.append(sub_chr_command)
+                            chr_output_filenames.append(chr_output_filename)
 
                 if args.debug:
                     demux_file = _jp('DEMUX_COMMANDS.txt')
@@ -1153,6 +1172,13 @@ def main():
 
                 info('Demultiplexing reads by location (%d genomic regions)...'%len(chr_commands), {'percent_complete': 85})
                 CRISPRessoMultiProcessing.run_parallel_commands(chr_commands, n_processes=n_processes_for_pooled, descriptor='Demultiplexing reads by location', continue_on_fail=args.skip_failed)
+
+                with open(REPORT_ALL_DEPTH, 'w') as f:
+                    f.write('chr_id\tstart\tend\tnumber of reads\toutput filename\n')
+                    for chr_output_filename in chr_output_filenames:
+                        with open(chr_output_filename, 'r') as f_in:
+                            for line in f_in:
+                                f.write(line)
 
                 df_all_demux = pd.read_csv(REPORT_ALL_DEPTH, sep='\t')
                 df_all_demux.sort_values(by=['chr_id', 'start'], inplace=True)

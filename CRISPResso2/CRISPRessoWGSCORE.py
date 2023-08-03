@@ -109,15 +109,6 @@ def get_region_from_fa(chr_id, bpstart, bpend, uncompressed_reference):
     p = sb.Popen("samtools faidx %s %s |   grep -v ^\> | tr -d '\n'" %(uncompressed_reference, region), shell=True, stdout=sb.PIPE)
     return p.communicate()[0].decode('utf-8').upper()
 
-
-#get a clean name that we can use for a filename
-validFilenameChars = "+-_.() %s%s" % (string.ascii_letters, string.digits)
-
-def clean_filename(filename):
-    cleanedFilename = unicodedata.normalize('NFKD', filename)
-    return ''.join(c for c in cleanedFilename if c in validFilenameChars)
-
-
 def find_overlapping_genes(row, df_genes):
     df_genes_overlapping=df_genes.loc[(df_genes.chrom==row.chr_id) &
                                      (df_genes.txStart<=row.bpend) &
@@ -314,7 +305,27 @@ def main():
         '''
         print(CRISPRessoShared.get_crispresso_header(description, wgs_string))
 
-        parser = CRISPRessoShared.getCRISPRessoArgParser(parserTitle = 'CRISPRessoWGS Parameters', requiredParams={})
+        # if no args are given, print a simplified help message
+        if len(sys.argv) == 1:
+            print(CRISPRessoShared.format_cl_text('usage: CRISPRessoWGS [-b BAM_FILE] [-f REGION_FILE] [-r REFERENCE_FILE] [-n NAME]\n' + \
+                'commonly-used arguments:\n' + \
+                '-h, --help            show the full list of arguments\n' + \
+                '-v, --version         show program\'s version number and exit\n' + \
+                '-b BAM_FILE           WGS aligned bam file (required)\n' + \
+                '-f REGION_FILE        Regions description file. A BED format file containing the regions to analyze, one per line. The required columns are: chr_id(chromosome name), bpstart(start position), bpend(end position). (required)\n' + \
+                '-r REFERENCE_FILE     Reference genome in fasta format (required)\n' + \
+                '-n NAME, --name NAME  Name for the analysis (default: name based on input file name)'
+            ))
+            sys.exit()
+
+        parser = CRISPRessoShared.getCRISPRessoArgParser(parser_title = 'CRISPRessoWGS Parameters', required_params=[], 
+                    suppress_params=['bam_input',
+                                   'bam_chr_loc'
+                                   'fastq_r1', 
+                                   'fastq_r2', 
+                                   'amplicon_seq', 
+                                   'amplicon_name', 
+                                   ])
 
         #tool specific optional
         parser.add_argument('-b', '--bam_file', type=str,  help='WGS aligned bam file', required=True, default='bam filename' )
@@ -554,8 +565,8 @@ def main():
 
         def set_filenames(row):
             row_fastq_exists = False
-            fastq_gz_filename=os.path.join(ANALYZED_REGIONS, '%s.fastq.gz' % clean_filename('REGION_'+str(row.region_number)))
-            bam_region_filename=os.path.join(ANALYZED_REGIONS, '%s.bam' % clean_filename('REGION_'+str(row.region_number)))
+            fastq_gz_filename=os.path.join(ANALYZED_REGIONS, '%s.fastq.gz' % CRISPRessoShared.clean_filename('REGION_'+str(row.region_number)))
+            bam_region_filename=os.path.join(ANALYZED_REGIONS, '%s.bam' % CRISPRessoShared.clean_filename('REGION_'+str(row.region_number)))
             #if bam file already exists, don't regenerate it
             if os.path.isfile(fastq_gz_filename):
                 row_fastq_exists = True

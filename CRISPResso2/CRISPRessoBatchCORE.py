@@ -10,6 +10,7 @@ from copy import deepcopy
 from concurrent.futures import ProcessPoolExecutor, wait
 from functools import partial
 import sys
+import re
 import traceback
 from datetime import datetime
 from CRISPResso2 import CRISPRessoShared
@@ -58,7 +59,18 @@ def main():
         '''
         print(CRISPRessoShared.get_crispresso_header(description, batch_string))
 
-        parser = CRISPRessoShared.getCRISPRessoArgParser(parserTitle = 'CRISPRessoBatch Parameters')
+        # if no args are given, print a simplified help message
+        if len(sys.argv) == 1:
+            print(CRISPRessoShared.format_cl_text('usage: CRISPRessoBatch  [-bs BATCH_SETTINGS]  [-n NAME]\n' + \
+                'commonly-used arguments:\n' + \
+                '-h, --help            show the full list of arguments\n' + \
+                '-v, --version         show program\'s version number and exit\n' + \
+                '-bs BATCH_SETTINGS    Tab-separated file where rows are samples and columns specify settings for each sample.\n' + \
+                '-n NAME, --name NAME  Name for the analysis (default: name based on input file name)'
+            ))
+            sys.exit()
+
+        parser = CRISPRessoShared.getCRISPRessoArgParser(parser_title = 'CRISPRessoBatch Parameters')
 
         #batch specific params
         parser.add_argument('-bs', '--batch_settings', type=str, help='Settings file for batch. Must be tab-separated text file. The header row contains CRISPResso parameters (e.g., fastq_r1, fastq_r2, amplicon_seq, and other optional parameters). Each following row sets parameters for an additional batch.', required=True)
@@ -219,8 +231,6 @@ def main():
             curr_amplicon_seq_arr = str(curr_amplicon_seq_str).split(',')
             curr_amplicon_quant_window_coordinates_arr = [None]*len(curr_amplicon_seq_arr)
             if row.quantification_window_coordinates is not None:
-                print(f'{row.quantification_window_coordinates =}')
-                print(f'{row =}')
                 for idx, coords in enumerate(row.quantification_window_coordinates.strip("'").strip('"').split(",")):
                     if coords != "":
                         curr_amplicon_quant_window_coordinates_arr[idx] = coords
@@ -238,7 +248,7 @@ def main():
 
                 # iterate through guides
                 curr_guide_seq_string = row.guide_seq
-                if curr_guide_seq_string is not None and curr_guide_seq_string != "":
+                if curr_guide_seq_string is not None and re.match(r'(?i)^$|^nan?$', str(curr_guide_seq_string)) is None:
                     guides = str(curr_guide_seq_string).strip().upper().split(',')
                     for curr_guide_seq in guides:
                         wrong_nt = CRISPRessoShared.find_wrong_nt(curr_guide_seq)
@@ -273,8 +283,11 @@ def main():
 
             crispresso_cmd = args.crispresso_command + ' -o "%s" --name %s' % (OUTPUT_DIRECTORY, batch_name)
             crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_batch, batch_params, idx)
-            if row.amplicon_seq == "":
+            if re.match(r'(?i)^$|^nan?$', str(row.amplicon_seq)) is not None:
                 crispresso_cmd += ' --auto '
+                crispresso_cmd = re.sub(r'--amplicon_seq\s+[^ ]+\s*', '', crispresso_cmd)
+            if re.match(r'(?i)^$|^nan?$', str(row.guide_seq)) is not None:
+                crispresso_cmd = re.sub(r'--guide_seq\s+[^ ]+\s*', '', crispresso_cmd)
             crispresso_cmds.append(crispresso_cmd)
 
         crispresso2_info['results']['batch_names_arr'] = batch_names_arr
@@ -334,13 +347,17 @@ def main():
         if args.suppress_report:
             save_png = False
 
-        process_results = []
-        process_pool = ProcessPoolExecutor(n_processes_for_batch)
+        if n_processes_for_batch > 1:
+            process_pool = ProcessPoolExecutor(n_processes_for_batch)
+            process_futures = {}
+        else:
+            process_pool = None
+            process_futures = None
 
         plot = partial(
             CRISPRessoMultiProcessing.run_plot,
             num_processes=n_processes_for_batch,
-            process_results=process_results,
+            process_futures=process_futures,
             process_pool=process_pool,
         )
 
@@ -856,8 +873,13 @@ def main():
                     for line in infile:
                         outfile.write(batch_name + "\t" + line)
 
-        if not args.suppress_batch_summary_plots:
-            wait(process_results)
+        if not args.suppress_batch_summary_plots and n_processes_for_batch > 1:
+            wait(process_futures)
+            if args.debug:
+                debug('CRISPResso batch results:')
+                for future in process_futures:
+                    debug('future: ' + str(future))
+            future_results = [f.result() for f in process_futures] #required to raise exceptions thrown from within future
             process_pool.shutdown()
 
         if not args.suppress_report:

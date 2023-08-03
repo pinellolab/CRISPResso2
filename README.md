@@ -194,7 +194,7 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 -a or --amplicon_seq: The amplicon sequence used for the experiment.
 
--an or --amplicon_name: A name for the reference amplicon can be given. If multiple amplicons are given, multiple names can be specified here. (default: Reference)
+-an or --amplicon_name: A name for the reference amplicon can be given. If multiple amplicons are given, multiple names can be specified here. Because amplicon names are used as output filename prefixes, amplicon names are truncated to 21bp unless the parameter `--suppress_amplicon_name_truncation` is set. (default: Reference)
 
 -g or --guide_seq: sgRNA sequence, if more than one, please separate by commas. Note that the sgRNA needs to be input as the guide RNA sequence (usually 20 nt) immediately adjacent to but not including the PAM sequence (5' of NGG for SpCas9). If the PAM is found on the opposite strand with respect to the Amplicon Sequence, ensure the sgRNA sequence is also found on the opposite strand. The CRISPResso convention is to depict the expected cleavage position using the value of the parameter '--quantification_window_center' nucleotides from the 3' end of the guide. In addition, the use of alternate nucleases besides SpCas9 is supported. For example, if using the Cpf1 system, enter the sequence (usually 20 nt) immediately 3' of the PAM sequence and explicitly set the '--cleavage_offset' parameter to 1, since the default setting of -3 is suitable only for SpCas9. (default: )
 
@@ -323,6 +323,8 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --write_detailed_allele_table: If set, a detailed allele table will be written including alignment scores for each read sequence. (default: False)
 
+--suppress_amplicon_name_truncation: If set, amplicon names will not be truncated when creating output filename prefixes. If not set, amplicon names longer than 21 characters will be truncated when creating filename prefixes. (default: False)
+
 --fastq_output: If set, a fastq file with annotations for each read will be produced. (default: False)
 
 --bam_output': If set, a bam file with alignments for each read will be produced. Setting this parameter will produce a file called 'CRISPResso_output.bam' with the alignments in bam format. If the `bowtie2_index` is provided, alignments will be reported in reference to that genome. If the `bowtie2_index` is not provided, alignments will be reported in reference to a custom reference created by the amplicon sequence(s) and written to the file 'CRISPResso_output.fa'. (default: False)
@@ -350,6 +352,8 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 --dsODN: dsODN sequence -- Reads containing the dsODN are labeled and quantified. (default: '')
 
 --debug: Show debug messages (default: False)
+
+-v or --verbosity: Verbosity level of output to the console (1-4), 4 is the most verbose. If parameter `--debug` is set `--verbosity` is overridden and set to 4. (default=3)
 
 --no_rerun: Don't rerun CRISPResso2 if a run using the same parameters has already been finished. (default: False)
 
@@ -480,12 +484,12 @@ Download the test dataset files [SRR3305543.fastq.gz](https://crispresso.pinello
 
 *Using Bioconda:*
 ```
-CRISPRessoBatch --batch_settings batch.batch --amplicon_seq CATTGCAGAGAGGCGTATCATTTCGCGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCC -p 4 --base_edit -g GGAATCCCTTCTGCAGCACC -wc -10 -w 20
+CRISPRessoBatch --batch_settings batch.batch --amplicon_seq CATTGCAGAGAGGCGTATCATTTCGCGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCC -p 4 --base_editor_output -g GGAATCCCTTCTGCAGCACC -wc -10 -w 20
 ```
 
 *Using Docker:*
 ```
-docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoBatch --batch_settings batch.batch --amplicon_seq CATTGCAGAGAGGCGTATCATTTCGCGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCC -p 4 --base_edit -g GGAATCCCTTCTGCAGCACC -wc -10 -w 20
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoBatch --batch_settings batch.batch --amplicon_seq CATTGCAGAGAGGCGTATCATTTCGCGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCC -p 4 --base_editor_output -g GGAATCCCTTCTGCAGCACC -wc -10 -w 20
 ```
 
 This should produce a folder called 'CRISPRessoBatch_on_batch'. Open the file called CRISPRessoBatch_on_batch/CRISPResso2Batch_report.html in a web browser, and you should see an output like this: [CRISPResso2Batch_report.html](https://crispresso.pinellolab.partners.org/static/demo/CRISPRessoBatch_on_batch/CRISPResso2Batch_report.html).
@@ -791,20 +795,34 @@ although the least reliable in terms of quantification accuracy.
 
 #### Parameter List
 -f or --amplicons_file: Amplicons description file (default: ''). This file is a tab-delimited text file with up to 14 columns (2 required):
-        amplicon_name:  an identifier for the amplicon (must be unique)
-        amplicon_seq:  amplicon sequence used in the experiment
-        guide_seq (OPTIONAL):  sgRNA sequence used for this amplicon without the PAM sequence. Multiple guides can be given separated by commas and not spaces.
-        expected_hdr_amplicon_seq (OPTIONAL): expected amplicon sequence in case of HDR.
-        coding_seq (OPTIONAL): Subsequence(s) of the amplicon corresponding to coding sequences. If more than one separate them by commas and not spaces.
-        prime_editing_pegRNA_spacer_seq (OPTIONAL): pegRNA spacer sgRNA sequence used in prime editing. The spacer should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the given sequence.
-        prime_editing_nicking_guide_seq (OPTIONAL): Nicking sgRNA sequence used in prime editing. The sgRNA should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the sequence.
-        prime_editing_pegRNA_extension_seq (OPTIONAL): Extension sequence used in prime editing. The sequence should be given in the RNA 5'->3' order, such that the sequence starts with the RT template including the edit, followed by the Primer-binding site (PBS). 
-        prime_editing_pegRNA_scaffold_seq (OPTIONAL): If given, reads containing any of this scaffold sequence before extension sequence (provided by --prime_editing_extension_seq) will be classified as 'Scaffold-incorporated'. The sequence should be given in the 5'->3' order such that the RT template directly follows this sequence. A common value ends with 'GGCACCGAGUCGGUGC'.
-        prime_editing_pegRNA_scaffold_min_match_length (OPTIONAL): Minimum number of bases matching scaffold sequence for the read to be counted as 'Scaffold-incorporated'. If the scaffold sequence matches the reference sequence at the incorporation site, the minimum number of bases to match will be minimally increased (beyond this parameter) to disambiguate between prime-edited and scaffold-incorporated sequences.
-        prime_editing_override_prime_edited_ref_seq (OPTIONAL): If given, this sequence will be used as the prime-edited reference sequence. This may be useful if the prime-edited reference sequence has large indels or the algorithm cannot otherwise infer the correct reference sequence.
-        quantification_window_coordinates (OPTIONAL): Bp positions in the amplicon sequence specifying the quantification window. This parameter overrides values of the "--quantification_window_center", "-- cleavage_offset", "--window_around_sgrna" or "-- window_around_sgrna" values. Any indels/substitutions outside this window are excluded. Indexes are 0-based, meaning that the first nucleotide is position 0. Ranges are separated by the dash sign like "start-stop", and multiple ranges can be separated by the underscore (\_). A value of 0 disables this filter. (can be comma-separated list of values, corresponding to amplicon sequences given in --amplicon_seq e.g. 5-10,5-10_20-30 would specify the 5th-10th bp in the first reference and the 5th-10th and 20th-30th bp in the second reference) (default: None)
-        quantification_window_size (OPTIONAL): Defines the size (in bp) of the quantification window extending from the position specified by the "--cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence(s) (--sgRNA). Mutations within this number of bp from the quantification window center are used in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 1, 1bp on each side of the cleavage position for a total length of 2bp.
-        quantification_window_center (OPTIONAL): Center of quantification window to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17.
+
+--amplicon_name:  an identifier for the amplicon (must be unique)
+
+--amplicon_seq:  amplicon sequence used in the experiment
+
+--guide_seq (OPTIONAL):  sgRNA sequence used for this amplicon without the PAM sequence. Multiple guides can be given separated by commas and not spaces.
+
+--expected_hdr_amplicon_seq (OPTIONAL): expected amplicon sequence in case of HDR.
+
+--coding_seq (OPTIONAL): Subsequence(s) of the amplicon corresponding to coding sequences. If more than one separate them by commas and not spaces.
+
+--prime_editing_pegRNA_spacer_seq (OPTIONAL): pegRNA spacer sgRNA sequence used in prime editing. The spacer should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the given sequence.
+
+--prime_editing_nicking_guide_seq (OPTIONAL): Nicking sgRNA sequence used in prime editing. The sgRNA should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the sequence.
+
+--prime_editing_pegRNA_extension_seq (OPTIONAL): Extension sequence used in prime editing. The sequence should be given in the RNA 5'->3' order, such that the sequence starts with the RT template including the edit, followed by the Primer-binding site (PBS).
+
+--prime_editing_pegRNA_scaffold_seq (OPTIONAL): If given, reads containing any of this scaffold sequence before extension sequence (provided by --prime_editing_extension_seq) will be classified as 'Scaffold-incorporated'. The sequence should be given in the 5'->3' order such that the RT template directly follows this sequence. A common value ends with 'GGCACCGAGUCGGUGC'.
+
+--prime_editing_pegRNA_scaffold_min_match_length (OPTIONAL): Minimum number of bases matching scaffold sequence for the read to be counted as 'Scaffold-incorporated'. If the scaffold sequence matches the reference sequence at the incorporation site, the minimum number of bases to match will be minimally increased (beyond this parameter) to disambiguate between prime-edited and scaffold-incorporated sequences.
+
+--prime_editing_override_prime_edited_ref_seq (OPTIONAL): If given, this sequence will be used as the prime-edited reference sequence. This may be useful if the prime-edited reference sequence has large indels or the algorithm cannot otherwise infer the correct reference sequence.
+
+--quantification_window_coordinates (OPTIONAL): Bp positions in the amplicon sequence specifying the quantification window. This parameter overrides values of the "--quantification_window_center", "-- cleavage_offset", "--window_around_sgrna" or "-- window_around_sgrna" values. Any indels/substitutions outside this window are excluded. Indexes are 0-based, meaning that the first nucleotide is position 0. Ranges are separated by the dash sign like "start-stop", and multiple ranges can be separated by the underscore (\_). A value of 0 disables this filter. (can be comma-separated list of values, corresponding to amplicon sequences given in --amplicon_seq e.g. 5-10,5-10_20-30 would specify the 5th-10th bp in the first reference and the 5th-10th and 20th-30th bp in the second reference) (default: None)
+
+--quantification_window_size (OPTIONAL): Defines the size (in bp) of the quantification window extending from the position specified by the "--cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence(s) (--sgRNA). Mutations within this number of bp from the quantification window center are used in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 1, 1bp on each side of the cleavage position for a total length of 2bp.
+
+--quantification_window_center (OPTIONAL): Center of quantification window to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17.
 
 --gene_annotations: Gene Annotation Table from UCSC Genome Browser Tables <http://genome.ucsc.edu/cgi-bin/hgTables?command=start>, please select as table "knownGene", as output format "all fields from selected table" and as file returned "gzip compressed". (default: '')
 
@@ -833,7 +851,13 @@ although the least reliable in terms of quantification accuracy.
 CRISPRessoWGS is a utility for the analysis of genome editing experiment
 from whole genome sequencing (WGS) data. CRISPRessoWGS allows exploring
 any region of the genome to quantify targeted editing or potentially
-off-target effects.
+off-target effects. The intended use case for CRISPRessoWGS is the analysis
+of targeted regions, and WGS reads from those regions will be realigned using
+CRISPResso's alignment aligorithm for more accurate genome editing 
+quantification. To scan the entire genome for mutations 
+[VarScan](http://dkoboldt.github.io/varscan/) or [MuTect](https://github.com/broadinstitute/mutect) 
+are more suitable, and identified regions can be analyzed and visualized using
+CRISPRessoWGS.
 
 #### Usage
 To run CRISPRessoWGS you must provide:
