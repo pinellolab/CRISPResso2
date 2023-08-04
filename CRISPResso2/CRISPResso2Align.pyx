@@ -124,7 +124,7 @@ def global_align(str pystr_seqj, str pystr_seqi, np.ndarray[DTYPE_INT, ndim=2] m
     cdef size_t max_j = len(pystr_seqj)
     cdef size_t max_i = len(pystr_seqi)
     if len(gap_incentive) != max_i + 1:
-        print('\nERROR: Mismatch in gap_incentive length (gap_incentive: ' + str(len(gap_incentive)) + ' ref: '+str(max_i+1) + '\n')
+        print('\nERROR: Mismatch in gap_incentive length (gap_incentive: ' + str(len(gap_incentive)) + ' ref: '+str(max_i+1) + ')\n')
         return 0
 
     # need to initialize j for the case when it's a zero-length string.
@@ -150,6 +150,9 @@ def global_align(str pystr_seqj, str pystr_seqi, np.ndarray[DTYPE_INT, ndim=2] m
 
 
     cdef int min_score = gap_open * max_j * max_i
+    # if max_j or max_i == 0 min_score could be 0 which would lead to bad score matrix initialization
+    if gap_open < min_score:
+        min_score = gap_open
 
     #init match matrix
     mScore[0,1:] = min_score
@@ -235,45 +238,46 @@ def global_align(str pystr_seqj, str pystr_seqi, np.ndarray[DTYPE_INT, ndim=2] m
     #last column
     j = max_j
     cj = seqj[j-1]
-    for i in range(1, max_i):
-        ci = seqi[i-1]
+    if max_j > 0:
+        for i in range(1, max_i):
+            ci = seqi[i-1]
 
-        iFromMVal = gap_extend + mScore[i, j - 1] + gap_incentive[i]
-        iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]
-        if iFromMVal > iExtendVal:
-            iScore[i,j] =  iFromMVal
-            iPointer[i,j] = MARRAY
-        else:
-            iScore[i,j] = iExtendVal
-            iPointer[i,j] = IARRAY
-
-        jFromMVal = gap_extend + mScore[i - 1, j] + gap_incentive[i-1]
-        jExtendVal = gap_extend + jScore[i - 1, j]
-        if jFromMVal > jExtendVal:
-            jScore[i,j] =  jFromMVal
-            jPointer[i,j] = MARRAY
-        else:
-            jScore[i,j] = jExtendVal
-            jPointer[i,j] = JARRAY
-
-        mVal = mScore[i - 1, j - 1] + matrix[ci,cj]
-        iVal = iScore[i - 1, j - 1] + matrix[ci,cj]
-        jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
-        if mVal > jVal:
-            if mVal > iVal:
-                mScore[i, j] = mVal
-                mPointer[i, j] = MARRAY
+            iFromMVal = gap_extend + mScore[i, j - 1] + gap_incentive[i]
+            iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]
+            if iFromMVal > iExtendVal:
+                iScore[i,j] =  iFromMVal
+                iPointer[i,j] = MARRAY
             else:
-                mScore[i, j]   = iVal
-                mPointer[i, j] = IARRAY
-        else:
-            if jVal > iVal:
-                mScore[i, j]  = jVal
-                mPointer[i, j] = JARRAY
+                iScore[i,j] = iExtendVal
+                iPointer[i,j] = IARRAY
+
+            jFromMVal = gap_extend + mScore[i - 1, j] + gap_incentive[i-1]
+            jExtendVal = gap_extend + jScore[i - 1, j]
+            if jFromMVal > jExtendVal:
+                jScore[i,j] =  jFromMVal
+                jPointer[i,j] = MARRAY
             else:
-                mScore[i, j] = iVal
-                mPointer[i, j] = IARRAY
-#        print('lastCol: mScore['+str(i) + ',' + str(j) +']: ' + str(mScore[i,j]) + ': max(' + str(mScore[i - 1, j - 1])+ '+ (' + str(ci)+ ',' + str(cj) + ') ' + str(matrix[ci,cj]) + ', i:'+str(iVal) + ',j:' + str(jVal))
+                jScore[i,j] = jExtendVal
+                jPointer[i,j] = JARRAY
+
+            mVal = mScore[i - 1, j - 1] + matrix[ci,cj]
+            iVal = iScore[i - 1, j - 1] + matrix[ci,cj]
+            jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
+            if mVal > jVal:
+                if mVal > iVal:
+                    mScore[i, j] = mVal
+                    mPointer[i, j] = MARRAY
+                else:
+                    mScore[i, j]   = iVal
+                    mPointer[i, j] = IARRAY
+            else:
+                if jVal > iVal:
+                    mScore[i, j]  = jVal
+                    mPointer[i, j] = JARRAY
+                else:
+                    mScore[i, j] = iVal
+                    mPointer[i, j] = IARRAY
+#            print('lastCol: mScore['+str(i) + ',' + str(j) +']: ' + str(mScore[i,j]) + ': max(' + str(mScore[i - 1, j - 1])+ '+ (' + str(ci)+ ',' + str(cj) + ') ' + str(matrix[ci,cj]) + ', i:'+str(iVal) + ',j:' + str(jVal))
 
     #last row
     i = max_i

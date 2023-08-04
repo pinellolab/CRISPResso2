@@ -2421,7 +2421,7 @@ static const char __pyx_k_p[] = "p";
 static const char __pyx_k_v[] = "v";
 static const char __pyx_k_x[] = "x";
 static const char __pyx_k__2[] = " ";
-static const char __pyx_k__7[] = "\n";
+static const char __pyx_k__7[] = ")\n";
 static const char __pyx_k_ai[] = "ai";
 static const char __pyx_k_ci[] = "ci";
 static const char __pyx_k_cj[] = "cj";
@@ -4693,7 +4693,7 @@ static PyObject *__pyx_pf_11CRISPResso2_16CRISPResso2Align_4global_align(CYTHON_
  *     cdef size_t max_j = len(pystr_seqj)
  *     cdef size_t max_i = len(pystr_seqi)             # <<<<<<<<<<<<<<
  *     if len(gap_incentive) != max_i + 1:
- *         print('\nERROR: Mismatch in gap_incentive length (gap_incentive: ' + str(len(gap_incentive)) + ' ref: '+str(max_i+1) + '\n')
+ *         print('\nERROR: Mismatch in gap_incentive length (gap_incentive: ' + str(len(gap_incentive)) + ' ref: '+str(max_i+1) + ')\n')
  */
   if (unlikely(__pyx_v_pystr_seqi == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
@@ -4706,7 +4706,7 @@ static PyObject *__pyx_pf_11CRISPResso2_16CRISPResso2Align_4global_align(CYTHON_
  *     cdef size_t max_j = len(pystr_seqj)
  *     cdef size_t max_i = len(pystr_seqi)
  *     if len(gap_incentive) != max_i + 1:             # <<<<<<<<<<<<<<
- *         print('\nERROR: Mismatch in gap_incentive length (gap_incentive: ' + str(len(gap_incentive)) + ' ref: '+str(max_i+1) + '\n')
+ *         print('\nERROR: Mismatch in gap_incentive length (gap_incentive: ' + str(len(gap_incentive)) + ' ref: '+str(max_i+1) + ')\n')
  *         return 0
  */
   __pyx_t_3 = PyObject_Length(((PyObject *)__pyx_v_gap_incentive)); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 126, __pyx_L1_error)
@@ -4716,7 +4716,7 @@ static PyObject *__pyx_pf_11CRISPResso2_16CRISPResso2Align_4global_align(CYTHON_
     /* "CRISPResso2/CRISPResso2Align.pyx":127
  *     cdef size_t max_i = len(pystr_seqi)
  *     if len(gap_incentive) != max_i + 1:
- *         print('\nERROR: Mismatch in gap_incentive length (gap_incentive: ' + str(len(gap_incentive)) + ' ref: '+str(max_i+1) + '\n')             # <<<<<<<<<<<<<<
+ *         print('\nERROR: Mismatch in gap_incentive length (gap_incentive: ' + str(len(gap_incentive)) + ' ref: '+str(max_i+1) + ')\n')             # <<<<<<<<<<<<<<
  *         return 0
  * 
  */
@@ -4751,7 +4751,7 @@ static PyObject *__pyx_pf_11CRISPResso2_16CRISPResso2Align_4global_align(CYTHON_
 
     /* "CRISPResso2/CRISPResso2Align.pyx":128
  *     if len(gap_incentive) != max_i + 1:
- *         print('\nERROR: Mismatch in gap_incentive length (gap_incentive: ' + str(len(gap_incentive)) + ' ref: '+str(max_i+1) + '\n')
+ *         print('\nERROR: Mismatch in gap_incentive length (gap_incentive: ' + str(len(gap_incentive)) + ' ref: '+str(max_i+1) + ')\n')
  *         return 0             # <<<<<<<<<<<<<<
  * 
  *     # need to initialize j for the case when it's a zero-length string.
@@ -4765,7 +4765,7 @@ static PyObject *__pyx_pf_11CRISPResso2_16CRISPResso2Align_4global_align(CYTHON_
  *     cdef size_t max_j = len(pystr_seqj)
  *     cdef size_t max_i = len(pystr_seqi)
  *     if len(gap_incentive) != max_i + 1:             # <<<<<<<<<<<<<<
- *         print('\nERROR: Mismatch in gap_incentive length (gap_incentive: ' + str(len(gap_incentive)) + ' ref: '+str(max_i+1) + '\n')
+ *         print('\nERROR: Mismatch in gap_incentive length (gap_incentive: ' + str(len(gap_incentive)) + ' ref: '+str(max_i+1) + ')\n')
  *         return 0
  */
   }
@@ -5061,12 +5061,40 @@ static PyObject *__pyx_pf_11CRISPResso2_16CRISPResso2Align_4global_align(CYTHON_
  * 
  * 
  *     cdef int min_score = gap_open * max_j * max_i             # <<<<<<<<<<<<<<
- * 
- *     #init match matrix
+ *     # if max_j or max_i == 0 min_score could be 0 which would lead to bad score matrix initialization
+ *     if gap_open < min_score:
  */
   __pyx_v_min_score = ((__pyx_v_gap_open * __pyx_v_max_j) * __pyx_v_max_i);
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":155
+  /* "CRISPResso2/CRISPResso2Align.pyx":154
+ *     cdef int min_score = gap_open * max_j * max_i
+ *     # if max_j or max_i == 0 min_score could be 0 which would lead to bad score matrix initialization
+ *     if gap_open < min_score:             # <<<<<<<<<<<<<<
+ *         min_score = gap_open
+ * 
+ */
+  __pyx_t_4 = ((__pyx_v_gap_open < __pyx_v_min_score) != 0);
+  if (__pyx_t_4) {
+
+    /* "CRISPResso2/CRISPResso2Align.pyx":155
+ *     # if max_j or max_i == 0 min_score could be 0 which would lead to bad score matrix initialization
+ *     if gap_open < min_score:
+ *         min_score = gap_open             # <<<<<<<<<<<<<<
+ * 
+ *     #init match matrix
+ */
+    __pyx_v_min_score = __pyx_v_gap_open;
+
+    /* "CRISPResso2/CRISPResso2Align.pyx":154
+ *     cdef int min_score = gap_open * max_j * max_i
+ *     # if max_j or max_i == 0 min_score could be 0 which would lead to bad score matrix initialization
+ *     if gap_open < min_score:             # <<<<<<<<<<<<<<
+ *         min_score = gap_open
+ * 
+ */
+  }
+
+  /* "CRISPResso2/CRISPResso2Align.pyx":158
  * 
  *     #init match matrix
  *     mScore[0,1:] = min_score             # <<<<<<<<<<<<<<
@@ -5100,7 +5128,7 @@ __pyx_t_10 = -1;
     0,
     1) < 0))
 {
-    __PYX_ERR(0, 155, __pyx_L1_error)
+    __PYX_ERR(0, 158, __pyx_L1_error)
 }
 
 {
@@ -5121,7 +5149,7 @@ __pyx_t_10 = -1;
   __pyx_t_9.memview = NULL;
   __pyx_t_9.data = NULL;
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":156
+  /* "CRISPResso2/CRISPResso2Align.pyx":159
  *     #init match matrix
  *     mScore[0,1:] = min_score
  *     mScore[1:,0] = min_score             # <<<<<<<<<<<<<<
@@ -5146,7 +5174,7 @@ __pyx_t_10 = -1;
     0,
     1) < 0))
 {
-    __PYX_ERR(0, 156, __pyx_L1_error)
+    __PYX_ERR(0, 159, __pyx_L1_error)
 }
 
 {
@@ -5176,7 +5204,7 @@ __pyx_t_10 = -1;
   __pyx_t_9.memview = NULL;
   __pyx_t_9.data = NULL;
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":157
+  /* "CRISPResso2/CRISPResso2Align.pyx":160
  *     mScore[0,1:] = min_score
  *     mScore[1:,0] = min_score
  *     mScore[0,0] = 0             # <<<<<<<<<<<<<<
@@ -5189,7 +5217,7 @@ __pyx_t_10 = -1;
   if (__pyx_t_12 < 0) __pyx_t_12 += __pyx_v_mScore.shape[1];
   *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_11 * __pyx_v_mScore.strides[0]) ) + __pyx_t_12 * __pyx_v_mScore.strides[1]) )) = 0;
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":158
+  /* "CRISPResso2/CRISPResso2Align.pyx":161
  *     mScore[1:,0] = min_score
  *     mScore[0,0] = 0
  *     mPointer[0,1:] = IARRAY             # <<<<<<<<<<<<<<
@@ -5223,7 +5251,7 @@ __pyx_t_10 = -1;
     0,
     1) < 0))
 {
-    __PYX_ERR(0, 158, __pyx_L1_error)
+    __PYX_ERR(0, 161, __pyx_L1_error)
 }
 
 {
@@ -5244,7 +5272,7 @@ __pyx_t_10 = -1;
   __pyx_t_9.memview = NULL;
   __pyx_t_9.data = NULL;
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":159
+  /* "CRISPResso2/CRISPResso2Align.pyx":162
  *     mScore[0,0] = 0
  *     mPointer[0,1:] = IARRAY
  *     mPointer[1:,0] = JARRAY             # <<<<<<<<<<<<<<
@@ -5269,7 +5297,7 @@ __pyx_t_10 = -1;
     0,
     1) < 0))
 {
-    __PYX_ERR(0, 159, __pyx_L1_error)
+    __PYX_ERR(0, 162, __pyx_L1_error)
 }
 
 {
@@ -5299,7 +5327,7 @@ __pyx_t_10 = -1;
   __pyx_t_9.memview = NULL;
   __pyx_t_9.data = NULL;
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":160
+  /* "CRISPResso2/CRISPResso2Align.pyx":163
  *     mPointer[0,1:] = IARRAY
  *     mPointer[1:,0] = JARRAY
  *     mPointer[0,0] = 0             # <<<<<<<<<<<<<<
@@ -5312,23 +5340,23 @@ __pyx_t_10 = -1;
   if (__pyx_t_11 < 0) __pyx_t_11 += __pyx_v_mPointer.shape[1];
   *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mPointer.data + __pyx_t_12 * __pyx_v_mPointer.strides[0]) ) + __pyx_t_11 * __pyx_v_mPointer.strides[1]) )) = 0;
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":167
+  /* "CRISPResso2/CRISPResso2Align.pyx":170
  * # gap extension penalty for gaps starting at beginning
  *     #init i matrix
  *     for i in range(1,max_j+1):             # <<<<<<<<<<<<<<
  *         iScore[0,i] = gap_extend * i + gap_incentive[0]
- * #    iScore[0,1:] = [gap_extend * np.arange(1, max_j+1, dtype=np.int)]
+ * #    iScore[0,1:] = [gap_extend * np.arange(1, max_j+1, dtype=int)]
  */
   __pyx_t_13 = (__pyx_v_max_j + 1);
   __pyx_t_14 = __pyx_t_13;
   for (__pyx_t_15 = 1; __pyx_t_15 < __pyx_t_14; __pyx_t_15+=1) {
     __pyx_v_i = __pyx_t_15;
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":168
+    /* "CRISPResso2/CRISPResso2Align.pyx":171
  *     #init i matrix
  *     for i in range(1,max_j+1):
  *         iScore[0,i] = gap_extend * i + gap_incentive[0]             # <<<<<<<<<<<<<<
- * #    iScore[0,1:] = [gap_extend * np.arange(1, max_j+1, dtype=np.int)]
+ * #    iScore[0,1:] = [gap_extend * np.arange(1, max_j+1, dtype=int)]
  *     iScore[0:,0] = min_score
  */
     __pyx_t_11 = 0;
@@ -5339,9 +5367,9 @@ __pyx_t_10 = -1;
     *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iScore.data + __pyx_t_12 * __pyx_v_iScore.strides[0]) ) + __pyx_t_16 * __pyx_v_iScore.strides[1]) )) = ((__pyx_v_gap_extend * __pyx_v_i) + (*__Pyx_BufPtrStrided1d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_gap_incentive.rcbuffer->pybuffer.buf, __pyx_t_11, __pyx_pybuffernd_gap_incentive.diminfo[0].strides)));
   }
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":170
+  /* "CRISPResso2/CRISPResso2Align.pyx":173
  *         iScore[0,i] = gap_extend * i + gap_incentive[0]
- * #    iScore[0,1:] = [gap_extend * np.arange(1, max_j+1, dtype=np.int)]
+ * #    iScore[0,1:] = [gap_extend * np.arange(1, max_j+1, dtype=int)]
  *     iScore[0:,0] = min_score             # <<<<<<<<<<<<<<
  *     iPointer[0,1:] = IARRAY
  * 
@@ -5364,7 +5392,7 @@ __pyx_t_10 = -1;
     0,
     1) < 0))
 {
-    __PYX_ERR(0, 170, __pyx_L1_error)
+    __PYX_ERR(0, 173, __pyx_L1_error)
 }
 
 {
@@ -5394,8 +5422,8 @@ __pyx_t_10 = -1;
   __pyx_t_9.memview = NULL;
   __pyx_t_9.data = NULL;
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":171
- * #    iScore[0,1:] = [gap_extend * np.arange(1, max_j+1, dtype=np.int)]
+  /* "CRISPResso2/CRISPResso2Align.pyx":174
+ * #    iScore[0,1:] = [gap_extend * np.arange(1, max_j+1, dtype=int)]
  *     iScore[0:,0] = min_score
  *     iPointer[0,1:] = IARRAY             # <<<<<<<<<<<<<<
  * 
@@ -5428,7 +5456,7 @@ __pyx_t_10 = -1;
     0,
     1) < 0))
 {
-    __PYX_ERR(0, 171, __pyx_L1_error)
+    __PYX_ERR(0, 174, __pyx_L1_error)
 }
 
 {
@@ -5449,23 +5477,23 @@ __pyx_t_10 = -1;
   __pyx_t_9.memview = NULL;
   __pyx_t_9.data = NULL;
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":174
+  /* "CRISPResso2/CRISPResso2Align.pyx":177
  * 
  *     #init j matrix
  *     for i in range(1,max_i+1):             # <<<<<<<<<<<<<<
  *         jScore[i,0] = gap_extend * i + gap_incentive[0]
- *     #jScore[1:,0] = np.vectorize(gap_extend * np.arange(1, max_i+1, dtype=np.int))
+ *     #jScore[1:,0] = np.vectorize(gap_extend * np.arange(1, max_i+1, dtype=int))
  */
   __pyx_t_13 = (__pyx_v_max_i + 1);
   __pyx_t_14 = __pyx_t_13;
   for (__pyx_t_15 = 1; __pyx_t_15 < __pyx_t_14; __pyx_t_15+=1) {
     __pyx_v_i = __pyx_t_15;
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":175
+    /* "CRISPResso2/CRISPResso2Align.pyx":178
  *     #init j matrix
  *     for i in range(1,max_i+1):
  *         jScore[i,0] = gap_extend * i + gap_incentive[0]             # <<<<<<<<<<<<<<
- *     #jScore[1:,0] = np.vectorize(gap_extend * np.arange(1, max_i+1, dtype=np.int))
+ *     #jScore[1:,0] = np.vectorize(gap_extend * np.arange(1, max_i+1, dtype=int))
  *     jScore[0,0:] = min_score
  */
     __pyx_t_11 = 0;
@@ -5476,9 +5504,9 @@ __pyx_t_10 = -1;
     *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jScore.data + __pyx_t_16 * __pyx_v_jScore.strides[0]) ) + __pyx_t_12 * __pyx_v_jScore.strides[1]) )) = ((__pyx_v_gap_extend * __pyx_v_i) + (*__Pyx_BufPtrStrided1d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_gap_incentive.rcbuffer->pybuffer.buf, __pyx_t_11, __pyx_pybuffernd_gap_incentive.diminfo[0].strides)));
   }
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":177
+  /* "CRISPResso2/CRISPResso2Align.pyx":180
  *         jScore[i,0] = gap_extend * i + gap_incentive[0]
- *     #jScore[1:,0] = np.vectorize(gap_extend * np.arange(1, max_i+1, dtype=np.int))
+ *     #jScore[1:,0] = np.vectorize(gap_extend * np.arange(1, max_i+1, dtype=int))
  *     jScore[0,0:] = min_score             # <<<<<<<<<<<<<<
  *     jPointer[1:,0] = JARRAY
  * 
@@ -5510,7 +5538,7 @@ __pyx_t_10 = -1;
     0,
     1) < 0))
 {
-    __PYX_ERR(0, 177, __pyx_L1_error)
+    __PYX_ERR(0, 180, __pyx_L1_error)
 }
 
 {
@@ -5531,8 +5559,8 @@ __pyx_t_10 = -1;
   __pyx_t_9.memview = NULL;
   __pyx_t_9.data = NULL;
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":178
- *     #jScore[1:,0] = np.vectorize(gap_extend * np.arange(1, max_i+1, dtype=np.int))
+  /* "CRISPResso2/CRISPResso2Align.pyx":181
+ *     #jScore[1:,0] = np.vectorize(gap_extend * np.arange(1, max_i+1, dtype=int))
  *     jScore[0,0:] = min_score
  *     jPointer[1:,0] = JARRAY             # <<<<<<<<<<<<<<
  * 
@@ -5556,7 +5584,7 @@ __pyx_t_10 = -1;
     0,
     1) < 0))
 {
-    __PYX_ERR(0, 178, __pyx_L1_error)
+    __PYX_ERR(0, 181, __pyx_L1_error)
 }
 
 {
@@ -5586,7 +5614,7 @@ __pyx_t_10 = -1;
   __pyx_t_9.memview = NULL;
   __pyx_t_9.data = NULL;
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":189
+  /* "CRISPResso2/CRISPResso2Align.pyx":192
  * 
  *     #apply NW algorithm for inside squares (not last row or column)
  *     for i in range(1, max_i):             # <<<<<<<<<<<<<<
@@ -5598,7 +5626,7 @@ __pyx_t_10 = -1;
   for (__pyx_t_15 = 1; __pyx_t_15 < __pyx_t_14; __pyx_t_15+=1) {
     __pyx_v_i = __pyx_t_15;
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":190
+    /* "CRISPResso2/CRISPResso2Align.pyx":193
  *     #apply NW algorithm for inside squares (not last row or column)
  *     for i in range(1, max_i):
  *         ci = seqi[i - 1] #char in i             # <<<<<<<<<<<<<<
@@ -5607,7 +5635,7 @@ __pyx_t_10 = -1;
  */
     __pyx_v_ci = (__pyx_v_seqi[(__pyx_v_i - 1)]);
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":192
+    /* "CRISPResso2/CRISPResso2Align.pyx":195
  *         ci = seqi[i - 1] #char in i
  * 
  *         for j in range(1, max_j):             # <<<<<<<<<<<<<<
@@ -5619,7 +5647,7 @@ __pyx_t_10 = -1;
     for (__pyx_t_18 = 1; __pyx_t_18 < __pyx_t_17; __pyx_t_18+=1) {
       __pyx_v_j = __pyx_t_18;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":193
+      /* "CRISPResso2/CRISPResso2Align.pyx":196
  * 
  *         for j in range(1, max_j):
  *             cj = seqj[j - 1] #char in j             # <<<<<<<<<<<<<<
@@ -5628,7 +5656,7 @@ __pyx_t_10 = -1;
  */
       __pyx_v_cj = (__pyx_v_seqj[(__pyx_v_j - 1)]);
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":195
+      /* "CRISPResso2/CRISPResso2Align.pyx":198
  *             cj = seqj[j - 1] #char in j
  * 
  *             iFromMVal = gap_open + mScore[i, j - 1] + gap_incentive[i]             # <<<<<<<<<<<<<<
@@ -5640,7 +5668,7 @@ __pyx_t_10 = -1;
       __pyx_t_21 = __pyx_v_i;
       __pyx_v_iFromMVal = ((__pyx_v_gap_open + (*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_19 * __pyx_v_mScore.strides[0]) ) + __pyx_t_20 * __pyx_v_mScore.strides[1]) )))) + (*__Pyx_BufPtrStrided1d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_gap_incentive.rcbuffer->pybuffer.buf, __pyx_t_21, __pyx_pybuffernd_gap_incentive.diminfo[0].strides)));
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":196
+      /* "CRISPResso2/CRISPResso2Align.pyx":199
  * 
  *             iFromMVal = gap_open + mScore[i, j - 1] + gap_incentive[i]
  *             iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]             # <<<<<<<<<<<<<<
@@ -5652,7 +5680,7 @@ __pyx_t_10 = -1;
       __pyx_t_19 = __pyx_v_i;
       __pyx_v_iExtendVal = ((__pyx_v_gap_extend + (*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iScore.data + __pyx_t_21 * __pyx_v_iScore.strides[0]) ) + __pyx_t_20 * __pyx_v_iScore.strides[1]) )))) + (*__Pyx_BufPtrStrided1d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_gap_incentive.rcbuffer->pybuffer.buf, __pyx_t_19, __pyx_pybuffernd_gap_incentive.diminfo[0].strides)));
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":197
+      /* "CRISPResso2/CRISPResso2Align.pyx":200
  *             iFromMVal = gap_open + mScore[i, j - 1] + gap_incentive[i]
  *             iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]
  *             if iFromMVal > iExtendVal:             # <<<<<<<<<<<<<<
@@ -5662,7 +5690,7 @@ __pyx_t_10 = -1;
       __pyx_t_4 = ((__pyx_v_iFromMVal > __pyx_v_iExtendVal) != 0);
       if (__pyx_t_4) {
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":198
+        /* "CRISPResso2/CRISPResso2Align.pyx":201
  *             iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]
  *             if iFromMVal > iExtendVal:
  *                 iScore[i,j] = iFromMVal             # <<<<<<<<<<<<<<
@@ -5673,7 +5701,7 @@ __pyx_t_10 = -1;
         __pyx_t_20 = __pyx_v_j;
         *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iScore.data + __pyx_t_19 * __pyx_v_iScore.strides[0]) ) + __pyx_t_20 * __pyx_v_iScore.strides[1]) )) = __pyx_v_iFromMVal;
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":199
+        /* "CRISPResso2/CRISPResso2Align.pyx":202
  *             if iFromMVal > iExtendVal:
  *                 iScore[i,j] = iFromMVal
  *                 iPointer[i,j] = MARRAY             # <<<<<<<<<<<<<<
@@ -5684,17 +5712,17 @@ __pyx_t_10 = -1;
         __pyx_t_19 = __pyx_v_j;
         *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iPointer.data + __pyx_t_20 * __pyx_v_iPointer.strides[0]) ) + __pyx_t_19 * __pyx_v_iPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_MARRAY;
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":197
+        /* "CRISPResso2/CRISPResso2Align.pyx":200
  *             iFromMVal = gap_open + mScore[i, j - 1] + gap_incentive[i]
  *             iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]
  *             if iFromMVal > iExtendVal:             # <<<<<<<<<<<<<<
  *                 iScore[i,j] = iFromMVal
  *                 iPointer[i,j] = MARRAY
  */
-        goto __pyx_L12;
+        goto __pyx_L13;
       }
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":201
+      /* "CRISPResso2/CRISPResso2Align.pyx":204
  *                 iPointer[i,j] = MARRAY
  *             else:
  *                 iScore[i,j] = iExtendVal             # <<<<<<<<<<<<<<
@@ -5706,7 +5734,7 @@ __pyx_t_10 = -1;
         __pyx_t_20 = __pyx_v_j;
         *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iScore.data + __pyx_t_19 * __pyx_v_iScore.strides[0]) ) + __pyx_t_20 * __pyx_v_iScore.strides[1]) )) = __pyx_v_iExtendVal;
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":202
+        /* "CRISPResso2/CRISPResso2Align.pyx":205
  *             else:
  *                 iScore[i,j] = iExtendVal
  *                 iPointer[i,j] = IARRAY             # <<<<<<<<<<<<<<
@@ -5717,9 +5745,9 @@ __pyx_t_10 = -1;
         __pyx_t_19 = __pyx_v_j;
         *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iPointer.data + __pyx_t_20 * __pyx_v_iPointer.strides[0]) ) + __pyx_t_19 * __pyx_v_iPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_IARRAY;
       }
-      __pyx_L12:;
+      __pyx_L13:;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":204
+      /* "CRISPResso2/CRISPResso2Align.pyx":207
  *                 iPointer[i,j] = IARRAY
  * 
  *             jFromMVal = gap_open + mScore[i - 1, j] + gap_incentive[i-1]             # <<<<<<<<<<<<<<
@@ -5731,7 +5759,7 @@ __pyx_t_10 = -1;
       __pyx_t_21 = (__pyx_v_i - 1);
       __pyx_v_jFromMVal = ((__pyx_v_gap_open + (*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_19 * __pyx_v_mScore.strides[0]) ) + __pyx_t_20 * __pyx_v_mScore.strides[1]) )))) + (*__Pyx_BufPtrStrided1d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_gap_incentive.rcbuffer->pybuffer.buf, __pyx_t_21, __pyx_pybuffernd_gap_incentive.diminfo[0].strides)));
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":206
+      /* "CRISPResso2/CRISPResso2Align.pyx":209
  *             jFromMVal = gap_open + mScore[i - 1, j] + gap_incentive[i-1]
  * 	    #no gap incentive here -- J already got the gap incentive when it transitioned from M, so don't add it again if we're extending.
  *             jExtendVal = gap_extend + jScore[i - 1, j]             # <<<<<<<<<<<<<<
@@ -5742,7 +5770,7 @@ __pyx_t_10 = -1;
       __pyx_t_20 = __pyx_v_j;
       __pyx_v_jExtendVal = (__pyx_v_gap_extend + (*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jScore.data + __pyx_t_21 * __pyx_v_jScore.strides[0]) ) + __pyx_t_20 * __pyx_v_jScore.strides[1]) ))));
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":207
+      /* "CRISPResso2/CRISPResso2Align.pyx":210
  * 	    #no gap incentive here -- J already got the gap incentive when it transitioned from M, so don't add it again if we're extending.
  *             jExtendVal = gap_extend + jScore[i - 1, j]
  *             if jFromMVal > jExtendVal:             # <<<<<<<<<<<<<<
@@ -5752,7 +5780,7 @@ __pyx_t_10 = -1;
       __pyx_t_4 = ((__pyx_v_jFromMVal > __pyx_v_jExtendVal) != 0);
       if (__pyx_t_4) {
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":208
+        /* "CRISPResso2/CRISPResso2Align.pyx":211
  *             jExtendVal = gap_extend + jScore[i - 1, j]
  *             if jFromMVal > jExtendVal:
  *                 jScore[i,j] =  jFromMVal             # <<<<<<<<<<<<<<
@@ -5763,7 +5791,7 @@ __pyx_t_10 = -1;
         __pyx_t_21 = __pyx_v_j;
         *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jScore.data + __pyx_t_20 * __pyx_v_jScore.strides[0]) ) + __pyx_t_21 * __pyx_v_jScore.strides[1]) )) = __pyx_v_jFromMVal;
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":209
+        /* "CRISPResso2/CRISPResso2Align.pyx":212
  *             if jFromMVal > jExtendVal:
  *                 jScore[i,j] =  jFromMVal
  *                 jPointer[i,j] = MARRAY             # <<<<<<<<<<<<<<
@@ -5774,17 +5802,17 @@ __pyx_t_10 = -1;
         __pyx_t_20 = __pyx_v_j;
         *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jPointer.data + __pyx_t_21 * __pyx_v_jPointer.strides[0]) ) + __pyx_t_20 * __pyx_v_jPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_MARRAY;
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":207
+        /* "CRISPResso2/CRISPResso2Align.pyx":210
  * 	    #no gap incentive here -- J already got the gap incentive when it transitioned from M, so don't add it again if we're extending.
  *             jExtendVal = gap_extend + jScore[i - 1, j]
  *             if jFromMVal > jExtendVal:             # <<<<<<<<<<<<<<
  *                 jScore[i,j] =  jFromMVal
  *                 jPointer[i,j] = MARRAY
  */
-        goto __pyx_L13;
+        goto __pyx_L14;
       }
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":211
+      /* "CRISPResso2/CRISPResso2Align.pyx":214
  *                 jPointer[i,j] = MARRAY
  *             else:
  *                 jScore[i,j] = jExtendVal             # <<<<<<<<<<<<<<
@@ -5796,7 +5824,7 @@ __pyx_t_10 = -1;
         __pyx_t_21 = __pyx_v_j;
         *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jScore.data + __pyx_t_20 * __pyx_v_jScore.strides[0]) ) + __pyx_t_21 * __pyx_v_jScore.strides[1]) )) = __pyx_v_jExtendVal;
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":212
+        /* "CRISPResso2/CRISPResso2Align.pyx":215
  *             else:
  *                 jScore[i,j] = jExtendVal
  *                 jPointer[i,j] = JARRAY             # <<<<<<<<<<<<<<
@@ -5807,9 +5835,9 @@ __pyx_t_10 = -1;
         __pyx_t_20 = __pyx_v_j;
         *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jPointer.data + __pyx_t_21 * __pyx_v_jPointer.strides[0]) ) + __pyx_t_20 * __pyx_v_jPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_JARRAY;
       }
-      __pyx_L13:;
+      __pyx_L14:;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":214
+      /* "CRISPResso2/CRISPResso2Align.pyx":217
  *                 jPointer[i,j] = JARRAY
  * 
  *             mVal = mScore[i - 1, j - 1] + matrix[ci,cj]             # <<<<<<<<<<<<<<
@@ -5824,7 +5852,7 @@ __pyx_t_10 = -1;
       if (__pyx_t_12 < 0) __pyx_t_12 += __pyx_pybuffernd_matrix.diminfo[1].shape;
       __pyx_v_mVal = ((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_20 * __pyx_v_mScore.strides[0]) ) + __pyx_t_21 * __pyx_v_mScore.strides[1]) ))) + (*__Pyx_BufPtrStrided2d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_matrix.rcbuffer->pybuffer.buf, __pyx_t_11, __pyx_pybuffernd_matrix.diminfo[0].strides, __pyx_t_12, __pyx_pybuffernd_matrix.diminfo[1].strides)));
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":215
+      /* "CRISPResso2/CRISPResso2Align.pyx":218
  * 
  *             mVal = mScore[i - 1, j - 1] + matrix[ci,cj]
  *             iVal = iScore[i - 1, j - 1] + matrix[ci,cj]             # <<<<<<<<<<<<<<
@@ -5839,7 +5867,7 @@ __pyx_t_10 = -1;
       if (__pyx_t_11 < 0) __pyx_t_11 += __pyx_pybuffernd_matrix.diminfo[1].shape;
       __pyx_v_iVal = ((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iScore.data + __pyx_t_21 * __pyx_v_iScore.strides[0]) ) + __pyx_t_20 * __pyx_v_iScore.strides[1]) ))) + (*__Pyx_BufPtrStrided2d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_matrix.rcbuffer->pybuffer.buf, __pyx_t_12, __pyx_pybuffernd_matrix.diminfo[0].strides, __pyx_t_11, __pyx_pybuffernd_matrix.diminfo[1].strides)));
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":216
+      /* "CRISPResso2/CRISPResso2Align.pyx":219
  *             mVal = mScore[i - 1, j - 1] + matrix[ci,cj]
  *             iVal = iScore[i - 1, j - 1] + matrix[ci,cj]
  *             jVal = jScore[i - 1, j - 1] + matrix[ci,cj]             # <<<<<<<<<<<<<<
@@ -5854,7 +5882,7 @@ __pyx_t_10 = -1;
       if (__pyx_t_12 < 0) __pyx_t_12 += __pyx_pybuffernd_matrix.diminfo[1].shape;
       __pyx_v_jVal = ((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jScore.data + __pyx_t_20 * __pyx_v_jScore.strides[0]) ) + __pyx_t_21 * __pyx_v_jScore.strides[1]) ))) + (*__Pyx_BufPtrStrided2d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_matrix.rcbuffer->pybuffer.buf, __pyx_t_11, __pyx_pybuffernd_matrix.diminfo[0].strides, __pyx_t_12, __pyx_pybuffernd_matrix.diminfo[1].strides)));
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":217
+      /* "CRISPResso2/CRISPResso2Align.pyx":220
  *             iVal = iScore[i - 1, j - 1] + matrix[ci,cj]
  *             jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
  *             if mVal > jVal:             # <<<<<<<<<<<<<<
@@ -5864,7 +5892,7 @@ __pyx_t_10 = -1;
       __pyx_t_4 = ((__pyx_v_mVal > __pyx_v_jVal) != 0);
       if (__pyx_t_4) {
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":218
+        /* "CRISPResso2/CRISPResso2Align.pyx":221
  *             jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
  *             if mVal > jVal:
  *                 if mVal > iVal:             # <<<<<<<<<<<<<<
@@ -5874,7 +5902,7 @@ __pyx_t_10 = -1;
         __pyx_t_4 = ((__pyx_v_mVal > __pyx_v_iVal) != 0);
         if (__pyx_t_4) {
 
-          /* "CRISPResso2/CRISPResso2Align.pyx":219
+          /* "CRISPResso2/CRISPResso2Align.pyx":222
  *             if mVal > jVal:
  *                 if mVal > iVal:
  *                     mScore[i, j] = mVal             # <<<<<<<<<<<<<<
@@ -5885,7 +5913,7 @@ __pyx_t_10 = -1;
           __pyx_t_20 = __pyx_v_j;
           *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_21 * __pyx_v_mScore.strides[0]) ) + __pyx_t_20 * __pyx_v_mScore.strides[1]) )) = __pyx_v_mVal;
 
-          /* "CRISPResso2/CRISPResso2Align.pyx":220
+          /* "CRISPResso2/CRISPResso2Align.pyx":223
  *                 if mVal > iVal:
  *                     mScore[i, j] = mVal
  *                     mPointer[i, j] = MARRAY             # <<<<<<<<<<<<<<
@@ -5896,17 +5924,17 @@ __pyx_t_10 = -1;
           __pyx_t_21 = __pyx_v_j;
           *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mPointer.data + __pyx_t_20 * __pyx_v_mPointer.strides[0]) ) + __pyx_t_21 * __pyx_v_mPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_MARRAY;
 
-          /* "CRISPResso2/CRISPResso2Align.pyx":218
+          /* "CRISPResso2/CRISPResso2Align.pyx":221
  *             jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
  *             if mVal > jVal:
  *                 if mVal > iVal:             # <<<<<<<<<<<<<<
  *                     mScore[i, j] = mVal
  *                     mPointer[i, j] = MARRAY
  */
-          goto __pyx_L15;
+          goto __pyx_L16;
         }
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":222
+        /* "CRISPResso2/CRISPResso2Align.pyx":225
  *                     mPointer[i, j] = MARRAY
  *                 else:
  *                     mScore[i, j]   = iVal             # <<<<<<<<<<<<<<
@@ -5918,7 +5946,7 @@ __pyx_t_10 = -1;
           __pyx_t_20 = __pyx_v_j;
           *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_21 * __pyx_v_mScore.strides[0]) ) + __pyx_t_20 * __pyx_v_mScore.strides[1]) )) = __pyx_v_iVal;
 
-          /* "CRISPResso2/CRISPResso2Align.pyx":223
+          /* "CRISPResso2/CRISPResso2Align.pyx":226
  *                 else:
  *                     mScore[i, j]   = iVal
  *                     mPointer[i, j] = IARRAY             # <<<<<<<<<<<<<<
@@ -5929,19 +5957,19 @@ __pyx_t_10 = -1;
           __pyx_t_21 = __pyx_v_j;
           *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mPointer.data + __pyx_t_20 * __pyx_v_mPointer.strides[0]) ) + __pyx_t_21 * __pyx_v_mPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_IARRAY;
         }
-        __pyx_L15:;
+        __pyx_L16:;
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":217
+        /* "CRISPResso2/CRISPResso2Align.pyx":220
  *             iVal = iScore[i - 1, j - 1] + matrix[ci,cj]
  *             jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
  *             if mVal > jVal:             # <<<<<<<<<<<<<<
  *                 if mVal > iVal:
  *                     mScore[i, j] = mVal
  */
-        goto __pyx_L14;
+        goto __pyx_L15;
       }
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":225
+      /* "CRISPResso2/CRISPResso2Align.pyx":228
  *                     mPointer[i, j] = IARRAY
  *             else:
  *                 if jVal > iVal:             # <<<<<<<<<<<<<<
@@ -5952,7 +5980,7 @@ __pyx_t_10 = -1;
         __pyx_t_4 = ((__pyx_v_jVal > __pyx_v_iVal) != 0);
         if (__pyx_t_4) {
 
-          /* "CRISPResso2/CRISPResso2Align.pyx":226
+          /* "CRISPResso2/CRISPResso2Align.pyx":229
  *             else:
  *                 if jVal > iVal:
  *                     mScore[i, j]  = jVal             # <<<<<<<<<<<<<<
@@ -5963,7 +5991,7 @@ __pyx_t_10 = -1;
           __pyx_t_20 = __pyx_v_j;
           *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_21 * __pyx_v_mScore.strides[0]) ) + __pyx_t_20 * __pyx_v_mScore.strides[1]) )) = __pyx_v_jVal;
 
-          /* "CRISPResso2/CRISPResso2Align.pyx":227
+          /* "CRISPResso2/CRISPResso2Align.pyx":230
  *                 if jVal > iVal:
  *                     mScore[i, j]  = jVal
  *                     mPointer[i, j] = JARRAY             # <<<<<<<<<<<<<<
@@ -5974,17 +6002,17 @@ __pyx_t_10 = -1;
           __pyx_t_21 = __pyx_v_j;
           *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mPointer.data + __pyx_t_20 * __pyx_v_mPointer.strides[0]) ) + __pyx_t_21 * __pyx_v_mPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_JARRAY;
 
-          /* "CRISPResso2/CRISPResso2Align.pyx":225
+          /* "CRISPResso2/CRISPResso2Align.pyx":228
  *                     mPointer[i, j] = IARRAY
  *             else:
  *                 if jVal > iVal:             # <<<<<<<<<<<<<<
  *                     mScore[i, j]  = jVal
  *                     mPointer[i, j] = JARRAY
  */
-          goto __pyx_L16;
+          goto __pyx_L17;
         }
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":229
+        /* "CRISPResso2/CRISPResso2Align.pyx":232
  *                     mPointer[i, j] = JARRAY
  *                 else:
  *                     mScore[i, j] = iVal             # <<<<<<<<<<<<<<
@@ -5996,7 +6024,7 @@ __pyx_t_10 = -1;
           __pyx_t_20 = __pyx_v_j;
           *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_21 * __pyx_v_mScore.strides[0]) ) + __pyx_t_20 * __pyx_v_mScore.strides[1]) )) = __pyx_v_iVal;
 
-          /* "CRISPResso2/CRISPResso2Align.pyx":230
+          /* "CRISPResso2/CRISPResso2Align.pyx":233
  *                 else:
  *                     mScore[i, j] = iVal
  *                     mPointer[i, j] = IARRAY             # <<<<<<<<<<<<<<
@@ -6007,436 +6035,455 @@ __pyx_t_10 = -1;
           __pyx_t_21 = __pyx_v_j;
           *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mPointer.data + __pyx_t_20 * __pyx_v_mPointer.strides[0]) ) + __pyx_t_21 * __pyx_v_mPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_IARRAY;
         }
-        __pyx_L16:;
+        __pyx_L17:;
       }
-      __pyx_L14:;
+      __pyx_L15:;
     }
   }
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":236
+  /* "CRISPResso2/CRISPResso2Align.pyx":239
  *     #for last column and last row, ignore gap opening penalty
  *     #last column
  *     j = max_j             # <<<<<<<<<<<<<<
  *     cj = seqj[j-1]
- *     for i in range(1, max_i):
+ *     if max_j > 0:
  */
   __pyx_v_j = __pyx_v_max_j;
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":237
+  /* "CRISPResso2/CRISPResso2Align.pyx":240
  *     #last column
  *     j = max_j
  *     cj = seqj[j-1]             # <<<<<<<<<<<<<<
- *     for i in range(1, max_i):
- *         ci = seqi[i-1]
+ *     if max_j > 0:
+ *         for i in range(1, max_i):
  */
   __pyx_v_cj = (__pyx_v_seqj[(__pyx_v_j - 1)]);
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":238
+  /* "CRISPResso2/CRISPResso2Align.pyx":241
  *     j = max_j
  *     cj = seqj[j-1]
- *     for i in range(1, max_i):             # <<<<<<<<<<<<<<
- *         ci = seqi[i-1]
- * 
+ *     if max_j > 0:             # <<<<<<<<<<<<<<
+ *         for i in range(1, max_i):
+ *             ci = seqi[i-1]
  */
-  __pyx_t_13 = __pyx_v_max_i;
-  __pyx_t_14 = __pyx_t_13;
-  for (__pyx_t_15 = 1; __pyx_t_15 < __pyx_t_14; __pyx_t_15+=1) {
-    __pyx_v_i = __pyx_t_15;
-
-    /* "CRISPResso2/CRISPResso2Align.pyx":239
- *     cj = seqj[j-1]
- *     for i in range(1, max_i):
- *         ci = seqi[i-1]             # <<<<<<<<<<<<<<
- * 
- *         iFromMVal = gap_extend + mScore[i, j - 1] + gap_incentive[i]
- */
-    __pyx_v_ci = (__pyx_v_seqi[(__pyx_v_i - 1)]);
-
-    /* "CRISPResso2/CRISPResso2Align.pyx":241
- *         ci = seqi[i-1]
- * 
- *         iFromMVal = gap_extend + mScore[i, j - 1] + gap_incentive[i]             # <<<<<<<<<<<<<<
- *         iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]
- *         if iFromMVal > iExtendVal:
- */
-    __pyx_t_16 = __pyx_v_i;
-    __pyx_t_17 = (__pyx_v_j - 1);
-    __pyx_t_18 = __pyx_v_i;
-    __pyx_v_iFromMVal = ((__pyx_v_gap_extend + (*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_16 * __pyx_v_mScore.strides[0]) ) + __pyx_t_17 * __pyx_v_mScore.strides[1]) )))) + (*__Pyx_BufPtrStrided1d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_gap_incentive.rcbuffer->pybuffer.buf, __pyx_t_18, __pyx_pybuffernd_gap_incentive.diminfo[0].strides)));
+  __pyx_t_4 = ((__pyx_v_max_j > 0) != 0);
+  if (__pyx_t_4) {
 
     /* "CRISPResso2/CRISPResso2Align.pyx":242
+ *     cj = seqj[j-1]
+ *     if max_j > 0:
+ *         for i in range(1, max_i):             # <<<<<<<<<<<<<<
+ *             ci = seqi[i-1]
  * 
- *         iFromMVal = gap_extend + mScore[i, j - 1] + gap_incentive[i]
- *         iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]             # <<<<<<<<<<<<<<
- *         if iFromMVal > iExtendVal:
- *             iScore[i,j] =  iFromMVal
  */
-    __pyx_t_18 = __pyx_v_i;
-    __pyx_t_17 = (__pyx_v_j - 1);
-    __pyx_t_16 = __pyx_v_i;
-    __pyx_v_iExtendVal = ((__pyx_v_gap_extend + (*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iScore.data + __pyx_t_18 * __pyx_v_iScore.strides[0]) ) + __pyx_t_17 * __pyx_v_iScore.strides[1]) )))) + (*__Pyx_BufPtrStrided1d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_gap_incentive.rcbuffer->pybuffer.buf, __pyx_t_16, __pyx_pybuffernd_gap_incentive.diminfo[0].strides)));
-
-    /* "CRISPResso2/CRISPResso2Align.pyx":243
- *         iFromMVal = gap_extend + mScore[i, j - 1] + gap_incentive[i]
- *         iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]
- *         if iFromMVal > iExtendVal:             # <<<<<<<<<<<<<<
- *             iScore[i,j] =  iFromMVal
- *             iPointer[i,j] = MARRAY
- */
-    __pyx_t_4 = ((__pyx_v_iFromMVal > __pyx_v_iExtendVal) != 0);
-    if (__pyx_t_4) {
-
-      /* "CRISPResso2/CRISPResso2Align.pyx":244
- *         iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]
- *         if iFromMVal > iExtendVal:
- *             iScore[i,j] =  iFromMVal             # <<<<<<<<<<<<<<
- *             iPointer[i,j] = MARRAY
- *         else:
- */
-      __pyx_t_16 = __pyx_v_i;
-      __pyx_t_17 = __pyx_v_j;
-      *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iScore.data + __pyx_t_16 * __pyx_v_iScore.strides[0]) ) + __pyx_t_17 * __pyx_v_iScore.strides[1]) )) = __pyx_v_iFromMVal;
-
-      /* "CRISPResso2/CRISPResso2Align.pyx":245
- *         if iFromMVal > iExtendVal:
- *             iScore[i,j] =  iFromMVal
- *             iPointer[i,j] = MARRAY             # <<<<<<<<<<<<<<
- *         else:
- *             iScore[i,j] = iExtendVal
- */
-      __pyx_t_17 = __pyx_v_i;
-      __pyx_t_16 = __pyx_v_j;
-      *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iPointer.data + __pyx_t_17 * __pyx_v_iPointer.strides[0]) ) + __pyx_t_16 * __pyx_v_iPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_MARRAY;
+    __pyx_t_13 = __pyx_v_max_i;
+    __pyx_t_14 = __pyx_t_13;
+    for (__pyx_t_15 = 1; __pyx_t_15 < __pyx_t_14; __pyx_t_15+=1) {
+      __pyx_v_i = __pyx_t_15;
 
       /* "CRISPResso2/CRISPResso2Align.pyx":243
- *         iFromMVal = gap_extend + mScore[i, j - 1] + gap_incentive[i]
- *         iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]
- *         if iFromMVal > iExtendVal:             # <<<<<<<<<<<<<<
- *             iScore[i,j] =  iFromMVal
- *             iPointer[i,j] = MARRAY
- */
-      goto __pyx_L19;
-    }
-
-    /* "CRISPResso2/CRISPResso2Align.pyx":247
- *             iPointer[i,j] = MARRAY
- *         else:
- *             iScore[i,j] = iExtendVal             # <<<<<<<<<<<<<<
- *             iPointer[i,j] = IARRAY
+ *     if max_j > 0:
+ *         for i in range(1, max_i):
+ *             ci = seqi[i-1]             # <<<<<<<<<<<<<<
  * 
+ *             iFromMVal = gap_extend + mScore[i, j - 1] + gap_incentive[i]
  */
-    /*else*/ {
+      __pyx_v_ci = (__pyx_v_seqi[(__pyx_v_i - 1)]);
+
+      /* "CRISPResso2/CRISPResso2Align.pyx":245
+ *             ci = seqi[i-1]
+ * 
+ *             iFromMVal = gap_extend + mScore[i, j - 1] + gap_incentive[i]             # <<<<<<<<<<<<<<
+ *             iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]
+ *             if iFromMVal > iExtendVal:
+ */
       __pyx_t_16 = __pyx_v_i;
-      __pyx_t_17 = __pyx_v_j;
-      *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iScore.data + __pyx_t_16 * __pyx_v_iScore.strides[0]) ) + __pyx_t_17 * __pyx_v_iScore.strides[1]) )) = __pyx_v_iExtendVal;
+      __pyx_t_17 = (__pyx_v_j - 1);
+      __pyx_t_18 = __pyx_v_i;
+      __pyx_v_iFromMVal = ((__pyx_v_gap_extend + (*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_16 * __pyx_v_mScore.strides[0]) ) + __pyx_t_17 * __pyx_v_mScore.strides[1]) )))) + (*__Pyx_BufPtrStrided1d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_gap_incentive.rcbuffer->pybuffer.buf, __pyx_t_18, __pyx_pybuffernd_gap_incentive.diminfo[0].strides)));
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":248
- *         else:
- *             iScore[i,j] = iExtendVal
- *             iPointer[i,j] = IARRAY             # <<<<<<<<<<<<<<
+      /* "CRISPResso2/CRISPResso2Align.pyx":246
  * 
- *         jFromMVal = gap_extend + mScore[i - 1, j] + gap_incentive[i-1]
- */
-      __pyx_t_17 = __pyx_v_i;
-      __pyx_t_16 = __pyx_v_j;
-      *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iPointer.data + __pyx_t_17 * __pyx_v_iPointer.strides[0]) ) + __pyx_t_16 * __pyx_v_iPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_IARRAY;
-    }
-    __pyx_L19:;
-
-    /* "CRISPResso2/CRISPResso2Align.pyx":250
- *             iPointer[i,j] = IARRAY
- * 
- *         jFromMVal = gap_extend + mScore[i - 1, j] + gap_incentive[i-1]             # <<<<<<<<<<<<<<
- *         jExtendVal = gap_extend + jScore[i - 1, j]
- *         if jFromMVal > jExtendVal:
- */
-    __pyx_t_16 = (__pyx_v_i - 1);
-    __pyx_t_17 = __pyx_v_j;
-    __pyx_t_18 = (__pyx_v_i - 1);
-    __pyx_v_jFromMVal = ((__pyx_v_gap_extend + (*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_16 * __pyx_v_mScore.strides[0]) ) + __pyx_t_17 * __pyx_v_mScore.strides[1]) )))) + (*__Pyx_BufPtrStrided1d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_gap_incentive.rcbuffer->pybuffer.buf, __pyx_t_18, __pyx_pybuffernd_gap_incentive.diminfo[0].strides)));
-
-    /* "CRISPResso2/CRISPResso2Align.pyx":251
- * 
- *         jFromMVal = gap_extend + mScore[i - 1, j] + gap_incentive[i-1]
- *         jExtendVal = gap_extend + jScore[i - 1, j]             # <<<<<<<<<<<<<<
- *         if jFromMVal > jExtendVal:
- *             jScore[i,j] =  jFromMVal
- */
-    __pyx_t_18 = (__pyx_v_i - 1);
-    __pyx_t_17 = __pyx_v_j;
-    __pyx_v_jExtendVal = (__pyx_v_gap_extend + (*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jScore.data + __pyx_t_18 * __pyx_v_jScore.strides[0]) ) + __pyx_t_17 * __pyx_v_jScore.strides[1]) ))));
-
-    /* "CRISPResso2/CRISPResso2Align.pyx":252
- *         jFromMVal = gap_extend + mScore[i - 1, j] + gap_incentive[i-1]
- *         jExtendVal = gap_extend + jScore[i - 1, j]
- *         if jFromMVal > jExtendVal:             # <<<<<<<<<<<<<<
- *             jScore[i,j] =  jFromMVal
- *             jPointer[i,j] = MARRAY
- */
-    __pyx_t_4 = ((__pyx_v_jFromMVal > __pyx_v_jExtendVal) != 0);
-    if (__pyx_t_4) {
-
-      /* "CRISPResso2/CRISPResso2Align.pyx":253
- *         jExtendVal = gap_extend + jScore[i - 1, j]
- *         if jFromMVal > jExtendVal:
- *             jScore[i,j] =  jFromMVal             # <<<<<<<<<<<<<<
- *             jPointer[i,j] = MARRAY
- *         else:
- */
-      __pyx_t_17 = __pyx_v_i;
-      __pyx_t_18 = __pyx_v_j;
-      *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jScore.data + __pyx_t_17 * __pyx_v_jScore.strides[0]) ) + __pyx_t_18 * __pyx_v_jScore.strides[1]) )) = __pyx_v_jFromMVal;
-
-      /* "CRISPResso2/CRISPResso2Align.pyx":254
- *         if jFromMVal > jExtendVal:
- *             jScore[i,j] =  jFromMVal
- *             jPointer[i,j] = MARRAY             # <<<<<<<<<<<<<<
- *         else:
- *             jScore[i,j] = jExtendVal
+ *             iFromMVal = gap_extend + mScore[i, j - 1] + gap_incentive[i]
+ *             iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]             # <<<<<<<<<<<<<<
+ *             if iFromMVal > iExtendVal:
+ *                 iScore[i,j] =  iFromMVal
  */
       __pyx_t_18 = __pyx_v_i;
-      __pyx_t_17 = __pyx_v_j;
-      *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jPointer.data + __pyx_t_18 * __pyx_v_jPointer.strides[0]) ) + __pyx_t_17 * __pyx_v_jPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_MARRAY;
+      __pyx_t_17 = (__pyx_v_j - 1);
+      __pyx_t_16 = __pyx_v_i;
+      __pyx_v_iExtendVal = ((__pyx_v_gap_extend + (*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iScore.data + __pyx_t_18 * __pyx_v_iScore.strides[0]) ) + __pyx_t_17 * __pyx_v_iScore.strides[1]) )))) + (*__Pyx_BufPtrStrided1d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_gap_incentive.rcbuffer->pybuffer.buf, __pyx_t_16, __pyx_pybuffernd_gap_incentive.diminfo[0].strides)));
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":252
- *         jFromMVal = gap_extend + mScore[i - 1, j] + gap_incentive[i-1]
- *         jExtendVal = gap_extend + jScore[i - 1, j]
- *         if jFromMVal > jExtendVal:             # <<<<<<<<<<<<<<
- *             jScore[i,j] =  jFromMVal
- *             jPointer[i,j] = MARRAY
+      /* "CRISPResso2/CRISPResso2Align.pyx":247
+ *             iFromMVal = gap_extend + mScore[i, j - 1] + gap_incentive[i]
+ *             iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]
+ *             if iFromMVal > iExtendVal:             # <<<<<<<<<<<<<<
+ *                 iScore[i,j] =  iFromMVal
+ *                 iPointer[i,j] = MARRAY
  */
-      goto __pyx_L20;
-    }
-
-    /* "CRISPResso2/CRISPResso2Align.pyx":256
- *             jPointer[i,j] = MARRAY
- *         else:
- *             jScore[i,j] = jExtendVal             # <<<<<<<<<<<<<<
- *             jPointer[i,j] = JARRAY
- * 
- */
-    /*else*/ {
-      __pyx_t_17 = __pyx_v_i;
-      __pyx_t_18 = __pyx_v_j;
-      *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jScore.data + __pyx_t_17 * __pyx_v_jScore.strides[0]) ) + __pyx_t_18 * __pyx_v_jScore.strides[1]) )) = __pyx_v_jExtendVal;
-
-      /* "CRISPResso2/CRISPResso2Align.pyx":257
- *         else:
- *             jScore[i,j] = jExtendVal
- *             jPointer[i,j] = JARRAY             # <<<<<<<<<<<<<<
- * 
- *         mVal = mScore[i - 1, j - 1] + matrix[ci,cj]
- */
-      __pyx_t_18 = __pyx_v_i;
-      __pyx_t_17 = __pyx_v_j;
-      *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jPointer.data + __pyx_t_18 * __pyx_v_jPointer.strides[0]) ) + __pyx_t_17 * __pyx_v_jPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_JARRAY;
-    }
-    __pyx_L20:;
-
-    /* "CRISPResso2/CRISPResso2Align.pyx":259
- *             jPointer[i,j] = JARRAY
- * 
- *         mVal = mScore[i - 1, j - 1] + matrix[ci,cj]             # <<<<<<<<<<<<<<
- *         iVal = iScore[i - 1, j - 1] + matrix[ci,cj]
- *         jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
- */
-    __pyx_t_17 = (__pyx_v_i - 1);
-    __pyx_t_18 = (__pyx_v_j - 1);
-    __pyx_t_12 = __pyx_v_ci;
-    __pyx_t_11 = __pyx_v_cj;
-    if (__pyx_t_12 < 0) __pyx_t_12 += __pyx_pybuffernd_matrix.diminfo[0].shape;
-    if (__pyx_t_11 < 0) __pyx_t_11 += __pyx_pybuffernd_matrix.diminfo[1].shape;
-    __pyx_v_mVal = ((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_17 * __pyx_v_mScore.strides[0]) ) + __pyx_t_18 * __pyx_v_mScore.strides[1]) ))) + (*__Pyx_BufPtrStrided2d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_matrix.rcbuffer->pybuffer.buf, __pyx_t_12, __pyx_pybuffernd_matrix.diminfo[0].strides, __pyx_t_11, __pyx_pybuffernd_matrix.diminfo[1].strides)));
-
-    /* "CRISPResso2/CRISPResso2Align.pyx":260
- * 
- *         mVal = mScore[i - 1, j - 1] + matrix[ci,cj]
- *         iVal = iScore[i - 1, j - 1] + matrix[ci,cj]             # <<<<<<<<<<<<<<
- *         jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
- *         if mVal > jVal:
- */
-    __pyx_t_18 = (__pyx_v_i - 1);
-    __pyx_t_17 = (__pyx_v_j - 1);
-    __pyx_t_11 = __pyx_v_ci;
-    __pyx_t_12 = __pyx_v_cj;
-    if (__pyx_t_11 < 0) __pyx_t_11 += __pyx_pybuffernd_matrix.diminfo[0].shape;
-    if (__pyx_t_12 < 0) __pyx_t_12 += __pyx_pybuffernd_matrix.diminfo[1].shape;
-    __pyx_v_iVal = ((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iScore.data + __pyx_t_18 * __pyx_v_iScore.strides[0]) ) + __pyx_t_17 * __pyx_v_iScore.strides[1]) ))) + (*__Pyx_BufPtrStrided2d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_matrix.rcbuffer->pybuffer.buf, __pyx_t_11, __pyx_pybuffernd_matrix.diminfo[0].strides, __pyx_t_12, __pyx_pybuffernd_matrix.diminfo[1].strides)));
-
-    /* "CRISPResso2/CRISPResso2Align.pyx":261
- *         mVal = mScore[i - 1, j - 1] + matrix[ci,cj]
- *         iVal = iScore[i - 1, j - 1] + matrix[ci,cj]
- *         jVal = jScore[i - 1, j - 1] + matrix[ci,cj]             # <<<<<<<<<<<<<<
- *         if mVal > jVal:
- *             if mVal > iVal:
- */
-    __pyx_t_17 = (__pyx_v_i - 1);
-    __pyx_t_18 = (__pyx_v_j - 1);
-    __pyx_t_12 = __pyx_v_ci;
-    __pyx_t_11 = __pyx_v_cj;
-    if (__pyx_t_12 < 0) __pyx_t_12 += __pyx_pybuffernd_matrix.diminfo[0].shape;
-    if (__pyx_t_11 < 0) __pyx_t_11 += __pyx_pybuffernd_matrix.diminfo[1].shape;
-    __pyx_v_jVal = ((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jScore.data + __pyx_t_17 * __pyx_v_jScore.strides[0]) ) + __pyx_t_18 * __pyx_v_jScore.strides[1]) ))) + (*__Pyx_BufPtrStrided2d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_matrix.rcbuffer->pybuffer.buf, __pyx_t_12, __pyx_pybuffernd_matrix.diminfo[0].strides, __pyx_t_11, __pyx_pybuffernd_matrix.diminfo[1].strides)));
-
-    /* "CRISPResso2/CRISPResso2Align.pyx":262
- *         iVal = iScore[i - 1, j - 1] + matrix[ci,cj]
- *         jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
- *         if mVal > jVal:             # <<<<<<<<<<<<<<
- *             if mVal > iVal:
- *                 mScore[i, j] = mVal
- */
-    __pyx_t_4 = ((__pyx_v_mVal > __pyx_v_jVal) != 0);
-    if (__pyx_t_4) {
-
-      /* "CRISPResso2/CRISPResso2Align.pyx":263
- *         jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
- *         if mVal > jVal:
- *             if mVal > iVal:             # <<<<<<<<<<<<<<
- *                 mScore[i, j] = mVal
- *                 mPointer[i, j] = MARRAY
- */
-      __pyx_t_4 = ((__pyx_v_mVal > __pyx_v_iVal) != 0);
+      __pyx_t_4 = ((__pyx_v_iFromMVal > __pyx_v_iExtendVal) != 0);
       if (__pyx_t_4) {
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":264
- *         if mVal > jVal:
- *             if mVal > iVal:
- *                 mScore[i, j] = mVal             # <<<<<<<<<<<<<<
- *                 mPointer[i, j] = MARRAY
+        /* "CRISPResso2/CRISPResso2Align.pyx":248
+ *             iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]
+ *             if iFromMVal > iExtendVal:
+ *                 iScore[i,j] =  iFromMVal             # <<<<<<<<<<<<<<
+ *                 iPointer[i,j] = MARRAY
  *             else:
  */
-        __pyx_t_18 = __pyx_v_i;
+        __pyx_t_16 = __pyx_v_i;
         __pyx_t_17 = __pyx_v_j;
-        *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_18 * __pyx_v_mScore.strides[0]) ) + __pyx_t_17 * __pyx_v_mScore.strides[1]) )) = __pyx_v_mVal;
+        *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iScore.data + __pyx_t_16 * __pyx_v_iScore.strides[0]) ) + __pyx_t_17 * __pyx_v_iScore.strides[1]) )) = __pyx_v_iFromMVal;
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":265
- *             if mVal > iVal:
- *                 mScore[i, j] = mVal
- *                 mPointer[i, j] = MARRAY             # <<<<<<<<<<<<<<
+        /* "CRISPResso2/CRISPResso2Align.pyx":249
+ *             if iFromMVal > iExtendVal:
+ *                 iScore[i,j] =  iFromMVal
+ *                 iPointer[i,j] = MARRAY             # <<<<<<<<<<<<<<
  *             else:
- *                 mScore[i, j]   = iVal
+ *                 iScore[i,j] = iExtendVal
+ */
+        __pyx_t_17 = __pyx_v_i;
+        __pyx_t_16 = __pyx_v_j;
+        *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iPointer.data + __pyx_t_17 * __pyx_v_iPointer.strides[0]) ) + __pyx_t_16 * __pyx_v_iPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_MARRAY;
+
+        /* "CRISPResso2/CRISPResso2Align.pyx":247
+ *             iFromMVal = gap_extend + mScore[i, j - 1] + gap_incentive[i]
+ *             iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]
+ *             if iFromMVal > iExtendVal:             # <<<<<<<<<<<<<<
+ *                 iScore[i,j] =  iFromMVal
+ *                 iPointer[i,j] = MARRAY
+ */
+        goto __pyx_L21;
+      }
+
+      /* "CRISPResso2/CRISPResso2Align.pyx":251
+ *                 iPointer[i,j] = MARRAY
+ *             else:
+ *                 iScore[i,j] = iExtendVal             # <<<<<<<<<<<<<<
+ *                 iPointer[i,j] = IARRAY
+ * 
+ */
+      /*else*/ {
+        __pyx_t_16 = __pyx_v_i;
+        __pyx_t_17 = __pyx_v_j;
+        *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iScore.data + __pyx_t_16 * __pyx_v_iScore.strides[0]) ) + __pyx_t_17 * __pyx_v_iScore.strides[1]) )) = __pyx_v_iExtendVal;
+
+        /* "CRISPResso2/CRISPResso2Align.pyx":252
+ *             else:
+ *                 iScore[i,j] = iExtendVal
+ *                 iPointer[i,j] = IARRAY             # <<<<<<<<<<<<<<
+ * 
+ *             jFromMVal = gap_extend + mScore[i - 1, j] + gap_incentive[i-1]
+ */
+        __pyx_t_17 = __pyx_v_i;
+        __pyx_t_16 = __pyx_v_j;
+        *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iPointer.data + __pyx_t_17 * __pyx_v_iPointer.strides[0]) ) + __pyx_t_16 * __pyx_v_iPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_IARRAY;
+      }
+      __pyx_L21:;
+
+      /* "CRISPResso2/CRISPResso2Align.pyx":254
+ *                 iPointer[i,j] = IARRAY
+ * 
+ *             jFromMVal = gap_extend + mScore[i - 1, j] + gap_incentive[i-1]             # <<<<<<<<<<<<<<
+ *             jExtendVal = gap_extend + jScore[i - 1, j]
+ *             if jFromMVal > jExtendVal:
+ */
+      __pyx_t_16 = (__pyx_v_i - 1);
+      __pyx_t_17 = __pyx_v_j;
+      __pyx_t_18 = (__pyx_v_i - 1);
+      __pyx_v_jFromMVal = ((__pyx_v_gap_extend + (*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_16 * __pyx_v_mScore.strides[0]) ) + __pyx_t_17 * __pyx_v_mScore.strides[1]) )))) + (*__Pyx_BufPtrStrided1d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_gap_incentive.rcbuffer->pybuffer.buf, __pyx_t_18, __pyx_pybuffernd_gap_incentive.diminfo[0].strides)));
+
+      /* "CRISPResso2/CRISPResso2Align.pyx":255
+ * 
+ *             jFromMVal = gap_extend + mScore[i - 1, j] + gap_incentive[i-1]
+ *             jExtendVal = gap_extend + jScore[i - 1, j]             # <<<<<<<<<<<<<<
+ *             if jFromMVal > jExtendVal:
+ *                 jScore[i,j] =  jFromMVal
+ */
+      __pyx_t_18 = (__pyx_v_i - 1);
+      __pyx_t_17 = __pyx_v_j;
+      __pyx_v_jExtendVal = (__pyx_v_gap_extend + (*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jScore.data + __pyx_t_18 * __pyx_v_jScore.strides[0]) ) + __pyx_t_17 * __pyx_v_jScore.strides[1]) ))));
+
+      /* "CRISPResso2/CRISPResso2Align.pyx":256
+ *             jFromMVal = gap_extend + mScore[i - 1, j] + gap_incentive[i-1]
+ *             jExtendVal = gap_extend + jScore[i - 1, j]
+ *             if jFromMVal > jExtendVal:             # <<<<<<<<<<<<<<
+ *                 jScore[i,j] =  jFromMVal
+ *                 jPointer[i,j] = MARRAY
+ */
+      __pyx_t_4 = ((__pyx_v_jFromMVal > __pyx_v_jExtendVal) != 0);
+      if (__pyx_t_4) {
+
+        /* "CRISPResso2/CRISPResso2Align.pyx":257
+ *             jExtendVal = gap_extend + jScore[i - 1, j]
+ *             if jFromMVal > jExtendVal:
+ *                 jScore[i,j] =  jFromMVal             # <<<<<<<<<<<<<<
+ *                 jPointer[i,j] = MARRAY
+ *             else:
  */
         __pyx_t_17 = __pyx_v_i;
         __pyx_t_18 = __pyx_v_j;
-        *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mPointer.data + __pyx_t_17 * __pyx_v_mPointer.strides[0]) ) + __pyx_t_18 * __pyx_v_mPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_MARRAY;
+        *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jScore.data + __pyx_t_17 * __pyx_v_jScore.strides[0]) ) + __pyx_t_18 * __pyx_v_jScore.strides[1]) )) = __pyx_v_jFromMVal;
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":263
- *         jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
- *         if mVal > jVal:
- *             if mVal > iVal:             # <<<<<<<<<<<<<<
- *                 mScore[i, j] = mVal
- *                 mPointer[i, j] = MARRAY
+        /* "CRISPResso2/CRISPResso2Align.pyx":258
+ *             if jFromMVal > jExtendVal:
+ *                 jScore[i,j] =  jFromMVal
+ *                 jPointer[i,j] = MARRAY             # <<<<<<<<<<<<<<
+ *             else:
+ *                 jScore[i,j] = jExtendVal
+ */
+        __pyx_t_18 = __pyx_v_i;
+        __pyx_t_17 = __pyx_v_j;
+        *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jPointer.data + __pyx_t_18 * __pyx_v_jPointer.strides[0]) ) + __pyx_t_17 * __pyx_v_jPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_MARRAY;
+
+        /* "CRISPResso2/CRISPResso2Align.pyx":256
+ *             jFromMVal = gap_extend + mScore[i - 1, j] + gap_incentive[i-1]
+ *             jExtendVal = gap_extend + jScore[i - 1, j]
+ *             if jFromMVal > jExtendVal:             # <<<<<<<<<<<<<<
+ *                 jScore[i,j] =  jFromMVal
+ *                 jPointer[i,j] = MARRAY
  */
         goto __pyx_L22;
       }
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":267
- *                 mPointer[i, j] = MARRAY
+      /* "CRISPResso2/CRISPResso2Align.pyx":260
+ *                 jPointer[i,j] = MARRAY
  *             else:
- *                 mScore[i, j]   = iVal             # <<<<<<<<<<<<<<
- *                 mPointer[i, j] = IARRAY
- *         else:
+ *                 jScore[i,j] = jExtendVal             # <<<<<<<<<<<<<<
+ *                 jPointer[i,j] = JARRAY
+ * 
  */
       /*else*/ {
-        __pyx_t_18 = __pyx_v_i;
-        __pyx_t_17 = __pyx_v_j;
-        *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_18 * __pyx_v_mScore.strides[0]) ) + __pyx_t_17 * __pyx_v_mScore.strides[1]) )) = __pyx_v_iVal;
-
-        /* "CRISPResso2/CRISPResso2Align.pyx":268
- *             else:
- *                 mScore[i, j]   = iVal
- *                 mPointer[i, j] = IARRAY             # <<<<<<<<<<<<<<
- *         else:
- *             if jVal > iVal:
- */
         __pyx_t_17 = __pyx_v_i;
         __pyx_t_18 = __pyx_v_j;
-        *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mPointer.data + __pyx_t_17 * __pyx_v_mPointer.strides[0]) ) + __pyx_t_18 * __pyx_v_mPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_IARRAY;
+        *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jScore.data + __pyx_t_17 * __pyx_v_jScore.strides[0]) ) + __pyx_t_18 * __pyx_v_jScore.strides[1]) )) = __pyx_v_jExtendVal;
+
+        /* "CRISPResso2/CRISPResso2Align.pyx":261
+ *             else:
+ *                 jScore[i,j] = jExtendVal
+ *                 jPointer[i,j] = JARRAY             # <<<<<<<<<<<<<<
+ * 
+ *             mVal = mScore[i - 1, j - 1] + matrix[ci,cj]
+ */
+        __pyx_t_18 = __pyx_v_i;
+        __pyx_t_17 = __pyx_v_j;
+        *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jPointer.data + __pyx_t_18 * __pyx_v_jPointer.strides[0]) ) + __pyx_t_17 * __pyx_v_jPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_JARRAY;
       }
       __pyx_L22:;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":262
- *         iVal = iScore[i - 1, j - 1] + matrix[ci,cj]
- *         jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
- *         if mVal > jVal:             # <<<<<<<<<<<<<<
- *             if mVal > iVal:
- *                 mScore[i, j] = mVal
+      /* "CRISPResso2/CRISPResso2Align.pyx":263
+ *                 jPointer[i,j] = JARRAY
+ * 
+ *             mVal = mScore[i - 1, j - 1] + matrix[ci,cj]             # <<<<<<<<<<<<<<
+ *             iVal = iScore[i - 1, j - 1] + matrix[ci,cj]
+ *             jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
  */
-      goto __pyx_L21;
-    }
+      __pyx_t_17 = (__pyx_v_i - 1);
+      __pyx_t_18 = (__pyx_v_j - 1);
+      __pyx_t_12 = __pyx_v_ci;
+      __pyx_t_11 = __pyx_v_cj;
+      if (__pyx_t_12 < 0) __pyx_t_12 += __pyx_pybuffernd_matrix.diminfo[0].shape;
+      if (__pyx_t_11 < 0) __pyx_t_11 += __pyx_pybuffernd_matrix.diminfo[1].shape;
+      __pyx_v_mVal = ((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_17 * __pyx_v_mScore.strides[0]) ) + __pyx_t_18 * __pyx_v_mScore.strides[1]) ))) + (*__Pyx_BufPtrStrided2d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_matrix.rcbuffer->pybuffer.buf, __pyx_t_12, __pyx_pybuffernd_matrix.diminfo[0].strides, __pyx_t_11, __pyx_pybuffernd_matrix.diminfo[1].strides)));
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":270
- *                 mPointer[i, j] = IARRAY
- *         else:
- *             if jVal > iVal:             # <<<<<<<<<<<<<<
- *                 mScore[i, j]  = jVal
- *                 mPointer[i, j] = JARRAY
+      /* "CRISPResso2/CRISPResso2Align.pyx":264
+ * 
+ *             mVal = mScore[i - 1, j - 1] + matrix[ci,cj]
+ *             iVal = iScore[i - 1, j - 1] + matrix[ci,cj]             # <<<<<<<<<<<<<<
+ *             jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
+ *             if mVal > jVal:
  */
-    /*else*/ {
-      __pyx_t_4 = ((__pyx_v_jVal > __pyx_v_iVal) != 0);
+      __pyx_t_18 = (__pyx_v_i - 1);
+      __pyx_t_17 = (__pyx_v_j - 1);
+      __pyx_t_11 = __pyx_v_ci;
+      __pyx_t_12 = __pyx_v_cj;
+      if (__pyx_t_11 < 0) __pyx_t_11 += __pyx_pybuffernd_matrix.diminfo[0].shape;
+      if (__pyx_t_12 < 0) __pyx_t_12 += __pyx_pybuffernd_matrix.diminfo[1].shape;
+      __pyx_v_iVal = ((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iScore.data + __pyx_t_18 * __pyx_v_iScore.strides[0]) ) + __pyx_t_17 * __pyx_v_iScore.strides[1]) ))) + (*__Pyx_BufPtrStrided2d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_matrix.rcbuffer->pybuffer.buf, __pyx_t_11, __pyx_pybuffernd_matrix.diminfo[0].strides, __pyx_t_12, __pyx_pybuffernd_matrix.diminfo[1].strides)));
+
+      /* "CRISPResso2/CRISPResso2Align.pyx":265
+ *             mVal = mScore[i - 1, j - 1] + matrix[ci,cj]
+ *             iVal = iScore[i - 1, j - 1] + matrix[ci,cj]
+ *             jVal = jScore[i - 1, j - 1] + matrix[ci,cj]             # <<<<<<<<<<<<<<
+ *             if mVal > jVal:
+ *                 if mVal > iVal:
+ */
+      __pyx_t_17 = (__pyx_v_i - 1);
+      __pyx_t_18 = (__pyx_v_j - 1);
+      __pyx_t_12 = __pyx_v_ci;
+      __pyx_t_11 = __pyx_v_cj;
+      if (__pyx_t_12 < 0) __pyx_t_12 += __pyx_pybuffernd_matrix.diminfo[0].shape;
+      if (__pyx_t_11 < 0) __pyx_t_11 += __pyx_pybuffernd_matrix.diminfo[1].shape;
+      __pyx_v_jVal = ((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jScore.data + __pyx_t_17 * __pyx_v_jScore.strides[0]) ) + __pyx_t_18 * __pyx_v_jScore.strides[1]) ))) + (*__Pyx_BufPtrStrided2d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_matrix.rcbuffer->pybuffer.buf, __pyx_t_12, __pyx_pybuffernd_matrix.diminfo[0].strides, __pyx_t_11, __pyx_pybuffernd_matrix.diminfo[1].strides)));
+
+      /* "CRISPResso2/CRISPResso2Align.pyx":266
+ *             iVal = iScore[i - 1, j - 1] + matrix[ci,cj]
+ *             jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
+ *             if mVal > jVal:             # <<<<<<<<<<<<<<
+ *                 if mVal > iVal:
+ *                     mScore[i, j] = mVal
+ */
+      __pyx_t_4 = ((__pyx_v_mVal > __pyx_v_jVal) != 0);
       if (__pyx_t_4) {
 
+        /* "CRISPResso2/CRISPResso2Align.pyx":267
+ *             jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
+ *             if mVal > jVal:
+ *                 if mVal > iVal:             # <<<<<<<<<<<<<<
+ *                     mScore[i, j] = mVal
+ *                     mPointer[i, j] = MARRAY
+ */
+        __pyx_t_4 = ((__pyx_v_mVal > __pyx_v_iVal) != 0);
+        if (__pyx_t_4) {
+
+          /* "CRISPResso2/CRISPResso2Align.pyx":268
+ *             if mVal > jVal:
+ *                 if mVal > iVal:
+ *                     mScore[i, j] = mVal             # <<<<<<<<<<<<<<
+ *                     mPointer[i, j] = MARRAY
+ *                 else:
+ */
+          __pyx_t_18 = __pyx_v_i;
+          __pyx_t_17 = __pyx_v_j;
+          *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_18 * __pyx_v_mScore.strides[0]) ) + __pyx_t_17 * __pyx_v_mScore.strides[1]) )) = __pyx_v_mVal;
+
+          /* "CRISPResso2/CRISPResso2Align.pyx":269
+ *                 if mVal > iVal:
+ *                     mScore[i, j] = mVal
+ *                     mPointer[i, j] = MARRAY             # <<<<<<<<<<<<<<
+ *                 else:
+ *                     mScore[i, j]   = iVal
+ */
+          __pyx_t_17 = __pyx_v_i;
+          __pyx_t_18 = __pyx_v_j;
+          *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mPointer.data + __pyx_t_17 * __pyx_v_mPointer.strides[0]) ) + __pyx_t_18 * __pyx_v_mPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_MARRAY;
+
+          /* "CRISPResso2/CRISPResso2Align.pyx":267
+ *             jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
+ *             if mVal > jVal:
+ *                 if mVal > iVal:             # <<<<<<<<<<<<<<
+ *                     mScore[i, j] = mVal
+ *                     mPointer[i, j] = MARRAY
+ */
+          goto __pyx_L24;
+        }
+
         /* "CRISPResso2/CRISPResso2Align.pyx":271
- *         else:
- *             if jVal > iVal:
- *                 mScore[i, j]  = jVal             # <<<<<<<<<<<<<<
- *                 mPointer[i, j] = JARRAY
+ *                     mPointer[i, j] = MARRAY
+ *                 else:
+ *                     mScore[i, j]   = iVal             # <<<<<<<<<<<<<<
+ *                     mPointer[i, j] = IARRAY
  *             else:
  */
-        __pyx_t_18 = __pyx_v_i;
-        __pyx_t_17 = __pyx_v_j;
-        *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_18 * __pyx_v_mScore.strides[0]) ) + __pyx_t_17 * __pyx_v_mScore.strides[1]) )) = __pyx_v_jVal;
+        /*else*/ {
+          __pyx_t_18 = __pyx_v_i;
+          __pyx_t_17 = __pyx_v_j;
+          *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_18 * __pyx_v_mScore.strides[0]) ) + __pyx_t_17 * __pyx_v_mScore.strides[1]) )) = __pyx_v_iVal;
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":272
- *             if jVal > iVal:
- *                 mScore[i, j]  = jVal
- *                 mPointer[i, j] = JARRAY             # <<<<<<<<<<<<<<
+          /* "CRISPResso2/CRISPResso2Align.pyx":272
+ *                 else:
+ *                     mScore[i, j]   = iVal
+ *                     mPointer[i, j] = IARRAY             # <<<<<<<<<<<<<<
  *             else:
- *                 mScore[i, j] = iVal
+ *                 if jVal > iVal:
  */
-        __pyx_t_17 = __pyx_v_i;
-        __pyx_t_18 = __pyx_v_j;
-        *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mPointer.data + __pyx_t_17 * __pyx_v_mPointer.strides[0]) ) + __pyx_t_18 * __pyx_v_mPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_JARRAY;
+          __pyx_t_17 = __pyx_v_i;
+          __pyx_t_18 = __pyx_v_j;
+          *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mPointer.data + __pyx_t_17 * __pyx_v_mPointer.strides[0]) ) + __pyx_t_18 * __pyx_v_mPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_IARRAY;
+        }
+        __pyx_L24:;
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":270
- *                 mPointer[i, j] = IARRAY
- *         else:
- *             if jVal > iVal:             # <<<<<<<<<<<<<<
- *                 mScore[i, j]  = jVal
- *                 mPointer[i, j] = JARRAY
+        /* "CRISPResso2/CRISPResso2Align.pyx":266
+ *             iVal = iScore[i - 1, j - 1] + matrix[ci,cj]
+ *             jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
+ *             if mVal > jVal:             # <<<<<<<<<<<<<<
+ *                 if mVal > iVal:
+ *                     mScore[i, j] = mVal
  */
         goto __pyx_L23;
       }
 
       /* "CRISPResso2/CRISPResso2Align.pyx":274
- *                 mPointer[i, j] = JARRAY
+ *                     mPointer[i, j] = IARRAY
  *             else:
- *                 mScore[i, j] = iVal             # <<<<<<<<<<<<<<
- *                 mPointer[i, j] = IARRAY
- * #        print('lastCol: mScore['+str(i) + ',' + str(j) +']: ' + str(mScore[i,j]) + ': max(' + str(mScore[i - 1, j - 1])+ '+ (' + str(ci)+ ',' + str(cj) + ') ' + str(matrix[ci,cj]) + ', i:'+str(iVal) + ',j:' + str(jVal))
+ *                 if jVal > iVal:             # <<<<<<<<<<<<<<
+ *                     mScore[i, j]  = jVal
+ *                     mPointer[i, j] = JARRAY
  */
       /*else*/ {
-        __pyx_t_18 = __pyx_v_i;
-        __pyx_t_17 = __pyx_v_j;
-        *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_18 * __pyx_v_mScore.strides[0]) ) + __pyx_t_17 * __pyx_v_mScore.strides[1]) )) = __pyx_v_iVal;
+        __pyx_t_4 = ((__pyx_v_jVal > __pyx_v_iVal) != 0);
+        if (__pyx_t_4) {
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":275
+          /* "CRISPResso2/CRISPResso2Align.pyx":275
  *             else:
- *                 mScore[i, j] = iVal
- *                 mPointer[i, j] = IARRAY             # <<<<<<<<<<<<<<
- * #        print('lastCol: mScore['+str(i) + ',' + str(j) +']: ' + str(mScore[i,j]) + ': max(' + str(mScore[i - 1, j - 1])+ '+ (' + str(ci)+ ',' + str(cj) + ') ' + str(matrix[ci,cj]) + ', i:'+str(iVal) + ',j:' + str(jVal))
+ *                 if jVal > iVal:
+ *                     mScore[i, j]  = jVal             # <<<<<<<<<<<<<<
+ *                     mPointer[i, j] = JARRAY
+ *                 else:
+ */
+          __pyx_t_18 = __pyx_v_i;
+          __pyx_t_17 = __pyx_v_j;
+          *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_18 * __pyx_v_mScore.strides[0]) ) + __pyx_t_17 * __pyx_v_mScore.strides[1]) )) = __pyx_v_jVal;
+
+          /* "CRISPResso2/CRISPResso2Align.pyx":276
+ *                 if jVal > iVal:
+ *                     mScore[i, j]  = jVal
+ *                     mPointer[i, j] = JARRAY             # <<<<<<<<<<<<<<
+ *                 else:
+ *                     mScore[i, j] = iVal
+ */
+          __pyx_t_17 = __pyx_v_i;
+          __pyx_t_18 = __pyx_v_j;
+          *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mPointer.data + __pyx_t_17 * __pyx_v_mPointer.strides[0]) ) + __pyx_t_18 * __pyx_v_mPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_JARRAY;
+
+          /* "CRISPResso2/CRISPResso2Align.pyx":274
+ *                     mPointer[i, j] = IARRAY
+ *             else:
+ *                 if jVal > iVal:             # <<<<<<<<<<<<<<
+ *                     mScore[i, j]  = jVal
+ *                     mPointer[i, j] = JARRAY
+ */
+          goto __pyx_L25;
+        }
+
+        /* "CRISPResso2/CRISPResso2Align.pyx":278
+ *                     mPointer[i, j] = JARRAY
+ *                 else:
+ *                     mScore[i, j] = iVal             # <<<<<<<<<<<<<<
+ *                     mPointer[i, j] = IARRAY
+ * #            print('lastCol: mScore['+str(i) + ',' + str(j) +']: ' + str(mScore[i,j]) + ': max(' + str(mScore[i - 1, j - 1])+ '+ (' + str(ci)+ ',' + str(cj) + ') ' + str(matrix[ci,cj]) + ', i:'+str(iVal) + ',j:' + str(jVal))
+ */
+        /*else*/ {
+          __pyx_t_18 = __pyx_v_i;
+          __pyx_t_17 = __pyx_v_j;
+          *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_18 * __pyx_v_mScore.strides[0]) ) + __pyx_t_17 * __pyx_v_mScore.strides[1]) )) = __pyx_v_iVal;
+
+          /* "CRISPResso2/CRISPResso2Align.pyx":279
+ *                 else:
+ *                     mScore[i, j] = iVal
+ *                     mPointer[i, j] = IARRAY             # <<<<<<<<<<<<<<
+ * #            print('lastCol: mScore['+str(i) + ',' + str(j) +']: ' + str(mScore[i,j]) + ': max(' + str(mScore[i - 1, j - 1])+ '+ (' + str(ci)+ ',' + str(cj) + ') ' + str(matrix[ci,cj]) + ', i:'+str(iVal) + ',j:' + str(jVal))
  * 
  */
-        __pyx_t_17 = __pyx_v_i;
-        __pyx_t_18 = __pyx_v_j;
-        *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mPointer.data + __pyx_t_17 * __pyx_v_mPointer.strides[0]) ) + __pyx_t_18 * __pyx_v_mPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_IARRAY;
+          __pyx_t_17 = __pyx_v_i;
+          __pyx_t_18 = __pyx_v_j;
+          *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mPointer.data + __pyx_t_17 * __pyx_v_mPointer.strides[0]) ) + __pyx_t_18 * __pyx_v_mPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_IARRAY;
+        }
+        __pyx_L25:;
       }
       __pyx_L23:;
     }
-    __pyx_L21:;
+
+    /* "CRISPResso2/CRISPResso2Align.pyx":241
+ *     j = max_j
+ *     cj = seqj[j-1]
+ *     if max_j > 0:             # <<<<<<<<<<<<<<
+ *         for i in range(1, max_i):
+ *             ci = seqi[i-1]
+ */
   }
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":279
+  /* "CRISPResso2/CRISPResso2Align.pyx":283
  * 
  *     #last row
  *     i = max_i             # <<<<<<<<<<<<<<
@@ -6445,7 +6492,7 @@ __pyx_t_10 = -1;
  */
   __pyx_v_i = __pyx_v_max_i;
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":280
+  /* "CRISPResso2/CRISPResso2Align.pyx":284
  *     #last row
  *     i = max_i
  *     ci = seqi[i - 1]             # <<<<<<<<<<<<<<
@@ -6454,7 +6501,7 @@ __pyx_t_10 = -1;
  */
   __pyx_v_ci = (__pyx_v_seqi[(__pyx_v_i - 1)]);
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":281
+  /* "CRISPResso2/CRISPResso2Align.pyx":285
  *     i = max_i
  *     ci = seqi[i - 1]
  *     for j in range(1, max_j+1):             # <<<<<<<<<<<<<<
@@ -6466,7 +6513,7 @@ __pyx_t_10 = -1;
   for (__pyx_t_15 = 1; __pyx_t_15 < __pyx_t_14; __pyx_t_15+=1) {
     __pyx_v_j = __pyx_t_15;
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":282
+    /* "CRISPResso2/CRISPResso2Align.pyx":286
  *     ci = seqi[i - 1]
  *     for j in range(1, max_j+1):
  *         cj = seqj[j - 1]             # <<<<<<<<<<<<<<
@@ -6475,7 +6522,7 @@ __pyx_t_10 = -1;
  */
     __pyx_v_cj = (__pyx_v_seqj[(__pyx_v_j - 1)]);
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":284
+    /* "CRISPResso2/CRISPResso2Align.pyx":288
  *         cj = seqj[j - 1]
  * 
  *         iFromMVal = gap_extend + mScore[i, j - 1] + gap_incentive[i]             # <<<<<<<<<<<<<<
@@ -6487,7 +6534,7 @@ __pyx_t_10 = -1;
     __pyx_t_16 = __pyx_v_i;
     __pyx_v_iFromMVal = ((__pyx_v_gap_extend + (*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_18 * __pyx_v_mScore.strides[0]) ) + __pyx_t_17 * __pyx_v_mScore.strides[1]) )))) + (*__Pyx_BufPtrStrided1d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_gap_incentive.rcbuffer->pybuffer.buf, __pyx_t_16, __pyx_pybuffernd_gap_incentive.diminfo[0].strides)));
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":285
+    /* "CRISPResso2/CRISPResso2Align.pyx":289
  * 
  *         iFromMVal = gap_extend + mScore[i, j - 1] + gap_incentive[i]
  *         iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]             # <<<<<<<<<<<<<<
@@ -6499,7 +6546,7 @@ __pyx_t_10 = -1;
     __pyx_t_18 = __pyx_v_i;
     __pyx_v_iExtendVal = ((__pyx_v_gap_extend + (*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iScore.data + __pyx_t_16 * __pyx_v_iScore.strides[0]) ) + __pyx_t_17 * __pyx_v_iScore.strides[1]) )))) + (*__Pyx_BufPtrStrided1d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_gap_incentive.rcbuffer->pybuffer.buf, __pyx_t_18, __pyx_pybuffernd_gap_incentive.diminfo[0].strides)));
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":286
+    /* "CRISPResso2/CRISPResso2Align.pyx":290
  *         iFromMVal = gap_extend + mScore[i, j - 1] + gap_incentive[i]
  *         iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]
  *         if iFromMVal > iExtendVal:             # <<<<<<<<<<<<<<
@@ -6509,7 +6556,7 @@ __pyx_t_10 = -1;
     __pyx_t_4 = ((__pyx_v_iFromMVal > __pyx_v_iExtendVal) != 0);
     if (__pyx_t_4) {
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":287
+      /* "CRISPResso2/CRISPResso2Align.pyx":291
  *         iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]
  *         if iFromMVal > iExtendVal:
  *             iScore[i,j] =  iFromMVal             # <<<<<<<<<<<<<<
@@ -6520,7 +6567,7 @@ __pyx_t_10 = -1;
       __pyx_t_17 = __pyx_v_j;
       *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iScore.data + __pyx_t_18 * __pyx_v_iScore.strides[0]) ) + __pyx_t_17 * __pyx_v_iScore.strides[1]) )) = __pyx_v_iFromMVal;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":288
+      /* "CRISPResso2/CRISPResso2Align.pyx":292
  *         if iFromMVal > iExtendVal:
  *             iScore[i,j] =  iFromMVal
  *             iPointer[i,j] = MARRAY             # <<<<<<<<<<<<<<
@@ -6531,17 +6578,17 @@ __pyx_t_10 = -1;
       __pyx_t_18 = __pyx_v_j;
       *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iPointer.data + __pyx_t_17 * __pyx_v_iPointer.strides[0]) ) + __pyx_t_18 * __pyx_v_iPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_MARRAY;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":286
+      /* "CRISPResso2/CRISPResso2Align.pyx":290
  *         iFromMVal = gap_extend + mScore[i, j - 1] + gap_incentive[i]
  *         iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]
  *         if iFromMVal > iExtendVal:             # <<<<<<<<<<<<<<
  *             iScore[i,j] =  iFromMVal
  *             iPointer[i,j] = MARRAY
  */
-      goto __pyx_L26;
+      goto __pyx_L28;
     }
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":290
+    /* "CRISPResso2/CRISPResso2Align.pyx":294
  *             iPointer[i,j] = MARRAY
  *         else:
  *             iScore[i,j] = iExtendVal             # <<<<<<<<<<<<<<
@@ -6553,7 +6600,7 @@ __pyx_t_10 = -1;
       __pyx_t_17 = __pyx_v_j;
       *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iScore.data + __pyx_t_18 * __pyx_v_iScore.strides[0]) ) + __pyx_t_17 * __pyx_v_iScore.strides[1]) )) = __pyx_v_iExtendVal;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":291
+      /* "CRISPResso2/CRISPResso2Align.pyx":295
  *         else:
  *             iScore[i,j] = iExtendVal
  *             iPointer[i,j] = IARRAY             # <<<<<<<<<<<<<<
@@ -6564,9 +6611,9 @@ __pyx_t_10 = -1;
       __pyx_t_18 = __pyx_v_j;
       *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iPointer.data + __pyx_t_17 * __pyx_v_iPointer.strides[0]) ) + __pyx_t_18 * __pyx_v_iPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_IARRAY;
     }
-    __pyx_L26:;
+    __pyx_L28:;
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":293
+    /* "CRISPResso2/CRISPResso2Align.pyx":297
  *             iPointer[i,j] = IARRAY
  * 
  *         jFromMVal = gap_extend + mScore[i - 1, j] + gap_incentive[i-1]             # <<<<<<<<<<<<<<
@@ -6578,7 +6625,7 @@ __pyx_t_10 = -1;
     __pyx_t_16 = (__pyx_v_i - 1);
     __pyx_v_jFromMVal = ((__pyx_v_gap_extend + (*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_18 * __pyx_v_mScore.strides[0]) ) + __pyx_t_17 * __pyx_v_mScore.strides[1]) )))) + (*__Pyx_BufPtrStrided1d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_gap_incentive.rcbuffer->pybuffer.buf, __pyx_t_16, __pyx_pybuffernd_gap_incentive.diminfo[0].strides)));
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":294
+    /* "CRISPResso2/CRISPResso2Align.pyx":298
  * 
  *         jFromMVal = gap_extend + mScore[i - 1, j] + gap_incentive[i-1]
  *         jExtendVal = gap_extend + jScore[i - 1, j]             # <<<<<<<<<<<<<<
@@ -6589,7 +6636,7 @@ __pyx_t_10 = -1;
     __pyx_t_17 = __pyx_v_j;
     __pyx_v_jExtendVal = (__pyx_v_gap_extend + (*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jScore.data + __pyx_t_16 * __pyx_v_jScore.strides[0]) ) + __pyx_t_17 * __pyx_v_jScore.strides[1]) ))));
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":295
+    /* "CRISPResso2/CRISPResso2Align.pyx":299
  *         jFromMVal = gap_extend + mScore[i - 1, j] + gap_incentive[i-1]
  *         jExtendVal = gap_extend + jScore[i - 1, j]
  *         if jFromMVal > jExtendVal:             # <<<<<<<<<<<<<<
@@ -6599,7 +6646,7 @@ __pyx_t_10 = -1;
     __pyx_t_4 = ((__pyx_v_jFromMVal > __pyx_v_jExtendVal) != 0);
     if (__pyx_t_4) {
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":296
+      /* "CRISPResso2/CRISPResso2Align.pyx":300
  *         jExtendVal = gap_extend + jScore[i - 1, j]
  *         if jFromMVal > jExtendVal:
  *             jScore[i,j] =  jFromMVal             # <<<<<<<<<<<<<<
@@ -6610,7 +6657,7 @@ __pyx_t_10 = -1;
       __pyx_t_16 = __pyx_v_j;
       *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jScore.data + __pyx_t_17 * __pyx_v_jScore.strides[0]) ) + __pyx_t_16 * __pyx_v_jScore.strides[1]) )) = __pyx_v_jFromMVal;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":297
+      /* "CRISPResso2/CRISPResso2Align.pyx":301
  *         if jFromMVal > jExtendVal:
  *             jScore[i,j] =  jFromMVal
  *             jPointer[i,j] = MARRAY             # <<<<<<<<<<<<<<
@@ -6621,17 +6668,17 @@ __pyx_t_10 = -1;
       __pyx_t_17 = __pyx_v_j;
       *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jPointer.data + __pyx_t_16 * __pyx_v_jPointer.strides[0]) ) + __pyx_t_17 * __pyx_v_jPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_MARRAY;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":295
+      /* "CRISPResso2/CRISPResso2Align.pyx":299
  *         jFromMVal = gap_extend + mScore[i - 1, j] + gap_incentive[i-1]
  *         jExtendVal = gap_extend + jScore[i - 1, j]
  *         if jFromMVal > jExtendVal:             # <<<<<<<<<<<<<<
  *             jScore[i,j] =  jFromMVal
  *             jPointer[i,j] = MARRAY
  */
-      goto __pyx_L27;
+      goto __pyx_L29;
     }
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":299
+    /* "CRISPResso2/CRISPResso2Align.pyx":303
  *             jPointer[i,j] = MARRAY
  *         else:
  *             jScore[i,j] = jExtendVal             # <<<<<<<<<<<<<<
@@ -6643,7 +6690,7 @@ __pyx_t_10 = -1;
       __pyx_t_16 = __pyx_v_j;
       *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jScore.data + __pyx_t_17 * __pyx_v_jScore.strides[0]) ) + __pyx_t_16 * __pyx_v_jScore.strides[1]) )) = __pyx_v_jExtendVal;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":300
+      /* "CRISPResso2/CRISPResso2Align.pyx":304
  *         else:
  *             jScore[i,j] = jExtendVal
  *             jPointer[i,j] = JARRAY             # <<<<<<<<<<<<<<
@@ -6654,9 +6701,9 @@ __pyx_t_10 = -1;
       __pyx_t_17 = __pyx_v_j;
       *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jPointer.data + __pyx_t_16 * __pyx_v_jPointer.strides[0]) ) + __pyx_t_17 * __pyx_v_jPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_JARRAY;
     }
-    __pyx_L27:;
+    __pyx_L29:;
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":303
+    /* "CRISPResso2/CRISPResso2Align.pyx":307
  * 
  * 
  *         mVal = mScore[i - 1, j - 1] + matrix[ci,cj]             # <<<<<<<<<<<<<<
@@ -6671,7 +6718,7 @@ __pyx_t_10 = -1;
     if (__pyx_t_12 < 0) __pyx_t_12 += __pyx_pybuffernd_matrix.diminfo[1].shape;
     __pyx_v_mVal = ((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_17 * __pyx_v_mScore.strides[0]) ) + __pyx_t_16 * __pyx_v_mScore.strides[1]) ))) + (*__Pyx_BufPtrStrided2d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_matrix.rcbuffer->pybuffer.buf, __pyx_t_11, __pyx_pybuffernd_matrix.diminfo[0].strides, __pyx_t_12, __pyx_pybuffernd_matrix.diminfo[1].strides)));
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":304
+    /* "CRISPResso2/CRISPResso2Align.pyx":308
  * 
  *         mVal = mScore[i - 1, j - 1] + matrix[ci,cj]
  *         iVal = iScore[i - 1, j - 1] + matrix[ci,cj]             # <<<<<<<<<<<<<<
@@ -6686,7 +6733,7 @@ __pyx_t_10 = -1;
     if (__pyx_t_11 < 0) __pyx_t_11 += __pyx_pybuffernd_matrix.diminfo[1].shape;
     __pyx_v_iVal = ((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iScore.data + __pyx_t_16 * __pyx_v_iScore.strides[0]) ) + __pyx_t_17 * __pyx_v_iScore.strides[1]) ))) + (*__Pyx_BufPtrStrided2d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_matrix.rcbuffer->pybuffer.buf, __pyx_t_12, __pyx_pybuffernd_matrix.diminfo[0].strides, __pyx_t_11, __pyx_pybuffernd_matrix.diminfo[1].strides)));
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":305
+    /* "CRISPResso2/CRISPResso2Align.pyx":309
  *         mVal = mScore[i - 1, j - 1] + matrix[ci,cj]
  *         iVal = iScore[i - 1, j - 1] + matrix[ci,cj]
  *         jVal = jScore[i - 1, j - 1] + matrix[ci,cj]             # <<<<<<<<<<<<<<
@@ -6701,7 +6748,7 @@ __pyx_t_10 = -1;
     if (__pyx_t_12 < 0) __pyx_t_12 += __pyx_pybuffernd_matrix.diminfo[1].shape;
     __pyx_v_jVal = ((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jScore.data + __pyx_t_17 * __pyx_v_jScore.strides[0]) ) + __pyx_t_16 * __pyx_v_jScore.strides[1]) ))) + (*__Pyx_BufPtrStrided2d(__pyx_t_11CRISPResso2_16CRISPResso2Align_DTYPE_INT *, __pyx_pybuffernd_matrix.rcbuffer->pybuffer.buf, __pyx_t_11, __pyx_pybuffernd_matrix.diminfo[0].strides, __pyx_t_12, __pyx_pybuffernd_matrix.diminfo[1].strides)));
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":306
+    /* "CRISPResso2/CRISPResso2Align.pyx":310
  *         iVal = iScore[i - 1, j - 1] + matrix[ci,cj]
  *         jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
  *         if mVal > jVal:             # <<<<<<<<<<<<<<
@@ -6711,7 +6758,7 @@ __pyx_t_10 = -1;
     __pyx_t_4 = ((__pyx_v_mVal > __pyx_v_jVal) != 0);
     if (__pyx_t_4) {
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":307
+      /* "CRISPResso2/CRISPResso2Align.pyx":311
  *         jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
  *         if mVal > jVal:
  *             if mVal > iVal:             # <<<<<<<<<<<<<<
@@ -6721,7 +6768,7 @@ __pyx_t_10 = -1;
       __pyx_t_4 = ((__pyx_v_mVal > __pyx_v_iVal) != 0);
       if (__pyx_t_4) {
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":308
+        /* "CRISPResso2/CRISPResso2Align.pyx":312
  *         if mVal > jVal:
  *             if mVal > iVal:
  *                 mScore[i, j] = mVal             # <<<<<<<<<<<<<<
@@ -6732,7 +6779,7 @@ __pyx_t_10 = -1;
         __pyx_t_17 = __pyx_v_j;
         *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_16 * __pyx_v_mScore.strides[0]) ) + __pyx_t_17 * __pyx_v_mScore.strides[1]) )) = __pyx_v_mVal;
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":309
+        /* "CRISPResso2/CRISPResso2Align.pyx":313
  *             if mVal > iVal:
  *                 mScore[i, j] = mVal
  *                 mPointer[i, j] = MARRAY             # <<<<<<<<<<<<<<
@@ -6743,17 +6790,17 @@ __pyx_t_10 = -1;
         __pyx_t_16 = __pyx_v_j;
         *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mPointer.data + __pyx_t_17 * __pyx_v_mPointer.strides[0]) ) + __pyx_t_16 * __pyx_v_mPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_MARRAY;
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":307
+        /* "CRISPResso2/CRISPResso2Align.pyx":311
  *         jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
  *         if mVal > jVal:
  *             if mVal > iVal:             # <<<<<<<<<<<<<<
  *                 mScore[i, j] = mVal
  *                 mPointer[i, j] = MARRAY
  */
-        goto __pyx_L29;
+        goto __pyx_L31;
       }
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":311
+      /* "CRISPResso2/CRISPResso2Align.pyx":315
  *                 mPointer[i, j] = MARRAY
  *             else:
  *                 mScore[i, j]   = iVal             # <<<<<<<<<<<<<<
@@ -6765,7 +6812,7 @@ __pyx_t_10 = -1;
         __pyx_t_17 = __pyx_v_j;
         *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_16 * __pyx_v_mScore.strides[0]) ) + __pyx_t_17 * __pyx_v_mScore.strides[1]) )) = __pyx_v_iVal;
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":312
+        /* "CRISPResso2/CRISPResso2Align.pyx":316
  *             else:
  *                 mScore[i, j]   = iVal
  *                 mPointer[i, j] = IARRAY             # <<<<<<<<<<<<<<
@@ -6776,19 +6823,19 @@ __pyx_t_10 = -1;
         __pyx_t_16 = __pyx_v_j;
         *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mPointer.data + __pyx_t_17 * __pyx_v_mPointer.strides[0]) ) + __pyx_t_16 * __pyx_v_mPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_IARRAY;
       }
-      __pyx_L29:;
+      __pyx_L31:;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":306
+      /* "CRISPResso2/CRISPResso2Align.pyx":310
  *         iVal = iScore[i - 1, j - 1] + matrix[ci,cj]
  *         jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
  *         if mVal > jVal:             # <<<<<<<<<<<<<<
  *             if mVal > iVal:
  *                 mScore[i, j] = mVal
  */
-      goto __pyx_L28;
+      goto __pyx_L30;
     }
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":314
+    /* "CRISPResso2/CRISPResso2Align.pyx":318
  *                 mPointer[i, j] = IARRAY
  *         else:
  *             if jVal > iVal:             # <<<<<<<<<<<<<<
@@ -6799,7 +6846,7 @@ __pyx_t_10 = -1;
       __pyx_t_4 = ((__pyx_v_jVal > __pyx_v_iVal) != 0);
       if (__pyx_t_4) {
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":315
+        /* "CRISPResso2/CRISPResso2Align.pyx":319
  *         else:
  *             if jVal > iVal:
  *                 mScore[i, j]  = jVal             # <<<<<<<<<<<<<<
@@ -6810,7 +6857,7 @@ __pyx_t_10 = -1;
         __pyx_t_17 = __pyx_v_j;
         *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_16 * __pyx_v_mScore.strides[0]) ) + __pyx_t_17 * __pyx_v_mScore.strides[1]) )) = __pyx_v_jVal;
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":316
+        /* "CRISPResso2/CRISPResso2Align.pyx":320
  *             if jVal > iVal:
  *                 mScore[i, j]  = jVal
  *                 mPointer[i, j] = JARRAY             # <<<<<<<<<<<<<<
@@ -6821,17 +6868,17 @@ __pyx_t_10 = -1;
         __pyx_t_16 = __pyx_v_j;
         *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mPointer.data + __pyx_t_17 * __pyx_v_mPointer.strides[0]) ) + __pyx_t_16 * __pyx_v_mPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_JARRAY;
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":314
+        /* "CRISPResso2/CRISPResso2Align.pyx":318
  *                 mPointer[i, j] = IARRAY
  *         else:
  *             if jVal > iVal:             # <<<<<<<<<<<<<<
  *                 mScore[i, j]  = jVal
  *                 mPointer[i, j] = JARRAY
  */
-        goto __pyx_L30;
+        goto __pyx_L32;
       }
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":318
+      /* "CRISPResso2/CRISPResso2Align.pyx":322
  *                 mPointer[i, j] = JARRAY
  *             else:
  *                 mScore[i, j] = iVal             # <<<<<<<<<<<<<<
@@ -6843,7 +6890,7 @@ __pyx_t_10 = -1;
         __pyx_t_17 = __pyx_v_j;
         *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_16 * __pyx_v_mScore.strides[0]) ) + __pyx_t_17 * __pyx_v_mScore.strides[1]) )) = __pyx_v_iVal;
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":319
+        /* "CRISPResso2/CRISPResso2Align.pyx":323
  *             else:
  *                 mScore[i, j] = iVal
  *                 mPointer[i, j] = IARRAY             # <<<<<<<<<<<<<<
@@ -6854,12 +6901,12 @@ __pyx_t_10 = -1;
         __pyx_t_16 = __pyx_v_j;
         *((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mPointer.data + __pyx_t_17 * __pyx_v_mPointer.strides[0]) ) + __pyx_t_16 * __pyx_v_mPointer.strides[1]) )) = __pyx_v_11CRISPResso2_16CRISPResso2Align_IARRAY;
       }
-      __pyx_L30:;
+      __pyx_L32:;
     }
-    __pyx_L28:;
+    __pyx_L30:;
   }
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":340
+  /* "CRISPResso2/CRISPResso2Align.pyx":344
  * #      print("\n"),
  * 
  *     seqlen = max_i + max_j             # <<<<<<<<<<<<<<
@@ -6868,7 +6915,7 @@ __pyx_t_10 = -1;
  */
   __pyx_v_seqlen = (__pyx_v_max_i + __pyx_v_max_j);
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":341
+  /* "CRISPResso2/CRISPResso2Align.pyx":345
  * 
  *     seqlen = max_i + max_j
  *     cdef char* tmp_align_j = get_c_string_with_length(seqlen)             # <<<<<<<<<<<<<<
@@ -6877,7 +6924,7 @@ __pyx_t_10 = -1;
  */
   __pyx_v_tmp_align_j = __pyx_f_11CRISPResso2_16CRISPResso2Align_get_c_string_with_length(__pyx_v_seqlen);
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":342
+  /* "CRISPResso2/CRISPResso2Align.pyx":346
  *     seqlen = max_i + max_j
  *     cdef char* tmp_align_j = get_c_string_with_length(seqlen)
  *     cdef char* tmp_align_i = get_c_string_with_length(seqlen)             # <<<<<<<<<<<<<<
@@ -6886,7 +6933,7 @@ __pyx_t_10 = -1;
  */
   __pyx_v_tmp_align_i = __pyx_f_11CRISPResso2_16CRISPResso2Align_get_c_string_with_length(__pyx_v_seqlen);
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":344
+  /* "CRISPResso2/CRISPResso2Align.pyx":348
  *     cdef char* tmp_align_i = get_c_string_with_length(seqlen)
  * 
  *     cdef int matchCount = 0             # <<<<<<<<<<<<<<
@@ -6895,7 +6942,7 @@ __pyx_t_10 = -1;
  */
   __pyx_v_matchCount = 0;
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":345
+  /* "CRISPResso2/CRISPResso2Align.pyx":349
  * 
  *     cdef int matchCount = 0
  *     i = max_i             # <<<<<<<<<<<<<<
@@ -6904,7 +6951,7 @@ __pyx_t_10 = -1;
  */
   __pyx_v_i = __pyx_v_max_i;
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":346
+  /* "CRISPResso2/CRISPResso2Align.pyx":350
  *     cdef int matchCount = 0
  *     i = max_i
  *     j = max_j             # <<<<<<<<<<<<<<
@@ -6913,7 +6960,7 @@ __pyx_t_10 = -1;
  */
   __pyx_v_j = __pyx_v_max_j;
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":347
+  /* "CRISPResso2/CRISPResso2Align.pyx":351
  *     i = max_i
  *     j = max_j
  *     ci = seqi[i - 1]             # <<<<<<<<<<<<<<
@@ -6922,7 +6969,7 @@ __pyx_t_10 = -1;
  */
   __pyx_v_ci = (__pyx_v_seqi[(__pyx_v_i - 1)]);
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":348
+  /* "CRISPResso2/CRISPResso2Align.pyx":352
  *     j = max_j
  *     ci = seqi[i - 1]
  *     cj = seqj[j - 1]             # <<<<<<<<<<<<<<
@@ -6931,7 +6978,7 @@ __pyx_t_10 = -1;
  */
   __pyx_v_cj = (__pyx_v_seqj[(__pyx_v_j - 1)]);
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":350
+  /* "CRISPResso2/CRISPResso2Align.pyx":354
  *     cj = seqj[j - 1]
  *     cdef int currMatrix
  *     currMatrix = MARRAY             # <<<<<<<<<<<<<<
@@ -6940,7 +6987,7 @@ __pyx_t_10 = -1;
  */
   __pyx_v_currMatrix = __pyx_v_11CRISPResso2_16CRISPResso2Align_MARRAY;
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":351
+  /* "CRISPResso2/CRISPResso2Align.pyx":355
  *     cdef int currMatrix
  *     currMatrix = MARRAY
  *     if mScore[i,j] > jScore[i,j]:             # <<<<<<<<<<<<<<
@@ -6954,7 +7001,7 @@ __pyx_t_10 = -1;
   __pyx_t_4 = (((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_13 * __pyx_v_mScore.strides[0]) ) + __pyx_t_14 * __pyx_v_mScore.strides[1]) ))) > (*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jScore.data + __pyx_t_15 * __pyx_v_jScore.strides[0]) ) + __pyx_t_16 * __pyx_v_jScore.strides[1]) )))) != 0);
   if (__pyx_t_4) {
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":352
+    /* "CRISPResso2/CRISPResso2Align.pyx":356
  *     currMatrix = MARRAY
  *     if mScore[i,j] > jScore[i,j]:
  *         if mScore[i,j] > iScore[i,j]:             # <<<<<<<<<<<<<<
@@ -6968,7 +7015,7 @@ __pyx_t_10 = -1;
     __pyx_t_4 = (((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_16 * __pyx_v_mScore.strides[0]) ) + __pyx_t_15 * __pyx_v_mScore.strides[1]) ))) > (*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iScore.data + __pyx_t_14 * __pyx_v_iScore.strides[0]) ) + __pyx_t_13 * __pyx_v_iScore.strides[1]) )))) != 0);
     if (__pyx_t_4) {
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":353
+      /* "CRISPResso2/CRISPResso2Align.pyx":357
  *     if mScore[i,j] > jScore[i,j]:
  *         if mScore[i,j] > iScore[i,j]:
  *             currMatrix = MARRAY             # <<<<<<<<<<<<<<
@@ -6977,17 +7024,17 @@ __pyx_t_10 = -1;
  */
       __pyx_v_currMatrix = __pyx_v_11CRISPResso2_16CRISPResso2Align_MARRAY;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":352
+      /* "CRISPResso2/CRISPResso2Align.pyx":356
  *     currMatrix = MARRAY
  *     if mScore[i,j] > jScore[i,j]:
  *         if mScore[i,j] > iScore[i,j]:             # <<<<<<<<<<<<<<
  *             currMatrix = MARRAY
  *         else:
  */
-      goto __pyx_L32;
+      goto __pyx_L34;
     }
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":355
+    /* "CRISPResso2/CRISPResso2Align.pyx":359
  *             currMatrix = MARRAY
  *         else:
  *             currMatrix = IARRAY             # <<<<<<<<<<<<<<
@@ -6997,19 +7044,19 @@ __pyx_t_10 = -1;
     /*else*/ {
       __pyx_v_currMatrix = __pyx_v_11CRISPResso2_16CRISPResso2Align_IARRAY;
     }
-    __pyx_L32:;
+    __pyx_L34:;
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":351
+    /* "CRISPResso2/CRISPResso2Align.pyx":355
  *     cdef int currMatrix
  *     currMatrix = MARRAY
  *     if mScore[i,j] > jScore[i,j]:             # <<<<<<<<<<<<<<
  *         if mScore[i,j] > iScore[i,j]:
  *             currMatrix = MARRAY
  */
-    goto __pyx_L31;
+    goto __pyx_L33;
   }
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":357
+  /* "CRISPResso2/CRISPResso2Align.pyx":361
  *             currMatrix = IARRAY
  *     else:
  *         if jScore[i,j] > iScore[i,j]:             # <<<<<<<<<<<<<<
@@ -7024,7 +7071,7 @@ __pyx_t_10 = -1;
     __pyx_t_4 = (((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jScore.data + __pyx_t_13 * __pyx_v_jScore.strides[0]) ) + __pyx_t_14 * __pyx_v_jScore.strides[1]) ))) > (*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iScore.data + __pyx_t_15 * __pyx_v_iScore.strides[0]) ) + __pyx_t_16 * __pyx_v_iScore.strides[1]) )))) != 0);
     if (__pyx_t_4) {
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":358
+      /* "CRISPResso2/CRISPResso2Align.pyx":362
  *     else:
  *         if jScore[i,j] > iScore[i,j]:
  *             currMatrix = JARRAY             # <<<<<<<<<<<<<<
@@ -7033,17 +7080,17 @@ __pyx_t_10 = -1;
  */
       __pyx_v_currMatrix = __pyx_v_11CRISPResso2_16CRISPResso2Align_JARRAY;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":357
+      /* "CRISPResso2/CRISPResso2Align.pyx":361
  *             currMatrix = IARRAY
  *     else:
  *         if jScore[i,j] > iScore[i,j]:             # <<<<<<<<<<<<<<
  *             currMatrix = JARRAY
  *         else:
  */
-      goto __pyx_L33;
+      goto __pyx_L35;
     }
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":360
+    /* "CRISPResso2/CRISPResso2Align.pyx":364
  *             currMatrix = JARRAY
  *         else:
  *             currMatrix = IARRAY             # <<<<<<<<<<<<<<
@@ -7053,11 +7100,11 @@ __pyx_t_10 = -1;
     /*else*/ {
       __pyx_v_currMatrix = __pyx_v_11CRISPResso2_16CRISPResso2Align_IARRAY;
     }
-    __pyx_L33:;
+    __pyx_L35:;
   }
-  __pyx_L31:;
+  __pyx_L33:;
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":363
+  /* "CRISPResso2/CRISPResso2Align.pyx":367
  * #    print('seqi' + str(seqi))
  * #    print('seqj' + str(seqj))
  *     while i > 0 or j > 0:             # <<<<<<<<<<<<<<
@@ -7069,14 +7116,14 @@ __pyx_t_10 = -1;
     if (!__pyx_t_22) {
     } else {
       __pyx_t_4 = __pyx_t_22;
-      goto __pyx_L36_bool_binop_done;
+      goto __pyx_L38_bool_binop_done;
     }
     __pyx_t_22 = ((__pyx_v_j > 0) != 0);
     __pyx_t_4 = __pyx_t_22;
-    __pyx_L36_bool_binop_done:;
+    __pyx_L38_bool_binop_done:;
     if (!__pyx_t_4) break;
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":366
+    /* "CRISPResso2/CRISPResso2Align.pyx":370
  *         # print("i: " + str(i) + " j: " + str(j) + " currMatrix: " + str(currMatrix) + " match score: " + str(mScore[i,j]) + " last match: " +  str(mScore[i-1,j-1]) + " matrix[" + str(ci) + "," + str(cj) + "]: " + str(matrix[ci,cj]) + " last j " + str(jScore[i,j]) + " last i: " + str(iScore[i,j]) + " mpointer: " + str(mPointer[i,j]) + " ipointer: " + str(iPointer[i,j]) + " jpointer: " + str(jPointer[i,j]))
  * 
  *         currVal = mScore[i,j]             # <<<<<<<<<<<<<<
@@ -7085,12 +7132,12 @@ __pyx_t_10 = -1;
  */
     __pyx_t_16 = __pyx_v_i;
     __pyx_t_15 = __pyx_v_j;
-    __pyx_t_1 = __Pyx_PyInt_From_int((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_16 * __pyx_v_mScore.strides[0]) ) + __pyx_t_15 * __pyx_v_mScore.strides[1]) )))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 366, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyInt_From_int((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mScore.data + __pyx_t_16 * __pyx_v_mScore.strides[0]) ) + __pyx_t_15 * __pyx_v_mScore.strides[1]) )))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 370, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_XDECREF_SET(__pyx_v_currVal, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":367
+    /* "CRISPResso2/CRISPResso2Align.pyx":371
  * 
  *         currVal = mScore[i,j]
  *         currPtr = mPointer[i,j]             # <<<<<<<<<<<<<<
@@ -7099,12 +7146,12 @@ __pyx_t_10 = -1;
  */
     __pyx_t_15 = __pyx_v_i;
     __pyx_t_16 = __pyx_v_j;
-    __pyx_t_1 = __Pyx_PyInt_From_int((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mPointer.data + __pyx_t_15 * __pyx_v_mPointer.strides[0]) ) + __pyx_t_16 * __pyx_v_mPointer.strides[1]) )))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 367, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyInt_From_int((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mPointer.data + __pyx_t_15 * __pyx_v_mPointer.strides[0]) ) + __pyx_t_16 * __pyx_v_mPointer.strides[1]) )))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 371, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_XDECREF_SET(__pyx_v_currPtr, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":368
+    /* "CRISPResso2/CRISPResso2Align.pyx":372
  *         currVal = mScore[i,j]
  *         currPtr = mPointer[i,j]
  *         if currMatrix == IARRAY:             # <<<<<<<<<<<<<<
@@ -7114,7 +7161,7 @@ __pyx_t_10 = -1;
     __pyx_t_4 = ((__pyx_v_currMatrix == __pyx_v_11CRISPResso2_16CRISPResso2Align_IARRAY) != 0);
     if (__pyx_t_4) {
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":369
+      /* "CRISPResso2/CRISPResso2Align.pyx":373
  *         currPtr = mPointer[i,j]
  *         if currMatrix == IARRAY:
  *             currVal = iScore[i,j]             # <<<<<<<<<<<<<<
@@ -7123,12 +7170,12 @@ __pyx_t_10 = -1;
  */
       __pyx_t_16 = __pyx_v_i;
       __pyx_t_15 = __pyx_v_j;
-      __pyx_t_1 = __Pyx_PyInt_From_int((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iScore.data + __pyx_t_16 * __pyx_v_iScore.strides[0]) ) + __pyx_t_15 * __pyx_v_iScore.strides[1]) )))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 369, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyInt_From_int((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iScore.data + __pyx_t_16 * __pyx_v_iScore.strides[0]) ) + __pyx_t_15 * __pyx_v_iScore.strides[1]) )))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 373, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF_SET(__pyx_v_currVal, __pyx_t_1);
       __pyx_t_1 = 0;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":370
+      /* "CRISPResso2/CRISPResso2Align.pyx":374
  *         if currMatrix == IARRAY:
  *             currVal = iScore[i,j]
  *             currPtr = iPointer[i,j]             # <<<<<<<<<<<<<<
@@ -7137,12 +7184,12 @@ __pyx_t_10 = -1;
  */
       __pyx_t_15 = __pyx_v_i;
       __pyx_t_16 = __pyx_v_j;
-      __pyx_t_1 = __Pyx_PyInt_From_int((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iPointer.data + __pyx_t_15 * __pyx_v_iPointer.strides[0]) ) + __pyx_t_16 * __pyx_v_iPointer.strides[1]) )))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 370, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyInt_From_int((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iPointer.data + __pyx_t_15 * __pyx_v_iPointer.strides[0]) ) + __pyx_t_16 * __pyx_v_iPointer.strides[1]) )))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 374, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF_SET(__pyx_v_currPtr, __pyx_t_1);
       __pyx_t_1 = 0;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":368
+      /* "CRISPResso2/CRISPResso2Align.pyx":372
  *         currVal = mScore[i,j]
  *         currPtr = mPointer[i,j]
  *         if currMatrix == IARRAY:             # <<<<<<<<<<<<<<
@@ -7151,7 +7198,7 @@ __pyx_t_10 = -1;
  */
     }
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":371
+    /* "CRISPResso2/CRISPResso2Align.pyx":375
  *             currVal = iScore[i,j]
  *             currPtr = iPointer[i,j]
  *         if currMatrix == JARRAY:             # <<<<<<<<<<<<<<
@@ -7161,7 +7208,7 @@ __pyx_t_10 = -1;
     __pyx_t_4 = ((__pyx_v_currMatrix == __pyx_v_11CRISPResso2_16CRISPResso2Align_JARRAY) != 0);
     if (__pyx_t_4) {
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":372
+      /* "CRISPResso2/CRISPResso2Align.pyx":376
  *             currPtr = iPointer[i,j]
  *         if currMatrix == JARRAY:
  *             currVal = jScore[i,j]             # <<<<<<<<<<<<<<
@@ -7170,12 +7217,12 @@ __pyx_t_10 = -1;
  */
       __pyx_t_16 = __pyx_v_i;
       __pyx_t_15 = __pyx_v_j;
-      __pyx_t_1 = __Pyx_PyInt_From_int((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jScore.data + __pyx_t_16 * __pyx_v_jScore.strides[0]) ) + __pyx_t_15 * __pyx_v_jScore.strides[1]) )))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 372, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyInt_From_int((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jScore.data + __pyx_t_16 * __pyx_v_jScore.strides[0]) ) + __pyx_t_15 * __pyx_v_jScore.strides[1]) )))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 376, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF_SET(__pyx_v_currVal, __pyx_t_1);
       __pyx_t_1 = 0;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":373
+      /* "CRISPResso2/CRISPResso2Align.pyx":377
  *         if currMatrix == JARRAY:
  *             currVal = jScore[i,j]
  *             currPtr = jPointer[i,j]             # <<<<<<<<<<<<<<
@@ -7184,12 +7231,12 @@ __pyx_t_10 = -1;
  */
       __pyx_t_15 = __pyx_v_i;
       __pyx_t_16 = __pyx_v_j;
-      __pyx_t_1 = __Pyx_PyInt_From_int((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jPointer.data + __pyx_t_15 * __pyx_v_jPointer.strides[0]) ) + __pyx_t_16 * __pyx_v_jPointer.strides[1]) )))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 373, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyInt_From_int((*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jPointer.data + __pyx_t_15 * __pyx_v_jPointer.strides[0]) ) + __pyx_t_16 * __pyx_v_jPointer.strides[1]) )))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 377, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF_SET(__pyx_v_currPtr, __pyx_t_1);
       __pyx_t_1 = 0;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":371
+      /* "CRISPResso2/CRISPResso2Align.pyx":375
  *             currVal = iScore[i,j]
  *             currPtr = iPointer[i,j]
  *         if currMatrix == JARRAY:             # <<<<<<<<<<<<<<
@@ -7198,7 +7245,7 @@ __pyx_t_10 = -1;
  */
     }
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":375
+    /* "CRISPResso2/CRISPResso2Align.pyx":379
  *             currPtr = jPointer[i,j]
  * #        print("i: " + str(i) + " j: " + str(j) + " " + str(currMatrix) +':' + str(currVal) + ' > ' + str(currPtr))
  *         if currMatrix == MARRAY: # 1             # <<<<<<<<<<<<<<
@@ -7208,7 +7255,7 @@ __pyx_t_10 = -1;
     __pyx_t_4 = ((__pyx_v_currMatrix == __pyx_v_11CRISPResso2_16CRISPResso2Align_MARRAY) != 0);
     if (__pyx_t_4) {
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":376
+      /* "CRISPResso2/CRISPResso2Align.pyx":380
  * #        print("i: " + str(i) + " j: " + str(j) + " " + str(currMatrix) +':' + str(currVal) + ' > ' + str(currPtr))
  *         if currMatrix == MARRAY: # 1
  *             currMatrix = mPointer[i,j]             # <<<<<<<<<<<<<<
@@ -7219,7 +7266,7 @@ __pyx_t_10 = -1;
       __pyx_t_15 = __pyx_v_j;
       __pyx_v_currMatrix = (*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_mPointer.data + __pyx_t_16 * __pyx_v_mPointer.strides[0]) ) + __pyx_t_15 * __pyx_v_mPointer.strides[1]) )));
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":377
+      /* "CRISPResso2/CRISPResso2Align.pyx":381
  *         if currMatrix == MARRAY: # 1
  *             currMatrix = mPointer[i,j]
  *             tmp_align_j[align_counter] = cj             # <<<<<<<<<<<<<<
@@ -7228,7 +7275,7 @@ __pyx_t_10 = -1;
  */
       (__pyx_v_tmp_align_j[__pyx_v_align_counter]) = __pyx_v_cj;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":378
+      /* "CRISPResso2/CRISPResso2Align.pyx":382
  *             currMatrix = mPointer[i,j]
  *             tmp_align_j[align_counter] = cj
  *             tmp_align_i[align_counter] = ci             # <<<<<<<<<<<<<<
@@ -7237,7 +7284,7 @@ __pyx_t_10 = -1;
  */
       (__pyx_v_tmp_align_i[__pyx_v_align_counter]) = __pyx_v_ci;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":379
+      /* "CRISPResso2/CRISPResso2Align.pyx":383
  *             tmp_align_j[align_counter] = cj
  *             tmp_align_i[align_counter] = ci
  *             if cj == ci:             # <<<<<<<<<<<<<<
@@ -7247,7 +7294,7 @@ __pyx_t_10 = -1;
       __pyx_t_4 = ((__pyx_v_cj == __pyx_v_ci) != 0);
       if (__pyx_t_4) {
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":380
+        /* "CRISPResso2/CRISPResso2Align.pyx":384
  *             tmp_align_i[align_counter] = ci
  *             if cj == ci:
  *                 matchCount += 1             # <<<<<<<<<<<<<<
@@ -7256,7 +7303,7 @@ __pyx_t_10 = -1;
  */
         __pyx_v_matchCount = (__pyx_v_matchCount + 1);
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":379
+        /* "CRISPResso2/CRISPResso2Align.pyx":383
  *             tmp_align_j[align_counter] = cj
  *             tmp_align_i[align_counter] = ci
  *             if cj == ci:             # <<<<<<<<<<<<<<
@@ -7265,7 +7312,7 @@ __pyx_t_10 = -1;
  */
       }
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":382
+      /* "CRISPResso2/CRISPResso2Align.pyx":386
  *                 matchCount += 1
  * 
  *             if i > 1:             # <<<<<<<<<<<<<<
@@ -7275,7 +7322,7 @@ __pyx_t_10 = -1;
       __pyx_t_4 = ((__pyx_v_i > 1) != 0);
       if (__pyx_t_4) {
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":383
+        /* "CRISPResso2/CRISPResso2Align.pyx":387
  * 
  *             if i > 1:
  *                 i -= 1             # <<<<<<<<<<<<<<
@@ -7284,7 +7331,7 @@ __pyx_t_10 = -1;
  */
         __pyx_v_i = (__pyx_v_i - 1);
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":384
+        /* "CRISPResso2/CRISPResso2Align.pyx":388
  *             if i > 1:
  *                 i -= 1
  *                 ci = seqi[i - 1]             # <<<<<<<<<<<<<<
@@ -7293,17 +7340,17 @@ __pyx_t_10 = -1;
  */
         __pyx_v_ci = (__pyx_v_seqi[(__pyx_v_i - 1)]);
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":382
+        /* "CRISPResso2/CRISPResso2Align.pyx":386
  *                 matchCount += 1
  * 
  *             if i > 1:             # <<<<<<<<<<<<<<
  *                 i -= 1
  *                 ci = seqi[i - 1]
  */
-        goto __pyx_L42;
+        goto __pyx_L44;
       }
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":386
+      /* "CRISPResso2/CRISPResso2Align.pyx":390
  *                 ci = seqi[i - 1]
  *             else:
  *                 i = 0             # <<<<<<<<<<<<<<
@@ -7313,7 +7360,7 @@ __pyx_t_10 = -1;
       /*else*/ {
         __pyx_v_i = 0;
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":387
+        /* "CRISPResso2/CRISPResso2Align.pyx":391
  *             else:
  *                 i = 0
  *                 ci = seqi[i]             # <<<<<<<<<<<<<<
@@ -7322,9 +7369,9 @@ __pyx_t_10 = -1;
  */
         __pyx_v_ci = (__pyx_v_seqi[__pyx_v_i]);
       }
-      __pyx_L42:;
+      __pyx_L44:;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":388
+      /* "CRISPResso2/CRISPResso2Align.pyx":392
  *                 i = 0
  *                 ci = seqi[i]
  *             if j > 1:             # <<<<<<<<<<<<<<
@@ -7334,7 +7381,7 @@ __pyx_t_10 = -1;
       __pyx_t_4 = ((__pyx_v_j > 1) != 0);
       if (__pyx_t_4) {
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":389
+        /* "CRISPResso2/CRISPResso2Align.pyx":393
  *                 ci = seqi[i]
  *             if j > 1:
  *                 j -= 1             # <<<<<<<<<<<<<<
@@ -7343,7 +7390,7 @@ __pyx_t_10 = -1;
  */
         __pyx_v_j = (__pyx_v_j - 1);
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":390
+        /* "CRISPResso2/CRISPResso2Align.pyx":394
  *             if j > 1:
  *                 j -= 1
  *                 cj = seqj[j - 1]             # <<<<<<<<<<<<<<
@@ -7352,17 +7399,17 @@ __pyx_t_10 = -1;
  */
         __pyx_v_cj = (__pyx_v_seqj[(__pyx_v_j - 1)]);
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":388
+        /* "CRISPResso2/CRISPResso2Align.pyx":392
  *                 i = 0
  *                 ci = seqi[i]
  *             if j > 1:             # <<<<<<<<<<<<<<
  *                 j -= 1
  *                 cj = seqj[j - 1]
  */
-        goto __pyx_L43;
+        goto __pyx_L45;
       }
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":392
+      /* "CRISPResso2/CRISPResso2Align.pyx":396
  *                 cj = seqj[j - 1]
  *             else:
  *                 j = 0             # <<<<<<<<<<<<<<
@@ -7372,7 +7419,7 @@ __pyx_t_10 = -1;
       /*else*/ {
         __pyx_v_j = 0;
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":393
+        /* "CRISPResso2/CRISPResso2Align.pyx":397
  *             else:
  *                 j = 0
  *                 cj = seqj[j]             # <<<<<<<<<<<<<<
@@ -7381,19 +7428,19 @@ __pyx_t_10 = -1;
  */
         __pyx_v_cj = (__pyx_v_seqj[__pyx_v_j]);
       }
-      __pyx_L43:;
+      __pyx_L45:;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":375
+      /* "CRISPResso2/CRISPResso2Align.pyx":379
  *             currPtr = jPointer[i,j]
  * #        print("i: " + str(i) + " j: " + str(j) + " " + str(currMatrix) +':' + str(currVal) + ' > ' + str(currPtr))
  *         if currMatrix == MARRAY: # 1             # <<<<<<<<<<<<<<
  *             currMatrix = mPointer[i,j]
  *             tmp_align_j[align_counter] = cj
  */
-      goto __pyx_L40;
+      goto __pyx_L42;
     }
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":396
+    /* "CRISPResso2/CRISPResso2Align.pyx":400
  * 
  * #            print('in M set to ' + str(currMatrix))
  *         elif currMatrix == JARRAY: # 3             # <<<<<<<<<<<<<<
@@ -7403,7 +7450,7 @@ __pyx_t_10 = -1;
     __pyx_t_4 = ((__pyx_v_currMatrix == __pyx_v_11CRISPResso2_16CRISPResso2Align_JARRAY) != 0);
     if (__pyx_t_4) {
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":397
+      /* "CRISPResso2/CRISPResso2Align.pyx":401
  * #            print('in M set to ' + str(currMatrix))
  *         elif currMatrix == JARRAY: # 3
  *             currMatrix = jPointer[i,j]             # <<<<<<<<<<<<<<
@@ -7414,7 +7461,7 @@ __pyx_t_10 = -1;
       __pyx_t_16 = __pyx_v_j;
       __pyx_v_currMatrix = (*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_jPointer.data + __pyx_t_15 * __pyx_v_jPointer.strides[0]) ) + __pyx_t_16 * __pyx_v_jPointer.strides[1]) )));
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":398
+      /* "CRISPResso2/CRISPResso2Align.pyx":402
  *         elif currMatrix == JARRAY: # 3
  *             currMatrix = jPointer[i,j]
  *             tmp_align_j[align_counter] = c"-"             # <<<<<<<<<<<<<<
@@ -7423,7 +7470,7 @@ __pyx_t_10 = -1;
  */
       (__pyx_v_tmp_align_j[__pyx_v_align_counter]) = '-';
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":399
+      /* "CRISPResso2/CRISPResso2Align.pyx":403
  *             currMatrix = jPointer[i,j]
  *             tmp_align_j[align_counter] = c"-"
  *             tmp_align_i[align_counter] = ci             # <<<<<<<<<<<<<<
@@ -7432,7 +7479,7 @@ __pyx_t_10 = -1;
  */
       (__pyx_v_tmp_align_i[__pyx_v_align_counter]) = __pyx_v_ci;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":400
+      /* "CRISPResso2/CRISPResso2Align.pyx":404
  *             tmp_align_j[align_counter] = c"-"
  *             tmp_align_i[align_counter] = ci
  *             if i > 1:             # <<<<<<<<<<<<<<
@@ -7442,7 +7489,7 @@ __pyx_t_10 = -1;
       __pyx_t_4 = ((__pyx_v_i > 1) != 0);
       if (__pyx_t_4) {
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":401
+        /* "CRISPResso2/CRISPResso2Align.pyx":405
  *             tmp_align_i[align_counter] = ci
  *             if i > 1:
  *                 i -= 1             # <<<<<<<<<<<<<<
@@ -7451,7 +7498,7 @@ __pyx_t_10 = -1;
  */
         __pyx_v_i = (__pyx_v_i - 1);
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":402
+        /* "CRISPResso2/CRISPResso2Align.pyx":406
  *             if i > 1:
  *                 i -= 1
  *                 ci = seqi[i - 1]             # <<<<<<<<<<<<<<
@@ -7460,17 +7507,17 @@ __pyx_t_10 = -1;
  */
         __pyx_v_ci = (__pyx_v_seqi[(__pyx_v_i - 1)]);
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":400
+        /* "CRISPResso2/CRISPResso2Align.pyx":404
  *             tmp_align_j[align_counter] = c"-"
  *             tmp_align_i[align_counter] = ci
  *             if i > 1:             # <<<<<<<<<<<<<<
  *                 i -= 1
  *                 ci = seqi[i - 1]
  */
-        goto __pyx_L44;
+        goto __pyx_L46;
       }
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":404
+      /* "CRISPResso2/CRISPResso2Align.pyx":408
  *                 ci = seqi[i - 1]
  *             else:
  *                 i = 0             # <<<<<<<<<<<<<<
@@ -7480,7 +7527,7 @@ __pyx_t_10 = -1;
       /*else*/ {
         __pyx_v_i = 0;
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":405
+        /* "CRISPResso2/CRISPResso2Align.pyx":409
  *             else:
  *                 i = 0
  *                 ci = seqi[i]             # <<<<<<<<<<<<<<
@@ -7489,19 +7536,19 @@ __pyx_t_10 = -1;
  */
         __pyx_v_ci = (__pyx_v_seqi[__pyx_v_i]);
       }
-      __pyx_L44:;
+      __pyx_L46:;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":396
+      /* "CRISPResso2/CRISPResso2Align.pyx":400
  * 
  * #            print('in M set to ' + str(currMatrix))
  *         elif currMatrix == JARRAY: # 3             # <<<<<<<<<<<<<<
  *             currMatrix = jPointer[i,j]
  *             tmp_align_j[align_counter] = c"-"
  */
-      goto __pyx_L40;
+      goto __pyx_L42;
     }
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":406
+    /* "CRISPResso2/CRISPResso2Align.pyx":410
  *                 i = 0
  *                 ci = seqi[i]
  *         elif currMatrix == IARRAY: # 2             # <<<<<<<<<<<<<<
@@ -7511,7 +7558,7 @@ __pyx_t_10 = -1;
     __pyx_t_4 = ((__pyx_v_currMatrix == __pyx_v_11CRISPResso2_16CRISPResso2Align_IARRAY) != 0);
     if (likely(__pyx_t_4)) {
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":407
+      /* "CRISPResso2/CRISPResso2Align.pyx":411
  *                 ci = seqi[i]
  *         elif currMatrix == IARRAY: # 2
  *             currMatrix = iPointer[i,j]             # <<<<<<<<<<<<<<
@@ -7522,7 +7569,7 @@ __pyx_t_10 = -1;
       __pyx_t_15 = __pyx_v_j;
       __pyx_v_currMatrix = (*((int *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_iPointer.data + __pyx_t_16 * __pyx_v_iPointer.strides[0]) ) + __pyx_t_15 * __pyx_v_iPointer.strides[1]) )));
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":408
+      /* "CRISPResso2/CRISPResso2Align.pyx":412
  *         elif currMatrix == IARRAY: # 2
  *             currMatrix = iPointer[i,j]
  *             tmp_align_j[align_counter] = cj             # <<<<<<<<<<<<<<
@@ -7531,7 +7578,7 @@ __pyx_t_10 = -1;
  */
       (__pyx_v_tmp_align_j[__pyx_v_align_counter]) = __pyx_v_cj;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":409
+      /* "CRISPResso2/CRISPResso2Align.pyx":413
  *             currMatrix = iPointer[i,j]
  *             tmp_align_j[align_counter] = cj
  *             tmp_align_i[align_counter] = c"-"             # <<<<<<<<<<<<<<
@@ -7540,7 +7587,7 @@ __pyx_t_10 = -1;
  */
       (__pyx_v_tmp_align_i[__pyx_v_align_counter]) = '-';
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":410
+      /* "CRISPResso2/CRISPResso2Align.pyx":414
  *             tmp_align_j[align_counter] = cj
  *             tmp_align_i[align_counter] = c"-"
  *             if j > 1:             # <<<<<<<<<<<<<<
@@ -7550,7 +7597,7 @@ __pyx_t_10 = -1;
       __pyx_t_4 = ((__pyx_v_j > 1) != 0);
       if (__pyx_t_4) {
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":411
+        /* "CRISPResso2/CRISPResso2Align.pyx":415
  *             tmp_align_i[align_counter] = c"-"
  *             if j > 1:
  *                 j -= 1             # <<<<<<<<<<<<<<
@@ -7559,7 +7606,7 @@ __pyx_t_10 = -1;
  */
         __pyx_v_j = (__pyx_v_j - 1);
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":412
+        /* "CRISPResso2/CRISPResso2Align.pyx":416
  *             if j > 1:
  *                 j -= 1
  *                 cj = seqj[j - 1]             # <<<<<<<<<<<<<<
@@ -7568,17 +7615,17 @@ __pyx_t_10 = -1;
  */
         __pyx_v_cj = (__pyx_v_seqj[(__pyx_v_j - 1)]);
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":410
+        /* "CRISPResso2/CRISPResso2Align.pyx":414
  *             tmp_align_j[align_counter] = cj
  *             tmp_align_i[align_counter] = c"-"
  *             if j > 1:             # <<<<<<<<<<<<<<
  *                 j -= 1
  *                 cj = seqj[j - 1]
  */
-        goto __pyx_L45;
+        goto __pyx_L47;
       }
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":414
+      /* "CRISPResso2/CRISPResso2Align.pyx":418
  *                 cj = seqj[j - 1]
  *             else:
  *                 j = 0             # <<<<<<<<<<<<<<
@@ -7588,7 +7635,7 @@ __pyx_t_10 = -1;
       /*else*/ {
         __pyx_v_j = 0;
 
-        /* "CRISPResso2/CRISPResso2Align.pyx":415
+        /* "CRISPResso2/CRISPResso2Align.pyx":419
  *             else:
  *                 j = 0
  *                 cj = seqj[j]             # <<<<<<<<<<<<<<
@@ -7597,19 +7644,19 @@ __pyx_t_10 = -1;
  */
         __pyx_v_cj = (__pyx_v_seqj[__pyx_v_j]);
       }
-      __pyx_L45:;
+      __pyx_L47:;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":406
+      /* "CRISPResso2/CRISPResso2Align.pyx":410
  *                 i = 0
  *                 ci = seqi[i]
  *         elif currMatrix == IARRAY: # 2             # <<<<<<<<<<<<<<
  *             currMatrix = iPointer[i,j]
  *             tmp_align_j[align_counter] = cj
  */
-      goto __pyx_L40;
+      goto __pyx_L42;
     }
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":417
+    /* "CRISPResso2/CRISPResso2Align.pyx":421
  *                 cj = seqj[j]
  *         else:
  *             print('i: ' + str(i) + ' j: ' + str(j))             # <<<<<<<<<<<<<<
@@ -7617,93 +7664,93 @@ __pyx_t_10 = -1;
  *             print('seqj: ' + str(seqj) + ' seqi: ' + str(seqi))
  */
     /*else*/ {
-      __pyx_t_1 = __Pyx_PyInt_FromSize_t(__pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 417, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyInt_FromSize_t(__pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 421, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_6 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyUnicode_Type)), __pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 417, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyUnicode_Type)), __pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 421, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __pyx_t_1 = __Pyx_PyUnicode_Concat(__pyx_kp_u_i_2, __pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 417, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyUnicode_Concat(__pyx_kp_u_i_2, __pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 421, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __pyx_t_6 = __Pyx_PyUnicode_Concat(__pyx_t_1, __pyx_kp_u_j); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 417, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyUnicode_Concat(__pyx_t_1, __pyx_kp_u_j); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 421, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __pyx_t_1 = __Pyx_PyInt_FromSize_t(__pyx_v_j); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 417, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyInt_FromSize_t(__pyx_v_j); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 421, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_5 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyUnicode_Type)), __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 417, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyUnicode_Type)), __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 421, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __pyx_t_1 = __Pyx_PyUnicode_Concat(__pyx_t_6, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 417, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyUnicode_Concat(__pyx_t_6, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 421, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __pyx_t_5 = __Pyx_PyObject_CallOneArg(__pyx_builtin_print, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 417, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyObject_CallOneArg(__pyx_builtin_print, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 421, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":418
+      /* "CRISPResso2/CRISPResso2Align.pyx":422
  *         else:
  *             print('i: ' + str(i) + ' j: ' + str(j))
  *             print('currMatrix:' + str(currMatrix))             # <<<<<<<<<<<<<<
  *             print('seqj: ' + str(seqj) + ' seqi: ' + str(seqi))
  *             raise Exception('wtf4!:pointer: %i', i)
  */
-      __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_currMatrix); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 418, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_currMatrix); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 422, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_1 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyUnicode_Type)), __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 418, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyUnicode_Type)), __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 422, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __pyx_t_5 = __Pyx_PyUnicode_Concat(__pyx_kp_u_currMatrix, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 418, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyUnicode_Concat(__pyx_kp_u_currMatrix, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 422, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_builtin_print, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 418, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_builtin_print, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 422, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":419
+      /* "CRISPResso2/CRISPResso2Align.pyx":423
  *             print('i: ' + str(i) + ' j: ' + str(j))
  *             print('currMatrix:' + str(currMatrix))
  *             print('seqj: ' + str(seqj) + ' seqi: ' + str(seqi))             # <<<<<<<<<<<<<<
  *             raise Exception('wtf4!:pointer: %i', i)
  * #          print('at end, currMatrix is ' + str(currMatrix))
  */
-      __pyx_t_1 = __Pyx_PyBytes_FromString(__pyx_v_seqj); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 419, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyBytes_FromString(__pyx_v_seqj); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 423, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_5 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyUnicode_Type)), __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 419, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyUnicode_Type)), __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 423, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __pyx_t_1 = __Pyx_PyUnicode_Concat(__pyx_kp_u_seqj, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 419, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyUnicode_Concat(__pyx_kp_u_seqj, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 423, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __pyx_t_5 = __Pyx_PyUnicode_Concat(__pyx_t_1, __pyx_kp_u_seqi); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 419, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyUnicode_Concat(__pyx_t_1, __pyx_kp_u_seqi); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 423, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __pyx_t_1 = __Pyx_PyBytes_FromString(__pyx_v_seqi); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 419, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyBytes_FromString(__pyx_v_seqi); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 423, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_6 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyUnicode_Type)), __pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 419, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyUnicode_Type)), __pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 423, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __pyx_t_1 = __Pyx_PyUnicode_Concat(__pyx_t_5, __pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 419, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyUnicode_Concat(__pyx_t_5, __pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 423, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __pyx_t_6 = __Pyx_PyObject_CallOneArg(__pyx_builtin_print, __pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 419, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyObject_CallOneArg(__pyx_builtin_print, __pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 423, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-      /* "CRISPResso2/CRISPResso2Align.pyx":420
+      /* "CRISPResso2/CRISPResso2Align.pyx":424
  *             print('currMatrix:' + str(currMatrix))
  *             print('seqj: ' + str(seqj) + ' seqi: ' + str(seqi))
  *             raise Exception('wtf4!:pointer: %i', i)             # <<<<<<<<<<<<<<
  * #          print('at end, currMatrix is ' + str(currMatrix))
  * 
  */
-      __pyx_t_6 = __Pyx_PyInt_FromSize_t(__pyx_v_i); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 420, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyInt_FromSize_t(__pyx_v_i); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 424, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 420, __pyx_L1_error)
+      __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 424, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_INCREF(__pyx_kp_u_wtf4_pointer_i);
       __Pyx_GIVEREF(__pyx_kp_u_wtf4_pointer_i);
@@ -7711,16 +7758,16 @@ __pyx_t_10 = -1;
       __Pyx_GIVEREF(__pyx_t_6);
       PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_t_6);
       __pyx_t_6 = 0;
-      __pyx_t_6 = __Pyx_PyObject_Call(((PyObject *)(&((PyTypeObject*)PyExc_Exception)[0])), __pyx_t_1, NULL); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 420, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyObject_Call(((PyObject *)(&((PyTypeObject*)PyExc_Exception)[0])), __pyx_t_1, NULL); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 424, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __Pyx_Raise(__pyx_t_6, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __PYX_ERR(0, 420, __pyx_L1_error)
+      __PYX_ERR(0, 424, __pyx_L1_error)
     }
-    __pyx_L40:;
+    __pyx_L42:;
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":423
+    /* "CRISPResso2/CRISPResso2Align.pyx":427
  * #          print('at end, currMatrix is ' + str(currMatrix))
  * 
  *         align_counter += 1             # <<<<<<<<<<<<<<
@@ -7730,7 +7777,7 @@ __pyx_t_10 = -1;
     __pyx_v_align_counter = (__pyx_v_align_counter + 1);
   }
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":424
+  /* "CRISPResso2/CRISPResso2Align.pyx":428
  * 
  *         align_counter += 1
  *     try:             # <<<<<<<<<<<<<<
@@ -7739,20 +7786,20 @@ __pyx_t_10 = -1;
  */
   /*try:*/ {
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":425
+    /* "CRISPResso2/CRISPResso2Align.pyx":429
  *         align_counter += 1
  *     try:
  *         align_j = tmp_align_j[:align_counter].decode('UTF-8', 'strict')             # <<<<<<<<<<<<<<
  *     finally:
  *         free(tmp_align_j)
  */
-    __pyx_t_6 = __Pyx_decode_c_string(__pyx_v_tmp_align_j, 0, __pyx_v_align_counter, NULL, NULL, PyUnicode_DecodeUTF8); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 425, __pyx_L47_error)
+    __pyx_t_6 = __Pyx_decode_c_string(__pyx_v_tmp_align_j, 0, __pyx_v_align_counter, NULL, NULL, PyUnicode_DecodeUTF8); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 429, __pyx_L49_error)
     __Pyx_GOTREF(__pyx_t_6);
     __pyx_v_align_j = ((PyObject*)__pyx_t_6);
     __pyx_t_6 = 0;
   }
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":427
+  /* "CRISPResso2/CRISPResso2Align.pyx":431
  *         align_j = tmp_align_j[:align_counter].decode('UTF-8', 'strict')
  *     finally:
  *         free(tmp_align_j)             # <<<<<<<<<<<<<<
@@ -7762,9 +7809,9 @@ __pyx_t_10 = -1;
   /*finally:*/ {
     /*normal exit:*/{
       free(__pyx_v_tmp_align_j);
-      goto __pyx_L48;
+      goto __pyx_L50;
     }
-    __pyx_L47_error:;
+    __pyx_L49_error:;
     /*exception exit:*/{
       __Pyx_PyThreadState_declare
       __Pyx_PyThreadState_assign
@@ -7801,10 +7848,10 @@ __pyx_t_10 = -1;
       __pyx_lineno = __pyx_t_10; __pyx_clineno = __pyx_t_23; __pyx_filename = __pyx_t_24;
       goto __pyx_L1_error;
     }
-    __pyx_L48:;
+    __pyx_L50:;
   }
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":428
+  /* "CRISPResso2/CRISPResso2Align.pyx":432
  *     finally:
  *         free(tmp_align_j)
  *     try:             # <<<<<<<<<<<<<<
@@ -7813,20 +7860,20 @@ __pyx_t_10 = -1;
  */
   /*try:*/ {
 
-    /* "CRISPResso2/CRISPResso2Align.pyx":429
+    /* "CRISPResso2/CRISPResso2Align.pyx":433
  *         free(tmp_align_j)
  *     try:
  *         align_i = tmp_align_i[:align_counter].decode('UTF-8', 'strict')             # <<<<<<<<<<<<<<
  *     finally:
  *         free(tmp_align_i)
  */
-    __pyx_t_6 = __Pyx_decode_c_string(__pyx_v_tmp_align_i, 0, __pyx_v_align_counter, NULL, NULL, PyUnicode_DecodeUTF8); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 429, __pyx_L52_error)
+    __pyx_t_6 = __Pyx_decode_c_string(__pyx_v_tmp_align_i, 0, __pyx_v_align_counter, NULL, NULL, PyUnicode_DecodeUTF8); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 433, __pyx_L54_error)
     __Pyx_GOTREF(__pyx_t_6);
     __pyx_v_align_i = ((PyObject*)__pyx_t_6);
     __pyx_t_6 = 0;
   }
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":431
+  /* "CRISPResso2/CRISPResso2Align.pyx":435
  *         align_i = tmp_align_i[:align_counter].decode('UTF-8', 'strict')
  *     finally:
  *         free(tmp_align_i)             # <<<<<<<<<<<<<<
@@ -7836,9 +7883,9 @@ __pyx_t_10 = -1;
   /*finally:*/ {
     /*normal exit:*/{
       free(__pyx_v_tmp_align_i);
-      goto __pyx_L53;
+      goto __pyx_L55;
     }
-    __pyx_L52_error:;
+    __pyx_L54_error:;
     /*exception exit:*/{
       __Pyx_PyThreadState_declare
       __Pyx_PyThreadState_assign
@@ -7875,10 +7922,10 @@ __pyx_t_10 = -1;
       __pyx_lineno = __pyx_t_23; __pyx_clineno = __pyx_t_10; __pyx_filename = __pyx_t_31;
       goto __pyx_L1_error;
     }
-    __pyx_L53:;
+    __pyx_L55:;
   }
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":435
+  /* "CRISPResso2/CRISPResso2Align.pyx":439
  *     # print(tounicode_with_length_and_free(alig))
  * #    print(str(matchCount) + " aln: " + str(align_counter))
  *     final_score = 100*matchCount/float(align_counter)             # <<<<<<<<<<<<<<
@@ -7887,23 +7934,23 @@ __pyx_t_10 = -1;
   __pyx_t_32 = (0x64 * __pyx_v_matchCount);
   if (unlikely(((double)__pyx_v_align_counter) == 0)) {
     PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-    __PYX_ERR(0, 435, __pyx_L1_error)
+    __PYX_ERR(0, 439, __pyx_L1_error)
   }
   __pyx_v_final_score = (((double)__pyx_t_32) / ((double)__pyx_v_align_counter));
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":436
+  /* "CRISPResso2/CRISPResso2Align.pyx":440
  * #    print(str(matchCount) + " aln: " + str(align_counter))
  *     final_score = 100*matchCount/float(align_counter)
  *     return align_j[::-1], align_i[::-1], round(final_score, 3)             # <<<<<<<<<<<<<<
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_6 = __Pyx_PyObject_GetItem(__pyx_v_align_j, __pyx_slice__9); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 436, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_GetItem(__pyx_v_align_j, __pyx_slice__9); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 440, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_v_align_i, __pyx_slice__9); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 436, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_v_align_i, __pyx_slice__9); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 440, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_final_score); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 436, __pyx_L1_error)
+  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_final_score); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 440, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_7 = PyTuple_New(2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 436, __pyx_L1_error)
+  __pyx_t_7 = PyTuple_New(2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 440, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_t_5);
@@ -7911,10 +7958,10 @@ __pyx_t_10 = -1;
   __Pyx_GIVEREF(__pyx_int_3);
   PyTuple_SET_ITEM(__pyx_t_7, 1, __pyx_int_3);
   __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_7, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 436, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_7, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 440, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __pyx_t_7 = PyTuple_New(3); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 436, __pyx_L1_error)
+  __pyx_t_7 = PyTuple_New(3); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 440, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_GIVEREF(__pyx_t_6);
   PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_t_6);
@@ -22987,8 +23034,8 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
   __pyx_builtin_max = __Pyx_GetBuiltinName(__pyx_n_s_max); if (!__pyx_builtin_max) __PYX_ERR(0, 51, __pyx_L1_error)
   __pyx_builtin_zip = __Pyx_GetBuiltinName(__pyx_n_s_zip); if (!__pyx_builtin_zip) __PYX_ERR(0, 58, __pyx_L1_error)
   __pyx_builtin_print = __Pyx_GetBuiltinName(__pyx_n_s_print); if (!__pyx_builtin_print) __PYX_ERR(0, 127, __pyx_L1_error)
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 167, __pyx_L1_error)
-  __pyx_builtin_round = __Pyx_GetBuiltinName(__pyx_n_s_round); if (!__pyx_builtin_round) __PYX_ERR(0, 436, __pyx_L1_error)
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 170, __pyx_L1_error)
+  __pyx_builtin_round = __Pyx_GetBuiltinName(__pyx_n_s_round); if (!__pyx_builtin_round) __PYX_ERR(0, 440, __pyx_L1_error)
   __pyx_builtin_ImportError = __Pyx_GetBuiltinName(__pyx_n_s_ImportError); if (!__pyx_builtin_ImportError) __PYX_ERR(1, 945, __pyx_L1_error)
   __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(2, 133, __pyx_L1_error)
   __pyx_builtin_enumerate = __Pyx_GetBuiltinName(__pyx_n_s_enumerate); if (!__pyx_builtin_enumerate) __PYX_ERR(2, 151, __pyx_L1_error)
@@ -23052,12 +23099,12 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__8);
   __Pyx_GIVEREF(__pyx_tuple__8);
 
-  /* "CRISPResso2/CRISPResso2Align.pyx":436
+  /* "CRISPResso2/CRISPResso2Align.pyx":440
  * #    print(str(matchCount) + " aln: " + str(align_counter))
  *     final_score = 100*matchCount/float(align_counter)
  *     return align_j[::-1], align_i[::-1], round(final_score, 3)             # <<<<<<<<<<<<<<
  */
-  __pyx_slice__9 = PySlice_New(Py_None, Py_None, __pyx_int_neg_1); if (unlikely(!__pyx_slice__9)) __PYX_ERR(0, 436, __pyx_L1_error)
+  __pyx_slice__9 = PySlice_New(Py_None, Py_None, __pyx_int_neg_1); if (unlikely(!__pyx_slice__9)) __PYX_ERR(0, 440, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_slice__9);
   __Pyx_GIVEREF(__pyx_slice__9);
 

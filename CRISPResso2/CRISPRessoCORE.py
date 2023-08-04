@@ -239,7 +239,7 @@ def get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaf
         ref_aln_details.append((ref_name, s1, s2, score))
 
         #reads are matched to the reference to which they best align. The 'min_aln_score' is calculated using only the changes in 'include_idxs'
-        if score > best_match_score and score > refs[ref_name]['min_aln_score']:
+        if score > best_match_score and score >= refs[ref_name]['min_aln_score']:
             best_match_score = score
             best_match_s1s = [s1]
             best_match_s2s = [s2]
@@ -251,7 +251,7 @@ def get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaf
             best_match_names.append(ref_name)
             best_match_strands.append(aln_strand)
 
-    if best_match_score > 0:
+    if best_match_score > -1:
         new_variant = {}
         new_variant['count'] = 1
         new_variant['aln_ref_names'] = best_match_names
@@ -442,7 +442,7 @@ def process_fastq(fastq_filename, variantCache, ref_names, refs, args):
         #otherwise, create a new variant object, and put it in the cache
         else:
             new_variant = get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaffold_dna_info)
-            if new_variant['best_match_score'] <= 0:
+            if new_variant['best_match_score'] < 0:
                 N_COMPUTED_NOTALN+=1
                 not_aln[fastq_seq] = 1
             else:
@@ -529,7 +529,7 @@ def process_bam(bam_filename, bam_chr_loc, output_bam, variantCache, ref_names, 
             #otherwise, create a new variant object, and put it in the cache
             else:
                 new_variant = get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaffold_dna_info)
-                if new_variant['best_match_score'] <= 0:
+                if new_variant['best_match_score'] < 0:
                     N_COMPUTED_NOTALN+=1
                     crispresso_sam_optional_fields = "c2:Z:ALN=NA" +\
                             " ALN_SCORES=" + ('&'.join([str(x) for x in new_variant['aln_scores']])) +\
@@ -626,7 +626,6 @@ def process_fastq_write_out(fastq_input, fastq_output, variantCache, ref_names, 
     if args.prime_editing_pegRNA_scaffold_seq != "":
         pe_scaffold_dna_info = get_pe_scaffold_search(refs['Prime-edited']['sequence'], args.prime_editing_pegRNA_extension_seq, args.prime_editing_pegRNA_scaffold_seq, args.prime_editing_pegRNA_scaffold_min_match_length)
     not_aln = {} #cache for reads that don't align
-    not_aln[''] = "" #add empty sequence to the not_aln in case the fastq has an extra newline at the end
 
     if fastq_input.endswith('.gz'):
         fastq_input_handle=gzip.open(fastq_input, 'rt')
@@ -659,7 +658,7 @@ def process_fastq_write_out(fastq_input, fastq_output, variantCache, ref_names, 
         #otherwise, create a new variant object, and put it in the cache
         else:
             new_variant = get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaffold_dna_info)
-            if new_variant['best_match_score'] <= 0:
+            if new_variant['best_match_score'] < 0:
                 N_COMPUTED_NOTALN+=1
                 crispresso2_annotation = " ALN=NA" +\
                         " ALN_SCORES=" + ('&'.join([str(x) for x in new_variant['aln_scores']])) +\
@@ -755,7 +754,6 @@ def process_single_fastq_write_bam_out(fastq_input, bam_output, bam_header, vari
     if args.prime_editing_pegRNA_scaffold_seq != "":
         pe_scaffold_dna_info = get_pe_scaffold_search(refs['Prime-edited']['sequence'], args.prime_editing_pegRNA_extension_seq, args.prime_editing_pegRNA_scaffold_seq, args.prime_editing_pegRNA_scaffold_min_match_length)
     not_aln = {}  # cache for reads that don't align
-    not_aln[''] = ""  # add empty sequence to the not_aln in case the fastq has an extra newline at the end
 
     if fastq_input.endswith('.gz'):
         fastq_input_handle = gzip.open(fastq_input, 'rt')
@@ -798,7 +796,7 @@ def process_single_fastq_write_bam_out(fastq_input, bam_output, bam_header, vari
         # otherwise, create a new variant object, and put it in the cache
         else:
             new_variant = get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaffold_dna_info)
-            if new_variant['best_match_score'] <= 0:
+            if new_variant['best_match_score'] < 0:
                 N_COMPUTED_NOTALN += 1
                 new_sam_entry = [
                     fastq_id,  # read id
@@ -2295,10 +2293,6 @@ def main():
 
         ####INITIALIZE CACHE####
         variantCache = {}
-        #put empty sequence into cache
-        cache_fastq_seq = ''
-        variantCache[cache_fastq_seq] = {}
-        variantCache[cache_fastq_seq]['count'] = 0
 
         #operates on variantCache
         if args.bam_input:
@@ -2521,10 +2515,6 @@ def main():
 
         #end get_allele_row() definition
 
-        #take care of empty seqs
-        cache_fastq_seq = ''
-        variantCache[cache_fastq_seq]['count'] = 0
-
         ###iterate through variants
         for variant in variantCache:
             #skip variant if there were none observed
@@ -2534,7 +2524,7 @@ def main():
 
             #check to see if this sequence's reverse complement is in the variant
             rc_variant = CRISPRessoShared.reverse_complement(variant)
-            if rc_variant in variantCache and variantCache[rc_variant]['count'] > 0:
+            if rc_variant in variantCache and rc_variant != variant and variantCache[rc_variant]['count'] > 0:
                 variant_count += variantCache[rc_variant]['count']
                 variantCache[rc_variant]['count'] = 0
                 variantCache[variant]['count'] = variant_count
