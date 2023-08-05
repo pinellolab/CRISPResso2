@@ -238,8 +238,8 @@ def get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaf
         aln_scores.append(score)
         ref_aln_details.append((ref_name, s1, s2, score))
 
-        #reads are matched to the reference to which they best align. The 'min_aln_score' is calculated using only the changes in 'include_idxs'
-        if score > best_match_score and score >= refs[ref_name]['min_aln_score']:
+        #reads are matched to the reference(s) to which they best align.
+        if score > best_match_score and (refs[ref_name]['min_aln_score'] == 0 or score > refs[ref_name]['min_aln_score']):
             best_match_score = score
             best_match_s1s = [s1]
             best_match_s2s = [s2]
@@ -336,7 +336,7 @@ def process_fastq(fastq_filename, variantCache, ref_names, refs, args):
                 'aln_scores' : score of alignment to each reference
                 'aln_details' # details (seq1, seq2, score) of alignment to each other reference sequence
                 'class_name' : string with class names it was aligned to
-                'best_match_score' : score of best match (0 if no alignments matched above amplicon threshold)
+                'best_match_score' : score of best match (-1 if no alignments matched above amplicon threshold)
                 for each reference, there is a key: variant_ref_name with a payload object
             # payload object:
             The payload is a dict with keys:
