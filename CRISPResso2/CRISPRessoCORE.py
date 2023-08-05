@@ -13,7 +13,7 @@ if sys.version_info > (3, 0):
     running_python3 = True
 
 import argparse
-from collections import defaultdict
+from collections import Counter
 from copy import deepcopy
 from concurrent.futures import ProcessPoolExecutor, wait
 from functools import partial
@@ -87,8 +87,6 @@ def check_program(binary_name,download_url=None):
         if download_url:
             error('You can download it here:%s' % download_url)
         sys.exit(1)
-
-
 
 def get_avg_read_length_fastq(fastq_filename):
      cmd=('z' if fastq_filename.endswith('.gz') else '' ) +('cat < \"%s\"' % fastq_filename)+\
@@ -2450,14 +2448,14 @@ def main():
             deletion_length_vectors              [ref_name] = np.zeros(this_len_amplicon)
 
 
-            inserted_n_dicts                    [ref_name] = defaultdict(int)
-            deleted_n_dicts                     [ref_name] = defaultdict(int)
-            substituted_n_dicts                 [ref_name] = defaultdict(int)
-            effective_len_dicts                 [ref_name] = defaultdict(int)
+            inserted_n_dicts                    [ref_name] = Counter()
+            deleted_n_dicts                     [ref_name] = Counter()
+            substituted_n_dicts                 [ref_name] = Counter()
+            effective_len_dicts                 [ref_name] = Counter()
 
-            hists_inframe                       [ref_name] = defaultdict(int)
+            hists_inframe                       [ref_name] = Counter()
             hists_inframe                       [ref_name][0] = 0
-            hists_frameshift                    [ref_name] = defaultdict(int)
+            hists_frameshift                    [ref_name] = Counter()
             hists_frameshift                    [ref_name][0] = 0
         #end initialize data structures for each ref
         def get_allele_row(reference_name, variant_count, aln_ref_names_str, aln_ref_scores_str, variant_payload, write_detailed_allele_table):
@@ -2869,7 +2867,7 @@ def main():
         df_alleles['%Reads']=df_alleles['#Reads']/N_TOTAL*100
         df_alleles[['n_deleted', 'n_inserted', 'n_mutated']] = df_alleles[['n_deleted', 'n_inserted', 'n_mutated']].astype(int)
 
-        df_alleles.sort_values(by='#Reads', ascending=False, inplace=True)
+        df_alleles.sort_values(by=['#Reads', 'Aligned_Sequence', 'Reference_Sequence'], inplace=True, ascending=[False, True, True])
 
         def calculate_99_max(d):
             """
@@ -3395,7 +3393,7 @@ def main():
 
         if n_processes > 1:
             process_pool = ProcessPoolExecutor(n_processes)
-            process_futures = []
+            process_futures = {}
         else:
             process_pool = None
             process_futures = None
@@ -4231,7 +4229,7 @@ def main():
                     df_to_plot = df_alleles_around_cut
                     if not args.expand_allele_plots_by_quantification:
                         df_to_plot = df_alleles_around_cut.groupby(['Aligned_Sequence', 'Reference_Sequence']).sum().reset_index().set_index('Aligned_Sequence')
-                        df_to_plot.sort_values(by='%Reads', inplace=True, ascending=False)
+                        df_to_plot.sort_values(by=['#Reads', 'Aligned_Sequence', 'Reference_Sequence'], inplace=True, ascending=[False, True, True])
 
                     new_sgRNA_intervals = []
                     #adjust coordinates of sgRNAs
@@ -4398,9 +4396,9 @@ def main():
             global_NON_MODIFIED_NON_FRAMESHIFT = 0
             global_SPLICING_SITES_MODIFIED = 0
 
-            global_hists_frameshift = defaultdict(lambda :0)
+            global_hists_frameshift = Counter()
             global_hists_frameshift[0] = 0  # fill with at least the zero value (in case there are no others)
-            global_hists_inframe = defaultdict(lambda :0)
+            global_hists_inframe = Counter()
             global_hists_inframe[0] = 0
 
             global_count_total = 0

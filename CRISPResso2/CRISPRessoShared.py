@@ -1283,7 +1283,7 @@ def get_dataframe_around_cut(df_alleles, cut_point, offset, collapse_by_sequence
         ['Aligned_Sequence', 'Reference_Sequence', 'Unedited', 'n_deleted', 'n_inserted',
          'n_mutated']).sum().reset_index().set_index('Aligned_Sequence')
 
-    df_alleles_around_cut.sort_values(by='%Reads', inplace=True, ascending=False)
+    df_alleles_around_cut.sort_values(by=['#Reads', 'Aligned_Sequence', 'Reference_Sequence'], inplace=True, ascending=[False, True, True])
     df_alleles_around_cut['Unedited'] = df_alleles_around_cut['Unedited'] > 0
     return df_alleles_around_cut
 
@@ -1306,7 +1306,7 @@ def get_dataframe_around_cut_debug(df_alleles, cut_point, offset):
         ['Aligned_Sequence', 'Reference_Sequence', 'Unedited', 'n_deleted', 'n_inserted', 'n_mutated', 'oSeq',
          'oRef']).sum().reset_index().set_index('Aligned_Sequence')
 
-    df_alleles_around_cut.sort_values(by='%Reads', inplace=True, ascending=False)
+    df_alleles_around_cut.sort_values(by=['#Reads', 'Aligned_Sequence', 'Reference_Sequence'], inplace=True, ascending=[False, True, True])
     df_alleles_around_cut['Unedited'] = df_alleles_around_cut['Unedited'] > 0
     return df_alleles_around_cut
 
