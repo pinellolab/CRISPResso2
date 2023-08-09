@@ -1634,15 +1634,15 @@ def main():
                 this_freqs = []
                 this_names = []
                 with zipfile.ZipFile(allele_frequency_table_zip_filename, 'r') as archive:
-                    with archive.open(run_data['allele_frequency_table_filename'], 'r') as f:
-                        head = f.readline()
+                    with archive.open(run_data['running_info']['allele_frequency_table_filename'], 'r') as f:
+                        head = f.readline().decode('UTF-8')
                         head_els = head.rstrip().split("\t")
                         allele_ind = head_els.index('Aligned_Sequence')
                         freq_ind = head_els.index('%Reads')
 
                         new_allele_idx = 1
                         for line in f:
-                            line_els = line.split('\t')
+                            line_els = line.decode('UTF-8').split('\t')
                             allele_seq = line_els[allele_ind].replace('-', '')
                             allele_freq = float(line_els[freq_ind])
                             #add first allele -- then add other alleles if they are more frequent than the cutoff
