@@ -1052,7 +1052,7 @@ def main():
                       system("gzip -f "fastq_filename);  \
                       record_log_str = "__REGIONCHR__\t__REGIONSTART__\t__REGIONEND__\t"num_records"\t"fastq_filename".gz\n"; \
                       print record_log_str > "__DEMUX_CHR_LOGFILENAME__"; \
-                    } '''
+                    } ' '''
                     cmd = (s1).replace('__OUTPUTPATH__', MAPPED_REGIONS)
                     cmd = cmd.replace("__MIN_READS__", str(args.min_reads_to_use_region))
                     with open(REPORT_ALL_DEPTH, 'w') as f:
