@@ -4519,7 +4519,7 @@ def main():
                     matches_scaffold_to_this_point = True
                     has_gaps_to_this_point = True
                     aln_seq_to_test = row['Aligned_Sequence'][pe_read_possible_scaffold_loc:].replace("-", "")
-                    while i < len(scaffold_seq) and (matches_scaffold_to_this_point or has_gaps_to_this_point):
+                    while i < len(scaffold_seq) and i < len(aln_seq_to_test) and (matches_scaffold_to_this_point or has_gaps_to_this_point):
                         if matches_scaffold_to_this_point and aln_seq_to_test[i] == scaffold_seq[i] :
                             num_match_scaffold += 1
                         else:
