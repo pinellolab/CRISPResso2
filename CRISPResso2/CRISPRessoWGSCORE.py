@@ -173,7 +173,6 @@ def write_trimmed_fastq(in_bam_filename, bpstart, bpend, out_fastq_filename):
     p = sb.Popen(
                 'samtools view %s | cut -f1,4,6,10,11' % in_bam_filename,
                 stdout = sb.PIPE,
-                stderr = sb.STDOUT,
                 shell=True
                 )
 
