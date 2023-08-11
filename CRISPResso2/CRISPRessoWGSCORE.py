@@ -317,13 +317,13 @@ def main():
             ))
             sys.exit()
 
-        parser = CRISPRessoShared.getCRISPRessoArgParser(parser_title = 'CRISPRessoWGS Parameters', required_params=[], 
+        parser = CRISPRessoShared.getCRISPRessoArgParser(parser_title = 'CRISPRessoWGS Parameters', required_params=[],
                     suppress_params=['bam_input',
-                                   'bam_chr_loc'
-                                   'fastq_r1', 
-                                   'fastq_r2', 
-                                   'amplicon_seq', 
-                                   'amplicon_name', 
+                                   'bam_chr_loc',
+                                   'fastq_r1',
+                                   'fastq_r2',
+                                   'amplicon_seq',
+                                   'amplicon_name',
                                    ])
 
         #tool specific optional
