@@ -70,7 +70,7 @@ def main():
           url='http://github.com/pinellolab/CRISPResso2',
           package_dir={'CRISPResso2' : 'CRISPResso2'},
           include_package_data = True,
-          packages=['CRISPResso2'],
+          packages=['CRISPResso2', 'CRISPResso2.CRISPRessoReports'],
           entry_points=entry_points,
           description="Software pipeline for the analysis of genome editing outcomes from deep sequencing data",
           classifiers=[
@@ -89,6 +89,7 @@ def main():
               'matplotlib',  # '>=1.3.1,<=2.2.3',
               'seaborn', # '>0.7.1,<0.10',
               'jinja2',
+              'jinja_partials',
               'scipy',
               'numpy',
               'plotly',
