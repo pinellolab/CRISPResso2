@@ -72,13 +72,30 @@ def get_nuc_color(nuc, alpha):
 
         return (charSum, (1-charSum), (2*charSum*(1-charSum)))
 
-def get_color_lookup(nucs, alpha):
-    colorLookup = {}
-    for nuc in nucs:
-        colorLookup[nuc] = get_nuc_color(nuc, alpha)
-    return colorLookup
+def get_color_lookup(nucs, alpha, custom_colors=None):
+    if custom_colors is None:
+        colorLookup = {}
+        for nuc in nucs:
+            colorLookup[nuc] = get_nuc_color(nuc, alpha)
+        return colorLookup
+    else:
+        get_color = lambda x, y, z: (x / 255.0, y / 255.0, z / 255.0, alpha)
+        colors = {}
+        for nuc in nucs:
+            if nuc == 'INS':
+                rgb = (193, 129, 114)
+            else:
+                rgb = hex_to_rgb(custom_colors[nuc])
+            colors[nuc] = get_color(rgb[0], rgb[1], rgb[2])
+        return colors
 
-def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=False,sgRNA_intervals=None,min_text_pct=0.5,max_text_pct=0.95,quantification_window_idxs=None,sgRNA_names=None,sgRNA_mismatches=None,shade_unchanged=True,group_column='Batch'):
+
+def hex_to_rgb(value):
+    value = value.lstrip('#')
+    lv = len(value)
+    return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
+
+def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root, custom_colors, save_also_png=False,sgRNA_intervals=None,min_text_pct=0.5,max_text_pct=0.95,quantification_window_idxs=None,sgRNA_names=None,sgRNA_mismatches=None,shade_unchanged=True,group_column='Batch'):
     """
     Plots a nucleotide quilt with each square showing the percentage of each base at that position in the reference
     nuc_pct_df: dataframe with percents of each base (ACTGN-) at each position
@@ -111,8 +128,9 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root,save_also_png=
         samplesList.append(nuc_pct_df.iloc[sample_row_start, 0])
 
     # make a color map of fixed colors
-    color_lookup = get_color_lookup(['A', 'T', 'C', 'G', 'N', 'INS', '-'], alpha=1)
-    unchanged_color_lookup = get_color_lookup(['A', 'T', 'C', 'G', 'N', 'INS', '-'], alpha=0.3)
+    color_lookup = get_color_lookup(['A', 'T', 'C', 'G', 'N', 'INS', '-'], alpha=1, custom_colors=custom_colors)
+    unchanged_color_lookup = get_color_lookup(['A', 'T', 'C', 'G', 'N', 'INS', '-'], alpha=0.3,
+                                              custom_colors=custom_colors)
 
     #fig = plt.figure(figsize=(amp_len/2.0,nSamples*2))
     #fig = plt.figure(figsize=(amp_len,nSamples))
@@ -497,6 +515,7 @@ def plot_amplicon_modifications(
     y_max,
     plot_titles,
     plot_root,
+    custom_colors,
     save_also_png=False,
 ):
     fig, ax = plt.subplots(figsize=(10, 10))
@@ -535,9 +554,9 @@ def plot_amplicon_modifications(
 
     ax.plot(
         all_indelsub_count_vectors,
-        'r',
         lw=3,
         label=plot_titles['combined'],
+        color=custom_colors['Deletion']
     )
 
     if cut_points:
@@ -648,6 +667,7 @@ def plot_modification_frequency(
     y_max,
     plot_title,
     plot_root,
+    custom_colors,
     save_also_png=False,
 ):
     fig, ax = plt.subplots(figsize=(10, 10))
@@ -685,13 +705,13 @@ def plot_modification_frequency(
         ax.add_patch(p)
 
     ax.plot(
-        all_insertion_count_vectors, 'r', lw=3, label='Insertions',
+        all_insertion_count_vectors, lw=3, label='Insertions', color=custom_colors['Insertion']
     )
     ax.plot(
-        all_deletion_count_vectors, 'm', lw=3, label='Deletions',
+        all_deletion_count_vectors, lw=3, label='Deletions', color=custom_colors['Deletion']
     )
     ax.plot(
-        all_substitution_count_vectors, 'g', lw=3, label='Substitutions',
+        all_substitution_count_vectors, lw=3, label='Substitutions', color=custom_colors['Substitution']
     )
 
     y_max = max(
@@ -816,6 +836,7 @@ def plot_quantification_window_locations(
     ref_name,
     plot_title,
     plot_root,
+    custom_colors,
     save_also_png,
 ):
     fig, ax = plt.subplots(figsize=(10, 10))
@@ -859,11 +880,9 @@ def plot_quantification_window_locations(
         )
         ax.add_patch(p)
 
-    ax.plot(insertion_count_vectors, 'r', linewidth=3, label='Insertions')
-    ax.plot(deletion_count_vectors, 'm', linewidth=3, label='Deletions')
-    ax.plot(
-        substitution_count_vectors, 'g', linewidth=3, label='Substitutions',
-    )
+    ax.plot(insertion_count_vectors, linewidth=3, label='Insertions', color=custom_colors['Insertion'])
+    ax.plot(deletion_count_vectors, linewidth=3, label='Deletions', color=custom_colors['Deletion'])
+    ax.plot(substitution_count_vectors, linewidth=3, label='Substitutions', color=custom_colors['Substitution'])
 
     if cut_points:
         added_legend = False
@@ -1089,6 +1108,7 @@ def plot_global_modifications_reference(
     ref_name,
     plot_title,
     plot_root,
+    custom_colors,
     save_also_png=False,
 ):
     fig, ax = plt.subplots(figsize=(10, 10))
@@ -1103,13 +1123,13 @@ def plot_global_modifications_reference(
         1,
     ) * 1.1
 
-    ax.plot(ref1_all_insertion_positions, 'r', linewidth=3, label='Insertions')
-    ax.plot(ref1_all_deletion_positions, 'm', linewidth=3, label='Deletions')
+    ax.plot(ref1_all_insertion_positions, linewidth=3, label='Insertions', color=custom_colors['Insertion'])
+    ax.plot(ref1_all_deletion_positions, linewidth=3, label='Deletions', color=custom_colors['Deletion'])
     ax.plot(
         ref1_all_substitution_positions,
-        'g',
         linewidth=3,
         label='Substitutions',
+        color=custom_colors['Substitution']
     )
 
     ref1_cut_points = ref1['sgRNA_cut_points']
@@ -1405,10 +1425,10 @@ def plot_frameshift_frequency(
     ax1.bar(x - 0.1, y)
     ax1.set_xlim(-30.5, 30.5)
     ax1.set_frame_on(False)
-    ax1.set_xticks([idx for idx in range(-30, 31) if idx % 3])
+    ax1.set_xticks([idx for idx in range(-30, 31) if idx % 3 == 0])
     ax1.tick_params(
         which='both',      # both major and minor ticks are affected
-        bottom=False,      # ticks along the bottom edge are off
+        bottom=True,      # ticks along the bottom edge are off
         top=False,         # ticks along the top edge are off
         labelbottom=True,  # labels along the bottom edge are off
     )
@@ -1416,7 +1436,7 @@ def plot_frameshift_frequency(
     xmin, xmax = ax1.get_xaxis().get_view_interval()
     ymin, ymax = ax1.get_yaxis().get_view_interval()
     ax1.set_xticklabels(
-        map(str, [idx for idx in range(-30, 31) if idx % 3]),
+        map(str, [idx for idx in range(-30, 31) if idx % 3 == 0]),
         rotation='vertical',
     )
     ax1.set_title(plot_titles['fs'])
@@ -1448,7 +1468,7 @@ def plot_frameshift_frequency(
     ax2.set_xticks([idx for idx in range(-30, 31) if (idx % 3 == 0)])
     ax2.tick_params(
         which='both',      # both major and minor ticks are affected
-        bottom=False,      # ticks along the bottom edge are off
+        bottom=True,      # ticks along the bottom edge are off
         top=False,         # ticks along the top edge are off
         labelbottom=True,  # labels along the bottom edge are off
     )
@@ -1536,10 +1556,11 @@ def plot_global_frameshift_in_frame_mutations(
     ax1.bar(x - 0.1, y)
     ax1.set_xlim(-30.5, 30.5)
     ax1.set_frame_on(False)
-    ax1.set_xticks([idx for idx in range(-30, 31) if idx % 3])
+    ax1.set_xticks([idx for idx in range(-30, 31) if idx % 3 == 0])
     ax1.tick_params(
         which='both',      # both major and minor ticks are affected
-        bottom=False,      # ticks along the bottom edge are off
+        left=True,
+        bottom=True,      # ticks along the bottom edge are off
         top=False,         # ticks along the top edge are off
         labelbottom=True,  # labels along the bottom edge are off
     )
@@ -1547,7 +1568,7 @@ def plot_global_frameshift_in_frame_mutations(
     xmin, xmax = ax1.get_xaxis().get_view_interval()
     ymin, ymax = ax1.get_yaxis().get_view_interval()
     ax1.set_xticklabels(
-        map(str, [idx for idx in range(-30, 31) if idx % 3]),
+        map(str, [idx for idx in range(-30, 31) if idx % 3 == 0]),
         rotation='vertical',
     )
     ax1.set_title('Global Frameshift profile')
@@ -1659,26 +1680,27 @@ def plot_non_coding_mutations(
     sgRNA_intervals,
     plot_title,
     plot_root,
+    custom_colors,
     save_also_png=False,
 ):
     fig, ax = plt.subplots(figsize=(10, 10))
     ax.plot(
         insertion_count_vectors_noncoding,
-        'r',
         linewidth=3,
         label='Insertions',
+        color=custom_colors['Insertion']
     )
     ax.plot(
         deletion_count_vectors_noncoding,
-        'm',
         linewidth=3,
         label='Deletions',
+        color=custom_colors['Deletion']
     )
     ax.plot(
         substitution_count_vectors_noncoding,
-        'g',
         linewidth=3,
         label='Substitutions',
+        color=custom_colors['Substitution']
     )
 
     y_max = max(
@@ -1974,7 +1996,7 @@ def add_sgRNA_to_ax(ax,sgRNA_intervals,sgRNA_y_start,sgRNA_y_height,amp_len,x_of
         else:
             ax.text(x_offset+min_sgRNA_x, this_sgRNA_y_start + this_sgRNA_y_height/2, 'sgRNA ', horizontalalignment='right', verticalalignment='center', fontsize=font_size)
 
-def plot_conversion_map(nuc_pct_df,fig_filename_root,conversion_nuc_from,conversion_nuc_to,save_also_png,plotPct = 0.9,min_text_pct=0.3,max_text_pct=0.9,conversion_scale_max=None,sgRNA_intervals=None,quantification_window_idxs=None,sgRNA_names=None,sgRNA_mismatches=None):
+def plot_conversion_map(nuc_pct_df,fig_filename_root,conversion_nuc_from,conversion_nuc_to,save_also_png,custom_colors,plotPct = 0.9,min_text_pct=0.3,max_text_pct=0.9,conversion_scale_max=None,sgRNA_intervals=None,quantification_window_idxs=None,sgRNA_names=None,sgRNA_mismatches=None):
     """
     Plots a heatmap of conversion across several sequences
     :param nuc_pct_df combined df of multiple batches
@@ -2034,7 +2056,9 @@ def plot_conversion_map(nuc_pct_df,fig_filename_root,conversion_nuc_from,convers
     plt.clf()
 
     # make a color map of fixed colors (for coloring reference in this example)
-    color_lookup = get_color_lookup(['A', 'T', 'C', 'G'], alpha=1)
+    color_lookup = get_color_lookup(['A', 'T', 'C', 'G', 'N', 'INS', '-'], alpha=1, custom_colors=custom_colors)
+    unchanged_color_lookup = get_color_lookup(['A', 'T', 'C', 'G', 'N', 'INS', '-'], alpha=0.3,
+                                              custom_colors=custom_colors)
 
 #    fig = plt.figure(figsize=(amp_len/2.0,nSamples*2))
     fig, ax = plt.subplots(figsize=((amp_len+10)/2.0, (nSamples+1)*2))
@@ -2144,7 +2168,7 @@ def plot_conversion_map(nuc_pct_df,fig_filename_root,conversion_nuc_from,convers
     plt.close(fig)
 
 
-def plot_subs_across_ref(ref_len, ref_seq, ref_name, ref_count, all_substitution_base_vectors, plot_title, fig_filename_root, save_also_png, quantification_window_idxs=None):
+def plot_subs_across_ref(ref_len, ref_seq, ref_name, ref_count, all_substitution_base_vectors, plot_title, fig_filename_root, save_also_png, custom_colors, quantification_window_idxs=None):
     """
     Plots substitutions across the reference sequece - each position on the x axis reprsents a nucleotide in the reference
     bars at each x posion show the number of times the reference nucleotide was substituted for another reference
@@ -2153,8 +2177,7 @@ def plot_subs_across_ref(ref_len, ref_seq, ref_name, ref_count, all_substitution
     fig, ax = plt.subplots(figsize=(16, 8))
     ind = np.arange(ref_len)
 
-    alph = ['A', 'C', 'G', 'T', 'N']
-    color_lookup = get_color_lookup(alph, alpha=1)
+    color_lookup = get_color_lookup(['A', 'T', 'C', 'G', 'N', 'INS', '-'], alpha=1, custom_colors=custom_colors)
 
     pA = ax.bar(ind, all_substitution_base_vectors[ref_name+"_A"], color=color_lookup['A'])
     pC = ax.bar(ind, all_substitution_base_vectors[ref_name+"_C"], color=color_lookup['C'], bottom=all_substitution_base_vectors[ref_name+"_A"])
@@ -2210,7 +2233,7 @@ def plot_subs_across_ref(ref_len, ref_seq, ref_name, ref_count, all_substitution
         fig.savefig(fig_filename_root + '.png', bbox_extra_artists=(lgd,), bbox_inches='tight')
     plt.close(fig)
 
-def plot_sub_freqs(alt_nuc_counts, plot_title, fig_filename_root, save_also_png):
+def plot_sub_freqs(alt_nuc_counts, plot_title, fig_filename_root, save_also_png, custom_colors):
     """
     Plots histogram of substitution frequencies for each nucleotide (from nuc X to nuc Y)
     input:
@@ -2220,8 +2243,7 @@ def plot_sub_freqs(alt_nuc_counts, plot_title, fig_filename_root, save_also_png)
     #plot all substitution rates
     fig, ax = plt.subplots(figsize=(8.3, 8))
 
-    alph = ['A', 'C', 'G', 'T', 'N']
-    color_lookup = get_color_lookup(alph, alpha=1)
+    color_lookup = get_color_lookup(['A', 'T', 'C', 'G', 'N', 'INS', '-'], alpha=1, custom_colors=custom_colors)
 
     ax.bar([1, 2, 3], [alt_nuc_counts['A']['C'], alt_nuc_counts['A']['G'], alt_nuc_counts['A']['T']], color=color_lookup['A'])
     ax.bar([5, 6, 7], [alt_nuc_counts['C']['A'], alt_nuc_counts['C']['G'], alt_nuc_counts['C']['T']], color=color_lookup['C'])
@@ -2295,14 +2317,14 @@ def plot_log_nuc_freqs(df_nuc_freq,tot_aln_reads,plot_title,fig_filename_root,sa
     plt.close(fig)
 
 
-def plot_conversion_at_sel_nucs(df_subs, ref_name, ref_sequence, plot_title, conversion_nuc_from, fig_filename_root, save_also_png):
+def plot_conversion_at_sel_nucs(df_subs, ref_name, ref_sequence, plot_title, conversion_nuc_from, fig_filename_root, save_also_png, custom_colors):
     '''
     Plots the conversion at selected nucleotides
     Looks for the 'conversion_nuc_from' in the ref_sequence and sets those as 'selected nucleotides'
     At selected nucleotides, the proportion of each base is shown as a barplot
     '''
     nucs = list(df_subs.index)
-    color_lookup = get_color_lookup(nucs, alpha=1)
+    color_lookup = get_color_lookup(['A', 'T', 'C', 'G', 'N', 'INS', '-'], alpha=1, custom_colors=custom_colors)
     amp_len = len(ref_sequence)
 
     fig = plt.figure(figsize=(amp_len, 6))
@@ -2357,14 +2379,14 @@ def plot_conversion_at_sel_nucs(df_subs, ref_name, ref_sequence, plot_title, con
         fig.savefig(fig_filename_root+'.png', bbox_inches='tight', pad_inches=0.1)
     plt.close(fig)
 
-def plot_conversion_at_sel_nucs_not_include_ref(df_subs, ref_name, ref_sequence, plot_title, conversion_nuc_from, fig_filename_root, save_also_png):
+def plot_conversion_at_sel_nucs_not_include_ref(df_subs, ref_name, ref_sequence, plot_title, conversion_nuc_from, fig_filename_root, save_also_png, custom_colors):
     '''
     Plots the conversion at selected nucleotides but ignores non-substitutions (for example at nucs that are 'C' in the reference, bars show the proportion of A T G (not C))
     Looks for the 'conversion_nuc_from' in the ref_sequence and sets those as 'selected nucleotides'
     At selected nucleotides, the proportion of each substitution is shown as a barplot
     '''
     nucs = list(df_subs.index)
-    color_lookup = get_color_lookup(nucs, alpha=1)
+    color_lookup = get_color_lookup(['A', 'T', 'C', 'G', 'N', 'INS', '-'], alpha=1, custom_colors=custom_colors)
     amp_len = len(ref_sequence)
 
     fig = plt.figure(figsize=(amp_len, 6))
@@ -2429,14 +2451,14 @@ def plot_conversion_at_sel_nucs_not_include_ref(df_subs, ref_name, ref_sequence,
         fig.savefig(fig_filename_root+'.png', bbox_inches='tight', pad_inches=0.1)
     plt.close(fig)
 
-def plot_conversion_at_sel_nucs_not_include_ref_scaled(df_subs, ref_name, ref_sequence, plot_title, conversion_nuc_from, fig_filename_root, save_also_png):
+def plot_conversion_at_sel_nucs_not_include_ref_scaled(df_subs, ref_name, ref_sequence, plot_title, conversion_nuc_from, fig_filename_root, save_also_png, custom_colors):
     '''
     Plots the conversion at selected nucleotides not including reference base, scaled by number of events
     Looks for the 'conversion_nuc_from' in the ref_sequence and sets those as 'selected nucleotides'
     At selected nucleotides, the count of each base is shown as a barplot
     '''
     nucs = list(df_subs.index)
-    color_lookup = get_color_lookup(nucs, alpha=1)
+    color_lookup = get_color_lookup(['A', 'T', 'C', 'G', 'N', 'INS', '-'], alpha=1, custom_colors=custom_colors)
     nucs.remove(conversion_nuc_from)
     amp_len = len(ref_sequence)
 

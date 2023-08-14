@@ -9,6 +9,9 @@ import datetime
 import errno
 import gzip
 import json
+import sys
+import importlib.util
+
 import numpy as np
 import os
 import pandas as pd
@@ -19,6 +22,7 @@ import signal
 import subprocess as sb
 import unicodedata
 import logging
+from inspect import getmodule, stack
 
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoCOREResources
@@ -30,38 +34,50 @@ __version__ = "2.2.14"
 class FlashException(Exception):
     pass
 
+
 class TrimmomaticException(Exception):
     pass
+
 
 class NoReadsAlignedException(Exception):
     pass
 
+
 class AlignmentException(Exception):
     pass
+
 
 class SgRNASequenceException(Exception):
     pass
 
+
 class NTException(Exception):
     pass
+
 
 class ExonSequenceException(Exception):
     pass
 
+
 class DuplicateSequenceIdException(Exception):
     pass
+
 
 class NoReadsAfterQualityFilteringException(Exception):
     pass
 
+
 class BadParameterException(Exception):
     pass
+
 
 class AutoException(Exception):
     pass
 
+
 class OutputFolderIncompleteException(Exception):
     pass
+
 
 class InstallationException(Exception):
     pass
@@ -301,6 +317,7 @@ def getCRISPRessoArgParser(parser_title="CRISPResso Parameters", required_params
     parser.add_argument('--suppress_plots', help='Suppress output plots', action='store_true')
     parser.add_argument('--write_cleaned_report', action='store_true',
                         help=argparse.SUPPRESS)  # trims working directories from output in report (for web access)
+    parser.add_argument('--config_file', help='File path to JSON file with config elements', type=str)
 
     # base editor parameters
     parser.add_argument('--base_editor_output',
@@ -523,7 +540,7 @@ def clean_filename(filename):
     validFilenameChars = "+-_.()%s%s" % (string.ascii_letters, string.digits)
     filename = slugify(str(filename).replace(' ', '_'))
     cleanedFilename = unicodedata.normalize('NFKD', filename)
-    return(''.join(c for c in cleanedFilename if c in validFilenameChars))
+    return (''.join(c for c in cleanedFilename if c in validFilenameChars))
 
 def check_file(filename):
     try:
@@ -1810,3 +1827,73 @@ def zip_results(results_folder):
         )
     sb.call(cmd_to_zip, shell=True)
     return
+
+
+def is_C2Pro_installed():
+    try:
+        spec = importlib.util.find_spec("crispressoPro")
+        if spec is None:
+            return False
+        else:
+            return True
+    except:
+        return False
+
+
+def check_custom_config(args):
+    """Check if the config_file argument was provided. If so load the configurations from the file, otherwise load default configurations.
+    
+    Parameters:
+    -------------
+    args : dict
+        All arguments passed into the crispresso run.
+
+    Returns:
+    -------------
+    style : dict
+        A dict with a 'colors' key that contains hex color values for different report items.
+    
+    -OR-
+    
+    custom_style : dict
+        A dict with a 'colors' key that contains hex color values for different report items loaded from a user provided json file.
+
+    """
+    config =  {
+        "colors": {
+                'Substitution': '#0000FF',
+                'Insertion': '#008000',
+                'Deletion': '#FF0000',
+                'A': '#7FC97F',
+                'T': '#BEAED4',
+                'C': '#FDC086',
+                'G': '#FFFF99',
+                'N': '#C8C8C8',
+                '-': '#C1C1C1'
+                }        
+            }
+    
+    logger = logging.getLogger(getmodule(stack()[1][0]).__name__)
+
+    #Check if crispresso.pro is installed
+    if not is_C2Pro_installed():
+        return config
+    if args.config_file:
+        try:
+            with open(args.config_file, "r") as json_file:
+                custom_config = json.load(json_file)
+
+            if 'colors' not in custom_config.keys():
+                logger.warn("Json file does not contain the colors key. Defaulting all values.")
+                return config
+    
+            for key in config['colors']:
+                if key not in custom_config['colors']:
+                    logger.warn(f"Value for {key} not provided, defaulting")
+                    custom_config['colors'][key] = config['colors'][key]
+    
+            return custom_config
+        except Exception as e:
+            logger.warn("Cannot read json file '%s', defaulting style parameters." % args.config_file)
+            print(e)
+    return config

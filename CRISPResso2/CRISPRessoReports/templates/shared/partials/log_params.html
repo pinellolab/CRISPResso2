@@ -1,0 +1,23 @@
+<div class="tab-pane fade text-start screen-only" id="log_params" role="tabpanel">
+  <p>CRISPResso version: {{report_data['run_data']['running_info']['version']}}</p>
+  <p>Run completed: {{report_data['run_data']['running_info']['end_time_string']}}</p>
+  <p>Amplicon sequence: <pre class='pre-scrollable'>{{report_data['run_data']['running_info']['args']['amplicon_seq']}}</pre></p>
+  {% if report_data['run_data']['running_info']['args']['guide_seq'] != '' %}
+    <p>Guide sequence: <pre class='pre-scrollable'>{{report_data['run_data']['running_info']['args']['guide_seq']}}</pre></p>
+  {% endif %}
+  <p>Command used: <pre class='pre-scrollable'>{{report_data['run_data']['running_info']['command_used']}}</pre></p>
+  <p>Parameters: <pre class='pre-scrollable'>{{report_data['run_data']['running_info']['args_string']}}</pre></p>
+  <p class='text-center m-0'><small><a href="{{report_data['crispresso_data_path']}}{{report_data['run_data']['running_info']['log_filename']}}">Running log</a></small></p>
+</div>
+
+<div class="tab-pane fade text-left print-only" id="log_params" role="tabpanel">
+  <p>CRISPResso version: {{report_data['run_data']['running_info']['version']}}</p>
+  <p>Run completed: {{report_data['run_data']['running_info']['end_time_string']}}</p>
+  <p>Amplicon sequence: {{report_data['run_data']['running_info']['args']['amplicon_seq']}}</p>
+  {% if report_data['run_data']['running_info']['args']['guide_seq'] != '' %}
+    <p>Guide sequence: {{report_data['run_data']['running_info']['args']['guide_seq']}}</p>
+  {% endif %}
+  <p>Command used: {{report_data['run_data']['running_info']['command_used']}}</p>
+  <p>Parameters: {{report_data['run_data']['running_info']['args_string']}}</p>
+  <p class='text-center m-0'><small><a href="{{report_data['crispresso_data_path']}}{{report_data['run_data']['running_info']['log_filename']}}">Running log</a></small></p>
+</div>
