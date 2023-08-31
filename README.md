@@ -30,7 +30,7 @@ In addition, CRISPResso can be run as part of a larger tool suite:
 - [CRISPRessoAggregate](#crispressoaggregate) - for aggregating results from previously-run CRISPResso analyses
 
 ## CRISPResso2 processing
-![CRISPResso2 Schematic](https://github.com/pinellolab/CRISPResso2/blob/master/crispresso_schematic.png "CRISPResso2 Schematic")
+![CRISPResso2 Schematic](https://raw.githubusercontent.com/pinellolab/CRISPResso2/master/crispresso_schematic.png "CRISPResso2 Schematic")
 
 #### Quality filtering
 Input reads are first filtered based on the quality score (phred33) in order to remove potentially false positive indels. The filtering based on the phred33 quality score can be modulated by adjusting the optimal parameters (see additional notes below).
@@ -853,9 +853,9 @@ from whole genome sequencing (WGS) data. CRISPRessoWGS allows exploring
 any region of the genome to quantify targeted editing or potentially
 off-target effects. The intended use case for CRISPRessoWGS is the analysis
 of targeted regions, and WGS reads from those regions will be realigned using
-CRISPResso's alignment aligorithm for more accurate genome editing 
-quantification. To scan the entire genome for mutations 
-[VarScan](http://dkoboldt.github.io/varscan/) or [MuTect](https://github.com/broadinstitute/mutect) 
+CRISPResso's alignment aligorithm for more accurate genome editing
+quantification. To scan the entire genome for mutations
+[VarScan](http://dkoboldt.github.io/varscan/) or [MuTect](https://github.com/broadinstitute/mutect)
 are more suitable, and identified regions can be analyzed and visualized using
 CRISPRessoWGS.
 
