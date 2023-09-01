@@ -7,12 +7,14 @@
 CRISPResso2 is a software pipeline designed to enable rapid and intuitive interpretation of genome editing experiments. A limited web implementation is available at: https://crispresso2.pinellolab.org/.
 
 Briefly, CRISPResso2:
+
 - aligns sequencing reads to a reference sequence
 - quantifies insertions, mutations and deletions to determine whether a read is modified or unmodified by genome editing
 - summarizes editing results in intuitive plots and datasets
 
 ## What can I do with CRISPResso2?
 CRISPResso2 can be used to analyze genome editing outcomes using cleaving nucleases (e.g. Cas9 or Cpf1) or noncleaving nucleases (e.g. base editors). The following operations can be automatically performed:
+
 - filtering of low-quality reads
 - adapter trimming
 - alignment of reads to one or multiple reference sequences (in the case of multiple alleles)
@@ -23,6 +25,7 @@ CRISPResso2 can be used to analyze genome editing outcomes using cleaving nuclea
 - visualization of alleles and their frequencies
 
 In addition, CRISPResso can be run as part of a larger tool suite:
+
 - [CRISPRessoBatch](#crispressobatch) - for analyzing and comparing multiple experimental conditions at the same site
 - [CRISPRessoPooled](#crispressopooled) - for analyzing multiple amplicons from a pooled amplicon sequencing experiment
 - [CRISPRessoWGS](#crispressowgs) - for analyzing specific sites in whole-genome sequencing samples
@@ -30,7 +33,7 @@ In addition, CRISPResso can be run as part of a larger tool suite:
 - [CRISPRessoAggregate](#crispressoaggregate) - for aggregating results from previously-run CRISPResso analyses
 
 ## CRISPResso2 processing
-![CRISPResso2 Schematic](https://github.com/pinellolab/CRISPResso2/blob/master/crispresso_schematic.png "CRISPResso2 Schematic")
+![CRISPResso2 Schematic](https://raw.githubusercontent.com/pinellolab/CRISPResso2/master/crispresso_schematic.png "CRISPResso2 Schematic")
 
 #### Quality filtering
 Input reads are first filtered based on the quality score (phred33) in order to remove potentially false positive indels. The filtering based on the phred33 quality score can be modulated by adjusting the optimal parameters (see additional notes below).
@@ -853,9 +856,9 @@ from whole genome sequencing (WGS) data. CRISPRessoWGS allows exploring
 any region of the genome to quantify targeted editing or potentially
 off-target effects. The intended use case for CRISPRessoWGS is the analysis
 of targeted regions, and WGS reads from those regions will be realigned using
-CRISPResso's alignment aligorithm for more accurate genome editing 
-quantification. To scan the entire genome for mutations 
-[VarScan](http://dkoboldt.github.io/varscan/) or [MuTect](https://github.com/broadinstitute/mutect) 
+CRISPResso's alignment aligorithm for more accurate genome editing
+quantification. To scan the entire genome for mutations
+[VarScan](http://dkoboldt.github.io/varscan/) or [MuTect](https://github.com/broadinstitute/mutect)
 are more suitable, and identified regions can be analyzed and visualized using
 CRISPRessoWGS.
 
