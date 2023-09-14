@@ -23,7 +23,7 @@ import logging
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoCOREResources
 
-__version__ = "2.2.14"
+__version__ = "2.2.15"
 
 
 ###EXCEPTIONS############################
