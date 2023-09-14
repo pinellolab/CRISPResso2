@@ -336,7 +336,7 @@ def getCRISPRessoArgParser(parser_title="CRISPResso Parameters", required_params
                         help="If set, checks to assert that the prime editing guides and extension sequence are in the proper orientation are not performed. This may be useful if the checks are failing inappropriately, but the user is confident that the sequences are correct.",
                         action='store_true')
     parser.add_argument('--prime_editing_gap_open_penalty',
-                        help=argparse.SUPPRESS, type=int, default=-20)
+                        help=argparse.SUPPRESS, type=int, default=-50)
                         # help="If set, adjusts the alignment gap open penalty for calculating alignment between pegRNA components (e.g. spacer and extension)."
     parser.add_argument('--prime_editing_gap_extend_penalty',
                         help=argparse.SUPPRESS, type=int, default=0)
