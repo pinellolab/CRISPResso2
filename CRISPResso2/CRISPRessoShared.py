@@ -23,7 +23,7 @@ import logging
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoCOREResources
 
-__version__ = "2.2.14"
+__version__ = "2.2.15"
 
 
 ###EXCEPTIONS############################
@@ -335,6 +335,12 @@ def getCRISPRessoArgParser(parser_title="CRISPResso Parameters", required_params
     parser.add_argument('--prime_editing_override_sequence_checks',
                         help="If set, checks to assert that the prime editing guides and extension sequence are in the proper orientation are not performed. This may be useful if the checks are failing inappropriately, but the user is confident that the sequences are correct.",
                         action='store_true')
+    parser.add_argument('--prime_editing_gap_open_penalty',
+                        help=argparse.SUPPRESS, type=int, default=-50)
+                        # help="If set, adjusts the alignment gap open penalty for calculating alignment between pegRNA components (e.g. spacer and extension)."
+    parser.add_argument('--prime_editing_gap_extend_penalty',
+                        help=argparse.SUPPRESS, type=int, default=0)
+                        # help="If set, adjusts the alignment gap extension penalty for calculating alignment between pegRNA components (e.g. spacer and extension). Because prime editing may introduce large insertions/deletions, this is set to 0 to preference these large insertions."
 
     # special running modes
     parser.add_argument('--crispresso1_mode', help='Parameter usage as in CRISPResso 1', action='store_true')
