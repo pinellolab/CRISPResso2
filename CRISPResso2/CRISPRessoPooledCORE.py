@@ -722,11 +722,18 @@ def main():
                 raise Exception('The amplicon sequences must be distinct! (Duplicated entries: ' + str(duplicated_entries.values) + ')')
 
             if not len(df_template.amplicon_name.unique())==df_template.shape[0]:
-                duplicated_entries = df_template.amplicon_name[df_template.Name.duplicated()]
+                duplicated_entries = df_template.amplicon_name[df_template.amplicon_name.duplicated()]
                 raise Exception('The amplicon names must be distinct! (Duplicated names: ' + str(duplicated_entries.values) + ')')
 
             df_template=df_template.set_index('amplicon_name')
             df_template.index=df_template.index.to_series().str.replace(' ', '_')
+
+            #set clean run names for subruns
+            df_template['sub_run_name'] = [CRISPRessoShared.slugify(x) for x in df_template.index]
+
+            if not len(df_template['sub_run_name'].unique())==df_template.shape[0]:
+                duplicated_entries = df_template['sub_run_name'][ df_template['sub_run_name'].duplicated() ]
+                raise Exception('The amplicon names must be distinct for creating filenames! (Duplicated names: ' + str(duplicated_entries.values) + ')')
 
             for idx, row in df_template.iterrows():
                 wrong_nt=CRISPRessoShared.find_wrong_nt(row.amplicon_seq)
@@ -737,22 +744,20 @@ def main():
                     cut_points = []
                     guides = row.guide_seq.strip().upper().split(',')
                     guide_qw_centers = CRISPRessoShared.set_guide_array(args.quantification_window_center, guides, 'guide quantification center')
-                    for idx, current_guide_seq in enumerate(guides):
+                    for guide_idx, current_guide_seq in enumerate(guides):
 
                         wrong_nt = CRISPRessoShared.find_wrong_nt(current_guide_seq)
                         if wrong_nt:
                             raise NTException('The sgRNA sequence %s contains wrong characters:%s'  % (current_guide_seq, ' '.join(wrong_nt)))
 
-                        offset_fw=guide_qw_centers[idx]+len(current_guide_seq)-1
-                        offset_rc=(-guide_qw_centers[idx])-1
+                        offset_fw=guide_qw_centers[guide_idx]+len(current_guide_seq)-1
+                        offset_rc=(-guide_qw_centers[guide_idx])-1
                         cut_points+=[m.start() + offset_fw for \
                                     m in re.finditer(current_guide_seq,  row.amplicon_seq)]+[m.start() + offset_rc for m in re.finditer(CRISPRessoShared.reverse_complement(current_guide_seq),  row.amplicon_seq)]
 
                     if not cut_points:
                         warn('\nThe guide sequence/s provided: %s is(are) not present in the amplicon sequence:%s! \nNOTE: The guide will be ignored for the analysis. Please check your input!' % (row.guide_seq, row.amplicon_seq))
-                        df_template.iloc[idx,df_template.columns.get_loc('guide_seq')] = ''
-
-
+                        df_template.iloc[guide_idx,df_template.columns.get_loc('guide_seq')] = ''
 
         if RUNNING_MODE=='ONLY_AMPLICONS':
             #create a fasta file with all the amplicons
@@ -760,8 +765,9 @@ def main():
             fastq_gz_amplicon_filenames=[]
             with open(amplicon_fa_filename, 'w+') as outfile:
                 for idx, row in df_template.iterrows():
+                    sub_run_name = row['sub_run_name'] #cleansed of bad file characters
                     if row['amplicon_seq']:
-                        outfile.write('>%s\n%s\n' %(CRISPRessoShared.clean_filename('AMPL_'+idx), row['amplicon_seq']))
+                        outfile.write('>%s\n%s\n' %(CRISPRessoShared.clean_filename('AMPL_'+sub_run_name), row['amplicon_seq']))
 
                         #create place-holder fastq files
                         fastq_gz_amplicon_filenames.append(_jp('%s.fastq.gz' % CRISPRessoShared.clean_filename('AMPL_'+idx)))
@@ -860,7 +866,8 @@ def main():
                     this_amp_seq = new_refs
                     this_amp_name_string = "-an " + new_names
 
-                crispresso_cmd= args.crispresso_command + ' -r1 %s -a %s %s -o %s --name %s' % (row['Demultiplexed_fastq.gz_filename'], this_amp_seq, this_amp_name_string, OUTPUT_DIRECTORY, idx)
+                sub_run_name = row['sub_run_name'] #cleansed of bad file characters
+                crispresso_cmd= args.crispresso_command + ' -r1 %s -a %s %s -o %s --name %s' % (row['Demultiplexed_fastq.gz_filename'], this_amp_seq, this_amp_name_string, OUTPUT_DIRECTORY, sub_run_name)
 
                 if n_reads_aligned_amplicons[-1] > args.min_reads_to_use_region:
                     this_run_args_from_amplicons_file = {}
@@ -885,8 +892,6 @@ def main():
             df_template['n_reads_aligned_%']=df_template['n_reads']/float(N_READS_ALIGNED)*100
             df_template.fillna('NA').to_csv(_jp('REPORT_READS_ALIGNED_TO_AMPLICONS.txt'), sep='\t')
 
-
-
         if RUNNING_MODE=='AMPLICONS_AND_GENOME':
             info('Mapping amplicons to the reference genome...')
 
@@ -903,7 +908,7 @@ def main():
                 #write amplicons as fastq for alignment
                 with open(filename_amplicon_seqs_fasta, 'w') as fastas:
                     for idx, row in df_template.iterrows():
-                        fastas.write('>%s\n%s\n'%(idx, row.amplicon_seq))
+                        fastas.write('>%s\n%s\n'%(row.sub_run_name, row.amplicon_seq))
 
                 aligner_command= 'bowtie2 -x %s -p %s %s -f -U %s --no-hd --no-sq 2> %s > %s ' %(args.bowtie2_index, n_processes_for_pooled, bowtie2_options_string, \
                     filename_amplicon_seqs_fasta, filename_aligned_amplicons_sam_log, filename_aligned_amplicons_sam)
@@ -919,11 +924,12 @@ def main():
                             info('The amplicon [%s] is not mappable to the reference genome provided!' % line_els[0])
                             additional_columns.append([line_els[0], 'NOT_ALIGNED', 0, -1, '+', ''])
                         else:
+                            original_region_name = df_template[df_template['sub_run_name'] == line_els[0]].index.values[0]
                             aln_len = CRISPRessoShared.get_ref_length_from_cigar(line_els[5])
                             seq_start = int(line_els[3])
                             seq_stop = seq_start + aln_len
                             strand = "-" if (int(line_els[1]) & 0x10) else "+"
-                            additional_columns.append([line_els[0], line_els[2], seq_start, seq_stop, strand, line_els[9]])
+                            additional_columns.append([original_region_name, line_els[2], seq_start, seq_stop, strand, line_els[9]])
                             info('The amplicon [%s] was mapped to: %s:%d-%d ' % (line_els[0], line_els[2], seq_start, seq_stop))
                 additional_columns_df = pd.DataFrame(additional_columns, columns=['amplicon_name', 'chr_id', 'bpstart', 'bpend', 'strand', 'reference_seq']).set_index('amplicon_name')
                 additional_columns_df.to_csv(filename_amplicon_aligned_locations, sep="\t", index_label='amplicon_name')
@@ -937,7 +943,6 @@ def main():
             files_to_remove.append(filename_aligned_amplicons_sam)
 
             df_template=df_template.join(additional_columns_df)
-
             df_template.bpstart=df_template.bpstart.astype(int)
             df_template.bpend=df_template.bpend.astype(int)
 
@@ -951,7 +956,7 @@ def main():
 
             ###HERE we recreate the uncompressed genome file if not available###
 
-            #check you have all the files for the genome and create a fa idx for samtools
+            # assert that all genome index files are present eand create a fa idx for samtools
 
             uncompressed_reference=args.bowtie2_index+'.fa'
 
@@ -1248,8 +1253,8 @@ def main():
                              #debug here??
                         if N_READS >= args.min_reads_to_use_region and fastq_filename_region != "":
                             info('\nThe amplicon [%s] has enough reads (%d) mapped to it! Running CRISPResso!\n' % (idx, N_READS))
-
-                            crispresso_cmd = args.crispresso_command + ' -r1 %s -o %s --name %s' % (fastq_filename_region, OUTPUT_DIRECTORY, idx)
+                            sub_run_name = row['sub_run_name']
+                            crispresso_cmd = args.crispresso_command + ' -r1 %s -o %s --name %s' % (fastq_filename_region, OUTPUT_DIRECTORY, sub_run_name)
 
                             this_run_args_from_amplicons_file = {}
                             for column_name in default_input_amplicon_headers:
@@ -1349,6 +1354,8 @@ def main():
 
                 df_regions['n_reads_aligned_%'] = df_regions['n_reads']/float(N_READS_ALIGNED)*100
 
+                df_regions['sub_run_name'] = df_regions.apply(lambda row: CRISPRessoShared.slugify(row['chr_id'] + '_' + str(row['bpstart']) + '_' + str(row['bpend'])), axis=1) 
+
                 if args.gene_annotations:
                     info('Checking overlapping genes...')
                     df_regions = df_regions.apply(lambda row: find_overlapping_genes(row, df_genes), axis=1)
@@ -1374,7 +1381,8 @@ def main():
                         info('\nRunning CRISPResso on: %s-%d-%d...'%(row.chr_id, row.bpstart, row.bpend))
                         if pd.isna(row.sequence):
                             raise Exception('Cannot extract sequence from input reference ' + uncompressed_reference)
-                        crispresso_cmd = args.crispresso_command + ' -r1 %s -a %s -o %s' %(row.fastq_file, row.sequence, OUTPUT_DIRECTORY)
+                        sub_run_name = row['sub_run_name']
+                        crispresso_cmd = args.crispresso_command + ' -r1 %s -a %s -o %s -n %s' %(row.fastq_file, row.sequence, OUTPUT_DIRECTORY, sub_run_name)
                         crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, args)
                         crispresso_cmds.append(crispresso_cmd)
                     else:
@@ -1407,12 +1415,9 @@ def main():
         empty_line_els = [np.nan]*(header_el_count-1)
         n_reads_index = header_els.index('Reads_total') - 1
         for idx, row in df_final_data.iterrows():
-                run_name = idx
-                if RUNNING_MODE=='ONLY_AMPLICONS' or RUNNING_MODE=='AMPLICONS_AND_GENOME':
-                    run_name=idx
-                else:
-                    run_name='REGION_%s_%d_%d' %(row.chr_id, row.bpstart, row.bpend )
+                run_name = row['sub_run_name']
                 folder_name = 'CRISPResso_on_%s'%run_name
+                print('1420 checking name ' + str(folder_name))
 
                 all_region_names.append(run_name)
                 all_region_read_counts[run_name] = row.n_reads
