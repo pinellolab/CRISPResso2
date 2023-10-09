@@ -1853,7 +1853,7 @@ def plot_scaffold_indel_lengths(
     plot_root,
     save_also_png=False,
 ):
-    colors = 'b', 'g'
+    colors = ['b', 'g']
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.hist(
         [

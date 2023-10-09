@@ -171,14 +171,18 @@ def write_trimmed_fastq(in_bam_filename, bpstart, bpend, out_fastq_filename):
         n_reasd (int): number of reads written to the output fastq file
     """
     p = sb.Popen(
-                'samtools view %s | cut -f1,4,6,10,11' % in_bam_filename,
-                stdout = sb.PIPE,
-                stderr = sb.STDOUT,
-                shell=True
-                )
+        f'samtools view {in_bam_filename} | cut -f1,4,6,10,11',
+        stdout=sb.PIPE,
+        stderr=sb.PIPE,
+        shell=True,
+        text=True,
+    )
 
-    output=p.communicate()[0].decode('utf-8')
-    n_reads=0
+    output, stderr = p.communicate()
+    n_reads = 0
+    if stderr:
+        logger.debug('Stderr from samtools view:')
+        logger.debug(stderr)
 
     with gzip.open(out_fastq_filename, 'wt') as outfile:
         for line in output.split('\n'):
@@ -318,13 +322,13 @@ def main():
             ))
             sys.exit()
 
-        parser = CRISPRessoShared.getCRISPRessoArgParser(parser_title = 'CRISPRessoWGS Parameters', required_params=[], 
+        parser = CRISPRessoShared.getCRISPRessoArgParser(parser_title = 'CRISPRessoWGS Parameters', required_params=[],
                     suppress_params=['bam_input',
-                                   'bam_chr_loc'
-                                   'fastq_r1', 
-                                   'fastq_r2', 
-                                   'amplicon_seq', 
-                                   'amplicon_name', 
+                                   'bam_chr_loc',
+                                   'fastq_r1',
+                                   'fastq_r2',
+                                   'amplicon_seq',
+                                   'amplicon_name',
                                    ])
 
         #tool specific optional
