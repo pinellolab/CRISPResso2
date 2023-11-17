@@ -1049,7 +1049,7 @@ def main():
 
         logger.addHandler(CRISPRessoShared.StatusHandler(_jp('CRISPResso_status.txt')))
 
-        aln_matrix_loc = os.path.join(_ROOT, "EDNAFULL")
+        aln_matrix_loc = os.path.join(_ROOT, args.needleman_wunsch_aln_matrix_loc)
         CRISPRessoShared.check_file(aln_matrix_loc)
         aln_matrix = CRISPResso2Align.read_matrix(aln_matrix_loc)
 
