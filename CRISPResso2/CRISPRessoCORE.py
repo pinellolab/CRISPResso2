@@ -1688,7 +1688,7 @@ def main():
 
 
             # Calculate cut sites for this reference
-            (this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_cut_points, this_sgRNA_plot_cut_points, this_sgRNA_plot_idxs, this_sgRNA_mismatches, this_sgRNA_names, this_include_idxs,
+            (this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_cut_points, this_sgRNA_plot_cut_points, this_sgRNA_plot_idxs, this_sgRNA_mismatches, this_sgRNA_names, this_sgRNA_include_idxs, this_include_idxs,
                 this_exclude_idxs) = CRISPRessoShared.get_amplicon_info_for_guides(this_seq, this_guides, this_guide_mismatches, this_guide_names, this_guide_qw_centers,
                 this_guide_qw_sizes, this_quant_window_coordinates, args.exclude_bp_from_left, args.exclude_bp_from_right, args.plot_window_size, this_guide_plot_cut_points, args.discard_guide_positions_overhanging_amplicon_edge)
 
@@ -1777,6 +1777,7 @@ def main():
                    'sgRNA_names': this_sgRNA_names,
                    'sgRNA_mismatches': this_sgRNA_mismatches,
                    'sgRNA_orig_sequences': this_sgRNA_orig_seqs,
+                   'sgRNA_include_idxs': this_sgRNA_include_idxs,
                    'contains_guide': this_contains_guide,
                    'contains_coding_seq': this_contains_coding_seq,
                    'exon_positions': this_exon_positions,

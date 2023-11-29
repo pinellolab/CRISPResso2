@@ -267,6 +267,8 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --expand_ambiguous_alignments: If more than one reference amplicon is given, reads that align to multiple reference amplicons will count equally toward each amplicon. Default behavior is to exclude ambiguous alignments. (default: False)
 
+--assign_ambiguous_alignments_to_first_reference: If more than one reference amplicon is given, ambiguous reads that align with the same score to multiple amplicons will be assigned to the first amplicon. Default behavior is to exclude ambiguous alignments. (default: False)
+
 --needleman_wunsch_gap_open: Gap open option for Needleman-Wunsch alignment (default: -20)
 
 --needleman_wunsch_gap_extend: Gap extend option for Needleman-Wunsch alignment (default: -2)

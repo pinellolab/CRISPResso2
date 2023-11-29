@@ -1369,6 +1369,7 @@ def get_amplicon_info_for_guides(ref_seq, guides, guide_mismatches, guide_names,
     this_sgRNA_plot_idxs : list of indices to be plotted for each sgRNA
     this_sgRNA_mismatches: list of mismatches between the guide and the amplicon
     this_sgRNA_names : list of names for each sgRNA (to disambiguate in case a sequence aligns to multiple positions)
+    this_sgRNA_include_idxs : list of indices to be included in quantification per guide
     this_include_idxs : list of indices to be included in quantification
     this_exclude_idxs : list of indices to be excluded from quantification
     """
@@ -1381,6 +1382,7 @@ def get_amplicon_info_for_guides(ref_seq, guides, guide_mismatches, guide_names,
     this_sgRNA_plot_idxs = []
     this_sgRNA_mismatches = []
     this_sgRNA_names = []
+    this_sgRNA_include_idxs = []
     this_include_idxs = []
     this_exclude_idxs = []
 
@@ -1413,7 +1415,7 @@ def get_amplicon_info_for_guides(ref_seq, guides, guide_mismatches, guide_names,
         rv_matches = re.finditer(rv_regex, ref_seq, flags=re.IGNORECASE)
 
         # for every match, append:
-        # this_sgRNA_cut_points, this_sgRNA_intervals,this_sgRNA_mismatches,this_sgRNA_names,this_sgRNA_sequences,include_idxs
+        # this_sgRNA_cut_points, this_sgRNA_intervals,this_sgRNA_mismatches,this_sgRNA_names,this_sgRNA_sequences,this_sgRNA_include_idxs,include_idxs
         for m in fw_matches:
             cut_p = m.start() + offset_fw
             if discard_guide_positions_overhanging_amplicon_edge and (
@@ -1428,6 +1430,9 @@ def get_amplicon_info_for_guides(ref_seq, guides, guide_mismatches, guide_names,
                 st = max(0, cut_p - quantification_window_sizes[guide_idx] + 1)
                 en = min(ref_seq_length - 1, cut_p + quantification_window_sizes[guide_idx] + 1)
                 this_include_idxs.extend(range(st, en))
+                this_sgRNA_include_idxs.append(list(range(st, en)))
+            else:
+                this_sgRNA_include_idxs.append([])
 
             this_sgRNA_name = guide_names[guide_idx]
             if match_count == 1:
@@ -1457,6 +1462,9 @@ def get_amplicon_info_for_guides(ref_seq, guides, guide_mismatches, guide_names,
                 st = max(0, cut_p - quantification_window_sizes[guide_idx] + 1)
                 en = min(ref_seq_length - 1, cut_p + quantification_window_sizes[guide_idx] + 1)
                 this_include_idxs.extend(range(st, en))
+                this_sgRNA_include_idxs.append(list(range(st, en)))
+            else:
+                this_sgRNA_include_idxs.append([])
 
             this_sgRNA_name = guide_names[guide_idx]
             if match_count == 1:
@@ -1492,11 +1500,13 @@ def get_amplicon_info_for_guides(ref_seq, guides, guide_mismatches, guide_names,
                     theseCoords) + "'. Coordinates must be given in the form start-end e.g. 5-10 . Please check the --analysis_window_coordinate parameter.")
         given_include_idxs = coordinate_include_idxs
         this_include_idxs = coordinate_include_idxs
+        this_sgRNA_include_idxs = [[]] * len(this_sgRNA_include_idxs)
     # otherwise, take quantification centers + windows calculated for each guide above
     elif this_sgRNA_cut_points and len(this_include_idxs) > 0:
         given_include_idxs = this_include_idxs
     else:
         this_include_idxs = range(ref_seq_length)
+        this_sgRNA_include_idxs = [[]] * len(this_sgRNA_include_idxs)
 
     # flatten the arrays to avoid errors with old numpy library
     this_include_idxs = np.ravel(this_include_idxs)
@@ -1536,7 +1546,7 @@ def get_amplicon_info_for_guides(ref_seq, guides, guide_mismatches, guide_names,
     this_include_idxs = np.sort(list(this_include_idxs))
     this_exclude_idxs = np.sort(list(this_exclude_idxs))
 
-    return this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_cut_points, this_sgRNA_plot_cut_points, this_sgRNA_plot_idxs, this_sgRNA_mismatches, this_sgRNA_names, this_include_idxs, this_exclude_idxs
+    return this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_cut_points, this_sgRNA_plot_cut_points, this_sgRNA_plot_idxs, this_sgRNA_mismatches, this_sgRNA_names, this_sgRNA_include_idxs, this_include_idxs, this_exclude_idxs
 
 
 def set_guide_array(vals, guides, property_name):
