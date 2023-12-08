@@ -180,6 +180,7 @@ def make_report(run_data, crispresso_report_file, crispresso_folder, _ROOT):
 
 def make_batch_report_from_folder(crispressoBatch_report_file, crispresso2_info, batch_folder, _ROOT):
     batch_names = crispresso2_info['results']['completed_batch_arr']
+    failed_runs = crispresso2_info['results']['failed_batch_arr']
     display_names = crispresso2_info['results']['batch_input_names']
 
     window_nuc_pct_quilts = crispresso2_info['results']['general_plots']['window_nuc_pct_quilt_plot_names']
@@ -285,6 +286,7 @@ def make_batch_report_from_folder(crispressoBatch_report_file, crispresso2_info,
 
     make_multi_report(
         run_names,
+        failed_runs,
         sub_html_files,
         crispressoBatch_report_file,
         batch_folder,
@@ -307,6 +309,7 @@ def make_batch_report_from_folder(crispressoBatch_report_file, crispresso2_info,
 
 
 def make_pooled_report_from_folder(crispresso_report_file, crispresso2_info, folder, _ROOT):
+    print(crispresso2_info['results']['failed_batch_arr'])
     names_arr = crispresso2_info['results']['good_region_names']
     output_title = 'CRISPResso Pooled Output'
     if crispresso2_info['running_info']['args'].name != '':
@@ -373,6 +376,9 @@ def make_multi_report_from_folder(crispresso2_info, names_arr, report_name, cris
         summary_plot_datas = crispresso2_info['results']['general_plots']['summary_plot_datas']
 
     run_names = []
+    failed_runs = crispresso2_info['results']['failed_batch_arr']
+    print("Failed runs:")
+    print(failed_runs)
     sub_html_files = {}
     sub_2a_labels = {}
     sub_2a_pdfs = {}
@@ -406,9 +412,9 @@ def make_multi_report_from_folder(crispresso2_info, names_arr, report_name, cris
 
         sub_2a_labels[display_name] = this_sub_2a_labels
         sub_2a_pdfs[display_name] = this_sub_2a_pdfs
-
     make_multi_report(
         run_names,
+        failed_runs,
         sub_html_files,
         crispresso_report_file,
         folder,
@@ -426,6 +432,7 @@ def make_multi_report_from_folder(crispresso2_info, names_arr, report_name, cris
 
 def make_multi_report(
     run_names,
+    failed_runs,
     sub_html_files,
     crispresso_multi_report_file,
     crispresso_folder,
@@ -542,6 +549,7 @@ def make_multi_report(
                 'crispresso_data_path': crispresso_data_path,
             },
             run_names=run_names,
+            failed_runs=failed_runs,
             sub_html_files=sub_html_files,
             report_name=report_name,
             compact_plots_to_show=[] if compact_plots_to_show is None else compact_plots_to_show,

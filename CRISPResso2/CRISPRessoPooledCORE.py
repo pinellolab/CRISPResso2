@@ -880,8 +880,40 @@ def main():
 
                 else:
                     warn('Skipping amplicon [%s] because no reads align to it\n'% idx)
-
+            print(1111111111)
+            print(1111111111)
+            print(1111111111)
+            print(1111111111)
+            print(1111111111)
+            print(1111111111)
+            print(1111111111)
+            print("hey")
+            
             CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_pooled, 'amplicon', args.skip_failed, start_end_percent=(16, 80))
+            # Initialize array to track failed runs
+            failed_batch_arr = []
+            # Iterate over each command to check if the run was successful
+            # print(crispresso_cmds)
+            for cmd in crispresso_cmds:
+                
+                # Extract the folder name from the CRISPResso command
+                folder_name_regex = re.search(r'-o\s+\S+\s+--name\s+(\S+)', cmd)
+                if folder_name_regex:
+                    folder_name = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso_on_%s' % folder_name_regex.group(1))
+                    status_file = os.path.join(folder_name, 'CRISPResso_status.txt')
+
+                    # Check if the status file exists and contains '100.00'
+                    try:
+                        with open(status_file, 'r') as f:
+                            status_content = f.read()
+                            if '100.00' not in status_content:
+                                failed_batch_arr.append(folder_name_regex.group(1))
+                    except IOError:
+                        # Status file doesn't exist, mark as failed
+                        failed_batch_arr.append(folder_name_regex.group(1))
+
+            # Store the failed runs in crispresso2_info for later use
+            crispresso2_info['results']['failed_batch_arr'] = failed_batch_arr
 
             df_template['n_reads']=n_reads_aligned_amplicons
             df_template['n_reads_aligned_%']=df_template['n_reads']/float(N_READS_ALIGNED)*100

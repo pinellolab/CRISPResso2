@@ -66,6 +66,23 @@
             </div>
           {% endif %}
 
+          {% if failed_runs|length > 0 %}
+          <div class='card text-center mb-2 bg-danger'>
+            <div class='card-header'>
+              <h5 id="CRISPResso2_Batch_Output">Failed Runs</h5>
+            </div>
+            <div class='card-body p-0'>
+              <div class="list-group list-group-flush">
+                {% for failed_run in failed_runs %}
+                <div class="list-group-item list-group-item-action" id="{{failed_run}}">{{failed_run}}</div>
+                <!-- <a href="{{sub_html_files[failed_run]}}" class="list-group-item list-group-item-action" id="{{failed_run}}">{{failed_run}}</a> -->
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
+
           {% if window_nuc_pct_quilts|length > 0 %}
             <div class='card text-center mb-2'>
               <div class='card-header'>
@@ -154,6 +171,8 @@
 </div> {# jumbrotron #} <!-- end jumbotron -->
 
 </div> {# column #} <!-- end column -->
+
+<h1>Hey Trevor! Your edit worked.</h1>
 
 <div class="col-sm-1"></div>
 </div>
