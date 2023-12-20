@@ -208,7 +208,6 @@ def main():
             has_input = False
             if 'fastq_r1' in row and row.fastq_r1 != '':
                 CRISPRessoShared.check_file(row.fastq_r1)
-                print(row.fastq_r1)
                 has_input = True
 
             if 'fastq_r2' in row and row.fastq_r2 != '':
@@ -294,8 +293,9 @@ def main():
 
         crispresso2_info['results']['batch_names_arr'] = batch_names_arr
         crispresso2_info['results']['batch_input_names'] = batch_input_names
-        
+
         CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_batch, 'batch', args.skip_failed, start_end_percent=[10, 90])
+
         run_datas = [] # crispresso2 info from each row
 
         all_amplicons = set()
@@ -303,34 +303,17 @@ def main():
         amplicon_counts = {}
         completed_batch_arr = []
         failed_batch_arr = []
+        failed_batch_arr_desc = []
         for idx, row in batch_params.iterrows():
             batch_name = CRISPRessoShared.slugify(row["name"])
             folder_name = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso_on_%s' % batch_name)
-            run_data_file = os.path.join(folder_name, 'CRISPResso2_info.json')
-            status_info = os.path.join(folder_name, 'CRISPResso_status.txt')
-            # breakpoint()
-            if not os.path.isfile(run_data_file) or not os.path.isfile(status_info):
-                info("Skipping folder '%s'. Cannot find run data at '%s'."%(folder_name, run_data_file))
-                run_datas.append(None)
+            # check if run failed
+            failed_run_bool, failed_status_string = CRISPRessoShared.check_if_failed_run(folder_name, info)
+            if failed_run_bool:
                 failed_batch_arr.append(batch_name)
+                failed_batch_arr_desc.append(failed_status_string)
+                run_datas.append(None)
                 continue
-            else:
-                with open(status_info) as fh:
-                    try:
-                        percent_complete, status = re.search(r'(\d+\.\d+)% (.+)', fh.read()).groups()
-                        # breakpoint()
-                        if percent_complete != '100.00':
-                            info("Skipping folder '%s'. Run is not complete (%s)."%(folder_name, status))
-                            run_datas.append(None)
-                            failed_batch_arr.append(batch_name)
-                            continue
-                    except:
-                        info("Skipping folder '%s'. Cannot parse status file '%s'."%(folder_name, status_info))
-                        run_datas.append(None)
-                        failed_batch_arr.append(batch_name)
-                        continue
-
-
 
             run_data = CRISPRessoShared.load_crispresso_info(folder_name)
             run_datas.append(run_data)
@@ -349,6 +332,7 @@ def main():
             completed_batch_arr.append(batch_name)
 
         crispresso2_info['results']['failed_batch_arr'] = failed_batch_arr
+        crispresso2_info['results']['failed_batch_arr_desc'] = failed_batch_arr_desc
         crispresso2_info['results']['completed_batch_arr'] = completed_batch_arr
 
         # make sure amplicon names aren't super long

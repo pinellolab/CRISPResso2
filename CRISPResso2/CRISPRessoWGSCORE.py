@@ -650,15 +650,19 @@ def main():
         header_el_count = len(header_els)
         empty_line_els = [np.nan]*(header_el_count-1)
         n_reads_index = header_els.index('Reads_total') - 1
+        failed_batch_arr = []
+        failed_batch_arr_desc = []
         for idx, row in df_regions.iterrows():
             run_name = CRISPRessoShared.slugify(str(idx))
             folder_name = 'CRISPResso_on_%s' % run_name
 
+            failed_run_bool, failed_run_desc = CRISPRessoShared.check_if_failed_run(_jp(folder_name), info)
             all_region_names.append(run_name)
             all_region_read_counts[run_name] = row.n_reads
 
-            run_file = os.path.join(_jp(folder_name), 'CRISPResso2_info.json')
-            if not os.path.exists(run_file):
+            if failed_run_bool:
+                failed_batch_arr.append(run_name)
+                failed_batch_arr_desc.append(failed_run_desc)
                 warn('Skipping the folder %s: not enough reads, incomplete, or empty folder.'% folder_name)
                 this_els = empty_line_els[:]
                 this_els[n_reads_index] = row.n_reads
@@ -710,6 +714,8 @@ def main():
         else:
             df_summary_quantification.fillna('NA').to_csv(samples_quantification_summary_filename, sep='\t', index=None)
 
+        crispresso2_info['results']['failed_batch_arr'] = failed_batch_arr
+        crispresso2_info['results']['failed_batch_arr_desc'] = failed_batch_arr_desc
         crispresso2_info['results']['alignment_stats']['samples_quantification_summary_filename'] = os.path.basename(samples_quantification_summary_filename)
         crispresso2_info['results']['regions'] = df_regions
         crispresso2_info['results']['all_region_names'] = all_region_names

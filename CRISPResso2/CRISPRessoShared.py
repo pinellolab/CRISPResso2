@@ -1024,6 +1024,50 @@ def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, fla
 
     return seq_lines
 
+def check_if_failed_run(folder_name, info):
+    """
+    Check the output folder for a info.json file and a status.txt file to see if the run completed successfully or not
+
+    input:
+    folder_name: path to output folder
+    info: logger
+
+
+    returns:
+    bool True if run completed successfully, False otherwise
+    string describing why it failed
+    """
+     
+    run_data_file = os.path.join(folder_name, 'CRISPResso2_info.json')
+    status_info = os.path.join(folder_name, 'CRISPResso_status.txt')
+    if not os.path.isfile(run_data_file) or not os.path.isfile(status_info):
+        info("Skipping folder '%s'. Cannot find run data status file at '%s'."%(folder_name, run_data_file))
+        if "CRISPRessoPooled" in folder_name:
+            unit = "amplicon"
+        elif "CRISPRessoWGS" in folder_name:
+            unit = "region"
+        else:
+            unit = "sample"
+        
+        return True, f"CRISPResso failed for this {unit}! Please check your input files and parameters."
+    else:
+        with open(status_info) as fh:
+            try:
+                file_contents = fh.read()
+                search_result = re.search(r'(\d+\.\d+)% (.+)', file_contents)
+                if search_result:
+                    percent_complete, status = search_result.groups()
+                    if percent_complete != '100.00':
+                        info("Skipping folder '%s'. Run is not complete (%s)." % (folder_name, status))
+                        return True, status
+                else:
+                    return True, file_contents
+            except Exception as e:
+                print(e)
+                info("Skipping folder '%s'. Cannot parse status file '%s'." % (folder_name, status_info))
+                return True, "Cannot parse status file '%s'." % (status_info)
+    return False, ""
+
 
 def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,min_paired_end_reads_overlap,aln_matrix,needleman_wunsch_gap_open,needleman_wunsch_gap_extend,split_interleaved_input=False,min_freq_to_consider=0.2,amplicon_similarity_cutoff=0.95):
     """

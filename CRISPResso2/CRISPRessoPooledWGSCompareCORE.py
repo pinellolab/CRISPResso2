@@ -354,8 +354,12 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
                 report_name = _jp("CRISPResso2PooledWGSCompare_report.html")
             else:
                 report_name = OUTPUT_DIRECTORY+'.html'
+            empty_failed_runs_arr = []
+            empty_failed_runs_arr_desc = []
             CRISPRessoReport.make_multi_report(
                 processed_regions,
+                empty_failed_runs_arr,
+                empty_failed_runs_arr_desc,
                 processed_region_html_files,
                 report_name,
                 OUTPUT_DIRECTORY,

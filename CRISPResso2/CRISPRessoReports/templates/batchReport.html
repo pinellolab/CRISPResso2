@@ -44,6 +44,46 @@
 {% endblock %}
 
 {% block content %}
+
+<script>
+  // Function to toggle individual descriptions
+  function toggleDescription(index) {
+    var desc = document.getElementById("failed_run_desc_" + index);
+    desc.style.display = desc.style.display === "none" ? "block" : "none";
+    updateChevron();
+  }
+
+  // Function to toggle all descriptions
+  function toggleAllDescriptions() {
+    var descs = document.querySelectorAll('.failed-run-desc');
+    var allHidden = Array.from(descs).every(desc => desc.style.display === "none");
+
+    descs.forEach(desc => {
+      desc.style.display = allHidden ? "block" : "none";
+    });
+
+    updateChevron();
+  }
+
+  // Function to update the chevron direction based on the visibility of the descriptions
+  function updateChevron() {
+    var descs = document.querySelectorAll('.failed-run-desc');
+    var allHidden = Array.from(descs).every(desc => desc.style.display === "none");
+    var chevronIcon = document.getElementById("chevronIcon");
+    if (allHidden) {
+      chevronIcon.classList.remove("fa-chevron-up");
+      chevronIcon.classList.add("fa-chevron-down");
+    } else {
+      chevronIcon.classList.remove("fa-chevron-down");
+      chevronIcon.classList.add("fa-chevron-up");
+    }
+  }
+
+  // Call updateChevron on page load to set the initial chevron direction
+  document.addEventListener('DOMContentLoaded', updateChevron);
+</script>
+
+
 <div class="row">
 <div class="col-sm-1"></div>
 <div class="col-sm-10">
@@ -65,22 +105,36 @@
             </div>
             </div>
           {% endif %}
+          
+
 
           {% if failed_runs|length > 0 %}
-          <div class='card text-center mb-2 bg-danger'>
-            <div class='card-header'>
-              <h5 id="CRISPResso2_Batch_Output">Failed Runs</h5>
+          <div class='card text-center mb-2'>
+              <div class="card-header bg-danger d-flex justify-content-center align-items-center" onclick="toggleAllDescriptions()">
+                <!-- Center the title and button -->
+                <h5 id="CRISPResso2_Batch_Output" class="mb-0 text-white">Failed Runs</h5>
+                <button class="btn btn-danger ml-2" id="toggleAll" >
+                  <i class="fas fa-chevron-down" id="chevronIcon"></i>
+                </button>
             </div>
+
             <div class='card-body p-0'>
               <div class="list-group list-group-flush">
                 {% for failed_run in failed_runs %}
-                <div class="list-group-item list-group-item-action" id="{{failed_run}}">{{failed_run}}</div>
-                <!-- <a href="{{sub_html_files[failed_run]}}" class="list-group-item list-group-item-action" id="{{failed_run}}">{{failed_run}}</a> -->
+                <!-- Toggle the description visibility on click -->
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action failed-run-name bg-light text-dark"
+                  id="failed_run_{{loop.index0}}" onclick="toggleDescription({{loop.index0}})">
+                 {{failed_run}}
+                </a>
+                <!-- Initially hide the description and add a light background with dark text for readability -->
+                <div class="list-group-item text-dark  failed-run-desc" id="failed_run_desc_{{loop.index0}}" style="display: none;">
+                  {{failed_runs_desc[loop.index0]}}</div>
                 {% endfor %}
               </div>
             </div>
           </div>
           {% endif %}
+
 
 
           {% if window_nuc_pct_quilts|length > 0 %}
@@ -171,8 +225,6 @@
 </div> {# jumbrotron #} <!-- end jumbotron -->
 
 </div> {# column #} <!-- end column -->
-
-<h1>Hey Trevor! Your edit worked.</h1>
 
 <div class="col-sm-1"></div>
 </div>
