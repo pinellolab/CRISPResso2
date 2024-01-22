@@ -1,2 +1,2 @@
 include CRISPResso2/EDNAFULL
-include CRISPResso2/templates/*
+include CRISPResso2/CRISPRessoReports/templates/*

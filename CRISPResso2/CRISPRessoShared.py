@@ -9,6 +9,9 @@ import datetime
 import errno
 import gzip
 import json
+import sys
+import importlib.util
+
 import numpy as np
 import os
 import pandas as pd
@@ -19,6 +22,7 @@ import signal
 import subprocess as sb
 import unicodedata
 import logging
+from inspect import getmodule, stack
 
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoCOREResources
@@ -30,38 +34,50 @@ __version__ = "2.2.15"
 class FlashException(Exception):
     pass
 
+
 class TrimmomaticException(Exception):
     pass
+
 
 class NoReadsAlignedException(Exception):
     pass
 
+
 class AlignmentException(Exception):
     pass
+
 
 class SgRNASequenceException(Exception):
     pass
 
+
 class NTException(Exception):
     pass
+
 
 class ExonSequenceException(Exception):
     pass
 
+
 class DuplicateSequenceIdException(Exception):
     pass
+
 
 class NoReadsAfterQualityFilteringException(Exception):
     pass
 
+
 class BadParameterException(Exception):
     pass
+
 
 class AutoException(Exception):
     pass
 
+
 class OutputFolderIncompleteException(Exception):
     pass
+
 
 class InstallationException(Exception):
     pass
@@ -301,6 +317,7 @@ def getCRISPRessoArgParser(parser_title="CRISPResso Parameters", required_params
     parser.add_argument('--suppress_plots', help='Suppress output plots', action='store_true')
     parser.add_argument('--write_cleaned_report', action='store_true',
                         help=argparse.SUPPRESS)  # trims working directories from output in report (for web access)
+    parser.add_argument('--config_file', help='File path to JSON file with config elements', type=str)
 
     # base editor parameters
     parser.add_argument('--base_editor_output',
@@ -529,7 +546,7 @@ def clean_filename(filename):
     validFilenameChars = "+-_.()%s%s" % (string.ascii_letters, string.digits)
     filename = slugify(str(filename).replace(' ', '_'))
     cleanedFilename = unicodedata.normalize('NFKD', filename)
-    return(''.join(c for c in cleanedFilename if c in validFilenameChars))
+    return (''.join(c for c in cleanedFilename if c in validFilenameChars))
 
 def check_file(filename):
     try:
@@ -618,7 +635,7 @@ def assert_fastq_format(file_path, max_lines_to_check=100):
     params:
         file_path: path to fastq file
         max_lines_to_check: number of lines to check in the file
-    returns:   
+    returns:
         True if the file is in the correct format
     """
 
@@ -1006,6 +1023,50 @@ def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, fla
         os.remove(output_r2)
 
     return seq_lines
+
+def check_if_failed_run(folder_name, info):
+    """
+    Check the output folder for a info.json file and a status.txt file to see if the run completed successfully or not
+
+    input:
+    folder_name: path to output folder
+    info: logger
+
+
+    returns:
+    bool True if run completed successfully, False otherwise
+    string describing why it failed
+    """
+
+    run_data_file = os.path.join(folder_name, 'CRISPResso2_info.json')
+    status_info = os.path.join(folder_name, 'CRISPResso_status.txt')
+    if not os.path.isfile(run_data_file) or not os.path.isfile(status_info):
+        info("Skipping folder '%s'. Cannot find run data status file at '%s'."%(folder_name, run_data_file))
+        if "CRISPRessoPooled" in folder_name:
+            unit = "amplicon"
+        elif "CRISPRessoWGS" in folder_name:
+            unit = "region"
+        else:
+            unit = "sample"
+
+        return True, f"CRISPResso failed for this {unit}! Please check your input files and parameters."
+    else:
+        with open(status_info) as fh:
+            try:
+                file_contents = fh.read()
+                search_result = re.search(r'(\d+\.\d+)% (.+)', file_contents)
+                if search_result:
+                    percent_complete, status = search_result.groups()
+                    if percent_complete != '100.00':
+                        info("Skipping folder '%s'. Run is not complete (%s)." % (folder_name, status))
+                        return True, status
+                else:
+                    return True, file_contents
+            except Exception as e:
+                print(e)
+                info("Skipping folder '%s'. Cannot parse status file '%s'." % (folder_name, status_info))
+                return True, "Cannot parse status file '%s'." % (status_info)
+    return False, ""
 
 
 def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,min_paired_end_reads_overlap,aln_matrix,needleman_wunsch_gap_open,needleman_wunsch_gap_extend,split_interleaved_input=False,min_freq_to_consider=0.2,amplicon_similarity_cutoff=0.95):
@@ -1826,3 +1887,73 @@ def zip_results(results_folder):
         )
     sb.call(cmd_to_zip, shell=True)
     return
+
+
+def is_C2Pro_installed():
+    try:
+        spec = importlib.util.find_spec("crispressoPro")
+        if spec is None:
+            return False
+        else:
+            return True
+    except:
+        return False
+
+
+def check_custom_config(args):
+    """Check if the config_file argument was provided. If so load the configurations from the file, otherwise load default configurations.
+
+    Parameters:
+    -------------
+    args : dict
+        All arguments passed into the crispresso run.
+
+    Returns:
+    -------------
+    style : dict
+        A dict with a 'colors' key that contains hex color values for different report items.
+
+    -OR-
+
+    custom_style : dict
+        A dict with a 'colors' key that contains hex color values for different report items loaded from a user provided json file.
+
+    """
+    config =  {
+        "colors": {
+                'Substitution': '#0000FF',
+                'Insertion': '#008000',
+                'Deletion': '#FF0000',
+                'A': '#7FC97F',
+                'T': '#BEAED4',
+                'C': '#FDC086',
+                'G': '#FFFF99',
+                'N': '#C8C8C8',
+                '-': '#1E1E1E',
+                }
+            }
+
+    logger = logging.getLogger(getmodule(stack()[1][0]).__name__)
+
+    #Check if crispresso.pro is installed
+    if not is_C2Pro_installed():
+        return config
+    if args.config_file:
+        try:
+            with open(args.config_file, "r") as json_file:
+                custom_config = json.load(json_file)
+
+            if 'colors' not in custom_config.keys():
+                logger.warn("Json file does not contain the colors key. Defaulting all values.")
+                return config
+
+            for key in config['colors']:
+                if key not in custom_config['colors']:
+                    logger.warn(f"Value for {key} not provided, defaulting")
+                    custom_config['colors'][key] = config['colors'][key]
+
+            return custom_config
+        except Exception as e:
+            logger.warn("Cannot read json file '%s', defaulting style parameters." % args.config_file)
+            print(e)
+    return config
