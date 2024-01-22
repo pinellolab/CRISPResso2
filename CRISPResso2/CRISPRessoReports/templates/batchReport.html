@@ -1,5 +1,6 @@
 {% extends "layout.html" %}
 {% block head %}
+<script src="https://cdn.plot.ly/plotly-2.11.1.min.js"></script>
 <style>
 .nav-tabs.amp-header {
   border-bottom:none !important;
@@ -44,6 +45,8 @@
 {% endblock %}
 
 {% block content %}
+
+<div class="row">
 <div class="col-sm-1"></div>
 <div class="col-sm-10">
 
@@ -53,17 +56,19 @@
           {% if run_names|length > 0 %}
             <div class='card text-center mb-2'>
               <div class='card-header'>
-                <h5>{{report_name}}</h5>
+                <h5 id="CRISPResso2_Batch_Output">{{report_name}}</h5>
               </div>
               <div class='card-body p-0'>
-                <div class="list-group list-group-flush" style='max-height:80vh;overflow-y:auto'>
+                <div class="list-group list-group-flush">
               {% for run_name in run_names %}
-	      <a href="{{crispresso_data_path}}{{sub_html_files[run_name]}}" class="list-group-item list-group-item-action">{{run_name}}</a>
+	      <a href="{{sub_html_files[run_name]}}" class="list-group-item list-group-item-action" id="{{run_name}}">{{run_name}}</a>
                 {% endfor %}
               </div>
             </div>
             </div>
           {% endif %}
+
+          {{render_partial('shared/partials/failed_runs.html', failed_runs=failed_runs, failed_runs_desc=failed_runs_desc)}}
 
           {% if window_nuc_pct_quilts|length > 0 %}
             <div class='card text-center mb-2'>
@@ -72,12 +77,8 @@
               </div>
               <div class='card-body'>
                 {% for plot_name in window_nuc_pct_quilts %}
-                  <h5>{{summary_plot_titles[plot_name]}}</h5>
-		  <a href="{{crispresso_data_path}}{{plot_name}}.pdf"><img src="{{crispresso_data_path}}{{plot_name}}.png" width='80%' ></a>
-                  <label class="labelpadding">{{summary_plot_labels[plot_name]}}</label>
-  							  {% for (data_label,data_path) in summary_plot_datas[plot_name] %}
-							  <p class="m-0"><small>Data: <a href="{{crispresso_data_path}}{{data_path}}">{{data_label}}</a></small></p>
-                  {% endfor %}
+                    <h5>{{report_data['titles'][plot_name]}}</h5>
+		            {{ render_partial('shared/partials/fig_summaries.html', report_data=report_data, plot_name=plot_name) }}
                 {% endfor %}
               </div>
             </div>
@@ -90,12 +91,8 @@
               </div>
               <div class='card-body'>
                 {% for plot_name in nuc_pct_quilts %}
-                  <h5>{{summary_plot_titles[plot_name]}}</h5>
-		  <a href="{{crispresso_data_path}}{{plot_name}}.pdf"><img src="{{crispresso_data_path}}{{plot_name}}.png" width='80%' ></a>
-                  <label class="labelpadding">{{summary_plot_labels[plot_name]}}</label>
-  							  {% for (data_label,data_path) in summary_plot_datas[plot_name] %}
-							  <p class="m-0"><small>Data: <a href="{{crispresso_data_path}}{{data_path}}">{{data_label}}</a></small></p>
-                  {% endfor %}
+                    <h5>{{report_data['titles'][plot_name]}}</h5>
+		            {{ render_partial('shared/partials/fig_summaries.html', report_data=report_data, plot_name=plot_name) }}
                 {% endfor %}
               </div>
             </div>
@@ -108,12 +105,8 @@
               </div>
               <div class='card-body'>
                 {% for plot_name in window_nuc_conv_plots %}
-                  <h5>{{summary_plot_titles[plot_name]}}</h5>
-		  <a href="{{crispresso_data_path}}{{plot_name}}.pdf"><img src="{{crispresso_data_path}}{{plot_name}}.png" width='80%' ></a>
-                  <label class="labelpadding">{{summary_plot_labels[plot_name]}}</label>
-  							  {% for (data_label,data_path) in summary_plot_datas[plot_name] %}
-							  <p class="m-0"><small>Data: <a href="{{crispresso_data_path}}{{data_path}}">{{data_label}}</a></small></p>
-                  {% endfor %}
+                    <h5>{{report_data['titles'][plot_name]}}</h5>
+		            {{ render_partial('shared/partials/fig_summaries.html', report_data=report_data, plot_name=plot_name) }}
                 {% endfor %}
               </div>
             </div>
@@ -126,29 +119,21 @@
               </div>
               <div class='card-body'>
                 {% for plot_name in nuc_conv_plots %}
-                  <h5>{{summary_plot_titles[plot_name]}}</h5>
-		  <a href="{{crispresso_data_path}}{{plot_name}}.pdf"><img src="{{crispresso_data_path}}{{plot_name}}.png" width='80%' ></a>
-                  <label class="labelpadding">{{summary_plot_labels[plot_name]}}</label>
-  							  {% for (data_label,data_path) in summary_plot_datas[plot_name] %}
-							  <p class="m-0"><small>Data: <a href="{{crispresso_data_path}}{{data_path}}">{{data_label}}</a></small></p>
-                  {% endfor %}
+                    <h5>{{report_data['titles'][plot_name]}}</h5>
+		            {{ render_partial('shared/partials/fig_summaries.html', report_data=report_data, plot_name=plot_name) }}
                 {% endfor %}
               </div>
             </div>
           {% endif %}
 
-          {% if summary_plot_names|length > 0 %}
-            {% for plot_name in summary_plot_names %}
+          {% if report_data['names']|length > 0 %}
+            {% for plot_name in report_data['names'] %}
             <div class='card text-center mb-2'>
               <div class='card-header'>
-                <h5>{{summary_plot_titles[plot_name]}}</h5>
+                <h5>{{report_data['titles'][plot_name]}}</h5>
               </div>
-              <div class='card-body' style='max-height:80vh;overflow-y:auto'>
-		      <a href="{{crispresso_data_path}}{{plot_name}}.pdf"><img src="{{crispresso_data_path}}{{plot_name}}.png" width='80%' ></a>
-                <label class="labelpadding">{{summary_plot_labels[plot_name]}}</label>
-							  {% for (data_label,data_path) in summary_plot_datas[plot_name] %}
-							  <p class="m-0"><small>Data: <a href="{{crispresso_data_path}}{{data_path}}">{{data_label}}</a></small></p>
-                {% endfor %}
+              <div class='card-body'>
+		        {{ render_partial('shared/partials/fig_summaries.html', report_data=report_data, plot_name=plot_name) }}
               </div>
             </div>
             {% endfor %}
@@ -176,14 +161,14 @@
                             {{allele_modification_heatmap_plot_htmls[heatmap_plot_name]}}
                             <label class="labelpadding">{{allele_modification_heatmap_plot_labels[heatmap_plot_name]}}</label>
                             {% for (data_label, data_path) in allele_modification_heatmap_plot_datas[heatmap_plot_name] %}
-                                <p class="m-0"><small>Data: <a href="{{crispresso_data_path}}{{data_path}}">{{data_label}}</a></small></p>
+                                <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                             {% endfor %}
                         </div>
                         <div class="tab-pane fade" id="{{line_plot_name}}" role="tabpanel" aria-labelledby="{{modification_type}}-line-tab">
                             {{allele_modification_line_plot_htmls[line_plot_name]}}
                             <label class="labelpadding">{{allele_modification_line_plot_labels[line_plot_name]}}</label>
                             {% for (data_label, data_path) in allele_modification_line_plot_datas[line_plot_name] %}
-                                <p class="m-0"><small>Data: <a href="{{crispresso_data_path}}{{data_path}}">{{data_label}}</a></small></p>
+                                <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                             {% endfor %}
                         </div>
                     </div>
@@ -204,6 +189,7 @@
                });
               </script>
             {% endfor %}
+              {#
               <!-- The below code is another failed attempt to make the heatmaps go fullscreen.
                    To implement this behavior, wrap the `allele_modification_heatmap_plot_htmls[plot_name]` in a `div`
                    of class `plotly-full-screen`. -->
@@ -251,34 +237,24 @@
                    });
                    });
                    </script> -->
+              #}
           {% endif %}
-
-          {% if compact_plots_to_show|length > 0 %}
-            <div class='card text-center mb-2'>
-              <div class='card-header'>
-                <h5>Summary Plots</h5>
-              </div>
-              <div class='card-body p-0'>
-                <div class="list-group list-group-flush" style='max-height:80vh;overflow-y:auto'>
-							  {% for compact_plot in compact_plots_to_show %}
-	      <a href="{{crispresso_data_path}}{{compact_plots_to_show[compact_plot]['href']}}" data-toggle="tooltip" title="{{compact_plot}}" class="list-group-item list-group-item-action p-0"><img src="{{crispresso_data_path}}{{compact_plots_to_show[compact_plot]['img']}}" width='100%' ></a>
-                {% endfor %}
-              </div>
-              </div>
-            </div>
-          {% endif %}
-
 
           </div>
 
         </div>
 
-	</div> {# jumbotron_content #} <!-- end jumbotron_content -->
-</div> {# jumbrotron #} <!-- end jumbotron -->
 
-</div> {# column #} <!-- end column -->
+        {{render_partial('shared/partials/report_footer_buttons.html', report_zip_filename=report_zip_filename, report_path=report_path)}}
 
-<div class="col-sm-1"></div>
+
+    {# data bit for web version: #}
+    {#
+    <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a> <a href="{{report_data['crispresso_data_path']}}{{data_path}}" title="{{data_label}}" download> <span class="fas fa-download" data-bs-toggle='tooltip' title='Download {{data_label}}'><span></a></small></p>
+    #}
+	</div>
+    <div class="col-sm-1"></div>
+</div>
 {% endblock %}
 
 {% block foot %}

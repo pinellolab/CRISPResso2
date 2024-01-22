@@ -18,7 +18,7 @@ import re
 import zipfile
 from CRISPResso2 import CRISPRessoShared
 from CRISPResso2 import CRISPRessoMultiProcessing
-from CRISPResso2 import CRISPRessoReport
+from CRISPResso2.CRISPRessoReports import CRISPRessoReport
 from CRISPResso2 import CRISPRessoPlot
 import traceback
 
@@ -663,8 +663,8 @@ def main():
             lowercase_default_amplicon_headers = {h.lower(): h for h in default_input_amplicon_headers}
 
             headers = []
+            unmatched_headers = []
             has_header = False
-            has_unmatched_header_el = False
             for head in header_els:
                 # Header based on header provided
                 # Look up long name (e.g. qwc -> quantification_window_coordinates)
@@ -678,21 +678,23 @@ def main():
 
                 match = difflib.get_close_matches(long_head, lowercase_default_amplicon_headers, n=1)
                 if not match:
-                    has_unmatched_header_el = True
-                    warn(f'Unable to find matches for header value "{head}". Using the default header values and order.')
+                    unmatched_headers.append(head)
                 else:
                     has_header = True
                     headers.append(lowercase_default_amplicon_headers[match[0]])
                     if args.debug:
                         info(f'Matching header {head} with {lowercase_default_amplicon_headers[match[0]]}.')
 
-            if not has_header or has_unmatched_header_el:
+            if len(headers) > 5 and not has_header:
+                raise CRISPRessoShared.BadParameterException('Incorrect number of columns provided without header.')
+            elif has_header and len(unmatched_headers) > 0:
+                raise CRISPRessoShared.BadParameterException('Unable to match headers: ' + str(unmatched_headers))
+            
+            if not has_header:
                 # Default header
                 headers = []
                 for i in range(len(header_els)):
                     headers.append(default_input_amplicon_headers[i])
-                if len(headers) > 5:
-                    raise CRISPRessoShared.BadParameterException('Incorrect number of columns provided without header.')
 
             if args.debug:
                 info(f'Header variable names in order: {headers}')
@@ -880,6 +882,23 @@ def main():
                     warn('Skipping amplicon [%s] because no reads align to it\n'% idx)
 
             CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_pooled, 'amplicon', args.skip_failed, start_end_percent=(16, 80))
+            # Initialize array to track failed runs
+            failed_batch_arr = []
+            failed_batch_arr_desc = []
+            for cmd in crispresso_cmds:
+                
+                # Extract the folder name from the CRISPResso command
+                folder_name_regex = re.search(r'-o\s+\S+\s+--name\s+(\S+)', cmd)
+                if folder_name_regex:
+                    folder_name = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso_on_%s' % folder_name_regex.group(1))
+                    failed_run_bool, failed_status_string = CRISPRessoShared.check_if_failed_run(folder_name, info)
+                    if failed_run_bool:
+                        failed_batch_arr.append(folder_name_regex.group(1))
+                        failed_batch_arr_desc.append(failed_status_string)
+
+            # Store the failed runs in crispresso2_info for later use
+            crispresso2_info['results']['failed_batch_arr'] = failed_batch_arr
+            crispresso2_info['results']['failed_batch_arr_desc'] = failed_batch_arr_desc
 
             df_template['n_reads']=n_reads_aligned_amplicons
             df_template['n_reads_aligned_%']=df_template['n_reads']/float(N_READS_ALIGNED)*100

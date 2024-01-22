@@ -1,0 +1,34 @@
+<div id="fig_{{fig_name}}" class="d-flex flex-column">
+    {# Set the width based on the plot #}
+    {%- if fig_name in ['plot_1a', 'plot_1b', 'plot_1c', 'plot_1d', 'plot_3a', 'plot_4a', 'plot_4b', 'plot_4c', 'plot_4e', 'plot_4f', 'plot_5a', 'plot_7', 'plot_8', 'plot_8a', 'plot_11c'] -%}
+        {% set width = '40%' %}
+    {%- elif fig_name in ['plot_10b', 'plot_10c'] -%}
+        {% set width = '35%' %}
+    {%- elif fig_name in ['plot_10a'] -%}
+        {% set width = '70%' %}
+    {%- else -%}
+        {% set width = '100%' %}
+    {%- endif -%}
+
+    {%- if amplicon_name is defined -%}
+        {%- if 'htmls' in report_data['figures'] and fig_name in report_data['figures']['htmls'][amplicon_name] -%}
+            {{report_data['figures']['htmls'][amplicon_name][fig_name]|safe}}
+        {%- else -%}
+            <a href="{{report_data['crispresso_data_path']}}{{report_data['figures']['locs'][amplicon_name][fig_name]}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['figures']['locs'][amplicon_name][fig_name]}}.png" width='{{width}}'></a>
+        {% endif -%}
+        <label class="labelpadding">{{report_data['figures']['captions'][amplicon_name][fig_name]}}</label>
+        {%- for (data_label,data_path) in report_data['figures']['datas'][amplicon_name][fig_name] %}
+            <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
+        {%- endfor -%}
+    {%- else %}
+        {%- if 'htmls' in report_data['figures'] and fig_name in report_data['figures']['htmls'] -%}
+            {{report_data['figures']['htmls'][fig_name]|safe}}
+        {%- else -%}
+            <a href="{{report_data['crispresso_data_path']}}{{report_data['figures']['locs'][fig_name]}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['figures']['locs'][fig_name]}}.png" width='{{width}}'></a>
+        {% endif -%}
+        <label class="labelpadding">{{report_data['figures']['captions'][fig_name]}}</label>
+        {%- for (data_label,data_path) in report_data['figures']['datas'][fig_name] %}
+            <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
+        {%- endfor -%}
+    {%- endif %}
+</div>

@@ -1,0 +1,9 @@
+<div align="center" class='p-3'>
+  {% if is_web -%}
+    {%- if report_zip_filename -%}
+      <a href="/reports_data/{{report_zip_filename}}" class="btn btn-primary" role="button"><i class="fas fa-download"></i> Download report</a>
+    {% endif %}
+      <a href="{{report_path}}" class="btn btn-primary" role="button"><i class="fas fa-link"></i> Link to report</a>
+  {% endif %}
+  <button class='btn btn-primary hidden-print' onclick='window.print();'><i class="fas fa-print"></i> Print</button>
+</div>
