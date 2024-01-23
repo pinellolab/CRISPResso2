@@ -1,2 +1,3 @@
 include CRISPResso2/EDNAFULL
-recursive-include CRISPResso2/CRISPRessoReports/templates/*
+include CRISPResso2/CRISPRessoReports/templates/*
+include CRISPResso2/CRISPRessoReports/templates/shared/partials/*
