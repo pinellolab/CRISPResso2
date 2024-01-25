@@ -143,8 +143,6 @@ def main():
         else:
             n_processes_for_batch = int(args.n_processes)
 
-        # this value will be propagated to sub-commands, so set it as 1 here
-        args.n_processes = 1
 
         crispresso_cmd_to_write = ' '.join(sys.argv)
         if args.write_cleaned_report:
@@ -163,6 +161,13 @@ def main():
 #        batch_params=pd.read_csv(args.batch_settings,sep=None,engine='python',error_bad_lines=False)
         batch_params.columns = batch_params.columns.str.strip(' -\xd0')
 
+        # if there are more processes than batches, use more processes on each sub-crispresso run
+        # if there are more batches than processes, just use 1 process on each sub-crispresso run
+        args.n_processes = 1
+        num_batches = batch_params.shape[0]
+        if int(n_processes_for_batch/num_batches) > 1:
+            args.n_processes = int(n_processes_for_batch/num_batches)
+        
         int_columns = ['default_min_aln_score', 'min_average_read_quality', 'min_single_bp_quality',
                        'min_bp_quality_or_N',
                        'quantification_window_size', 'quantification_window_center', 'exclude_bp_from_left',
