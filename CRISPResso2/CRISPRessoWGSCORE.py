@@ -322,14 +322,7 @@ def main():
             ))
             sys.exit()
 
-        parser = CRISPRessoShared.getCRISPRessoArgParser(parser_title = 'CRISPRessoWGS Parameters', required_params=[],
-                    suppress_params=['bam_input',
-                                   'bam_chr_loc',
-                                   'fastq_r1',
-                                   'fastq_r2',
-                                   'amplicon_seq',
-                                   'amplicon_name',
-                                   ])
+        parser = CRISPRessoShared.getCRISPRessoArgParser("WGS", parser_title = 'CRISPRessoWGS Parameters')
 
         #tool specific optional
         parser.add_argument('-b', '--bam_file', type=str,  help='WGS aligned bam file', required=True, default='bam filename' )

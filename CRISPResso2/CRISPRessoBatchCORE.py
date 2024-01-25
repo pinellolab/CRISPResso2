@@ -70,15 +70,15 @@ def main():
             ))
             sys.exit()
 
-        parser = CRISPRessoShared.getCRISPRessoArgParser(parser_title = 'CRISPRessoBatch Parameters')
+        parser = CRISPRessoShared.getCRISPRessoArgParser("Batch", parser_title = 'CRISPRessoBatch Parameters')
 
-        #batch specific params
-        parser.add_argument('-bs', '--batch_settings', type=str, help='Settings file for batch. Must be tab-separated text file. The header row contains CRISPResso parameters (e.g., fastq_r1, fastq_r2, amplicon_seq, and other optional parameters). Each following row sets parameters for an additional batch.', required=True)
-        parser.add_argument('--skip_failed',  help='Continue with batch analysis even if one sample fails', action='store_true')
-        parser.add_argument('--min_reads_for_inclusion',  help='Minimum number of reads for a batch to be included in the batch summary', type=int, default=0)
-        parser.add_argument('-bo', '--batch_output_folder',  help='Directory where batch analysis output will be stored')
-        parser.add_argument('--suppress_batch_summary_plots',  help='Suppress batch summary plots - e.g. if many samples are run at once, the summary plots of all sub-runs may be too large. This parameter suppresses the production of these plots.', action='store_true')
-        parser.add_argument('--crispresso_command', help='CRISPResso command to call', default='CRISPResso')
+        # #batch specific params
+        # parser.add_argument('-bs', '--batch_settings', type=str, help='Settings file for batch. Must be tab-separated text file. The header row contains CRISPResso parameters (e.g., fastq_r1, fastq_r2, amplicon_seq, and other optional parameters). Each following row sets parameters for an additional batch.', required=True)
+        # parser.add_argument('--skip_failed',  help='Continue with batch analysis even if one sample fails', action='store_true')
+        # parser.add_argument('--min_reads_for_inclusion',  help='Minimum number of reads for a batch to be included in the batch summary', type=int, default=0)
+        # parser.add_argument('-bo', '--batch_output_folder',  help='Directory where batch analysis output will be stored')
+        # parser.add_argument('--suppress_batch_summary_plots',  help='Suppress batch summary plots - e.g. if many samples are run at once, the summary plots of all sub-runs may be too large. This parameter suppresses the production of these plots.', action='store_true')
+        # parser.add_argument('--crispresso_command', help='CRISPResso command to call', default='CRISPResso')
 
         args = parser.parse_args()
 

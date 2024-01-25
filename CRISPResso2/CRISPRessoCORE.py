@@ -1014,7 +1014,7 @@ def main():
             sys.exit()
 
 
-        arg_parser = CRISPRessoShared.getCRISPRessoArgParser()
+        arg_parser = CRISPRessoShared.getCRISPRessoArgParser("Core")
         args = arg_parser.parse_args()
 
         CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
