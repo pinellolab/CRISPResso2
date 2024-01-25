@@ -6,7 +6,7 @@ Take care when committing into these files as not to mix unrelated git histories
 
 ## How do I work with this repo?
 
-Step 1 only needs to be done once per cloned repo, the other steps will need to be done more frequently.
+Step 1 only needs to be done once per cloned repo, the other steps will need to be dne more frequently.
 
 1. Add the remote to this repo to the "parent" repo (i.e. `CRISPResso2` or `C2Web`). **You should only have to do this once.**
 

@@ -107,7 +107,7 @@
       <div class="row pb-2">
         <div class="col-sm-1"></div>
         {% if is_web %}
-          <div class="col-sm-3 crispresso_cup"> <a href='/'><img class='img-fluid' src="https://crispresso.pinellolab.partners.org/static/imgs/CRISPResso_justcup.png" width="80%"></a>
+          <div class="col-sm-3 crispresso_cup"> <a href='/'><img class='img-fluid' src="../../../static/imgs/CRISPResso_justcup.png" width="80%"></a>
         {% else %}
           <div class="col-sm-3 crispresso_cup"> <a href='https://crispresso2.pinellolab.org'><img class='img-fluid' src="https://crispresso.pinellolab.partners.org/static/imgs/CRISPResso_justcup.png" width="80%"></a>
         {% endif %}
@@ -126,6 +126,8 @@
   <nav class="navbar fixed-top ms-1 navbar-expand-md bg-light navbar-light">
   <!-- Brand -->
   <a class="navbar-brand" href="/">
+{#  <img src="../../../static/imgs/CRISPResso_justcup.png" width="30" height="30" class="d-inline-block align-top" alt="" style="margin-left: 1em;"> #}
+{#    <span style="font-family:'Ranga'">CRISPResso2</span></a> #}
 {{config['BANNER_TEXT']}}</a>
 
   <!-- Toggler/collapsibe Button -->
