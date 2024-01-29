@@ -85,23 +85,26 @@ def main():
         compare_header = CRISPRessoShared.get_crispresso_header(description, compare_header)
         print(compare_header)
 
-        parser = argparse.ArgumentParser(description='CRISPRessoCompare Parameters', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-        parser.add_argument('crispresso_output_folder_1', type=str,  help='First output folder with CRISPResso analysis')
-        parser.add_argument('crispresso_output_folder_2', type=str,  help='Second output folder with CRISPResso analysis')
+        # parser = argparse.ArgumentParser(description='CRISPRessoCompare Parameters', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        parser = CRISPRessoShared.getCRISPRessoArgParser("Compare", parser_title = 'CRISPRessoCompare Parameters')
+        
+        # #REQUIRED ARGUMENTS
+        # parser.add_argument('crispresso_output_folder_1', type=str,  help='First output folder with CRISPResso analysis')
+        # parser.add_argument('crispresso_output_folder_2', type=str,  help='Second output folder with CRISPResso analysis')
 
-        #OPTIONALS
-        parser.add_argument('-n', '--name',  help='Output name', default='')
-        parser.add_argument('-n1', '--sample_1_name',  help='Sample 1 name')
-        parser.add_argument('-n2', '--sample_2_name',  help='Sample 2 name')
-        parser.add_argument('-o', '--output_folder',  help='', default='')
-        parser.add_argument('--reported_qvalue_cutoff', help='Q-value cutoff for signifance in tests for differential editing. Each base position is tested (for insertions, deletions, substitutions, and all modifications) using Fisher\'s exact test, followed by Bonferonni correction. The number of bases with a significance below this threshold in the quantification window are counted and reported in the output summary.', type=float, default=0.05)
-        parser.add_argument('--min_frequency_alleles_around_cut_to_plot', type=float, help='Minimum %% reads required to report an allele in the alleles table plot.', default=0.2)
-        parser.add_argument('--max_rows_alleles_around_cut_to_plot',  type=int, help='Maximum number of rows to report in the alleles table plot. ', default=50)
-        parser.add_argument('--suppress_report',  help='Suppress output report', action='store_true')
-        parser.add_argument('--place_report_in_output_folder',  help='If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output.', action='store_true')
-        parser.add_argument('--zip_output', help="If set, the output will be placed in a zip folder.", action='store_true')
-        parser.add_argument('--debug', help='Show debug messages', action='store_true')
-        parser.add_argument('-v', '--verbosity', type=int, help='Verbosity level of output to the console (1-4)', default=3)
+        # #OPTIONALS
+        # parser.add_argument('-n', '--name',  help='Output name', default='')
+        # parser.add_argument('-n1', '--sample_1_name',  help='Sample 1 name')
+        # parser.add_argument('-n2', '--sample_2_name',  help='Sample 2 name')
+        # parser.add_argument('-o', '--output_folder',  help='', default='')
+        # parser.add_argument('--reported_qvalue_cutoff', help='Q-value cutoff for signifance in tests for differential editing. Each base position is tested (for insertions, deletions, substitutions, and all modifications) using Fisher\'s exact test, followed by Bonferonni correction. The number of bases with a significance below this threshold in the quantification window are counted and reported in the output summary.', type=float, default=0.05)
+        # parser.add_argument('--min_frequency_alleles_around_cut_to_plot', type=float, help='Minimum %% reads required to report an allele in the alleles table plot.', default=0.2)
+        # parser.add_argument('--max_rows_alleles_around_cut_to_plot',  type=int, help='Maximum number of rows to report in the alleles table plot. ', default=50)
+        # parser.add_argument('--suppress_report',  help='Suppress output report', action='store_true')
+        # parser.add_argument('--place_report_in_output_folder',  help='If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output.', action='store_true')
+        # parser.add_argument('--zip_output', help="If set, the output will be placed in a zip folder.", action='store_true')
+        # parser.add_argument('--debug', help='Show debug messages', action='store_true')
+        # parser.add_argument('-v', '--verbosity', type=int, help='Verbosity level of output to the console (1-4)', default=3)
 
         args = parser.parse_args()
 

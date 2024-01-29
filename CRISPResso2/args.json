@@ -1,0 +1,778 @@
+{
+    "CRISPResso_args": {
+        "fastq_r1": {
+            "keys": ["-r1", "--fastq_r1"],
+            "help": "First fastq file",
+            "type": "str",
+            "default": "",
+            "required": "fastq_r1",
+            "tools": ["Core", "Batch", "Pooled"]
+        },
+        "fastq_r2": {
+            "keys": ["-r2", "--fastq_r2"],
+            "help": "Second fastq file for paired end reads",
+            "type": "str",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled"]
+        },
+        "amplicon_seq": {
+            "name": "Amplicon Sequence",
+            "alt_keys": [],
+            "help": "Amplicon sequence to search for in reads",
+            "required": "amplicon_seq",
+            "type": "str", 
+            "tools": ["Core", "Batch", "Pooled"]
+        },
+        "amplicon_name": {
+            "name": "Amplicon Name",
+            "keys": ["-an"],
+            "help": "Amplicon Name (can be comma-separated list of multiple names, corresponding to amplicon sequences given in --amplicon_seq",
+            "type": "str",
+            "default": "Reference",
+            "tools": ["Core", "Batch", "Pooled"]
+        },
+        "amplicon_min_alignment_score": {
+            "keys": ["-amas", "--amplicon_min_alignment_score"],
+            "help": "Amplicon Minimum Alignment Score; score between 0 and 100; sequences must have at least this homology score with the amplicon to be aligned (can be comma-separated list of multiple scores, corresponding to amplicon sequences given in --amplicon_seq)",
+            "type": "str",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "default_min_aln_score": {
+            "keys": ["--default_min_aln_score", "--min_identity_score"],
+            "help": "Default minimum homology score for a read to align to a reference amplicon",
+            "type": "int",
+            "default": 60,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "expand_ambiguous_alignments": {
+            "keys": ["--expand_ambiguous_alignments"],
+            "help": "If more than one reference amplicon is given, reads that align to multiple reference amplicons will count equally toward each amplicon. Default behavior is to exclude ambiguous alignments.",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "assign_ambiguous_alignments_to_first_reference": {
+            "keys": ["--assign_ambiguous_alignments_to_first_reference"],
+            "help": "If more than one reference amplicon is given, ambiguous reads that align with the same score to multiple amplicons will be assigned to the first amplicon. Default behavior is to exclude ambiguous alignments.",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "guide_seq": {
+            "keys": ["-g", "--guide_seq", "--sgRNA"],
+            "help": "sgRNA sequence, if more than one, please separate by commas. Note that the sgRNA needs to be input as the guide RNA sequence (usually 20 nt) immediately adjacent to but not including the PAM sequence (5' of NGG for SpCas9). If the PAM is found on the opposite strand with respect to the Amplicon Sequence, ensure the sgRNA sequence is also found on the opposite strand. The CRISPResso convention is to depict the expected cleavage position using the value of the parameter '--quantification_window_center' nucleotides from the 3' end of the guide. In addition, the use of alternate nucleases besides SpCas9 is supported. For example, if using the Cpf1 system, enter the sequence (usually 20 nt) immediately 3' of the PAM sequence and explicitly set the '--cleavage_offset' parameter to 1, since the default setting of -3 is suitable only for SpCas9.",
+            "type": "str",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "guide_name": {
+            "keys": ["-gn", "--guide_name"],
+            "help": "sgRNA names, if more than one, please separate by commas.",
+            "type": "str",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "flexiguide_seq": {
+            "keys": ["-fg", "--flexiguide_seq"],
+            "help": "sgRNA sequence (flexible) (can be comma-separated list of multiple flexiguides). The flexiguide sequence will be aligned to the amplicon sequence(s), as long as the guide sequence has homology as set by --flexiguide_homology.",
+            "type": "str",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "flexiguide_homology": {
+            "keys": ["-fh", "--flexiguide_homology"],
+            "help": "flexiguides will yield guides in amplicons with at least this homology to the flexiguide sequence.",
+            "type": "int",
+            "default": 80,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "flexiguide_name": {
+            "keys": ["-fgn", "--flexiguide_name"],
+            "help": "flexiguide name",
+            "type": "str",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "discard_guide_positions_overhanging_amplicon_edge": {
+            "keys": ["--discard_guide_positions_overhanging_amplicon_edge"],
+            "help": "If set, for guides that align to multiple positions, guide positions will be discarded if plotting around those regions would included bp that extend beyond the end of the amplicon.",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "expected_hdr_amplicon_seq": {
+            "keys": ["-e", "--expected_hdr_amplicon_seq"],
+            "help": "Amplicon sequence expected after HDR",
+            "type": "str",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "coding_seq": {
+            "keys": ["-c", "--coding_seq"],
+            "help": "Subsequence/s of the amplicon sequence covering one or more coding sequences for frameshift analysis. If more than one (for example, split by intron/s), please separate by commas.",
+            "type": "str",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "min_average_read_quality": {
+            "keys": ["-q", "--min_average_read_quality"],
+            "help": "Minimum average quality score (phred33) to keep a read",
+            "type": "int",
+            "default": 0,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "min_single_bp_quality": {
+            "keys": ["-s", "--min_single_bp_quality"],
+            "help": "Minimum single bp score (phred33) to keep a read",
+            "type": "int",
+            "default": 0,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "min_bp_quality_or_N": {
+            "keys": ["--min_bp_quality_or_N"],
+            "help": "Bases with a quality score (phred33) less than this value will be set to 'N'",
+            "type": "int",
+            "default": 0,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "file_prefix": {
+            "keys": ["--file_prefix"],
+            "help": "File prefix for output plots and tables",
+            "type": "str",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "name": {
+            "keys": ["-n", "--name"],
+            "help": "Output name of the report (default: the name is obtained from the filename of the file/s used in input)",
+            "type": "str",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled", "WGS", "Compare"]
+        },
+        "suppress_amplicon_name_truncation": {
+            "keys": ["--suppress_amplicon_name_truncation"],
+            "help": "If set, amplicon names will not be truncated when creating output filename prefixes. If not set, amplicon names longer than 21 characters will be truncated when creating filename prefixes.",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "output_folder": {
+            "keys": ["-o", "--output_folder"],
+            "help": "Output folder to use for the analysis (default: current folder)",
+            "type": "str",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled", "WGS", "Compare"]
+        },
+        "verbosity": {
+            "keys": ["-v", "--verbosity"],
+            "help": "Verbosity level of output to the console (1-4), 4 is the most verbose",
+            "type": "int",
+            "default": 3,
+            "tools": ["Core", "Batch", "Pooled", "WGS", "Compare"]
+        },
+        "split_interleaved_input": {
+            "keys": ["--split_interleaved_input", "--split_paired_end"],
+            "help": "Splits a single fastq file containing paired end reads into two files before running CRISPResso",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "trim_sequences": {
+            "keys": ["--trim_sequences"],
+            "help": "Enable the trimming of Illumina adapters with Trimmomatic",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "trimmomatic_command": {
+            "keys": ["--trimmomatic_command"],
+            "help": "Command to run trimmomatic",
+            "type": "str",
+            "default": "trimmomatic",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "trimmomatic_options_string": {
+            "keys": ["--trimmomatic_options_string"],
+            "help": "Override options for Trimmomatic, e.g. 'ILLUMINACLIP:/data/NexteraPE-PE.fa:0:90:10:0:true'",
+            "type": "str",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "flash_command": {
+            "keys": ["--flash_command"],
+            "help": "Command to run flash",
+            "type": "str",
+            "default": "flash",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "min_paired_end_reads_overlap": {
+            "keys": ["--min_paired_end_reads_overlap"],
+            "help": "Parameter for the FLASH read merging step. Minimum required overlap length between two reads to provide a confident overlap.",
+            "type": "int",
+            "default": 10,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "max_paired_end_reads_overlap": {
+            "keys": ["--max_paired_end_reads_overlap"],
+            "help": "Parameter for the FLASH merging step. Maximum overlap length expected in approximately 90%% of read pairs. Please see the FLASH manual for more information.",
+            "type": "int",
+            "default": 100,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "stringent_flash_merging": {
+            "keys": ["--stringent_flash_merging"],
+            "help": "Use stringent parameters for flash merging. In the case where flash could merge R1 and R2 reads ambiguously, the expected overlap is calculated as 2*average_read_length - amplicon_length. The flash parameters for --min-overlap and --max-overlap will be set to prefer merged reads with length within 10bp of the expected overlap. These values override the --min_paired_end_reads_overlap or --max_paired_end_reads_overlap CRISPResso parameters.",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "force_merge_pairs": {
+            "keys": ["--force_merge_pairs"],
+            "action": "store_true",
+            "help": "Force-merges R1 and R2 if they cannot be merged using flash (use with caution -- may create non-biological apparent indels at the joining site)",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "quantification_window_size": {
+            "keys": ["-w", "--quantification_window_size", "--window_around_sgrna"],
+            "help": "Defines the size (in bp) of the quantification window extending from the position specified by the '--cleavage_offset' or '--quantification_window_center' parameter in relation to the provided guide RNA sequence(s) (--sgRNA). Mutations within this number of bp from the quantification window center are used in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 1, 1bp on each side of the cleavage position for a total length of 2bp. Multiple quantification window sizes (corresponding to each guide specified by --guide_seq) can be specified with a comma-separated list.",
+            "type": "str",
+            "default": "1",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "quantification_window_center": {
+            "keys": ["-wc", "--quantification_window_center", "--cleavage_offset"],
+            "help": "Center of quantification window to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17 to only include mutations near the 5' end of the sgRNA. Multiple quantification window centers (corresponding to each guide specified by --guide_seq) can be specified with a comma-separated list.",
+            "type": "str",
+            "default": "-3",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "exclude_bp_from_left": {
+            "keys": ["--exclude_bp_from_left"],
+            "help": "Exclude bp from the left side of the amplicon sequence for the quantification of the indels",
+            "type": "int",
+            "default": 15,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "exclude_bp_from_right": {
+            "keys": ["--exclude_bp_from_right"],
+            "help": "Exclude bp from the right side of the amplicon sequence for the quantification of the indels",
+            "type": "int",
+            "default": 15,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "use_legacy_insertion_quantification": {
+            "keys": ["--use_legacy_insertion_quantification"],
+            "help": "If set, the legacy insertion quantification method will be used (i.e. with a 1bp quantification window, indels at the cut site and 1bp away from the cut site would be quantified). By default (if this parameter is not set) with a 1bp quantification window, only insertions at the cut site will be quantified.",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "ignore_substitutions": {
+            "keys": ["--ignore_substitutions"],
+            "help": "Ignore substitutions events for the quantification and visualization",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "ignore_insertions": {
+            "keys": ["--ignore_insertions"],
+            "help": "Ignore insertions events for the quantification and visualization",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "ignore_deletions": {
+            "keys": ["--ignore_deletions"],
+            "help": "Ignore deletions events for the quantification and visualization",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "discard_indel_reads": {
+            "keys": ["--discard_indel_reads"],
+            "help": "Discard reads with indels in the quantification window from analysis",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "needleman_wunsch_gap_open": {
+            "keys": ["--needleman_wunsch_gap_open"],
+            "help": "Gap open option for Needleman-Wunsch alignment",
+            "type": "int",
+            "default": -20,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "needleman_wunsch_gap_extend": {
+            "keys": ["--needleman_wunsch_gap_extend"],
+            "help": "Gap extend option for Needleman-Wunsch alignment",
+            "type": "int",
+            "default": -2,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "needleman_wunsch_gap_incentive": {
+            "keys": ["--needleman_wunsch_gap_incentive"],
+            "help": "Gap incentive value for inserting indels at cut sites",
+            "type": "int",
+            "default": 1,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "needleman_wunsch_aln_matrix_loc": {
+            "keys": ["--needleman_wunsch_aln_matrix_loc"],
+            "help": "Location of the matrix specifying substitution scores in the NCBI format (see ftp://ftp.ncbi.nih.gov/blast/matrices/)",
+            "type": "str",
+            "default": "EDNAFULL",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "aln_seed_count": {
+            "keys": ["--aln_seed_count"],
+            "help": "Number of seeds to test whether read is forward or reverse",
+            "type": "int",
+            "default": 5,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "aln_seed_len": {
+            "keys": ["--aln_seed_len"],
+            "help": "ASK KENDELL FOR CORRECT HELP TO PUT HERE /TODO/",
+            "type": "int",
+            "default": 10,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "aln_seed_min": {
+            "keys": ["--aln_seed_min"],
+            "help": "ASK KENDELL FOR CORRECT HELP TO PUT HERE /TODO/",
+            "type": "int",
+            "default": 2,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "plot_histogram_outliers": {
+            "keys": ["--plot_histogram_outliers"],
+            "help": "If set, all values will be shown on histograms. By default (if unset), histogram ranges are limited to plotting data within the 99 percentile.",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "plot_window_size": {
+            "keys": ["--plot_window_size", "--offset_around_cut_to_plot"],
+            "type": "int",
+            "help": "Defines the size of the window extending from the quantification window center to plot. Nucleotides within plot_window_size of the quantification_window_center for each guide are plotted.",
+            "default": 20,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "min_frequency_alleles_around_cut_to_plot": {
+            "keys": ["--min_frequency_alleles_around_cut_to_plot"],
+            "type": "float",
+            "help": "Minimum %% reads required to report an allele in the alleles table plot.",
+            "default": 0.2,
+            "tools": ["Core", "Batch", "Pooled", "WGS", "Compare"]
+        },
+        "expand_allele_plots_by_quantification": {
+            "keys": ["--expand_allele_plots_by_quantification"],
+            "help": "If set, alleles with different modifications in the quantification window (but not necessarily in the plotting window (e.g. for another sgRNA)) are plotted on separate lines, even though they may have the same apparent sequence. To force the allele plot and the allele table to be the same, set this parameter. If unset, all alleles with the same sequence will be collapsed into one row.",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "allele_plot_pcts_only_for_assigned_reference": {
+            "keys": ["--allele_plot_pcts_only_for_assigned_reference"],
+            "help": "If set, in the allele plots, the percentages will show the percentage as a percent of reads aligned to the assigned reference. Default behavior is to show percentage as a percent of all reads.",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "quantification_window_coordinates": {
+            "keys": ["-qwc", "--quantification_window_coordinates"],
+            "type": "str",
+            "help": "Bp positions in the amplicon sequence specifying the quantification window. This parameter overrides values of the '--quantification_window_center', '--cleavage_offset', '--window_around_sgrna' or '--window_around_sgrna' values. Any indels/substitutions outside this window are excluded. Indexes are 0-based, meaning that the first nucleotide is position 0. Ranges are separted by the dash sign (e.g. 'start-stop'), and multiple ranges can be separated by the underscore (_). A value of 0 disables this filter. (can be comma-separated list of values, corresponding to amplicon sequences given in --amplicon_seq e.g. 5-10,5-10_20-30 would specify the 5th-10th bp in the first reference and the 5th-10th and 20th-30th bp in the second reference)",
+            "default": null,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "annotate_wildtype_allele": {
+            "keys": ["--annotate_wildtype_allele"],
+            "type": "str",
+            "help": "Wildtype alleles in the allele table plots will be marked with this string (e.g. **).",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "keep_intermediate": {
+            "keys": ["--keep_intermediate"],
+            "help": "Keep all the intermediate files",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "dump": {
+            "keys": ["--dump"],
+            "help": "Dump numpy arrays and pandas dataframes to file for debugging purposes",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "write_detailed_allele_table": {
+            "keys": ["--write_detailed_allele_table"],
+            "help": "If set, a detailed allele table will be written including alignment scores for each read sequence.",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "fastq_output": {
+            "keys": ["--fastq_output"],
+            "help": "If set, a fastq file with annotations for each read will be produced.",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "bam_output": {
+            "keys": ["--bam_output"],
+            "help": "If set, a bam file with alignments for each read will be produced.",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "bowtie2_index": {
+            "keys": ["-x", "--bowtie2_index"],
+            "type": "str",
+            "help": "Basename of Bowtie2 index for the reference genome",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "zip_output": {
+            "keys": ["--zip_output"],
+            "help": "If set, the output will be placed in a zip folder.",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS", "Compare"]
+        },
+        "max_rows_alleles_around_cut_to_plot": {
+            "keys": ["--max_rows_alleles_around_cut_to_plot"],
+            "type": "int",
+            "help": "Maximum number of rows to report in the alleles table plot.",
+            "default": 50,
+            "tools": ["Core", "Batch", "Pooled", "WGS", "Compare"]
+        },
+        "suppress_report": {
+            "keys": ["--suppress_report"],
+            "help": "Suppress output report",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS", "Compare"]
+        },
+        "place_report_in_output_folder": {
+            "keys": ["--place_report_in_output_folder"],
+            "help": "If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output.",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS", "Compare"]
+        },
+        "suppress_plots": {
+            "keys": ["--suppress_plots"],
+            "help": "Suppress output plots",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "write_cleaned_report": {
+            "keys": ["--write_cleaned_report"],
+            "help": "Trims working directories from output in report (for web access)",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "base_editor_output": {
+            "keys": ["--base_editor_output"],
+            "help": "Outputs plots and tables to aid in analysis of base editor studies.",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "conversion_nuc_from": {
+            "keys": ["--conversion_nuc_from"],
+            "type": "str",
+            "help": "For base editor plots, this is the nucleotide targeted by the base editor",
+            "default": "C",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "conversion_nuc_to": {
+            "keys": ["--conversion_nuc_to"],
+            "type": "str",
+            "help": "For base editor plots, this is the nucleotide produced by the base editor",
+            "default": "T",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "prime_editing_pegRNA_spacer_seq": {
+            "keys": ["--prime_editing_pegRNA_spacer_seq"],
+            "type": "str",
+            "help": "pegRNA spacer sgRNA sequence used in prime editing. The spacer should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the given sequence.",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "prime_editing_pegRNA_extension_seq": {
+            "keys": ["--prime_editing_pegRNA_extension_seq"],
+            "type": "str",
+            "help": "Extension sequence used in prime editing. The sequence should be given in the RNA 5'->3' order, such that the sequence starts with the RT template including the edit, followed by the Primer-binding site (PBS).",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "prime_editing_pegRNA_extension_quantification_window_size": {
+            "keys": ["--prime_editing_pegRNA_extension_quantification_window_size"],
+            "type": "int",
+            "help": "Quantification window size (in bp) at flap site for measuring modifications anchored at the right side of the extension sequence. Similar to the --quantification_window parameter, the total length of the quantification window will be 2x this parameter. Default: 5bp (10bp total window size)",
+            "default": 5,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "prime_editing_pegRNA_scaffold_seq": {
+            "keys": ["--prime_editing_pegRNA_scaffold_seq"],
+            "type": "str",
+            "help": "If given, reads containing any of this scaffold sequence before extension sequence (provided by --prime_editing_extension_seq) will be classified as 'Scaffold-incorporated'. The sequence should be given in the 5'->3' order such that the RT template directly follows this sequence. A common value is 'GGCACCGAGUCGGUGC'.",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "prime_editing_pegRNA_scaffold_min_match_length": {
+            "keys": ["--prime_editing_pegRNA_scaffold_min_match_length"],
+            "type": "int",
+            "help": "Minimum number of bases matching scaffold sequence for the read to be counted as 'Scaffold-incorporated'. If the scaffold sequence matches the reference sequence at the incorporation site, the minimum number of bases to match will be minimally increased (beyond this parameter) to disambiguate between prime-edited and scaffold-incorporated sequences.",
+            "default": 1,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "prime_editing_nicking_guide_seq": {
+            "keys": ["--prime_editing_nicking_guide_seq"],
+            "type": "str",
+            "help": "Nicking sgRNA sequence used in prime editing. The sgRNA should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the sequence",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "prime_editing_override_prime_edited_ref_seq": {
+            "keys": ["--prime_editing_override_prime_edited_ref_seq"],
+            "type": "str",
+            "help": "If given, this sequence will be used as the prime-edited reference sequence. This may be useful if the prime-edited reference sequence has large indels or the algorithm cannot otherwise infer the correct reference sequence.",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "prime_editing_override_sequence_checks": {
+            "keys": ["--prime_editing_override_sequence_checks"],
+            "help": "If set, checks to assert that the prime editing guides and extension sequence are in the proper orientation are not performed. This may be useful if the checks are failing inappropriately, but the user is confident that the sequences are correct.",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "crispresso1_mode": {
+            "keys": ["--crispresso1_mode"],
+            "help": "Parameter usage as in CRISPResso 1",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "dsODN": {
+            "keys": ["--dsODN"],
+            "type": "str",
+            "help": "Label reads with the dsODN sequence provided",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "auto": {
+            "keys": ["--auto"],
+            "help": "Infer amplicon sequence from most common reads",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "debug": {
+            "keys": ["--debug"],
+            "help": "Show debug messages",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS", "Compare"]
+        },
+        "no_rerun": {
+            "keys": ["--no_rerun"],
+            "help": "Don't rerun CRISPResso2 if a run using the same parameters has already been finished.",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "n_processes": {
+            "keys": ["-p", "--n_processes"],
+            "type": "str",
+            "help": "Specify the number of processes to use for analysis. Please use with caution since increasing this parameter will significantly increase the memory required to run CRISPResso. Can be set to 'max'.",
+            "default": "1",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "bam_input": {
+            "keys": ["--bam_input"],
+            "type": "str",
+            "help": "Aligned reads for processing in bam format",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled"]
+        },
+        "bam_chr_loc": {
+            "keys": ["--bam_chr_loc"],
+            "type": "str",
+            "help": "Chromosome location in bam for reads to process. For example: 'chr1:50-100' or 'chrX'.",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled"]
+        },
+        "save_also_png": {
+            "keys": ["--save_also_png"],
+            "action": "store_true",
+            "help": "",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "batch_settings": {
+            "keys": ["-bs", "--batch_settings"],
+            "help": "Settings file for batch. Must be tab-separated text file. The header row contains CRISPResso parameters (e.g., fastq_r1, fastq_r2, amplicon_seq, and other optional parameters). Each following row sets parameters for an additional batch.",
+            "type": "str",
+            "required": "batch_settings",
+            "tools": ["Batch"]
+        },
+        "skip_failed": {
+            "keys": ["--skip_failed"],
+            "help": "Continue with analysis even if one sample fails",
+            "action":"store_true",
+            "tools": ["Batch", "Pooled", "WGS"]
+        },
+        "min_reads_for_inclusion": {
+            "keys": ["--min_reads_for_inclusion"],
+            "help": "Minimum number of reads for a batch to be included in the batch summary",
+            "type": "int",
+            "default": 0,
+            "tools": ["Batch"]
+        },
+        "batch_output_folder": {
+            "keys": ["-bo", "--batch_output_folder"],
+            "help": "Directory where batch analysis output will be stored",
+            "type": "str",
+            "default": "",
+            "tools": ["Batch"]
+        },
+        "suppress_batch_summary_plots": {
+            "keys": ["--suppress_batch_summary_plots"],
+            "help": "Suppress batch summary plots - e.g. if many samples are run at once, the summary plots of all sub-runs may be too large. This parameter suppresses the production of these plots.",
+            "action": "store_true",
+            "tools": ["Batch"]
+        },
+        "crispresso_command": {
+            "keys": ["--crispresso_command"],
+            "help": "CRISPResso command to call",
+            "type": "str",
+            "default": "CRISPResso",
+            "tools": ["Batch", "Pooled", "WGS"]
+        },
+        "amplicons_file": {
+            "keys": ["--amplicons_file"],
+            "help": "Amplicons description file. This file is a tab-delimited text file with up to 14 columns (2 required): amplicon_name:  an identifier for the amplicon (must be unique). amplicon_seq:  amplicon sequence used in the experiment. guide_seq (OPTIONAL):  sgRNA sequence used for this amplicon without the PAM sequence. Multiple guides can be given separated by commas and not spaces. expected_hdr_amplicon_seq (OPTIONAL): expected amplicon sequence in case of HDR. coding_seq (OPTIONAL): Subsequence(s) of the amplicon corresponding to coding sequences. If more than one separate them by commas and not spaces. prime_editing_pegRNA_spacer_seq (OPTIONAL): pegRNA spacer sgRNA sequence used in prime editing. The spacer should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the given sequence. prime_editing_nicking_guide_seq (OPTIONAL): Nicking sgRNA sequence used in prime editing. The sgRNA should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the sequence. prime_editing_pegRNA_extension_seq (OPTIONAL): Extension sequence used in prime editing. The sequence should be given in the RNA 5'->3' order, such that the sequence starts with the RT template including the edit, followed by the Primer-binding site (PBS). prime_editing_pegRNA_scaffold_seq (OPTIONAL): If given, reads containing any of this scaffold sequence before extension sequence (provided by --prime_editing_extension_seq) will be classified as 'Scaffold-incorporated'. The sequence should be given in the 5'->3' order such that the RT template directly follows this sequence. A common value ends with 'GGCACCGAGUCGGUGC'. prime_editing_pegRNA_scaffold_min_match_length (OPTIONAL): Minimum number of bases matching scaffold sequence for the read to be counted as 'Scaffold-incorporated'. If the scaffold sequence matches the reference sequence at the incorporation site, the minimum number of bases to match will be minimally increased (beyond this parameter) to disambiguate between prime-edited and scaffold-incorporated sequences. prime_editing_override_prime_edited_ref_seq (OPTIONAL): If given, this sequence will be used as the prime-edited reference sequence. This may be useful if the prime-edited reference sequence has large indels or the algorithm cannot otherwise infer the correct reference sequence. quantification_window_coordinates (OPTIONAL): Bp positions in the amplicon sequence specifying the quantification window. This parameter overrides values of the '--quantification_window_center', '-- cleavage_offset', '--window_around_sgrna' or '-- window_around_sgrna' values. Any indels/substitutions outside this window are excluded. Indexes are 0-based, meaning that the first nucleotide is position 0. Ranges are separated by the dash sign like 'start-stop', and multiple ranges can be separated by the underscore (_). A value of 0 disables this filter. (can be comma-separated list of values, corresponding to amplicon sequences given in --amplicon_seq e.g. 5-10,5-10_20-30 would specify the 5th-10th bp in the first reference and the 5th-10th and 20th-30th bp in the second reference) (default: None) quantification_window_size (OPTIONAL): Defines the size (in bp) of the quantification window extending from the position specified by the '--cleavage_offset' or '--quantification_window_center' parameter in relation to the provided guide RNA sequence(s) (--sgRNA). Mutations within this number of bp from the quantification window center are used in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 1, 1bp on each side of the cleavage position for a total length of 2bp. quantification_window_center (OPTIONAL): Center of quantification window to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17.",
+            "type": "str",
+            "default": "",
+            "tools": ["Pooled"]
+        },
+        "gene_annotations": {
+            "keys": ["--gene_annotations"],
+            "help": "Gene Annotation Table from UCSC Genome Browser Tables (http://genome.ucsc.edu/cgi-bin/hgTables?command=start), please select as table 'knownGene', as output format 'all fields from selected table' and as file returned 'gzip compressed'",
+            "type": "str",
+            "default": "",
+            "tools": ["Pooled"]
+        },
+        "bowtie2_options_string": {
+            "keys": ["--bowtie2_options_string"],
+            "help": "Override options for the Bowtie2 alignment command. By default, this is ' --end-to-end -N 0 --np 0 -mp 3,2 --score-min L,-5,-3(1-H)' where H is the default homology score.",
+            "type": "str",
+            "default": "",
+            "tools": ["Pooled"]
+        },
+        "use_legacy_bowtie2_options_string": {
+            "keys": ["--use_legacy_bowtie2_options_string"],
+            "help": "Use legacy (more stringent) Bowtie2 alignment parameters: ' -k 1 --end-to-end -N 0 --np 0 '.",
+            "action": "store_true",
+            "tools": ["Pooled"]
+        },
+        "min_reads_to_use_region": {
+            "keys": ["--min_reads_to_use_region"],
+            "help": "Minimum number of reads that align to a region to perform the CRISPResso analysis",
+            "type": "float",
+            "default": "1000",
+            "tools": ["Pooled"]
+        },
+        "skip_reporting_problematic_regions": {
+            "keys": ["--skip_reporting_problematic_regions"],
+            "help": "Skip reporting of problematic regions. By default, when both amplicons (-f) and genome (-x) are provided, problematic reads that align to the genome but to positions other than where the amplicons align are reported as problematic",
+            "action": "store_true",
+            "tools": ["Pooled"]
+        },
+        "compile_postrun_references": {
+            "keys": ["--compile_postrun_references"],
+            "help": "If set, a file will be produced which compiles the reference sequences of frequent amplicons.",
+            "action": "store_true",
+            "tools": ["Pooled"]
+        },
+        "compile_postrun_reference_allele_cutoff": {
+            "keys": ["--compile_postrun_reference_allele_cutoff"],
+            "help": "Only alleles with at least this percentage frequency in the population will be reported in the postrun analysis. This parameter is given as a percent, so 30 is 30%%.",
+            "type": "float",
+            "default": "30",
+            "tools": ["Pooled"]
+        },
+        "alternate_alleles": {
+            "keys": ["--alternate_alleles"],
+            "help": "Path to tab-separated file with alternate allele sequences for pooled experiments. This file has the columns 'region_name','reference_seqs', and 'reference_names' and gives the reference sequences of alternate alleles that will be passed to CRISPResso for each individual region for allelic analysis. Multiple reference alleles and reference names for a given region name are separated by commas (no spaces).",
+            "type": "str",
+            "default": "",
+            "tools": ["Pooled"]
+        },
+        "limit_open_files_for_demux": {
+            "keys": ["--limit_open_files_for_demux"],
+            "help": "If set, only one file will be opened during demultiplexing of read alignment locations. This will be slightly slower as the reads must be sorted, but may be necessary if the number of amplicons is greater than the number of files that can be opened due to OS constraints.",
+            "action": "store_true",
+            "tools": ["Pooled"]
+        },
+        "aligned_pooled_bam": {
+            "keys": ["--aligned_pooled_bam"],
+            "help": "Path to aligned input for CRISPRessoPooled processing. If this parameter is specified, the alignments in the given bam will be used to demultiplex reads. If this parameter is not set (default), input reads provided by --fastq_r1 (and optionally --fastq_r2) will be aligned to the reference genome using bowtie2. If the input bam is given, the corresponding reference fasta must also be given to extract reference genomic sequences via the parameter --bowtie2_index. Note that if the aligned reads are paired-end sequenced, they should already be merged into 1 read (e.g. via Flash) before alignment.",
+            "type": "str",
+            "default" : "",
+            "tools": ["Pooled"]
+        },
+        "demultiplex_only_at_amplicons": {
+            "keys": ["--demultiplex_only_at_amplicons"],
+            "help": "If set, and an amplicon file (--amplicons_file) and reference sequence (--bowtie2_index) are provided, reads overlapping alignment positions of amplicons will be demultiplexed and assigned to that amplicon. If this flag is not set, the entire genome will be demultiplexed and reads with the same start and stop coordinates as an amplicon will be assigned to that amplicon.",
+            "action": "store_true",
+            "tools": ["Pooled"]
+        },
+        "bam_file": {
+            "keys": ["-b", "--bam_file"],
+            "help": "WGS aligned bam file",
+            "type": "str",
+            "required": "bam_file",
+            "default": "bam filename",
+            "tools": ["WGS"]
+        },
+        "region_file": {
+            "keys": ["-f", "--region_file"],
+            "help": "Regions description file. A BED format file containing the regions to analyze, one per line. The REQUIRED columns are: chr_id(chromosome name), bpstart(start position), bpend(end position), the optional columns are:name (an unique indentifier for the region), guide_seq, expected_hdr_amplicon_seq, coding_seq, see CRISPResso help for more details on these last 3 parameters)",
+            "type": "str",
+            "required": "region_file",
+            "tools": ["WGS"]
+        },
+        "reference_file": {
+            "keys": ["-r", "--reference_file"],
+            "help": "A FASTA format reference file (for example hg19.fa for the human genome)",
+            "type": "str",
+            "default": "",
+            "required": "reference_file",
+            "tools": ["WGS"]
+        },
+        "min_reads_to_use_region_wgs": {
+            "keys": ["--min_reads_to_use_region"],
+            "help": "Minimum number of reads that align to a region to perform the CRISPResso analysis for WGS",
+            "type": "float",
+            "default": 10,
+            "tools": ["WGS"]
+        },
+        "crispresso_output_folder_1": {
+            "keys": ["crispresso_output_folder_1"],
+            "help": "First output folder with CRISPResso analysis",
+            "type": "str",
+            "tools": ["Compare"]
+        },
+        "crispresso_output_folder_2": {
+            "keys": ["crispresso_output_folder_2"],
+            "help": "Second output folder with CRISPResso analysis",
+            "type": "str",
+            "tools": ["Compare"]
+        },
+        "sample_1_name": {
+            "keys": ["-n1", "--sample_1_name"],
+            "help": "Sample 1 name",
+            "required": "sample_1_name",
+            "tools": ["Compare"]
+        },
+        "sample_2_name": {
+            "keys": ["-n2", "--sample_2_name"],
+            "help": "Sample 2 name",
+            "required": "sample_2_name",
+            "tools": ["Compare"]
+        },
+        "reported_qvalue_cutoff": {
+            "keys": ["--reported_qvalue_cutoff"],
+            "help": "Q-value cutoff for significance in tests for differential editing. Each base position is tested (for insertions, deletions, substitutions, and all modifications) using Fisher's exact test, followed by Bonferroni correction. The number of bases with significance below this threshold in the quantification window are counted and reported in the output summary.",
+            "type": "float",
+            "default": 0.05,
+            "tools": ["Compare"]
+        }
+    },
+    "Sections": {
+        "Required": {
+            "Core": []
+        },
+        "Optional": {
+            "Prime Editing": []
+        }
+    }
+}

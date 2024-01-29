@@ -148,10 +148,10 @@ def getCRISPRessoArgParser(tool, parser_title="CRISPResso Parameters"):
         "int": int,
         "float": float,
     }
-    for value in args_dict.values():
+    for key, value in args_dict.items():
         if tool in value['tools']:
             if 'action' in value:
-                parser.add_argument(*value['keys'], help=value['help'], action=value['action'])
+                parser.add_argument(("--" + key), *value['keys'], help=value['help'], action=value['action'])
             elif 'required' in value and 'default' not in value:
                 parser.add_argument(*value['keys'], help=value['help'], type=type_mapper[value['type']], required=True)
             elif 'required' in value:
