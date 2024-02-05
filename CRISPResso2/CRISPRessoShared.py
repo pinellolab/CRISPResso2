@@ -285,8 +285,9 @@ def getCRISPRessoArgParser(parser_title="CRISPResso Parameters", required_params
                         help='If set, in the allele plots, the percentages will show the percentage as a percent of reads aligned to the assigned reference. Default behavior is to show percentage as a percent of all reads.',
                         action='store_true')
     parser.add_argument('-qwc', '--quantification_window_coordinates', type=str,
-                        help='Bp positions in the amplicon sequence specifying the quantification window. This parameter overrides values of the "--quantification_window_center", "--cleavage_offset", "--window_around_sgrna" or "--window_around_sgrna" values. Any indels/substitutions outside this window are excluded. Indexes are 0-based, meaning that the first nucleotide is position 0. Ranges are separted by the dash sign (e.g. "start-stop"), and multiple ranges can be separated by the underscore (_). ' +
-                             'A value of 0 disables this filter. (can be comma-separated list of values, corresponding to amplicon sequences given in --amplicon_seq e.g. 5-10,5-10_20-30 would specify the 5th-10th bp in the first reference and the 5th-10th and 20th-30th bp in the second reference)',
+                        help='Bp positions in the amplicon sequence specifying the quantification window. This parameter overrides values of the "--quantification_window_center", "--cleavage_offset", "--window_around_sgrna" or "--window_around_sgrna" values. Any indels/substitutions outside this window are excluded. Indexes are 0-based, meaning that the first nucleotide is position 0. Ranges are separted by the dash sign (e.g. "start-stop"), and multiple ranges can be separated by the underscore (_) (can be comma-separated list of values, corresponding to amplicon sequences given in --amplicon_seq e.g. 5-10,5-10_20-30 would specify the 6th-11th bp in the first reference and the 6th-11th and 21st-31st bp in the second reference). ' +
+                             'A value of 0 disables this filter for a particular amplicon (e.g. 0,90-110 This would disable the quantification window for the first amplicon and specify the quantification window of 90-110 for the second).' +
+                             'Note that if there are multiple amplicons provided, and only one quantification window coordinate is provided, the same quantification window will be used for all amplicons and be adjusted to account for insertions/deletions.',
                         default=None)
     parser.add_argument('--annotate_wildtype_allele', type=str,
                         help='Wildtype alleles in the allele table plots will be marked with this string (e.g. **).',
@@ -1527,7 +1528,7 @@ def get_amplicon_info_for_guides(ref_seq, guides, guide_mismatches, guide_names,
     # create mask of positions in which to include/exclude indels for the quantification window
     # first, if exact coordinates have been given, set those
     given_include_idxs = []
-    if quantification_window_coordinates is not None:
+    if quantification_window_coordinates is not None and quantification_window_coordinates != "0":
         coordinate_include_idxs = []
         theseCoords = str(quantification_window_coordinates).split("_")
         for coord in theseCoords:
