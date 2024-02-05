@@ -1837,7 +1837,7 @@ def main():
                 break
 
         if clone_ref_name is not None:
-            for ref_name in ref_names:
+            for this_ref_idx, ref_name in enumerate(ref_names):
                 if clone_ref_name == ref_name:
                     continue
                 cut_points = refs[ref_name]['sgRNA_cut_points']
@@ -1962,8 +1962,12 @@ def main():
 
                 #quantification window coordinates override other options
                 if amplicon_quant_window_coordinates_arr[clone_ref_idx] != "":
+                    if amplicon_quant_window_coordinates_arr[this_ref_idx] != "":
+                        this_quant_window_coordinates = amplicon_quant_window_coordinates_arr[this_ref_idx]
+                    else:
+                        this_quant_window_coordinates = amplicon_quant_window_coordinates_arr[clone_ref_idx]
                     this_include_idxs = []
-                    these_coords = amplicon_quant_window_coordinates_arr[clone_ref_idx].split("_")
+                    these_coords = this_quant_window_coordinates.split("_")
                     for coord in these_coords:
                         coordRE = re.match(r'^(\d+)-(\d+)$', coord)
                         if coordRE:
