@@ -1168,7 +1168,7 @@ def main():
                                 n_reads_at_end = get_n_aligned_bam_region(bam_filename_genome, chr_str, curr_end-5, curr_end+5)
                                 while n_reads_at_end > 0:
                                     curr_end += 500  # look for another place with no reads
-                                    if curr_end >= curr_pos:
+                                    if curr_end >= chr_len:
                                         curr_end = chr_len
                                         break
                                     n_reads_at_end = get_n_aligned_bam_region(bam_filename_genome, chr_str, curr_end-5, curr_end+5)
