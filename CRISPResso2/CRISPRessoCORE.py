@@ -136,6 +136,29 @@ sns.set_style('white')
 
 #########################################
 
+
+def get_quant_window_coordinates(amplicon_quant_window_coordinates_arr, this_ref_idx, clone_ref_idx):
+    if amplicon_quant_window_coordinates_arr[this_ref_idx] != "":
+        this_quant_window_coordinates = amplicon_quant_window_coordinates_arr[this_ref_idx]
+    else:
+        this_quant_window_coordinates = amplicon_quant_window_coordinates_arr[clone_ref_idx]
+    this_include_idxs = []
+    these_coords = this_quant_window_coordinates.split("_")
+    for coord in these_coords:
+        coordRE = re.match(r'^(\d+)-(\d+)$', coord)
+        if coordRE:
+            if amplicon_quant_window_coordinates_arr[this_ref_idx] == "":
+                start = s1inds[int(coordRE.group(1))]
+                end = s1inds[int(coordRE.group(2)) + 1]
+            else:  # if quantification coordinates are provided for this reference, use them directly
+                start = int(coordRE.group(1))
+                end = int(coordRE.group(2)) + 1
+            this_include_idxs.extend(range(start, end))
+        else:
+            raise NTException("Cannot parse analysis window coordinate '" + str(coord))
+    return this_include_idxs
+
+
 def get_pe_scaffold_search(prime_edited_ref_sequence, prime_editing_pegRNA_extension_seq, prime_editing_pegRNA_scaffold_seq, prime_editing_pegRNA_scaffold_min_match_length):
     """
     For prime editing, determines the scaffold string to search for (the shortest substring of args.prime_editing_pegRNA_scaffold_seq not in the prime-edited reference sequence)
@@ -1962,20 +1985,7 @@ def main():
 
                 #quantification window coordinates override other options
                 if amplicon_quant_window_coordinates_arr[clone_ref_idx] != "":
-                    if amplicon_quant_window_coordinates_arr[this_ref_idx] != "":
-                        this_quant_window_coordinates = amplicon_quant_window_coordinates_arr[this_ref_idx]
-                    else:
-                        this_quant_window_coordinates = amplicon_quant_window_coordinates_arr[clone_ref_idx]
-                    this_include_idxs = []
-                    these_coords = this_quant_window_coordinates.split("_")
-                    for coord in these_coords:
-                        coordRE = re.match(r'^(\d+)-(\d+)$', coord)
-                        if coordRE:
-                            start = s1inds[int(coordRE.group(1))]
-                            end = s1inds[int(coordRE.group(2)) + 1]
-                            this_include_idxs.extend(range(start, end))
-                        else:
-                            raise NTException("Cannot parse analysis window coordinate '" + str(coord))
+                    this_include_idxs = get_quant_window_coordinates(amplicon_quant_window_coordinates_arr, this_ref_idx, clone_ref_idx)
                     #subtract any indices in 'exclude_idxs' -- e.g. in case some of the cloned include_idxs were near the read ends (excluded)
                     this_exclude_idxs = sorted(list(set(refs[ref_name]['exclude_idxs'])))
                     this_include_idxs = sorted(list(set(np.setdiff1d(this_include_idxs, this_exclude_idxs))))
