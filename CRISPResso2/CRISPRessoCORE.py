@@ -137,26 +137,35 @@ sns.set_style('white')
 #########################################
 
 
-def get_quant_window_coordinates(amplicon_quant_window_coordinates_arr, this_ref_idx, clone_ref_idx):
-    if amplicon_quant_window_coordinates_arr[this_ref_idx] != "":
-        this_quant_window_coordinates = amplicon_quant_window_coordinates_arr[this_ref_idx]
-    else:
-        this_quant_window_coordinates = amplicon_quant_window_coordinates_arr[clone_ref_idx]
-    this_include_idxs = []
-    these_coords = this_quant_window_coordinates.split("_")
-    for coord in these_coords:
-        coordRE = re.match(r'^(\d+)-(\d+)$', coord)
-        if coordRE:
-            if amplicon_quant_window_coordinates_arr[this_ref_idx] == "":
-                start = s1inds[int(coordRE.group(1))]
-                end = s1inds[int(coordRE.group(2)) + 1]
-            else:  # if quantification coordinates are provided for this reference, use them directly
-                start = int(coordRE.group(1))
-                end = int(coordRE.group(2)) + 1
-            this_include_idxs.extend(range(start, end))
+def split_quant_window_coordinates(quant_window_coordinates):
+    coord_re = re.compile(r'^(\d+)-(\d+)$')
+    return [coord_re.match(c) for c in quant_window_coordinates.split('_')]
+
+
+def extend_include_idxs(include_idxs, coord, _):
+    include_idxs.extend(range(int(coord.group(1)), int(coord.group(2)) + 1))
+
+
+def extend_cloned_include_idxs(include_idxs, coord, s1inds):
+    include_idxs.extend(range(s1inds[int(coord.group(1))], s1inds[int(coord.group(2)) + 1]))
+
+
+def build_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds, extend_func):
+    include_idxs = []
+    for coord in split_quant_window_coordinates(quant_window_coordinates):
+        if coord:
+            extend_func(include_idxs, coord, s1inds)
         else:
             raise NTException("Cannot parse analysis window coordinate '" + str(coord))
-    return this_include_idxs
+    return include_idxs
+
+
+def get_include_idxs_from_quant_window_coordinates(quant_window_coordinates):
+    return build_include_idxs_from_quant_window_coordinates(quant_window_coordinates, None, extend_include_idxs)
+
+
+def get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds):
+    return build_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds, extend_cloned_include_idxs)
 
 
 def get_pe_scaffold_search(prime_edited_ref_sequence, prime_editing_pegRNA_extension_seq, prime_editing_pegRNA_scaffold_seq, prime_editing_pegRNA_scaffold_min_match_length):
@@ -1985,7 +1994,13 @@ def main():
 
                 #quantification window coordinates override other options
                 if amplicon_quant_window_coordinates_arr[clone_ref_idx] != "":
-                    this_include_idxs = get_quant_window_coordinates(amplicon_quant_window_coordinates_arr, this_ref_idx, clone_ref_idx)
+                    if amplicon_quant_window_coordinates_arr[this_ref_idx] != "":
+                        this_include_idxs = get_include_idxs_from_quant_window_coordinates(amplicon_quant_window_coordinates_arr[this_ref_idx])
+                    else:
+                        this_include_idxs = get_cloned_include_idxs_from_quant_window_coordinates(
+                            amplicon_quant_window_coordinates_arr[clone_ref_idx],
+                            s1inds,
+                        )
                     #subtract any indices in 'exclude_idxs' -- e.g. in case some of the cloned include_idxs were near the read ends (excluded)
                     this_exclude_idxs = sorted(list(set(refs[ref_name]['exclude_idxs'])))
                     this_include_idxs = sorted(list(set(np.setdiff1d(this_include_idxs, this_exclude_idxs))))
