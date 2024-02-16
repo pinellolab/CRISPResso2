@@ -1,7 +1,7 @@
 """Unit tests for CRISPResso2CORE."""
 import pytest
 
-from CRISPResso2 import CRISPRessoCORE
+from CRISPResso2 import CRISPRessoCORE, CRISPRessoShared
 
 def test_get_consensus_alignment_from_pairs():
     """Tests for generating consensus alignments from paired reads."""
@@ -92,6 +92,53 @@ def test_get_consensus_alignment_from_pairs():
     assert aln_seq ==      "NNC-ANNGAN"
     assert ref_seq ==      "ATCGATCGAT"
     assert score == 50 #double check this score... should be 5/10
+
+
+def test_split_quant_window_coordinates_single():
+    assert [(5, 10)] == CRISPRessoCORE.split_quant_window_coordinates('5-10')
+
+
+def test_split_quant_window_coordinates_multiple():
+    assert CRISPRessoCORE.split_quant_window_coordinates('2-5_10-12') == [(2, 5), (10, 12)]
+
+
+def test_split_quant_window_coordinates_error():
+    with pytest.raises(CRISPRessoShared.NTException):
+        CRISPRessoCORE.split_quant_window_coordinates('a-5')
+
+
+def test_split_quant_window_coordinates_empty():
+    with pytest.raises(CRISPRessoShared.NTException):
+        CRISPRessoCORE.split_quant_window_coordinates('_')
+
+
+def test_split_quant_window_coordinates_partially_empty():
+    with pytest.raises(CRISPRessoShared.NTException):
+        CRISPRessoCORE.split_quant_window_coordinates('1-3_')
+
+
+def test_split_quant_window_coordinates_blank():
+    with pytest.raises(CRISPRessoShared.NTException):
+        CRISPRessoCORE.split_quant_window_coordinates('')
+
+
+def test_get_include_idxs_from_quant_window_coordinates():
+    quant_window_coordinates = '1-10_12-20'
+    assert CRISPRessoCORE.get_include_idxs_from_quant_window_coordinates(quant_window_coordinates) == [*list(range(1, 11)), *list(range(12, 21))]
+
+
+def test_get_cloned_include_idxs_from_quant_window_coordinates():
+    quant_window_coordinates = '1-10_12-20'
+    s1inds = list(range(22))
+    assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == [*list(range(1, 11)), *list(range(12, 21))]
+
+
+def test_get_cloned_include_idxs_from_quant_window_coordinates():
+    quant_window_coordinates = '1-10_12-20'
+    # represents a 5bp insertion at the begging (left)
+    s1inds = list(range(5, 27))
+    assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == [*list(range(6, 16)), *list(range(17, 26))]
+
 
 if __name__ == "__main__":
 # execute only if run as a script
