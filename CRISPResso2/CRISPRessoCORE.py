@@ -2112,44 +2112,6 @@ def main():
 
                 info('Done!', {'percent_complete': 4})
 
-        if args.min_average_read_quality>0 or args.min_single_bp_quality>0 or args.min_bp_quality_or_N>0:
-            if args.bam_input != '':
-                raise CRISPRessoShared.BadParameterException('The read filtering options are not available with bam input')
-            info('Filtering reads with average bp quality < %d and single bp quality < %d and replacing bases with quality < %d with N ...' % (args.min_average_read_quality, args.min_single_bp_quality, args.min_bp_quality_or_N))
-            min_av_quality = None
-            if args.min_average_read_quality > 0:
-                min_av_quality = args.min_average_read_quality
-
-            min_single_bp_quality = None
-            if args.min_single_bp_quality > 0:
-                min_single_bp_quality = args.min_single_bp_quality
-
-            min_bp_quality_or_N = None
-            if args.min_bp_quality_or_N > 0:
-                min_bp_quality_or_N = args.min_bp_quality_or_N
-
-            if args.fastq_r2!='':
-                output_filename_r1=_jp(os.path.basename(args.fastq_r1.replace('.fastq', '')).replace('.gz', '')+'_filtered.fastq.gz')
-                output_filename_r2=_jp(os.path.basename(args.fastq_r2.replace('.fastq', '')).replace('.gz', '')+'_filtered.fastq.gz')
-
-                from CRISPResso2 import filterFastqs
-                filterFastqs.filterFastqs(fastq_r1=args.fastq_r1, fastq_r2=args.fastq_r2, fastq_r1_out=output_filename_r1, fastq_r2_out=output_filename_r2, min_bp_qual_in_read=min_single_bp_quality, min_av_read_qual=min_av_quality, min_bp_qual_or_N=min_bp_quality_or_N)
-
-                args.fastq_r1 = output_filename_r1
-                args.fastq_r2 = output_filename_r2
-                files_to_remove += [output_filename_r1]
-                files_to_remove += [output_filename_r2]
-
-            else:
-                output_filename_r1=_jp(os.path.basename(args.fastq_r1.replace('.fastq', '')).replace('.gz', '')+'_filtered.fastq.gz')
-
-                from CRISPResso2 import filterFastqs
-                filterFastqs.filterFastqs(fastq_r1=args.fastq_r1, fastq_r1_out=output_filename_r1, min_bp_qual_in_read=min_single_bp_quality, min_av_read_qual=min_av_quality, min_bp_qual_or_N=min_bp_quality_or_N)
-
-                args.fastq_r1 = output_filename_r1
-                files_to_remove += [output_filename_r1]
-
-
         #Trim and merge reads
         if args.bam_input != '' and args.trim_sequences:
             raise CRISPRessoShared.BadParameterException('Read trimming options are not available with bam input')
@@ -2288,6 +2250,29 @@ def main():
 
             info('Done!', {'percent_complete': 7})
 
+        if args.min_average_read_quality>0 or args.min_single_bp_quality>0 or args.min_bp_quality_or_N>0:
+            if args.bam_input != '':
+                raise CRISPRessoShared.BadParameterException('The read filtering options are not available with bam input')
+            info('Filtering reads with average bp quality < %d and single bp quality < %d and replacing bases with quality < %d with N ...' % (args.min_average_read_quality, args.min_single_bp_quality, args.min_bp_quality_or_N))
+            min_av_quality = None
+            if args.min_average_read_quality > 0:
+                min_av_quality = args.min_average_read_quality
+
+            min_single_bp_quality = None
+            if args.min_single_bp_quality > 0:
+                min_single_bp_quality = args.min_single_bp_quality
+
+            min_bp_quality_or_N = None
+            if args.min_bp_quality_or_N > 0:
+                min_bp_quality_or_N = args.min_bp_quality_or_N
+
+            output_filename_r1=_jp(os.path.basename(args.fastq_r1.replace('.fastq', '')).replace('.gz', '')+'_filtered.fastq.gz')
+
+            from CRISPResso2 import filterFastqs
+            filterFastqs.filterFastqs(fastq_r1=args.fastq_r1, fastq_r1_out=output_filename_r1, min_bp_qual_in_read=min_single_bp_quality, min_av_read_qual=min_av_quality, min_bp_qual_or_N=min_bp_quality_or_N)
+
+            args.fastq_r1 = output_filename_r1
+            files_to_remove += [output_filename_r1]
 
         #count reads
         N_READS_AFTER_PREPROCESSING = 0
