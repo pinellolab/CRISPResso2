@@ -2252,7 +2252,7 @@ def main():
         else: # single end reads with no trimming
             processed_output_filename = args.fastq_r1
 
-        if args.min_average_read_quality>0 or args.min_single_bp_quality>0 or args.min_bp_quality_or_N>0:
+        if args.min_average_read_quality > 0 or args.min_single_bp_quality > 0 or args.min_bp_quality_or_N > 0:
             if args.bam_input != '':
                 raise CRISPRessoShared.BadParameterException('The read filtering options are not available with bam input')
             info('Filtering reads with average bp quality < %d and single bp quality < %d and replacing bases with quality < %d with N ...' % (args.min_average_read_quality, args.min_single_bp_quality, args.min_bp_quality_or_N))
@@ -2268,7 +2268,9 @@ def main():
             if args.min_bp_quality_or_N > 0:
                 min_bp_quality_or_N = args.min_bp_quality_or_N
 
-            output_filename_r1=_jp(os.path.basename(processed_output_filename.replace('.fastq', '')).replace('.gz', '')+'_filtered.fastq.gz')
+            output_filename_r1 = _jp(os.path.basename(
+                processed_output_filename.replace('.fastq', '')).replace('.gz', '') + '_filtered.fastq.gz',
+            )
 
             from CRISPResso2 import filterFastqs
             filterFastqs.filterFastqs(fastq_r1=processed_output_filename, fastq_r1_out=output_filename_r1, min_bp_qual_in_read=min_single_bp_quality, min_av_read_qual=min_av_quality, min_bp_qual_or_N=min_bp_quality_or_N)
