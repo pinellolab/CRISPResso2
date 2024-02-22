@@ -4282,6 +4282,7 @@ def main():
                         'annotate_wildtype_allele': args.annotate_wildtype_allele,
                         'custom_colors': config["colors"],
                     }
+                    CRISPRessoPlot.plot_alleles_table(**plot_9_input)
                     debug('Plotting allele distribution around cut for {0}'.format(ref_name))
                     plot(CRISPRessoPlot.plot_alleles_table, plot_9_input)
                     crispresso2_info['results']['refs'][ref_name]['plot_9_roots'].append(os.path.basename(fig_filename_root))
