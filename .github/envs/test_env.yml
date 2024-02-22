@@ -1,0 +1,18 @@
+name: test_env
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - pip
+  - trimmomatic
+  - flash
+  - numpy
+  - cython
+  - jinja2
+  - tbb=2020.2
+  - pyparsing=2.3.1
+  - scipy
+  - matplotlib
+  - pandas
+  - plotly
