@@ -2641,7 +2641,6 @@ def prep_alleles_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
 
     re_find_indels=re.compile("(-*-)")
     idx_row=0
-    breakpoint()
     for idx, row in df_alleles[df_alleles['%Reads']>=MIN_FREQUENCY][:MAX_N_ROWS].iterrows():
         X.append(seq_to_numbers(idx.upper()))
         annot.append(list(idx))
@@ -2741,7 +2740,6 @@ def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insert
     -custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     """
     plot_nuc_len=len(reference_seq)
-    breakpoint()
 
     # make a color map of fixed colors
     alpha=0.4
@@ -3045,7 +3043,6 @@ def plot_alleles_table(reference_seq,df_alleles,fig_filename_root,MIN_FREQUENCY=
     annotate_wildtype_allele: string to add to the end of the wildtype allele (e.g. ** or '')
     """
     X, annot, y_labels, insertion_dict, per_element_annot_kws, is_reference = prep_alleles_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY)
-    breakpoint()
     if annotate_wildtype_allele != '':
         for ix, is_ref in enumerate(is_reference):
             if is_ref:
