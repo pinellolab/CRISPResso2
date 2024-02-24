@@ -2542,7 +2542,7 @@ class Custom_HeatMapper(sns.matrix._HeatMapper):
 
 
         for x, y, m, color, val, per_element_dict  in zip(xpos.flat, ypos.flat,
-                                       mesh.get_array(), mesh.get_facecolors(),
+                                       mesh.get_array().flat, mesh.get_facecolors(),
                                        self.annot_data.flat, self.per_element_annot_kws.flat):
             #print per_element_dict
             if m is not np.ma.masked:
