@@ -140,7 +140,7 @@ def set_console_log_level(logger, level, debug=False):
 def getCRISPRessoArgParser(tool, parser_title="CRISPResso Parameters"):
     parser = argparse.ArgumentParser(description=parser_title, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--version', action='version', version='%(prog)s ' + __version__)
-    with open('./CRISPResso2/args.json', 'r') as json_file:
+    with open('../CRISPResso2/CRISPResso2/args.json', 'r') as json_file:
         args_dict = json.load(json_file)
         args_dict = args_dict["CRISPResso_args"]
     type_mapper = {
@@ -151,7 +151,7 @@ def getCRISPRessoArgParser(tool, parser_title="CRISPResso Parameters"):
     for key, value in args_dict.items():
         if tool in value['tools']:
             if 'action' in value:
-                parser.add_argument(("--" + key), *value['keys'], help=value['help'], action=value['action'])
+                parser.add_argument(*value['keys'], help=value['help'], action=value['action'])
             elif 'required' in value and 'default' not in value:
                 parser.add_argument(*value['keys'], help=value['help'], type=type_mapper[value['type']], required=True)
             elif 'required' in value:

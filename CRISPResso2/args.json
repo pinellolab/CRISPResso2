@@ -17,16 +17,16 @@
         },
         "amplicon_seq": {
             "name": "Amplicon Sequence",
-            "alt_keys": [],
+            "keys": ["-a", "--amplicon_seq"],
             "help": "Amplicon sequence to search for in reads",
-            "required": "amplicon_seq",
+            "required": "",
             "type": "str", 
             "tools": ["Core", "Batch", "Pooled"]
         },
         "amplicon_name": {
             "name": "Amplicon Name",
-            "keys": ["-an"],
-            "help": "Amplicon Name (can be comma-separated list of multiple names, corresponding to amplicon sequences given in --amplicon_seq",
+            "keys": ["--amplicon_name"],
+            "help": "Amplicon Name is important and (can be comma-separated list of multiple names, corresponding to amplicon sequences given in --amplicon_seq",
             "type": "str",
             "default": "Reference",
             "tools": ["Core", "Batch", "Pooled"]
@@ -39,6 +39,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "default_min_aln_score": {
+            "name": "Default Minimum Alignment Score",
             "keys": ["--default_min_aln_score", "--min_identity_score"],
             "help": "Default minimum homology score for a read to align to a reference amplicon",
             "type": "int",
@@ -99,6 +100,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "expected_hdr_amplicon_seq": {
+            "name": "Expected HDR Amplicon Sequence:",
             "keys": ["-e", "--expected_hdr_amplicon_seq"],
             "help": "Amplicon sequence expected after HDR",
             "type": "str",
@@ -106,6 +108,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "coding_seq": {
+            "name": "Exon Specification Coding Sequence/s:",
             "keys": ["-c", "--coding_seq"],
             "help": "Subsequence/s of the amplicon sequence covering one or more coding sequences for frameshift analysis. If more than one (for example, split by intron/s), please separate by commas.",
             "type": "str",
@@ -113,6 +116,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "min_average_read_quality": {
+            "name": "Minimum Average Read Quality(phred33 Scale)",
             "keys": ["-q", "--min_average_read_quality"],
             "help": "Minimum average quality score (phred33) to keep a read",
             "type": "int",
@@ -120,6 +124,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "min_single_bp_quality": {
+            "name": "Minimum Single bp Quality(phred33 Scale)",
             "keys": ["-s", "--min_single_bp_quality"],
             "help": "Minimum single bp score (phred33) to keep a read",
             "type": "int",
@@ -127,6 +132,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "min_bp_quality_or_N": {
+            "name": "Minimum bp Quality or N(phred33 Scale)",
             "keys": ["--min_bp_quality_or_N"],
             "help": "Bases with a quality score (phred33) less than this value will be set to 'N'",
             "type": "int",
@@ -141,6 +147,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "name": {
+            "name": "Sample Name",
             "keys": ["-n", "--name"],
             "help": "Output name of the report (default: the name is obtained from the filename of the file/s used in input)",
             "type": "str",
@@ -174,6 +181,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "trim_sequences": {
+            "name": "Trimming Adapter",
             "keys": ["--trim_sequences"],
             "help": "Enable the trimming of Illumina adapters with Trimmomatic",
             "action": "store_true",
@@ -227,6 +235,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "quantification_window_size": {
+            "name": "Quantification Window Size",
             "keys": ["-w", "--quantification_window_size", "--window_around_sgrna"],
             "help": "Defines the size (in bp) of the quantification window extending from the position specified by the '--cleavage_offset' or '--quantification_window_center' parameter in relation to the provided guide RNA sequence(s) (--sgRNA). Mutations within this number of bp from the quantification window center are used in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 1, 1bp on each side of the cleavage position for a total length of 2bp. Multiple quantification window sizes (corresponding to each guide specified by --guide_seq) can be specified with a comma-separated list.",
             "type": "str",
@@ -234,6 +243,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "quantification_window_center": {
+            "name": "Quantification Window Center",
             "keys": ["-wc", "--quantification_window_center", "--cleavage_offset"],
             "help": "Center of quantification window to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17 to only include mutations near the 5' end of the sgRNA. Multiple quantification window centers (corresponding to each guide specified by --guide_seq) can be specified with a comma-separated list.",
             "type": "str",
@@ -241,6 +251,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "exclude_bp_from_left": {
+            "name": "Exclude bp From Left",
             "keys": ["--exclude_bp_from_left"],
             "help": "Exclude bp from the left side of the amplicon sequence for the quantification of the indels",
             "type": "int",
@@ -248,6 +259,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "exclude_bp_from_right": {
+            "name": "Exclude bp From Right",
             "keys": ["--exclude_bp_from_right"],
             "help": "Exclude bp from the right side of the amplicon sequence for the quantification of the indels",
             "type": "int",
@@ -261,18 +273,21 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "ignore_substitutions": {
+            "name": "Ignore Substitutions",
             "keys": ["--ignore_substitutions"],
             "help": "Ignore substitutions events for the quantification and visualization",
             "action": "store_true",
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "ignore_insertions": {
+            "name": "Ignore Insertions",
             "keys": ["--ignore_insertions"],
             "help": "Ignore insertions events for the quantification and visualization",
             "action": "store_true",
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "ignore_deletions": {
+            "name": "Ignore Deletions",
             "keys": ["--ignore_deletions"],
             "help": "Ignore deletions events for the quantification and visualization",
             "action": "store_true",
@@ -340,6 +355,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "plot_window_size": {
+            "name": "Plot Window Size",
             "keys": ["--plot_window_size", "--offset_around_cut_to_plot"],
             "type": "int",
             "help": "Defines the size of the window extending from the quantification window center to plot. Nucleotides within plot_window_size of the quantification_window_center for each guide are plotted.",
@@ -454,6 +470,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "base_editor_output": {
+            "name": "Base Editor Output",
             "keys": ["--base_editor_output"],
             "help": "Outputs plots and tables to aid in analysis of base editor studies.",
             "action": "store_true",
@@ -474,6 +491,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "prime_editing_pegRNA_spacer_seq": {
+            "name": "Prime Editing Spacer Sequence",
             "keys": ["--prime_editing_pegRNA_spacer_seq"],
             "type": "str",
             "help": "pegRNA spacer sgRNA sequence used in prime editing. The spacer should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the given sequence.",
@@ -481,6 +499,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "prime_editing_pegRNA_extension_seq": {
+            "name": "Prime Editing Extension Sequence",
             "keys": ["--prime_editing_pegRNA_extension_seq"],
             "type": "str",
             "help": "Extension sequence used in prime editing. The sequence should be given in the RNA 5'->3' order, such that the sequence starts with the RT template including the edit, followed by the Primer-binding site (PBS).",
@@ -488,6 +507,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "prime_editing_pegRNA_extension_quantification_window_size": {
+            "name": "Prime Editing pegRNA Extension Quantification Window Size",
             "keys": ["--prime_editing_pegRNA_extension_quantification_window_size"],
             "type": "int",
             "help": "Quantification window size (in bp) at flap site for measuring modifications anchored at the right side of the extension sequence. Similar to the --quantification_window parameter, the total length of the quantification window will be 2x this parameter. Default: 5bp (10bp total window size)",
@@ -495,6 +515,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "prime_editing_pegRNA_scaffold_seq": {
+            "name": "Prime Editing pegRNA Scaffold Sequence",
             "keys": ["--prime_editing_pegRNA_scaffold_seq"],
             "type": "str",
             "help": "If given, reads containing any of this scaffold sequence before extension sequence (provided by --prime_editing_extension_seq) will be classified as 'Scaffold-incorporated'. The sequence should be given in the 5'->3' order such that the RT template directly follows this sequence. A common value is 'GGCACCGAGUCGGUGC'.",
@@ -502,6 +523,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "prime_editing_pegRNA_scaffold_min_match_length": {
+            "name": "Prime Editing pegRNA Scaffold Min Match Length",
             "keys": ["--prime_editing_pegRNA_scaffold_min_match_length"],
             "type": "int",
             "help": "Minimum number of bases matching scaffold sequence for the read to be counted as 'Scaffold-incorporated'. If the scaffold sequence matches the reference sequence at the incorporation site, the minimum number of bases to match will be minimally increased (beyond this parameter) to disambiguate between prime-edited and scaffold-incorporated sequences.",
@@ -509,6 +531,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "prime_editing_nicking_guide_seq": {
+            "name": "Prime Editing Nicking Guide Sequence",
             "keys": ["--prime_editing_nicking_guide_seq"],
             "type": "str",
             "help": "Nicking sgRNA sequence used in prime editing. The sgRNA should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the sequence",
@@ -516,6 +539,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "prime_editing_override_prime_edited_ref_seq": {
+            "name": "Prime Editing Override Prime Edited Reference Sequence",
             "keys": ["--prime_editing_override_prime_edited_ref_seq"],
             "type": "str",
             "help": "If given, this sequence will be used as the prime-edited reference sequence. This may be useful if the prime-edited reference sequence has large indels or the algorithm cannot otherwise infer the correct reference sequence.",
