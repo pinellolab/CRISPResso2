@@ -203,7 +203,7 @@ def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root, custom_colors
             sample_row_start = nNucs * i
             y_start = nSamples - i
 
-            ins_pct = float(mod_pct_df_indexed.loc[sampleName,'Insertions_Left'][pos_ind-2])
+            ins_pct = float(mod_pct_df_indexed.loc[sampleName,'Insertions_Left'].iloc[pos_ind-2])
 
             if ins_pct > min_plot_pct:
                 obs_pct = ins_pct * plotPct
