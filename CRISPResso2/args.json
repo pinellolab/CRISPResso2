@@ -19,7 +19,6 @@
             "name": "Amplicon Sequence",
             "keys": ["-a", "--amplicon_seq"],
             "help": "Amplicon sequence to search for in reads",
-            "required": "",
             "type": "str", 
             "tools": ["Core", "Batch", "Pooled"]
         },
