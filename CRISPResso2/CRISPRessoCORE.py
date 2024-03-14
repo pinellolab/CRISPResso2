@@ -926,22 +926,6 @@ def process_single_fastq_write_bam_out(fastq_input, bam_output, bam_header, vari
     return(aln_stats)
 
 
-def split_interleaved_fastq(fastq_filename, output_filename_r1, output_filename_r2):
-    if fastq_filename.endswith('.gz'):
-        fastq_handle = gzip.open(fastq_filename, 'rt')
-    else:
-        fastq_handle=open(fastq_filename)
-
-    try:
-        fastq_splitted_outfile_r1 = gzip.open(output_filename_r1, 'wt')
-        fastq_splitted_outfile_r2 = gzip.open(output_filename_r2, 'wt')
-        [fastq_splitted_outfile_r1.write(line) if (i % 8 < 4) else fastq_splitted_outfile_r2.write(line) for i, line in enumerate(fastq_handle)]
-    except:
-        raise CRISPRessoShared.BadParameterException('Error in splitting read pairs from a single file')
-
-    return output_filename_r1, output_filename_r2
-
-
 def normalize_name(name, fastq_r1, fastq_r2, bam_input):
     """Normalize the name according to the inputs and clean it.
 
@@ -2125,11 +2109,11 @@ def main():
                 raise CRISPRessoShared.BadParameterException('The option --split_interleaved_input is available only when a single fastq file is specified!')
             else:
                 info('Splitting paired end single fastq file into two files...')
-                args.fastq_r1, args.fastq_r2=split_interleaved_fastq(args.fastq_r1,
+                args.fastq_r1, args.fastq_r2 = CRISPRessoShared.split_interleaved_fastq(args.fastq_r1,
                     output_filename_r1=_jp(os.path.basename(args.fastq_r1.replace('.fastq', '')).replace('.gz', '')+'_splitted_r1.fastq.gz'),
                     output_filename_r2=_jp(os.path.basename(args.fastq_r1.replace('.fastq', '')).replace('.gz', '')+'_splitted_r2.fastq.gz'),)
-                files_to_remove+=[args.fastq_r1, args.fastq_r2]
-                N_READS_INPUT = N_READS_INPUT/2
+                files_to_remove += [args.fastq_r1, args.fastq_r2]
+                N_READS_INPUT /= 2
 
                 info('Done!', {'percent_complete': 4})
 

@@ -140,15 +140,19 @@ def set_console_log_level(logger, level, debug=False):
 def getCRISPRessoArgParser(parser_title="CRISPResso Parameters", required_params=[], suppress_params=[]):
     parser = argparse.ArgumentParser(description=parser_title, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--version', action='version', version='%(prog)s ' + __version__)
-    parser.add_argument('-r1', '--fastq_r1', type=str, help='First fastq file', default='',
-                        required='fastq_r1' in required_params)
-    parser.add_argument('-r2', '--fastq_r2', type=str, help='Second fastq file for paired end reads', default='')
-    parser.add_argument('-a', '--amplicon_seq', type=str,
-                        help='Amplicon Sequence (can be comma-separated list of multiple sequences)',
-                        required='amplicon_seq' in required_params)
-    parser.add_argument('-an', '--amplicon_name', type=str,
-                        help='Amplicon Name (can be comma-separated list of multiple names, corresponding to amplicon sequences given in --amplicon_seq',
-                        default='Reference')
+    if 'fastq_r1' not in suppress_params:
+        parser.add_argument('-r1', '--fastq_r1', type=str, help='First fastq file', default='',
+                            required='fastq_r1' in required_params)
+    if 'fastq_r2' not in suppress_params:
+        parser.add_argument('-r2', '--fastq_r2', type=str, help='Second fastq file for paired end reads', default='')
+    if 'amplicon_seq' not in suppress_params:
+        parser.add_argument('-a', '--amplicon_seq', type=str,
+                            help='Amplicon Sequence (can be comma-separated list of multiple sequences)',
+                            required='amplicon_seq' in required_params)
+    if 'amplicon_name' not in suppress_params:
+        parser.add_argument('-an', '--amplicon_name', type=str,
+                            help='Amplicon Name (can be comma-separated list of multiple names, corresponding to amplicon sequences given in --amplicon_seq',
+                            default='Reference')
     parser.add_argument('-amas', '--amplicon_min_alignment_score', type=str,
                         help='Amplicon Minimum Alignment Score; score between 0 and 100; sequences must have at least this homology score with the amplicon to be aligned (can be comma-separated list of multiple scores, corresponding to amplicon sequences given in --amplicon_seq)',
                         default="")
@@ -199,9 +203,10 @@ def getCRISPRessoArgParser(parser_title="CRISPResso Parameters", required_params
     parser.add_argument('-v', '--verbosity', type=int, help='Verbosity level of output to the console (1-4), 4 is the most verbose', default=3)
 
     ## read preprocessing params
-    parser.add_argument('--split_interleaved_input', '--split_paired_end',
-                        help='Splits a single fastq file containing paired end reads into two files before running CRISPResso',
-                        action='store_true')
+    if 'split_interleaved_input' not in suppress_params:
+        parser.add_argument('--split_interleaved_input', '--split_paired_end',
+                            help='Splits a single fastq file containing paired end reads into two files before running CRISPResso',
+                            action='store_true')
     parser.add_argument('--trim_sequences', help='Enable the trimming of Illumina adapters with Trimmomatic',
                         action='store_true')
     parser.add_argument('--trimmomatic_command', type=str, help='Command to run trimmomatic', default='trimmomatic')
@@ -1324,6 +1329,61 @@ def force_merge_pairs(r1_filename, r2_filename, output_filename):
     f_out.close()
 
     return (lineCount)
+
+
+def split_interleaved_fastq(fastq_filename, output_filename_r1, output_filename_r2):
+    """Split an interleaved fastq file into two files, one for each read pair.
+
+    This assumes that the input fastq file is interleaved, i.e. that the reads are ordered as follows:
+        R1
+        R2
+        R1
+        R2
+        ...
+
+    And results in two files, one for each read pair:
+        output_filename_r1
+            R1
+            R1
+            ...
+        output_filename_r2
+            R2
+            R2
+            ...
+
+    Parameters
+    ----------
+    fastq_filename : str
+        Path to the input fastq file.
+    output_filename_r1 : str
+        Path to the output fastq file for r1.
+    output_filename_r2 : str
+        Path to the output fastq file for r2.
+
+    Returns
+    -------
+    output_filename_r1 : str
+        Path to the output fastq file for r1.
+    output_filename_r2 : str
+        Path to the output fastq file for r2.
+    """
+    if fastq_filename.endswith('.gz'):
+        fastq_handle = gzip.open(fastq_filename, 'rt')
+    else:
+        fastq_handle = open(fastq_filename)
+
+    try:
+        fastq_splitted_outfile_r1 = gzip.open(output_filename_r1, 'wt')
+        fastq_splitted_outfile_r2 = gzip.open(output_filename_r2, 'wt')
+        [fastq_splitted_outfile_r1.write(line) if (i % 8 < 4) else fastq_splitted_outfile_r2.write(line) for i, line in enumerate(fastq_handle)]
+    except:
+        raise BadParameterException('Error in splitting read pairs from a single file')
+    finally:
+        fastq_handle.close()
+        fastq_splitted_outfile_r1.close()
+        fastq_splitted_outfile_r2.close()
+
+    return output_filename_r1, output_filename_r2
 
 
 ######
