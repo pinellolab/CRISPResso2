@@ -4590,14 +4590,14 @@ def main():
                     mod_pcts.append(np.concatenate(([ref_name, 'Deletions'], np.array(ref1_all_deletion_count_vectors[ref_name]).astype(float)/tot)))
                     mod_pcts.append(np.concatenate(([ref_name, 'Substitutions'], np.array(ref1_all_substitution_count_vectors[ref_name]).astype(float)/tot)))
                     mod_pcts.append(np.concatenate(([ref_name, 'All_modifications'], np.array(ref1_all_indelsub_count_vectors[ref_name]).astype(float)/tot)))
-                    mod_pcts.append(np.concatenate(([ref_name, 'Total'], [counts_total[ref_name]]*refs[ref_names_for_pe[0]]['sequence_length'])))
-                colnames = ['Batch', 'Modification']+list(refs[ref_names_for_pe[0]]['sequence'])
+                    mod_pcts.append(np.concatenate(([ref_name, 'Total'], [counts_total[ref_name]]*refs[ref_names[0]]['sequence_length'])))
+                colnames = ['Batch', 'Modification']+list(refs[ref_names[0]]['sequence'])
                 pe_modification_percentage_summary_df = to_numeric_ignore_columns(pd.DataFrame(mod_pcts, columns=colnames), {'Batch', 'Modification'})
 
-                sgRNA_intervals = refs[ref_names_for_pe[0]]['sgRNA_intervals']
-                sgRNA_names = refs[ref_names_for_pe[0]]['sgRNA_names']
-                sgRNA_mismatches = refs[ref_names_for_pe[0]]['sgRNA_mismatches']
-                include_idxs_list = refs[ref_names_for_pe[0]]['include_idxs']
+                sgRNA_intervals = refs[ref_names[0]]['sgRNA_intervals']
+                sgRNA_names = refs[ref_names[0]]['sgRNA_names']
+                sgRNA_mismatches = refs[ref_names[0]]['sgRNA_mismatches']
+                include_idxs_list = refs[ref_names[0]]['include_idxs']
 
                 plot_root = _jp('11a.Prime_editing_nucleotide_percentage_quilt')
                 plot_11a_input = {
@@ -4613,24 +4613,24 @@ def main():
                 }
                 info('Plotting prime editing nucleotide percentage quilt', {'percent_complete': 96})
                 plot(CRISPRessoPlot.plot_nucleotide_quilt, plot_11a_input)
-                crispresso2_info['results']['refs'][ref_names_for_pe[0]]['plot_11a_root'] = os.path.basename(plot_root)
-                crispresso2_info['results']['refs'][ref_names_for_pe[0]]['plot_11a_caption'] = "Figure 11a: Nucleotide distribution across all amplicons. At each base in the reference amplicon, the percentage of each base as observed in sequencing reads is shown (A = green; C = orange; G = yellow; T = purple). Black bars show the percentage of reads for which that base was deleted. Brown bars between bases show the percentage of reads having an insertion at that position."
-                crispresso2_info['results']['refs'][ref_names_for_pe[0]]['plot_11a_data'] = [('Nucleotide frequency table for ' + ref_name, os.path.basename(crispresso2_info['results']['refs'][ref_name]['nuc_freq_filename'])) for ref_name in ref_names_for_pe]
+                crispresso2_info['results']['refs'][ref_names[0]]['plot_11a_root'] = os.path.basename(plot_root)
+                crispresso2_info['results']['refs'][ref_names[0]]['plot_11a_caption'] = "Figure 11a: Nucleotide distribution across all amplicons. At each base in the reference amplicon, the percentage of each base as observed in sequencing reads is shown (A = green; C = orange; G = yellow; T = purple). Black bars show the percentage of reads for which that base was deleted. Brown bars between bases show the percentage of reads having an insertion at that position."
+                crispresso2_info['results']['refs'][ref_names[0]]['plot_11a_data'] = [('Nucleotide frequency table for ' + ref_name, os.path.basename(crispresso2_info['results']['refs'][ref_name]['nuc_freq_filename'])) for ref_name in ref_names_for_pe]
 
-                crispresso2_info['results']['refs'][ref_names_for_pe[0]]['plot_11b_roots'] = []
-                crispresso2_info['results']['refs'][ref_names_for_pe[0]]['plot_11b_captions'] = []
-                crispresso2_info['results']['refs'][ref_names_for_pe[0]]['plot_11b_datas'] = []
+                crispresso2_info['results']['refs'][ref_names[0]]['plot_11b_roots'] = []
+                crispresso2_info['results']['refs'][ref_names[0]]['plot_11b_captions'] = []
+                crispresso2_info['results']['refs'][ref_names[0]]['plot_11b_datas'] = []
 
-                pe_sgRNA_sequences = refs[ref_names_for_pe[0]]['sgRNA_sequences']
-                pe_sgRNA_orig_sequences = refs[ref_names_for_pe[0]]['sgRNA_orig_sequences']
-                pe_sgRNA_cut_points = refs[ref_names_for_pe[0]]['sgRNA_cut_points']
-                pe_sgRNA_plot_cut_points = refs[ref_names_for_pe[0]]['sgRNA_plot_cut_points']
-                pe_sgRNA_intervals = refs[ref_names_for_pe[0]]['sgRNA_intervals']
-                pe_sgRNA_names = refs[ref_names_for_pe[0]]['sgRNA_names']
-                pe_sgRNA_plot_idxs = refs[ref_names_for_pe[0]]['sgRNA_plot_idxs']
-                pe_sgRNA_mismatches = refs[ref_names_for_pe[0]]['sgRNA_mismatches']
-                pe_ref_len = refs[ref_names_for_pe[0]]['sequence_length']
-                pe_include_idxs_list = refs[ref_names_for_pe[0]]['include_idxs']
+                pe_sgRNA_sequences = refs[ref_names[0]]['sgRNA_sequences']
+                pe_sgRNA_orig_sequences = refs[ref_names[0]]['sgRNA_orig_sequences']
+                pe_sgRNA_cut_points = refs[ref_names[0]]['sgRNA_cut_points']
+                pe_sgRNA_plot_cut_points = refs[ref_names[0]]['sgRNA_plot_cut_points']
+                pe_sgRNA_intervals = refs[ref_names[0]]['sgRNA_intervals']
+                pe_sgRNA_names = refs[ref_names[0]]['sgRNA_names']
+                pe_sgRNA_plot_idxs = refs[ref_names[0]]['sgRNA_plot_idxs']
+                pe_sgRNA_mismatches = refs[ref_names[0]]['sgRNA_mismatches']
+                pe_ref_len = refs[ref_names[0]]['sequence_length']
+                pe_include_idxs_list = refs[ref_names[0]]['include_idxs']
 
                 for i in range(len(pe_sgRNA_cut_points)):
                     cut_point = pe_sgRNA_cut_points[i]
@@ -4653,7 +4653,7 @@ def main():
                     #get new intervals
                     new_sgRNA_intervals = []
                     #add annotations for each sgRNA (to be plotted on this sgRNA's plot)
-                    for (int_start, int_end) in refs[ref_names_for_pe[0]]['sgRNA_intervals']:
+                    for (int_start, int_end) in refs[ref_names[0]]['sgRNA_intervals']:
                         new_sgRNA_intervals += [(int_start - new_sel_cols_start, int_end - new_sel_cols_start)]
                     new_include_idx = []
                     for x in pe_include_idxs_list:
@@ -4672,9 +4672,9 @@ def main():
                     }
                     info('Plotting nucleotide quilt', {'percent_complete': 97})
                     plot(CRISPRessoPlot.plot_nucleotide_quilt, plot_11b_input)
-                    crispresso2_info['results']['refs'][ref_names_for_pe[0]]['plot_11b_roots'].append(os.path.basename(plot_root))
-                    crispresso2_info['results']['refs'][ref_names_for_pe[0]]['plot_11b_captions'].append('Figure 11b: Nucleotide distribution around the ' + sgRNA_legend + '.')
-                    crispresso2_info['results']['refs'][ref_names_for_pe[0]]['plot_11b_datas'].append([('Nucleotide frequency in quantification window for ' + ref_name, os.path.basename(crispresso2_info['results']['refs'][ref_name]['quant_window_nuc_freq_filename'])) for ref_name in ref_names_for_pe])
+                    crispresso2_info['results']['refs'][ref_names[0]]['plot_11b_roots'].append(os.path.basename(plot_root))
+                    crispresso2_info['results']['refs'][ref_names[0]]['plot_11b_captions'].append('Figure 11b: Nucleotide distribution around the ' + sgRNA_legend + '.')
+                    crispresso2_info['results']['refs'][ref_names[0]]['plot_11b_datas'].append([('Nucleotide frequency in quantification window for ' + ref_name, os.path.basename(crispresso2_info['results']['refs'][ref_name]['quant_window_nuc_freq_filename'])) for ref_name in ref_names_for_pe])
 
                 if args.prime_editing_pegRNA_scaffold_seq != "" and df_scaffold_insertion_sizes.shape[0] > 0 and df_scaffold_insertion_sizes['Num_match_scaffold'].max() > 0 and df_scaffold_insertion_sizes['Num_gaps'].max() > 0:
                     plot_root = _jp('11c.Prime_editing_scaffold_insertion_sizes')
