@@ -15,4 +15,4 @@ dependencies:
   - scipy
   - matplotlib
   - pandas
-  - plotly
+  - plotly=5.18.0
