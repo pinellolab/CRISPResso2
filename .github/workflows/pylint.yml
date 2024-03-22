@@ -3,6 +3,7 @@ name: Pylint
 on:
   push:
   pull_request:
+    types: [opened, reopened]
 
 jobs:
   build:
