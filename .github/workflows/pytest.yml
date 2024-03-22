@@ -2,7 +2,9 @@ name: Run Pytest
 
 on:
   push:
+  
   pull_request:
+    types: [opened, reopened]
 
 jobs:
   build:
