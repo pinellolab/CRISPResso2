@@ -40,7 +40,7 @@ jobs:
       run: |
         mkdir ../CRISPResso2_copy
         cp -r * ../CRISPResso2_copy
-        
+
     - name: Copy C2_tests repo
       uses: actions/checkout@master
       with:

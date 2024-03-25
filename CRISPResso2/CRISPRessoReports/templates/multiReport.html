@@ -46,7 +46,7 @@
 {% endblock %}
 
 {% block content %}
-
+<div class="row">
 <div class="col-sm-1"></div>
 <div class="col-sm-10">
 
@@ -61,7 +61,7 @@
               <div class='card-body p-0'>
                 <div class="list-group list-group-flush" style='max-height:80vh;overflow-y:auto'>
               {% for run_name in run_names %}
-	              <a href="{{report_data['crispresso_data_path']}}{{sub_html_files[run_name]}}" class="list-group-item list-group-item-action">{{run_name}}</a>
+	              <a href="{{sub_html_files[run_name]}}" class="list-group-item list-group-item-action">{{run_name}}</a>
                   {% endfor %}
                 </div>
               </div>
@@ -162,6 +162,7 @@
 </div> {# column #} <!-- end column -->
 
 <div class="col-sm-1"></div>
+</div>
 {% endblock %}
 
 {% block foot %}
