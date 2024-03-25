@@ -86,10 +86,16 @@ Also, note that the default commit message may have a summary of all commits, pl
 
 1. In the parent repo, switch to (or create) the branch on `CRISPRessoReports` that will have the changes you push.
 
-If you are creating a new branch based off of `CRISPRessoReports` master, run this:
+If you are creating a new branch based off of `CRISPRessoReports` master, run this to switch to the reports master branch:
 
 ``` shell
-git checkout -b <feature-branch>-reports reports/master
+git checkout reports/master
+```
+
+Then, run to actually create (and switch to) the branch that you will be working with:
+
+``` shell
+git checkout -b <feature-branch>-reports
 ```
 
 Or if you would like to push to an existing branch on `CRISPRessoReports`, run this:
@@ -106,6 +112,18 @@ git merge --squash -Xsubtree="CRISPResso2/CRISPRessoReports" --no-commit --allow
 
 *Note:* `<feature-branch>` is the branch of the parent repo that contains the changes inside the `CRISPRessoReports` sub-directory.
 
+3. Push to `CRISPRessoReports`.
+
+``` shell
+git push
+```
+
+4. Switch back to your branch on `CRISPResso` or `C2Web`.
+
+``` shell
+git checkout <feature-branch>
+```
+
 ### I am working on a feature that requires changing `CRISPRessoReports`, what do I do?
 
 If a feature that you are working on requires changes to CRISPRessoReports, you will need to perform a few steps to get setup.
@@ -113,7 +131,7 @@ If a feature that you are working on requires changes to CRISPRessoReports, you 
 1. Create a feature branch in the parent repo, based on the parent repo master.
 
 ``` shell
-git checkout -b <feature-branch> origin/master
+git checkout -b <feature-branch>
 ```
 
 2. Create a feature branch on `CRISPRessoReports`.
