@@ -1677,7 +1677,47 @@ def set_guide_array(vals, guides, property_name):
     for idx, val in enumerate(vals_array):
         if val != '':
             ret_array[idx] = int(val)
-    return ret_array
+    return ret_array        
+
+
+def get_relative_coordinates(to_sequence, from_sequence):
+    """Given an alignment, get the relative coordinates of the second sequence to the first.
+
+    For example, from_sequence[i] matches to to_sequence[inds[i]]. A `-1`
+    indicates a gap at the beginning of `to_sequence`.
+
+    Parameters
+    ----------
+    to_sequence : str
+        The alignment of the first sequence (where the coordinates are relative to)
+    from_sequence : str
+        The alignment of the second sequence
+
+    Returns
+    -------
+    s1inds_gap_left : list of int
+        The relative coordinates of the second sequence to the first, where gaps
+        in the first sequence are filled with the left value.
+    s1inds_gap_right : list of int
+        The relative coordinates of the second sequence to the first, where gaps
+        in the first sequence are filled with the right value.
+    """
+    s1inds_gap_left = []
+    s1inds_gap_right = []
+    s1idx_left = -1
+    s1idx_right = 0
+    s2idx = -1
+    for ix in range(len(to_sequence)):
+        if to_sequence[ix] != "-":
+            s1idx_left += 1
+        if from_sequence[ix] != "-":
+            s2idx += 1
+            s1inds_gap_left.append(s1idx_left)
+            s1inds_gap_right.append(s1idx_right)
+        if to_sequence[ix] != "-":
+            s1idx_right += 1
+
+    return s1inds_gap_left, s1inds_gap_right
 
 
 def get_alignment_coordinates(to_sequence, from_sequence, aln_matrix, needleman_wunsch_gap_open,
@@ -1701,23 +1741,7 @@ def get_alignment_coordinates(to_sequence, from_sequence, aln_matrix, needleman_
                                                         gap_open=needleman_wunsch_gap_open,
                                                         gap_extend=needleman_wunsch_gap_extend,
                                                         gap_incentive=this_gap_incentive)
-    #    print(fws1)
-    #    print(fws2)
-    s1inds_l = []
-    s1inds_r = []
-    s1ix_l = -1
-    s1ix_r = 0
-    s2ix = -1
-    for ix in range(len(fws1)):
-        if fws1[ix] != "-":
-            s1ix_l += 1
-        if fws2[ix] != "-":
-            s2ix += 1
-            s1inds_l.append(s1ix_l)
-            s1inds_r.append(s1ix_r)
-        if fws1[ix] != "-":
-            s1ix_r += 1
-    return s1inds_l, s1inds_r
+    return get_relative_coordinates(fws1, fws2)
 
 
 def get_mismatches(seq_1, seq_2, aln_matrix, needleman_wunsch_gap_open, needleman_wunsch_gap_extend):
