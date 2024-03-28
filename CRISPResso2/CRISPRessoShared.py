@@ -11,6 +11,7 @@ import gzip
 import json
 import sys
 import importlib.util
+from pathlib import Path
 
 import numpy as np
 import os
@@ -140,7 +141,14 @@ def set_console_log_level(logger, level, debug=False):
 def getCRISPRessoArgParser(tool, parser_title="CRISPResso Parameters"):
     parser = argparse.ArgumentParser(description=parser_title, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--version', action='version', version='%(prog)s ' + __version__)
-    with open('../CRISPResso2/CRISPResso2/args.json', 'r') as json_file:
+
+    # Get the directory of the current script
+    current_dir = Path(__file__).parent
+
+    # Adjust the path to point directly to the args.json file
+    json_path = current_dir / 'args.json'
+
+    with open(json_path, 'r') as json_file:
         args_dict = json.load(json_file)
         args_dict = args_dict["CRISPResso_args"]
     type_mapper = {
@@ -148,16 +156,47 @@ def getCRISPRessoArgParser(tool, parser_title="CRISPResso Parameters"):
         "int": int,
         "float": float,
     }
+    print("About to parse args")
+
     for key, value in args_dict.items():
-        if tool in value['tools']:
-            if 'action' in value:
-                parser.add_argument(*value['keys'], help=value['help'], action=value['action'])
-            elif 'required' in value and 'default' not in value:
-                parser.add_argument(*value['keys'], help=value['help'], type=type_mapper[value['type']], required=True)
-            elif 'required' in value:
-                parser.add_argument(*value['keys'], help=value['help'], default=value['default'], type=type_mapper[value['type']], required=True)
-            else:
-                parser.add_argument(*value['keys'], help=value['help'], default=value['default'], type=type_mapper[value['type']]) 
+        tools = value.get('tools', [])  # Default to empty list if 'tools' is not found
+        if tool in tools:
+            action = value.get('action')  # Use None as default if 'action' is not found
+            required = value.get('required', False)  # Use False as default if 'required' is not found
+            default = value.get('default')  # Use None as default if 'default' is not found
+            type_value = value.get('type', 'str')  # Assume 'str' as default type if 'type' is not specified
+            
+            # Determine the correct function based on conditions
+            if action:
+                parser.add_argument(*value['keys'], help=value['help'], action=action)
+            elif required and default is None:  # Checks if 'required' is true and 'default' is not provided
+                parser.add_argument(*value['keys'], help=value['help'], type=type_mapper[type_value], required=True)
+            elif required:  # Checks if 'required' is true (default is provided, as checked above)
+                parser.add_argument(*value['keys'], help=value['help'], default=default, type=type_mapper[type_value], required=True)
+            else:  # Case when neither 'action' nor 'required' conditions are met
+                # Here, it handles the case where default might be None, which is a valid scenario
+                kwargs = {'help': value['help'], 'type': type_mapper[type_value]}
+                if default is not None: kwargs['default'] = default  # Add 'default' only if it's specified
+                parser.add_argument(*value['keys'], **kwargs)
+
+    # for key, value in args_dict.items():
+    #     print(key, value)
+    #     print(tool, value['tools'])
+    #     if tool in value['tools']:
+    #         print("entering if")
+    #         if 'action' in value:
+    #             print("action")
+    #             # print(value['keys'], value['help'], value['action'])
+    #             # parser.add_argument(*value['keys'], help=value['help'], action=value['action'])
+    #         elif 'required' in value and 'default' not in value:
+    #             print(value['keys'], value['help'], value['action'])
+    #             parser.add_argument(*value['keys'], help=value['help'], type=type_mapper[value['type']], required=True)
+    #         elif 'required' in value:
+    #             print(value['keys'], value['help'], value['action'])
+    #             parser.add_argument(*value['keys'], help=value['help'], default=value['default'], type=type_mapper[value['type']], required=True)
+    #         else:
+    #             print(value['keys'], value['help'], value['action'])
+    #             parser.add_argument(*value['keys'], help=value['help'], default=value['default'], type=type_mapper[value['type']]) 
 
     # parser.add_argument('-r1', '--fastq_r1', type=str, help='First fastq file', default='',
     #                     required='fastq_r1' in required_params)
@@ -406,7 +445,7 @@ def getCRISPRessoArgParser(tool, parser_title="CRISPResso Parameters"):
 
 
 def get_crispresso_options():
-    parser = getCRISPRessoArgParser(parser_title="Temp Params", required_params=[])
+    parser = getCRISPRessoArgParser("WGS")
     crispresso_options = set()
     d = parser.__dict__['_option_string_actions']
     for key in d.keys():
