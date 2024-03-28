@@ -480,7 +480,7 @@ def process_fastq(fastq_filename, variantCache, ref_names, refs, args):
     aln_matrix = CRISPResso2Align.read_matrix(aln_matrix_loc)
 
     pe_scaffold_dna_info = (0, None) #scaffold start loc, scaffold seq to search
-    if args.prime_editing_pegRNA_scaffold_seq != "":
+    if args.prime_editing_pegRNA_scaffold_seq != "" and args.prime_editing_pegRNA_extension_seq != "":
         pe_scaffold_dna_info = get_pe_scaffold_search(refs['Prime-edited']['sequence'], args.prime_editing_pegRNA_extension_seq, args.prime_editing_pegRNA_scaffold_seq, args.prime_editing_pegRNA_scaffold_min_match_length)
 
     not_aln = {} #cache for reads that don't align
@@ -555,7 +555,7 @@ def process_bam(bam_filename, bam_chr_loc, output_bam, variantCache, ref_names, 
     aln_matrix = CRISPResso2Align.read_matrix(aln_matrix_loc)
 
     pe_scaffold_dna_info = (0, None) #scaffold start loc, scaffold sequence
-    if args.prime_editing_pegRNA_scaffold_seq != "":
+    if args.prime_editing_pegRNA_scaffold_seq != "" and args.prime_editing_pegRNA_extension_seq != "":
         pe_scaffold_dna_info = get_pe_scaffold_search(refs['Prime-edited']['sequence'], args.prime_editing_pegRNA_extension_seq, args.prime_editing_pegRNA_scaffold_seq, args.prime_editing_pegRNA_scaffold_min_match_length)
 
     not_aln = {} #cache for reads that don't align
@@ -694,7 +694,7 @@ def process_fastq_write_out(fastq_input, fastq_output, variantCache, ref_names, 
     aln_matrix = CRISPResso2Align.read_matrix(aln_matrix_loc)
 
     pe_scaffold_dna_info = (0, None) #scaffold start loc, scaffold sequence
-    if args.prime_editing_pegRNA_scaffold_seq != "":
+    if args.prime_editing_pegRNA_scaffold_seq != "" and args.prime_editing_pegRNA_extension_seq != "":
         pe_scaffold_dna_info = get_pe_scaffold_search(refs['Prime-edited']['sequence'], args.prime_editing_pegRNA_extension_seq, args.prime_editing_pegRNA_scaffold_seq, args.prime_editing_pegRNA_scaffold_min_match_length)
     not_aln = {} #cache for reads that don't align
     not_aln[''] = "" #add empty sequence to the not_aln in case the fastq has an extra newline at the end
@@ -823,7 +823,7 @@ def process_single_fastq_write_bam_out(fastq_input, bam_output, bam_header, vari
     aln_matrix = CRISPResso2Align.read_matrix(aln_matrix_loc)
 
     pe_scaffold_dna_info = (0, None)  # scaffold start loc, scaffold sequence
-    if args.prime_editing_pegRNA_scaffold_seq != "":
+    if args.prime_editing_pegRNA_scaffold_seq != "" and args.prime_editing_pegRNA_extension_seq != "":
         pe_scaffold_dna_info = get_pe_scaffold_search(refs['Prime-edited']['sequence'], args.prime_editing_pegRNA_extension_seq, args.prime_editing_pegRNA_scaffold_seq, args.prime_editing_pegRNA_scaffold_min_match_length)
     not_aln = {}  # cache for reads that don't align
     not_aln[''] = ""  # add empty sequence to the not_aln in case the fastq has an extra newline at the end
@@ -1428,6 +1428,8 @@ def main():
 
 
         #Prime editing
+        if 'Prime-edited' in amplicon_name_arr:
+            raise CRISPRessoShared.BadParameterException("An amplicon named 'Prime-edited' must not be provided.")
         prime_editing_extension_seq_dna = "" #global var for the editing extension sequence for the scaffold quantification below
         prime_editing_edited_amp_seq = ""
         if args.prime_editing_pegRNA_extension_seq != "":
@@ -1489,8 +1491,6 @@ def main():
             if new_ref in amplicon_seq_arr:
                 raise CRISPRessoShared.BadParameterException('The calculated prime-edited amplicon is the same as the reference sequence.')
             amplicon_seq_arr.append(new_ref)
-            if 'Prime-edited' in amplicon_name_arr:
-                raise CRISPRessoShared.BadParameterException("An amplicon named 'Prime-edited' must not be provided.")
             amplicon_name_arr.append('Prime-edited')
             amplicon_quant_window_coordinates_arr.append('')
             prime_editing_edited_amp_seq = new_ref
@@ -2380,7 +2380,7 @@ def main():
 
         info('Done!', {'percent_complete': 20})
 
-        if args.prime_editing_pegRNA_scaffold_seq != "":
+        if args.prime_editing_pegRNA_scaffold_seq != "" and args.prime_editing_pegRNA_extension_seq != "":
             #introduce a new ref (that we didn't align to) called 'Scaffold Incorporated' -- copy it from the ref called 'prime-edited'
             new_ref = deepcopy(refs['Prime-edited'])
             new_ref['name'] = "Scaffold-incorporated"
