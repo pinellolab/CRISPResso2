@@ -647,7 +647,7 @@
             "help": "CRISPResso command to call",
             "type": "str",
             "default": "CRISPResso",
-            "tools": ["Batch", "Pooled", "WGS"]
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "amplicons_file": {
             "keys": ["-f", "--amplicons_file"],
@@ -661,7 +661,7 @@
             "help": "Gene Annotation Table from UCSC Genome Browser Tables (http://genome.ucsc.edu/cgi-bin/hgTables?command=start), please select as table 'knownGene', as output format 'all fields from selected table' and as file returned 'gzip compressed'",
             "type": "str",
             "default": "",
-            "tools": ["Pooled"]
+            "tools": ["WGS", "Pooled"]
         },
         "bowtie2_options_string": {
             "keys": ["--bowtie2_options_string"],
@@ -733,14 +733,14 @@
             "type": "str",
             "required": "bam_file",
             "default": "bam filename",
-            "tools": ["WGS"]
+            "tools": ["Core","WGS"]
         },
         "region_file": {
             "keys": ["-f", "--region_file"],
             "help": "Regions description file. A BED format file containing the regions to analyze, one per line. The REQUIRED columns are: chr_id(chromosome name), bpstart(start position), bpend(end position), the optional columns are:name (an unique indentifier for the region), guide_seq, expected_hdr_amplicon_seq, coding_seq, see CRISPResso help for more details on these last 3 parameters)",
             "type": "str",
             "required": "region_file",
-            "tools": ["WGS"]
+            "tools": ["Core","WGS"]
         },
         "reference_file": {
             "keys": ["-r", "--reference_file"],
@@ -748,14 +748,14 @@
             "type": "str",
             "default": "",
             "required": "reference_file",
-            "tools": ["WGS"]
+            "tools": ["Core", "WGS"]
         },
         "min_reads_to_use_region_wgs": {
             "keys": ["--min_reads_to_use_region"],
             "help": "Minimum number of reads that align to a region to perform the CRISPResso analysis for WGS",
             "type": "float",
             "default": 10,
-            "tools": ["WGS"]
+            "tools": ["Core", "WGS"]
         },
         "crispresso_output_folder_1": {
             "keys": ["crispresso_output_folder_1"],
