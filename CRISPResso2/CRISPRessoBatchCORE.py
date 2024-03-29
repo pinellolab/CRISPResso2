@@ -174,7 +174,7 @@ def main():
                 batch_params[int_col] = batch_params[int_col].astype(int)
 
         # rename column "a" to "amplicon_seq", etc
-        batch_params.rename(index=str, columns=CRISPRessoShared.get_crispresso_options_lookup(), inplace=True)
+        batch_params.rename(index=str, columns=CRISPRessoShared.get_crispresso_options_lookup("Batch"), inplace=True)
         batch_count = batch_params.shape[0]
         batch_params.index = range(batch_count)
 

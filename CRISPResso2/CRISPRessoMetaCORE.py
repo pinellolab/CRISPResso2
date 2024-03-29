@@ -123,7 +123,7 @@ def main():
         print('table:')
         print(meta_params)
         #rename column "a" to "amplicon_seq", etc
-        meta_params.rename(index=str, columns=CRISPRessoShared.get_crispresso_options_lookup(), inplace=True)
+        meta_params.rename(index=str, columns=CRISPRessoShared.get_crispresso_options_lookup("Core"), inplace=True)
         meta_count = meta_params.shape[0]
         meta_params.index = range(meta_count)
 

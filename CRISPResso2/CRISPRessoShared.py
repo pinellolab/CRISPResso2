@@ -159,6 +159,7 @@ def getCRISPRessoArgParser(tool, parser_title="CRISPResso Parameters"):
     print("About to parse args")
 
     for key, value in args_dict.items():
+        # print(key, value)
         tools = value.get('tools', [])  # Default to empty list if 'tools' is not found
         if tool in tools:
             action = value.get('action')  # Use None as default if 'action' is not found
@@ -455,7 +456,7 @@ def get_crispresso_options():
     return crispresso_options
 
 
-def get_crispresso_options_lookup():
+def get_crispresso_options_lookup(tool):
     ##dict to lookup abbreviated params
     #    crispresso_options_lookup = {
     #    'r1':'fastq_r1',
@@ -465,7 +466,7 @@ def get_crispresso_options_lookup():
     #    .....
     # }
     crispresso_options_lookup = {}
-    parser = getCRISPRessoArgParser(parser_title="Temp Params", required_params=[])
+    parser = getCRISPRessoArgParser(tool)
     d = parser.__dict__['_option_string_actions']
     for key in d.keys():
         d2 = d[key].__dict__['dest']
@@ -607,6 +608,8 @@ def clean_filename(filename):
     return (''.join(c for c in cleanedFilename if c in validFilenameChars))
 
 def check_file(filename):
+    print("about to check:")
+    print(filename)
     try:
         with open(filename):
             pass

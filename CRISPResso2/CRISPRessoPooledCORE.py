@@ -649,7 +649,7 @@ def main():
                     head_line = amplicons_fin.readline()
                 header_els = head_line.split('\t')
 
-            head_lookup = CRISPRessoShared.get_crispresso_options_lookup()  # dict of qwc -> quantification_window_coordinates
+            head_lookup = CRISPRessoShared.get_crispresso_options_lookup("Pooled")  # dict of qwc -> quantification_window_coordinates
 
             # add legacy CRISPRessoPooled headers to the head_lookup
             # lowercase input header names for matching - they'll get fixed in the matching to default_input_amplicon_headers
