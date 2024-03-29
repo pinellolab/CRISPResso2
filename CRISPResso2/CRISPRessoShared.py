@@ -142,10 +142,10 @@ def getCRISPRessoArgParser(tool, parser_title="CRISPResso Parameters"):
     parser = argparse.ArgumentParser(description=parser_title, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--version', action='version', version='%(prog)s ' + __version__)
 
-    # Get the directory of the current script
+    # Getting the directory of the current script
     current_dir = Path(__file__).parent
 
-    # Adjust the path to point directly to the args.json file
+    # Adjusting the path to point directly to the args.json file
     json_path = current_dir / 'args.json'
 
     with open(json_path, 'r') as json_file:
