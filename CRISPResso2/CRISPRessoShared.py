@@ -445,8 +445,8 @@ def getCRISPRessoArgParser(tool, parser_title="CRISPResso Parameters"):
     return parser
 
 
-def get_crispresso_options():
-    parser = getCRISPRessoArgParser("WGS")
+def get_crispresso_options(tool):
+    parser = getCRISPRessoArgParser(tool)
     crispresso_options = set()
     d = parser.__dict__['_option_string_actions']
     for key in d.keys():
