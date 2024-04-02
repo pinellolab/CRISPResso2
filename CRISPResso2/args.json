@@ -699,7 +699,7 @@
             "help": "Only alleles with at least this percentage frequency in the population will be reported in the postrun analysis. This parameter is given as a percent, so 30 is 30%%.",
             "type": "float",
             "default": "30",
-            "tools": ["Pooled"]
+            "tools": ["Core", "Pooled"]
         },
         "alternate_alleles": {
             "keys": ["--alternate_alleles"],
@@ -724,7 +724,7 @@
             "keys": ["--demultiplex_only_at_amplicons"],
             "help": "If set, and an amplicon file (--amplicons_file) and reference sequence (--bowtie2_index) are provided, reads overlapping alignment positions of amplicons will be demultiplexed and assigned to that amplicon. If this flag is not set, the entire genome will be demultiplexed and reads with the same start and stop coordinates as an amplicon will be assigned to that amplicon.",
             "action": "store_true",
-            "tools": ["Pooled"]
+            "tools": ["Core", "Pooled"]
         },
         "bam_file": {
             "keys": ["-b", "--bam_file"],
@@ -737,7 +737,7 @@
             "keys": ["-f", "--region_file"],
             "help": "Regions description file. A BED format file containing the regions to analyze, one per line. The REQUIRED columns are: chr_id(chromosome name), bpstart(start position), bpend(end position), the optional columns are:name (an unique indentifier for the region), guide_seq, expected_hdr_amplicon_seq, coding_seq, see CRISPResso help for more details on these last 3 parameters)",
             "type": "str",
-            "tools": ["Core","WGS"]
+            "tools": ["WGS"]
         },
         "reference_file": {
             "keys": ["-r", "--reference_file"],

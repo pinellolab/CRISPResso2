@@ -479,6 +479,7 @@ def get_crispresso_options_lookup(tool):
 def propagate_crispresso_options(cmd, options, params, paramInd=None):
     ####
     # cmd - the command to run
+    breakpoint()
     # options - list of options to propagate e.g. crispresso options
     # params - arguments given to this program
     # paramInd - index in dict - this is the run number in case of multiple runs.
@@ -511,6 +512,7 @@ def propagate_crispresso_options(cmd, options, params, paramInd=None):
                         cmd += ' --%s' % option
                 else:
                     cmd += ' --%s %s' % (option, str(val))
+    breakpoint()
     return cmd
 
 

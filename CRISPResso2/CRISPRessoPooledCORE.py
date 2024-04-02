@@ -880,7 +880,8 @@ def main():
 
                 else:
                     warn('Skipping amplicon [%s] because no reads align to it\n'% idx)
-
+            print(123454321)
+            print(crispresso_cmds)
             CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_pooled, 'amplicon', args.skip_failed, start_end_percent=(16, 80))
             # Initialize array to track failed runs
             failed_batch_arr = []
