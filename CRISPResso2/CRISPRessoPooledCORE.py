@@ -338,8 +338,9 @@ def main():
         CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
 
         crispresso_options = CRISPRessoShared.get_crispresso_options("Pooled")
-        options_to_ignore = {'fastq_r1', 'fastq_r2', 'amplicon_seq', 'amplicon_name', 'output_folder', 'name', 'zip_output'}
+        options_to_ignore = {'fastq_r1', 'fastq_r2', 'amplicon_seq', 'amplicon_name', 'output_folder', 'name', 'zip_output', 'amplicons_file'}
         crispresso_options_for_pooled = list(crispresso_options-options_to_ignore)
+        breakpoint()
 
         files_to_remove = []
 
