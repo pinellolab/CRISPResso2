@@ -337,10 +337,9 @@ def main():
 
         CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
 
-        crispresso_options = CRISPRessoShared.get_crispresso_options("Pooled")
-        options_to_ignore = {'fastq_r1', 'fastq_r2', 'amplicon_seq', 'amplicon_name', 'output_folder', 'name', 'zip_output', 'amplicons_file'}
+        crispresso_options = CRISPRessoShared.get_crispresso_options("Core")
+        options_to_ignore = {'fastq_r1', 'fastq_r2', 'amplicon_seq', 'amplicon_name', 'output_folder', 'name', 'zip_output'}
         crispresso_options_for_pooled = list(crispresso_options-options_to_ignore)
-        breakpoint()
 
         files_to_remove = []
 
@@ -650,7 +649,7 @@ def main():
                     head_line = amplicons_fin.readline()
                 header_els = head_line.split('\t')
 
-            head_lookup = CRISPRessoShared.get_crispresso_options_lookup("Pooled")  # dict of qwc -> quantification_window_coordinates
+            head_lookup = CRISPRessoShared.get_crispresso_options_lookup("Core")  # dict of qwc -> quantification_window_coordinates
 
             # add legacy CRISPRessoPooled headers to the head_lookup
             # lowercase input header names for matching - they'll get fixed in the matching to default_input_amplicon_headers

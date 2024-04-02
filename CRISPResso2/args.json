@@ -23,7 +23,7 @@
         },
         "amplicon_name": {
             "name": "Amplicon Name",
-            "keys": ["--amplicon_name"],
+            "keys": ["-an", "--amplicon_name"],
             "help": "Amplicon Name is important and (can be comma-separated list of multiple names, corresponding to amplicon sequences given in --amplicon_seq",
             "type": "str",
             "default": "Reference",
@@ -74,7 +74,7 @@
             "keys": ["-fg", "--flexiguide_seq"],
             "help": "sgRNA sequence (flexible) (can be comma-separated list of multiple flexiguides). The flexiguide sequence will be aligned to the amplicon sequence(s), as long as the guide sequence has homology as set by --flexiguide_homology.",
             "type": "str",
-            "default": "",
+            "default": "None",
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "flexiguide_homology": {
@@ -111,6 +111,13 @@
             "help": "Subsequence/s of the amplicon sequence covering one or more coding sequences for frameshift analysis. If more than one (for example, split by intron/s), please separate by commas.",
             "type": "str",
             "default": "",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "config_file": {
+            "keys": ["--config_file"],
+            "help": "File path to JSON file with config elements",
+            "type": "str",
+            "default": "None",
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "min_average_read_quality": {
@@ -550,6 +557,20 @@
             "action": "store_true",
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
+        "prime_editing_gap_open_penalty": {
+            "keys": ["--prime_editing_gap_open_penalty"],
+            "type": "int",
+            "help": "If set, adjusts the alignment gap open penalty for calculating alignment between pegRNA components (e.g. spacer and extension).",
+            "default": -50,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "prime_editing_gap_extend_penalty": {
+            "keys": ["--prime_editing_gap_extend_penalty"],
+            "type": "int",
+            "help": "If set, adjusts the alignment gap extension penalty for calculating alignment between pegRNA components (e.g. spacer and extension). Because prime editing may introduce large insertions/deletions, this is set to 0 to preference these large insertions.",
+            "default": 0,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
         "crispresso1_mode": {
             "keys": ["--crispresso1_mode"],
             "help": "Parameter usage as in CRISPResso 1",
@@ -646,7 +667,7 @@
             "help": "CRISPResso command to call",
             "type": "str",
             "default": "CRISPResso",
-            "tools": ["Core", "Batch", "Pooled", "WGS"]
+            "tools": ["Batch", "Pooled", "WGS", "Meta"]
         },
         "amplicons_file": {
             "keys": ["-f", "--amplicons_file"],
@@ -699,7 +720,7 @@
             "help": "Only alleles with at least this percentage frequency in the population will be reported in the postrun analysis. This parameter is given as a percent, so 30 is 30%%.",
             "type": "float",
             "default": "30",
-            "tools": ["Core", "Pooled"]
+            "tools": ["Pooled"]
         },
         "alternate_alleles": {
             "keys": ["--alternate_alleles"],
@@ -724,14 +745,14 @@
             "keys": ["--demultiplex_only_at_amplicons"],
             "help": "If set, and an amplicon file (--amplicons_file) and reference sequence (--bowtie2_index) are provided, reads overlapping alignment positions of amplicons will be demultiplexed and assigned to that amplicon. If this flag is not set, the entire genome will be demultiplexed and reads with the same start and stop coordinates as an amplicon will be assigned to that amplicon.",
             "action": "store_true",
-            "tools": ["Core", "Pooled"]
+            "tools": ["Pooled"]
         },
         "bam_file": {
             "keys": ["-b", "--bam_file"],
             "help": "WGS aligned bam file",
             "type": "str",
             "default": "bam filename",
-            "tools": ["Core","WGS"]
+            "tools": ["WGS"]
         },
         "region_file": {
             "keys": ["-f", "--region_file"],
@@ -744,14 +765,14 @@
             "help": "A FASTA format reference file (for example hg19.fa for the human genome)",
             "type": "str",
             "default": "",
-            "tools": ["Core", "WGS"]
+            "tools": ["WGS"]
         },
         "min_reads_to_use_region_wgs": {
             "keys": ["--min_reads_to_use_region"],
             "help": "Minimum number of reads that align to a region to perform the CRISPResso analysis for WGS",
             "type": "float",
             "default": 10,
-            "tools": ["Core", "WGS"]
+            "tools": ["WGS"]
         },
         "crispresso_output_folder_1": {
             "keys": ["crispresso_output_folder_1"],

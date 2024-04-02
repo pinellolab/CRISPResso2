@@ -100,7 +100,7 @@ def main():
 
         debug_flag = args.debug
 
-        crispresso_options = CRISPRessoShared.get_crispresso_options()
+        crispresso_options = CRISPRessoShared.get_crispresso_options("Core")
         options_to_ignore = {'name', 'output_folder'}
         crispresso_options_for_meta = list(crispresso_options-options_to_ignore)
 

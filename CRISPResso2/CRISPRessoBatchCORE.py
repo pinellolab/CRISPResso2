@@ -86,7 +86,7 @@ def main():
 
         debug_flag = args.debug
 
-        crispresso_options = CRISPRessoShared.get_crispresso_options("Batch")
+        crispresso_options = CRISPRessoShared.get_crispresso_options("Core")
         options_to_ignore = {'name', 'output_folder', 'zip_output'}
         crispresso_options_for_batch = list(crispresso_options-options_to_ignore)
 
@@ -174,7 +174,7 @@ def main():
                 batch_params[int_col] = batch_params[int_col].astype(int)
 
         # rename column "a" to "amplicon_seq", etc
-        batch_params.rename(index=str, columns=CRISPRessoShared.get_crispresso_options_lookup("Batch"), inplace=True)
+        batch_params.rename(index=str, columns=CRISPRessoShared.get_crispresso_options_lookup("Core"), inplace=True)
         batch_count = batch_params.shape[0]
         batch_params.index = range(batch_count)
 
