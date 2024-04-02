@@ -1386,6 +1386,61 @@ def force_merge_pairs(r1_filename, r2_filename, output_filename):
     return (lineCount)
 
 
+def split_interleaved_fastq(fastq_filename, output_filename_r1, output_filename_r2):
+    """Split an interleaved fastq file into two files, one for each read pair.
+
+    This assumes that the input fastq file is interleaved, i.e. that the reads are ordered as follows:
+        R1
+        R2
+        R1
+        R2
+        ...
+
+    And results in two files, one for each read pair:
+        output_filename_r1
+            R1
+            R1
+            ...
+        output_filename_r2
+            R2
+            R2
+            ...
+
+    Parameters
+    ----------
+    fastq_filename : str
+        Path to the input fastq file.
+    output_filename_r1 : str
+        Path to the output fastq file for r1.
+    output_filename_r2 : str
+        Path to the output fastq file for r2.
+
+    Returns
+    -------
+    output_filename_r1 : str
+        Path to the output fastq file for r1.
+    output_filename_r2 : str
+        Path to the output fastq file for r2.
+    """
+    if fastq_filename.endswith('.gz'):
+        fastq_handle = gzip.open(fastq_filename, 'rt')
+    else:
+        fastq_handle = open(fastq_filename)
+
+    try:
+        fastq_splitted_outfile_r1 = gzip.open(output_filename_r1, 'wt')
+        fastq_splitted_outfile_r2 = gzip.open(output_filename_r2, 'wt')
+        [fastq_splitted_outfile_r1.write(line) if (i % 8 < 4) else fastq_splitted_outfile_r2.write(line) for i, line in enumerate(fastq_handle)]
+    except:
+        raise BadParameterException('Error in splitting read pairs from a single file')
+    finally:
+        fastq_handle.close()
+        fastq_splitted_outfile_r1.close()
+        fastq_splitted_outfile_r2.close()
+
+    return output_filename_r1, output_filename_r2
+
+
 ######
 # allele modification functions
 ######
@@ -1588,7 +1643,7 @@ def get_amplicon_info_for_guides(ref_seq, guides, guide_mismatches, guide_names,
     # create mask of positions in which to include/exclude indels for the quantification window
     # first, if exact coordinates have been given, set those
     given_include_idxs = []
-    if quantification_window_coordinates is not None:
+    if quantification_window_coordinates is not None and quantification_window_coordinates != "0":
         coordinate_include_idxs = []
         theseCoords = str(quantification_window_coordinates).split("_")
         for coord in theseCoords:
@@ -1677,7 +1732,47 @@ def set_guide_array(vals, guides, property_name):
     for idx, val in enumerate(vals_array):
         if val != '':
             ret_array[idx] = int(val)
-    return ret_array
+    return ret_array        
+
+
+def get_relative_coordinates(to_sequence, from_sequence):
+    """Given an alignment, get the relative coordinates of the second sequence to the first.
+
+    For example, from_sequence[i] matches to to_sequence[inds[i]]. A `-1`
+    indicates a gap at the beginning of `to_sequence`.
+
+    Parameters
+    ----------
+    to_sequence : str
+        The alignment of the first sequence (where the coordinates are relative to)
+    from_sequence : str
+        The alignment of the second sequence
+
+    Returns
+    -------
+    s1inds_gap_left : list of int
+        The relative coordinates of the second sequence to the first, where gaps
+        in the first sequence are filled with the left value.
+    s1inds_gap_right : list of int
+        The relative coordinates of the second sequence to the first, where gaps
+        in the first sequence are filled with the right value.
+    """
+    s1inds_gap_left = []
+    s1inds_gap_right = []
+    s1idx_left = -1
+    s1idx_right = 0
+    s2idx = -1
+    for ix in range(len(to_sequence)):
+        if to_sequence[ix] != "-":
+            s1idx_left += 1
+        if from_sequence[ix] != "-":
+            s2idx += 1
+            s1inds_gap_left.append(s1idx_left)
+            s1inds_gap_right.append(s1idx_right)
+        if to_sequence[ix] != "-":
+            s1idx_right += 1
+
+    return s1inds_gap_left, s1inds_gap_right
 
 
 def get_alignment_coordinates(to_sequence, from_sequence, aln_matrix, needleman_wunsch_gap_open,
@@ -1701,23 +1796,7 @@ def get_alignment_coordinates(to_sequence, from_sequence, aln_matrix, needleman_
                                                         gap_open=needleman_wunsch_gap_open,
                                                         gap_extend=needleman_wunsch_gap_extend,
                                                         gap_incentive=this_gap_incentive)
-    #    print(fws1)
-    #    print(fws2)
-    s1inds_l = []
-    s1inds_r = []
-    s1ix_l = -1
-    s1ix_r = 0
-    s2ix = -1
-    for ix in range(len(fws1)):
-        if fws1[ix] != "-":
-            s1ix_l += 1
-        if fws2[ix] != "-":
-            s2ix += 1
-            s1inds_l.append(s1ix_l)
-            s1inds_r.append(s1ix_r)
-        if fws1[ix] != "-":
-            s1ix_r += 1
-    return s1inds_l, s1inds_r
+    return get_relative_coordinates(fws1, fws2)
 
 
 def get_mismatches(seq_1, seq_2, aln_matrix, needleman_wunsch_gap_open, needleman_wunsch_gap_extend):

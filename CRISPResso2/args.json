@@ -183,7 +183,7 @@
             "keys": ["--split_interleaved_input", "--split_paired_end"],
             "help": "Splits a single fastq file containing paired end reads into two files before running CRISPResso",
             "action": "store_true",
-            "tools": ["Core", "Batch", "Pooled", "WGS"]
+            "tools": ["Core", "Batch", "Pooled"]
         },
         "trim_sequences": {
             "name": "Trimming Adapter",

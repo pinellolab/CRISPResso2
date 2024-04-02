@@ -44,7 +44,6 @@
 {% endblock %}
 
 {% block content %}
-
 <div class="row">
 <div class="col-sm-1"></div>
 <div class="col-sm-10">
@@ -61,7 +60,7 @@
                     <div class="list-group list-group-flush">
                         {% for region_name in run_names %}
 	                    <a href="{{sub_html_files[region_name]}}" class="list-group-item list-group-item-action">{{region_name}}</a>
-                      {% endfor %}
+                        {% endfor %}
                     </div>
                 </div>
             </div>

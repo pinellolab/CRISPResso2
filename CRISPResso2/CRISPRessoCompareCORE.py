@@ -398,7 +398,8 @@ def main():
                         merged[quant_cols] = merged[quant_cols].fillna(0)
                         lfc_error =0.1
                         merged['each_LFC'] = np.log2(((merged['%Reads_'+sample_1_name]+lfc_error)/(merged['%Reads_'+sample_2_name]+lfc_error)).astype(float)).replace([np.inf, np.NaN], 0)
-                        merged = merged.reset_index().set_index('Aligned_Sequence')
+                        merged = merged.sort_values(['%Reads_'+sample_1_name, 'Reference_Sequence', 'n_deleted', 'n_inserted', 'n_mutated'], ascending=False)
+                        merged = merged.reset_index(drop=True).set_index('Aligned_Sequence')
                         output_root = allele_file_1_name.replace(".txt", "")
                         allele_comparison_file = _jp(output_root+'.txt')
                         merged.to_csv(allele_comparison_file, sep="\t", index=None)

@@ -1,0 +1,83 @@
+name: Run Integration Tests
+
+on:
+  push:
+  
+  pull_request:
+    types: [opened, reopened]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    env:
+      CRISPRESSO2_DIR: ${GITHUB_WORKSPACE}/../CRISPResso2_copy
+
+    strategy:
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Conda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+          mamba-version: "*"
+          channels: conda-forge,bioconda,defaults
+          auto-activate-base: false
+          activate-environment: test_env
+          environment-file: .github/envs/test_env.yml
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc g++ bowtie2 samtools libsys-hostname-long-perl
+        pip install ydiff
+
+    - name: Create directory for files
+      run: |
+        mkdir ../CRISPResso2_copy
+        cp -r * ../CRISPResso2_copy
+
+    - name: Copy C2_tests repo
+      uses: actions/checkout@v3
+      with:
+        repository: edilytics/CRISPResso2_tests
+        token: ${{ secrets.ACCESS_CRISPRESSO2_TESTS }}
+        # ref: '<BRANCH_NAME>' // Use this to specify a branch other than master
+
+    - name: Run Basic
+      run: |
+        make basic test
+
+    - name: Run Params
+      if: success() || failure()
+      run: |
+        make params test
+
+    - name: Run Prime Editor
+      if: success() || failure()
+      run: |
+        make prime-editor test
+
+    - name: Run Batch
+      if: success() || failure()
+      run: |
+        make batch test
+
+    - name: Run Pooled
+      if: success() || failure()
+      run: |
+        make pooled test
+
+    - name: Run WGS
+      if: success() || failure()
+      run: |
+        make wgs test
+
+    - name: Run Compare
+      if: success() || failure()
+      run: |
+        make compare test
