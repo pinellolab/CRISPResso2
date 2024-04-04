@@ -91,7 +91,7 @@ class StatusFormatter(logging.Formatter):
     def format(self, record):
         record.percent_complete = ''
         if record.args and 'percent_complete' in record.args:
-            record.percent_complete = '{0:.2f}% '.format(record.args['percent_complete'])
+            record.percent_complete = float(record.args['percent_complete'])
             self.last_percent_complete = record.percent_complete
         elif hasattr(self, 'last_percent_complete'): # if we don't have a percent complete, use the last one
             record.percent_complete = self.last_percent_complete
@@ -101,7 +101,7 @@ class StatusFormatter(logging.Formatter):
 class StatusHandler(logging.FileHandler):
     def __init__(self, filename):
         super().__init__(filename, 'w')
-        self.setFormatter(StatusFormatter('%(percent_complete)s%(message)s'))
+        self.setFormatter(StatusFormatter('{\n  "message": "%(message)s",\n  "percent_complete": %(percent_complete)s\n}'))
 
     def emit(self, record):
         """Overwrite the existing file and write the new log."""
@@ -896,7 +896,7 @@ def write_crispresso_info(crispresso_output_file, crispresso2_info):
 
     """
     with open(crispresso_output_file, 'w') as fh:
-        json.dump(crispresso2_info, fh, cls=CRISPRessoJSONEncoder)
+        json.dump(crispresso2_info, fh, cls=CRISPRessoJSONEncoder, indent=2)
 
 
 def get_command_output(command):
@@ -1045,7 +1045,7 @@ def check_if_failed_run(folder_name, info):
     """
 
     run_data_file = os.path.join(folder_name, 'CRISPResso2_info.json')
-    status_info = os.path.join(folder_name, 'CRISPResso_status.txt')
+    status_info = os.path.join(folder_name, 'CRISPResso_status.json')
     if not os.path.isfile(run_data_file) or not os.path.isfile(status_info):
         info("Skipping folder '%s'. Cannot find run data status file at '%s'."%(folder_name, run_data_file))
         if "CRISPRessoPooled" in folder_name:
@@ -1059,20 +1059,31 @@ def check_if_failed_run(folder_name, info):
     else:
         with open(status_info) as fh:
             try:
-                file_contents = fh.read()
-                search_result = re.search(r'(\d+\.\d+)% (.+)', file_contents)
-                if search_result:
-                    percent_complete, status = search_result.groups()
-                    if percent_complete != '100.00':
-                        info("Skipping folder '%s'. Run is not complete (%s)." % (folder_name, status))
-                        return True, status
+                status_dict = json.load(fh)
+                if status_dict['percent_complete'] != 100.0:
+                    info("Skipping folder '%s'. Run is not complete (%s)." % (folder_name, status_dict['status']))
+                    return True, str(status_dict['message'])
                 else:
-                    return True, file_contents
-            except Exception as e:
-                print(e)
-                info("Skipping folder '%s'. Cannot parse status file '%s'." % (folder_name, status_info))
-                return True, "Cannot parse status file '%s'." % (status_info)
-    return False, ""
+                    return False, ""
+            except:
+                pass
+
+        with open(status_info) as fh:
+                try:
+                    file_contents = fh.read()
+                    search_result = re.search(r'(\d+\.\d+)% (.+)', file_contents)
+                    if search_result:
+                        percent_complete, status = search_result.groups()
+                        if percent_complete != '100.00':
+                            info("Skipping folder '%s'. Run is not complete (%s)." % (folder_name, status))
+                            return True, status
+                    else:
+                        return True, file_contents
+                except Exception as e:
+                    print(e)
+                    info("Skipping folder '%s'. Cannot parse status file '%s'." % (folder_name, status_info))
+                    return True, "Cannot parse status file '%s'." % (status_info)
+        return False, ""
 
 
 def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,min_paired_end_reads_overlap,aln_matrix,needleman_wunsch_gap_open,needleman_wunsch_gap_extend,split_interleaved_input=False,min_freq_to_consider=0.2,amplicon_similarity_cutoff=0.95):

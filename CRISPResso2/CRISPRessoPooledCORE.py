@@ -359,7 +359,7 @@ def main():
 
         log_filename = _jp('CRISPRessoPooled_RUNNING_LOG.txt')
         logger.addHandler(logging.FileHandler(log_filename))
-        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('CRISPRessoPooled_status.txt')))
+        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('CRISPRessoPooled_status.json')))
 
         if args.zip_output and not args.place_report_in_output_folder:
             logger.warn('Invalid arguement combination: If zip_output is True then place_report_in_output_folder must also be True. Setting place_report_in_output_folder to True.')
