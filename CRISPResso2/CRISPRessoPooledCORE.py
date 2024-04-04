@@ -19,7 +19,7 @@ import zipfile
 from CRISPResso2 import CRISPRessoShared
 from CRISPResso2 import CRISPRessoMultiProcessing
 from CRISPResso2.CRISPRessoReports import CRISPRessoReport
-from CRISPResso2 import CRISPRessoPlot
+
 import traceback
 
 import logging
@@ -297,6 +297,11 @@ def main():
         parser = CRISPRessoShared.getCRISPRessoArgParser("Pooled", parser_title = 'CRISPRessoPooled Parameters')
 
         args = parser.parse_args()
+
+        if args.use_matplotlib or not CRISPRessoShared.is_C2Pro_installed():
+            from CRISPResso2 import CRISPRessoPlot
+        else:
+            from CRISPRessoPro import plot as CRISPRessoPlot
 
         CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
 

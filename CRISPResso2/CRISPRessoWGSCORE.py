@@ -19,8 +19,6 @@ import unicodedata
 from CRISPResso2 import CRISPRessoShared
 from CRISPResso2 import CRISPRessoMultiProcessing
 from CRISPResso2.CRISPRessoReports import CRISPRessoReport
-from CRISPResso2 import CRISPRessoPlot
-
 
 import logging
 
@@ -325,6 +323,11 @@ def main():
         parser = CRISPRessoShared.getCRISPRessoArgParser("WGS", parser_title = 'CRISPRessoWGS Parameters')
 
         args = parser.parse_args()
+
+        if args.use_matplotlib or not CRISPRessoShared.is_C2Pro_installed():
+            from CRISPResso2 import CRISPRessoPlot
+        else:
+            from CRISPRessoPro import plot as CRISPRessoPlot
 
         CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
 

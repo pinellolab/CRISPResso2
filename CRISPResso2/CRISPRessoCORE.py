@@ -30,7 +30,13 @@ import traceback
 from CRISPResso2 import CRISPRessoCOREResources
 from CRISPResso2.CRISPRessoReports import CRISPRessoReport
 from CRISPResso2 import CRISPRessoShared
-from CRISPResso2 import CRISPRessoPlot
+
+if CRISPRessoShared.is_C2Pro_installed():
+    from CRISPRessoPro import __version__ as CRISPRessoProVersion
+    C2PRO_INSTALLED = True
+else:
+    C2PRO_INSTALLED = False
+
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoMultiProcessing
 
@@ -150,7 +156,6 @@ matplotlib=check_library('matplotlib')
 #end = time.time()
 #start = time.time()
 from matplotlib import font_manager as fm
-CRISPRessoPlot.setMatplotlibDefaults()
 #end = time.time()
 
 #start = time.time()
@@ -1339,6 +1344,13 @@ def main():
             raise CRISPRessoShared.BadParameterException("Needleman Wunsch gap extend penalty must be <= 0")
 
 
+        if args.use_matplotlib or not C2PRO_INSTALLED:
+            from CRISPResso2 import CRISPRessoPlot
+        else:
+            from CRISPRessoPro import plot as CRISPRessoPlot
+        CRISPRessoPlot.setMatplotlibDefaults()
+
+
         #create output directory
         crispresso2_info_file = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso2_info.json')
         crispresso2_info = {'running_info': {}, 'results': {'alignment_stats': {}, 'general_plots': {}}} #keep track of all information for this run to be pickled and saved at the end of the run
@@ -1836,6 +1848,10 @@ def main():
 
         #now that we're done with adding possible guides and amplicons, go through each amplicon and compute quantification windows
         info('Computing quantification windows', {'percent_complete': 2})
+        if C2PRO_INSTALLED:
+            info(f'CRISPRessoPro v{CRISPRessoProVersion} installed', {'percent_complete': 3})
+        else:
+            info(f'CRISPRessoPro not installed', {'percent_complete': 3})
 
         found_guide_seq = [False]*len(guides)
         found_coding_seq = [False]*len(coding_seqs)
@@ -3551,7 +3567,7 @@ def main():
             info('Making Plots...')
         ###############################################################################################################################################
         save_png = True
-        config = CRISPRessoShared.check_custom_config(args)
+        custom_config = CRISPRessoShared.check_custom_config(args)
         if args.suppress_report:
             save_png = False
 
@@ -3630,6 +3646,7 @@ def main():
                 'N_TOTAL': N_TOTAL,
                 'piechart_plot_root': plot_1b_root,
                 'barplot_plot_root': plot_1c_root,
+                'custom_colors': custom_config['colors'],
                 'save_png': save_png
             }
             crispresso2_info['results']['general_plots']['plot_1b_root'] = os.path.basename(plot_1b_root)
@@ -3772,17 +3789,18 @@ def main():
                     mod_df_for_plot = modification_percentage_summary_df.copy()
                     mod_df_for_plot.insert(0, 'Batch', ref_name)
 
-                    plot_root = _jp('2a.'+ref_plot_name + 'Nucleotide_percentage_quilt')
+                    plot_root = _jp('2a.'+ ref_plot_name + 'Nucleotide_percentage_quilt')
+                    pro_output_name = f'plot_{os.path.basename(plot_root)}.json'
                     plot_2a_input = {
                         'nuc_pct_df': nuc_df_for_plot,
                         'mod_pct_df': mod_df_for_plot,
-                        'fig_filename_root': plot_root,
+                        'fig_filename_root': f'{_jp(pro_output_name)}' if not args.use_matplotlib and C2PRO_INSTALLED else plot_root,
                         'save_also_png': save_png,
                         'sgRNA_intervals': sgRNA_intervals,
                         'sgRNA_names': sgRNA_names,
                         'sgRNA_mismatches': sgRNA_mismatches,
                         'quantification_window_idxs': include_idxs_list,
-                        'custom_colors': config["colors"],
+                        'custom_colors': custom_config["colors"],
                     }
                     debug('Plotting nucleotide quilt across amplicon')
                     plot(CRISPRessoPlot.plot_nucleotide_quilt, plot_2a_input)
@@ -3819,17 +3837,18 @@ def main():
                         new_include_idx = []
                         for x in include_idxs_list:
                             new_include_idx += [x - new_sel_cols_start]
-                        plot_root = _jp('2b.'+ref_plot_name + 'Nucleotide_percentage_quilt_around_' + sgRNA_label)
+                        plot_root = _jp('2b.'+ ref_plot_name + 'Nucleotide_percentage_quilt_around_' + sgRNA_label)
+                        pro_output_name = f'plot_{os.path.basename(plot_root)}.json'
                         plot_2b_input = {
                             'nuc_pct_df': nuc_df_for_plot.iloc[:, sel_cols],
                             'mod_pct_df': mod_df_for_plot.iloc[:, sel_cols],
-                            'fig_filename_root': plot_root,
+                            'fig_filename_root': f'{_jp(pro_output_name)}' if not args.use_matplotlib and C2PRO_INSTALLED else plot_root,
                             'save_also_png': save_png,
                             'sgRNA_intervals': new_sgRNA_intervals,
                             'sgRNA_names': sgRNA_names,
                             'sgRNA_mismatches': sgRNA_mismatches,
                             'quantification_window_idxs': new_include_idx,
-                            'custom_colors': config["colors"],
+                            'custom_colors': custom_config["colors"],
                         }
                         debug('Plotting nucleotide distribuition around {0} for {1}'.format(sgRNA_legend, ref_name))
                         plot(CRISPRessoPlot.plot_nucleotide_quilt, plot_2b_input)
@@ -3881,6 +3900,7 @@ def main():
                     ),
                     'plot_root': plot_root,
                     'save_also_png': save_png,
+                    'ref_name': ref_name,
                 }
                 debug('Plotting indel size distribution for {0}'.format(ref_name))
                 plot(CRISPRessoPlot.plot_indel_size_distribution, plot_3a_input)
@@ -3962,6 +3982,8 @@ def main():
                     'xmax_ins': xmax_ins,
                     'xmax_mut': xmax_mut,
                     'save_also_png': save_png,
+                    'custom_colors': custom_config["colors"],
+                    'ref_name' : ref_name,
                 }
                 debug('Plotting frequency deletions/insertions for {0}'.format(ref_name))
                 plot(CRISPRessoPlot.plot_frequency_deletions_insertions, plot_3b_input)
@@ -4007,7 +4029,7 @@ def main():
                         ),
                     },
                     'plot_root': plot_root,
-                    'custom_colors': config["colors"],
+                    'custom_colors': custom_config["colors"],
                     'save_also_png': save_png,
                 }
                 debug('Plotting amplication modifications for {0}'.format(ref_name))
@@ -4037,7 +4059,7 @@ def main():
                         'Mutation position distribution', ref_name,
                     ),
                     'plot_root': plot_root,
-                    'custom_colors': config["colors"],
+                    'custom_colors': custom_config["colors"],
                     'save_also_png': save_png,
                 }
                 debug('Plotting modification frequency for {0}'.format(ref_name))
@@ -4066,7 +4088,7 @@ def main():
                     ),
                     'ref_name': ref_name,
                     'plot_root': plot_root,
-                    'custom_colors': config["colors"],
+                    'custom_colors': custom_config["colors"],
                     'save_also_png': save_png,
                 }
                 debug('Plotting quantification window locations for {0}'.format(ref_name))
@@ -4098,6 +4120,7 @@ def main():
                     },
                     'plot_root': plot_root,
                     'save_also_png': save_png,
+                    'ref_name': ref_name,
                 }
                 debug('Plotting position dependent indel for {0}'.format(ref_name))
                 plot(
@@ -4123,7 +4146,7 @@ def main():
                         'n_total': N_TOTAL,
                         'ref_len': ref_len,
                         'ref_name': ref_names[0],
-                        'custom_colors': config["colors"],
+                        'custom_colors': custom_config["colors"],
                         'save_also_png': save_png,
                     }
                     if ref_name == ref_names[0]:
@@ -4185,16 +4208,17 @@ def main():
                     hdr_nucleotide_percentage_summary_df.rename(columns={'Batch':'Amplicon'}).to_csv(nuc_freq_filename,sep='\t',header=True,index=False)
 
                     plot_root = _jp('4g.HDR_nucleotide_percentage_quilt')
+                    pro_output_name = f'plot_{os.path.basename(plot_root)}.json'
                     plot_4g_input = {
                         'nuc_pct_df': hdr_nucleotide_percentage_summary_df,
                         'mod_pct_df': hdr_modification_percentage_summary_df,
-                        'fig_filename_root': plot_root,
+                        'fig_filename_root': f'{_jp(pro_output_name)}' if not args.use_matplotlib and C2PRO_INSTALLED else plot_root,
                         'save_also_png': save_png,
                         'sgRNA_intervals': sgRNA_intervals,
                         'quantification_window_idxs': include_idxs_list,
                         'sgRNA_names': sgRNA_names,
                         'sgRNA_mismatches': sgRNA_mismatches,
-                        'custom_colors': config["colors"],
+                        'custom_colors': custom_config["colors"],
                     }
                     debug('Plotting HDR nucleotide quilt')
                     plot(CRISPRessoPlot.plot_nucleotide_quilt, plot_4g_input)
@@ -4243,6 +4267,7 @@ def main():
                             'ref_name': ref_name,
                             'plot_root': plot_root,
                             'save_also_png': save_png,
+                            'custom_colors': custom_config['colors'],
                         }
                         debug('Plotting frameshift analysis for {0}'.format(ref_name))
                         plot(CRISPRessoPlot.plot_frameshift_analysis, plot_5_input)
@@ -4268,6 +4293,7 @@ def main():
 
                         'plot_root': plot_root,
                         'save_also_png': save_png,
+                        'ref_name': ref_name,
                     }
                     debug('Plotting frameshift frequency for {0}'.format(ref_name))
                     plot(CRISPRessoPlot.plot_frameshift_frequency, plot_6_input)
@@ -4295,8 +4321,9 @@ def main():
                             ref_name,
                         ),
                         'plot_root': plot_root,
-                        'custom_colors': config["colors"],
+                        'custom_colors': custom_config["colors"],
                         'save_also_png': save_png,
+                        'ref_name': ref_name,
                     }
                     debug('Plotting non-coding mutation positions for {0}'.format(ref_name))
                     plot(CRISPRessoPlot.plot_non_coding_mutations, plot_7_input)
@@ -4310,6 +4337,8 @@ def main():
                         'count_total': count_total,
                         'plot_root': plot_root,
                         'save_also_png': save_png,
+                        'ref_name': ref_name,
+                        'custom_colors': custom_config['colors'],
                     }
                     debug('Plotting potential splice sites')
                     plot(CRISPRessoPlot.plot_potential_splice_sites, plot_8_input)
@@ -4335,7 +4364,8 @@ def main():
                         'fig_filename_root': fig_filename_root,
                         'save_also_png': save_png,
                         'quantification_window_idxs': include_idxs_list,
-                        'custom_colors': config['colors']
+                        'custom_colors': custom_config['colors'],
+                        'ref_name': ref_name,
                     }
                     debug('Plotting substitutions across reference for {0}'.format(ref_name))
                     plot(CRISPRessoPlot.plot_subs_across_ref, plot_10a_input)
@@ -4354,7 +4384,7 @@ def main():
                         ),
                         'fig_filename_root': fig_filename_root,
                         'save_also_png': save_png,
-                        'custom_colors': config['colors']
+                        'custom_colors': custom_config['colors']
                     }
                     debug('Plotting substitution frequency barplot for {0}'.format(ref_name))
                     plot(CRISPRessoPlot.plot_sub_freqs, plot_10b_input)
@@ -4369,7 +4399,7 @@ def main():
                         'plot_title': get_plot_title_with_ref_name('Substitution frequency\nin quantification window', ref_name),
                         'fig_filename_root': fig_filename_root,
                         'save_also_png': save_png,
-                        'custom_colors': config['colors']
+                        'custom_colors': custom_config['colors']
                     }
                     debug('Plotting substitution frequency barplot in quantification window for {0}'.format(ref_name))
                     plot(CRISPRessoPlot.plot_sub_freqs, plot_10c_input)
@@ -4452,6 +4482,7 @@ def main():
                         'reference_seq': ref_seq_around_cut,
                         'df_alleles': df_to_plot,
                         'fig_filename_root': fig_filename_root,
+                        'custom_colors': custom_config["colors"],
                         'MIN_FREQUENCY': args.min_frequency_alleles_around_cut_to_plot,
                         'MAX_N_ROWS': args.max_rows_alleles_around_cut_to_plot,
                         'SAVE_ALSO_PNG': save_png,
@@ -4460,7 +4491,6 @@ def main():
                         'sgRNA_names': sgRNA_names,
                         'sgRNA_mismatches': sgRNA_mismatches,
                         'annotate_wildtype_allele': args.annotate_wildtype_allele,
-                        'custom_colors': config["colors"],
                     }
                     debug('Plotting allele distribution around cut for {0}'.format(ref_name))
                     plot(CRISPRessoPlot.plot_alleles_table, plot_9_input)
@@ -4547,7 +4577,7 @@ def main():
                             'conversion_nuc_from': args.conversion_nuc_from,
                             'fig_filename_root': fig_filename_root,
                             'save_also_png': save_png,
-                            'custom_colors': config['colors'],
+                            'custom_colors': custom_config['colors'],
                         }
                         debug('Plotting conversion at {0}s around the {1} for {2}'.format(args.conversion_nuc_from, sgRNA_legend, ref_name))
                         plot(
@@ -4567,7 +4597,7 @@ def main():
                             'conversion_nuc_from': args.conversion_nuc_from,
                             'fig_filename_root': fig_filename_root,
                             'save_also_png': save_png,
-                            'custom_colors': config['colors']
+                            'custom_colors': custom_config['colors']
                         }
                         debug('Plotting non-reference conversion at {0}s around the {1} for {2}'.format(args.conversion_nuc_from, sgRNA_legend, ref_name))
                         plot(
@@ -4590,7 +4620,7 @@ def main():
                             'conversion_nuc_from': args.conversion_nuc_from,
                             'fig_filename_root': fig_filename_root,
                             'save_also_png': save_png,
-                            'custom_colors': config['colors']
+                            'custom_colors': custom_config['colors']
                         }
                         debug('Plotting scaled non-reference conversion at {0}s around the {1} for {2}'.format(args.conversion_nuc_from, sgRNA_legend, ref_name))
                         plot(
@@ -4657,6 +4687,7 @@ def main():
                         'global_non_modified_non_frameshift': global_NON_MODIFIED_NON_FRAMESHIFT,
                         'plot_root': plot_root,
                         'save_also_png': save_png,
+                        'custom_colors': custom_config['colors'],
                     }
                     debug('Plotting global frameshift in-frame mutations pie chart', {'percent_complete': 90})
                     plot(
@@ -4696,6 +4727,7 @@ def main():
                     'global_count_total': global_count_total,
                     'plot_root': plot_root,
                     'save_also_png': save_png,
+                    'custom_colors': custom_config['colors'],
                 }
                 debug('Plotting global potential splice sites pie chart', {'percent_complete': 94})
                 plot(CRISPRessoPlot.plot_impact_on_splice_sites, plot_8a_input)
@@ -4774,16 +4806,17 @@ def main():
                 include_idxs_list = refs[ref_names[0]]['include_idxs']
 
                 plot_root = _jp('11a.Prime_editing_nucleotide_percentage_quilt')
+                pro_output_name = f'plot_{os.path.basename(plot_root)}.json'
                 plot_11a_input = {
                     'nuc_pct_df': pe_nucleotide_percentage_summary_df,
                     'mod_pct_df': pe_modification_percentage_summary_df,
-                    'fig_filename_root': plot_root,
+                    'fig_filename_root': f'{_jp(pro_output_name)}' if not args.use_matplotlib and C2PRO_INSTALLED else plot_root,
                     'save_also_png': save_png,
                     'sgRNA_intervals': sgRNA_intervals,
                     'sgRNA_names': sgRNA_names,
                     'sgRNA_mismatches': sgRNA_mismatches,
                     'quantification_window_idxs': include_idxs_list,
-                    'custom_colors': config['colors']
+                    'custom_colors': custom_config['colors']
                 }
                 info('Plotting prime editing nucleotide percentage quilt', {'percent_complete': 96})
                 plot(CRISPRessoPlot.plot_nucleotide_quilt, plot_11a_input)
@@ -4833,16 +4866,17 @@ def main():
                     for x in pe_include_idxs_list:
                         new_include_idx += [x - new_sel_cols_start]
                     plot_root = _jp('11b.Nucleotide_percentage_quilt_around_' + sgRNA_label)
+                    pro_output_name = f'plot_{os.path.basename(plot_root)}.json'
                     plot_11b_input = {
                         'nuc_pct_df': pe_nucleotide_percentage_summary_df.iloc[:, sel_cols],
                         'mod_pct_df': pe_modification_percentage_summary_df.iloc[:, sel_cols],
-                        'fig_filename_root': plot_root,
+                        'fig_filename_root': f'{_jp(pro_output_name)}' if not args.use_matplotlib and C2PRO_INSTALLED else plot_root,
                         'save_also_png': save_png,
                         'sgRNA_intervals': new_sgRNA_intervals,
                         'sgRNA_names': sgRNA_names,
                         'sgRNA_mismatches': sgRNA_mismatches,
                         'quantification_window_idxs': new_include_idx,
-                        'custom_colors': config['colors']
+                        'custom_colors': custom_config['colors']
                     }
                     info('Plotting nucleotide quilt', {'percent_complete': 97})
                     plot(CRISPRessoPlot.plot_nucleotide_quilt, plot_11b_input)
@@ -4925,7 +4959,8 @@ def main():
         if args.disable_guardrails:
             crispresso2_info['results']['guardrails_htmls'] = []
         else:
-            crispresso2_info['results']['guardrails_htmls'] = CRISPRessoShared.safety_check(crispresso2_info, aln_stats, config['guardrails'])
+            crispresso2_info['results']['guardrails_htmls'] = CRISPRessoShared.safety_check(crispresso2_info, aln_stats, custom_config['guardrails'])
+
 
         if not args.suppress_report:
             if (args.place_report_in_output_folder):

@@ -17,10 +17,14 @@ import pandas as pd
 import traceback
 from datetime import datetime
 from CRISPResso2 import CRISPRessoShared
-from CRISPResso2 import CRISPRessoPlot
 from CRISPResso2.CRISPRessoReports import CRISPRessoReport
 from CRISPResso2.CRISPRessoMultiProcessing import get_max_processes, run_plot
 
+if CRISPRessoShared.is_C2Pro_installed():
+    from CRISPRessoPro import __version__ as CRISPRessoProVersion
+    C2PRO_INSTALLED = True
+else:
+    C2PRO_INSTALLED = False
 
 import logging
 
@@ -67,8 +71,17 @@ ___________________________________
 
         parser.add_argument('--debug', help='Show debug messages', action='store_true')
         parser.add_argument('-v', '--verbosity', type=int, help='Verbosity level of output to the console (1-4), 4 is the most verbose', default=3)
+        
+        # CRISPRessoPro params
+        parser.add_argument('--use_matplotlib', action='store_true',
+                        help='Use matplotlib for plotting instead of plotly/d3 when CRISPRessoPro is installed')
 
         args = parser.parse_args()
+
+        if args.use_matplotlib or not CRISPRessoShared.is_C2Pro_installed():
+            from CRISPResso2 import CRISPRessoPlot
+        else:
+            from CRISPRessoPro import plot as CRISPRessoPlot
 
         CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
 
@@ -595,7 +608,7 @@ ___________________________________
                                 this_plot_suffix_int += 1
                                 this_plot_suffix = "_" + str(this_plot_suffix_int)
 
-                    if not args.suppress_plots:
+                    if C2PRO_INSTALLED and not args.use_matplotlib and not args.suppress_plots:
                         crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_names'] = []
                         crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_paths'] = {}
                         crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_titles'] = {}

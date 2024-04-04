@@ -6,14 +6,14 @@
             "type": "str",
             "required": true,
             "default": "",
-            "tools": ["Core"]
+            "tools": ["Core", "Pooled"]
         },
         "fastq_r2": {
             "keys": ["-r2", "--fastq_r2"],
             "help": "Second fastq file for paired end reads",
             "type": "str",
             "default": "",
-            "tools": ["Core"]
+            "tools": ["Core", "Pooled"]
         },
         "amplicon_seq": {
             "name": "Amplicon Sequence",
@@ -233,7 +233,14 @@
             "help": "Parameter for the fastp read merging step. Minimum required overlap length between two reads to provide a confident overlap",
             "type": "int",
             "default": 10,
-            "tools": ["Core", "Batch", "Pooled", "WGS"]
+            "tools": ["Core"]
+        },
+        "max_paired_end_reads_overlap": {
+            "keys": ["--max_paired_end_reads_overlap"],
+            "help": "DEPRECATED in v2.3.0",
+            "type": "str",
+            "default": "None",
+            "tools": ["Core"]
         },
         "stringent_flash_merging": {
             "keys": ["--stringent_flash_merging"],
@@ -789,26 +796,22 @@
             "keys": ["crispresso_output_folder_1"],
             "help": "First output folder with CRISPResso analysis",
             "type": "str",
-            "required": true,
             "tools": ["Compare"]
         },
         "crispresso_output_folder_2": {
             "keys": ["crispresso_output_folder_2"],
             "help": "Second output folder with CRISPResso analysis",
             "type": "str",
-            "required": true,
             "tools": ["Compare"]
         },
         "sample_1_name": {
             "keys": ["-n1", "--sample_1_name"],
             "help": "Sample 1 name",
-            "required": "",
             "tools": ["Compare"]
         },
         "sample_2_name": {
             "keys": ["-n2", "--sample_2_name"],
             "help": "Sample 2 name",
-            "required": "",
             "tools": ["Compare"]
         },
         "reported_qvalue_cutoff": {
@@ -823,6 +826,12 @@
             "help": "isable guardrail warnings",
             "action": "store_true",
             "tools": ["Core"]
+        },
+        "use_matplotlib": {
+            "keys": ["--use_matplotlib"],
+            "help": "Use matplotlib for plotting instead of plotl/d3 when CRISPRessoPro is installed",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS", "Compare"]
         }
     },
     "Sections": {

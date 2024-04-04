@@ -9,7 +9,6 @@ import os
 import numpy as np
 import pandas as pd
 import zipfile
-from CRISPResso2 import CRISPRessoPlot
 from CRISPResso2 import CRISPRessoShared
 import seaborn as sns
 import matplotlib
@@ -29,9 +28,17 @@ def main():
     parser.add_argument("--plot_left",help="Number of bases to plot to the left of the cut site",type=int,default=20)
     parser.add_argument("--plot_right",help="Number of bases to plot to the right of the cut site",type=int,default=20)
     parser.add_argument("--plot_center",help="Center of plot. If set, plots for guide RNAs will not be generated -- only a plot centered at this position will be plotted.",type=int,default=None)
-
+    
+    # CRISPRessoPro params
+    parser.add_argument('--use_matplotlib', action='store_true',
+                        help='Use matplotlib for plotting instead of plotly/d3 when CRISPRessoPro is installed')
 
     args = parser.parse_args()
+    if args.use_matplotlib or not CRISPRessoShared.is_C2Pro_installed():
+        from CRISPResso2 import CRISPRessoPlot
+    else:
+        from CRISPRessoPro import plot as CRISPRessoPlot
+
     plot_alleles_tables_from_folder(args.CRISPResso2_folder,args.output_root,MIN_FREQUENCY=args.min_freq,MAX_N_ROWS=args.max_rows,SAVE_ALSO_PNG=args.save_png,plot_cut_point=args.plot_cut_point,plot_left=args.plot_left,plot_right=args.plot_right,plot_center=args.plot_center)
 
 def arrStr_to_arr(val):
@@ -126,7 +133,7 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,p
                 new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1,int_end - new_sel_cols_start - 1)]
 
             fig_filename_root = fig_filename_root+"_"+ref_name+"_"+sgRNA_label
-            plot_alleles_table(ref_seq_around_cut,df_alleles=df_alleles_around_cut,fig_filename_root=fig_filename_root,cut_point_ind=cut_point-new_sel_cols_start, MIN_FREQUENCY=MIN_FREQUENCY,MAX_N_ROWS=MAX_N_ROWS,SAVE_ALSO_PNG=SAVE_ALSO_PNG,plot_cut_point=plot_cut_point,sgRNA_intervals=new_sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,annotate_wildtype_allele=crispresso2_info['running_info']['args'].annotate_wildtype_allele)
+            plot_alleles_table(ref_seq_around_cut,df_alleles=df_alleles_around_cut,fig_filename_root=fig_filename_root,cut_point_ind=cut_point-new_sel_cols_start,custom_colors=custom_colors,MIN_FREQUENCY=MIN_FREQUENCY,MAX_N_ROWS=MAX_N_ROWS,SAVE_ALSO_PNG=SAVE_ALSO_PNG,plot_cut_point=plot_cut_point,sgRNA_intervals=new_sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,annotate_wildtype_allele=crispresso2_info['running_info']['args'].annotate_wildtype_allele)
 
             plot_count += 1
         else:
@@ -155,12 +162,12 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,p
                     new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1,int_end - new_sel_cols_start - 1)]
 
                 fig_filename_root = fig_filename_root+"_"+ref_name+"_"+sgRNA_label
-                plot_alleles_table(ref_seq_around_cut,df_alleles=df_alleles_around_cut,fig_filename_root=fig_filename_root,cut_point_ind=cut_point-new_sel_cols_start, MIN_FREQUENCY=MIN_FREQUENCY,MAX_N_ROWS=MAX_N_ROWS,SAVE_ALSO_PNG=SAVE_ALSO_PNG,plot_cut_point=plot_cut_point,sgRNA_intervals=new_sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,annotate_wildtype_allele=crispresso2_info['running_info']['args'].annotate_wildtype_allele)
+                plot_alleles_table(ref_seq_around_cut,df_alleles=df_alleles_around_cut,fig_filename_root=fig_filename_root,cut_point_ind=cut_point-new_sel_cols_start,custom_colors=custom_colors,MIN_FREQUENCY=MIN_FREQUENCY,MAX_N_ROWS=MAX_N_ROWS,SAVE_ALSO_PNG=SAVE_ALSO_PNG,plot_cut_point=plot_cut_point,sgRNA_intervals=new_sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,annotate_wildtype_allele=crispresso2_info['running_info']['args'].annotate_wildtype_allele)
 
                 plot_count += 1
     print('Plotted ' + str(plot_count) + ' plots')
 
-def plot_alleles_table(reference_seq,df_alleles,fig_filename_root,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,plot_cut_point=True,cut_point_ind=None,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,custom_colors=None,annotate_wildtype_allele='****',):
+def plot_alleles_table(reference_seq,df_alleles,fig_filename_root,custom_colors,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,plot_cut_point=True,cut_point_ind=None,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,annotate_wildtype_allele='****',):
     """
     plots an allele table for a dataframe with allele frequencies
     input:
@@ -183,9 +190,9 @@ def plot_alleles_table(reference_seq,df_alleles,fig_filename_root,MIN_FREQUENCY=
         for ix, is_ref in enumerate(is_reference):
             if is_ref:
                 y_labels[ix] += annotate_wildtype_allele
-    plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG,plot_cut_point,cut_point_ind,sgRNA_intervals,sgRNA_names,sgRNA_mismatches,custom_colors)
+    plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,custom_colors,SAVE_ALSO_PNG,plot_cut_point,cut_point_ind,sgRNA_intervals,sgRNA_names,sgRNA_mismatches)
 
-def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,SAVE_ALSO_PNG=False,plot_cut_point=True,cut_point_ind=None,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,custom_colors=None):
+def plot_alleles_heatmap(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,custom_colors,SAVE_ALSO_PNG=False,plot_cut_point=True,cut_point_ind=None,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None):
     """
     Plots alleles in a heatmap (nucleotides color-coded for easy visualization)
     input:
