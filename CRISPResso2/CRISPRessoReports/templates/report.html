@@ -73,7 +73,9 @@
  }
 }
 </style>
-
+{% if C2PRO_INSTALLED %}
+<script src="https://cdn.plot.ly/plotly-2.11.1.min.js"></script>
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -725,7 +727,6 @@ try {
 
 {% if C2PRO_INSTALLED %}
   <script src="https://unpkg.com/d3@5"></script>
-  <script src="https://cdn.plot.ly/plotly-2.11.1.min.js"></script>
   {{ render_partial('partials/batch_d3.html', nucleotide_quilt_slugs=(report_data['nuc_quilt_names'])) }}
 {% endif %}
 
