@@ -4,27 +4,28 @@
             "keys": ["-r1", "--fastq_r1"],
             "help": "First fastq file",
             "type": "str",
+            "required": true,
             "default": "",
-            "tools": ["Core", "Batch", "Pooled"]
+            "tools": ["Core"]
         },
         "fastq_r2": {
             "keys": ["-r2", "--fastq_r2"],
             "help": "Second fastq file for paired end reads",
             "type": "str",
             "default": "",
-            "tools": ["Core", "Batch", "Pooled"]
+            "tools": ["Core"]
         },
         "amplicon_seq": {
             "name": "Amplicon Sequence",
             "keys": ["-a", "--amplicon_seq"],
-            "help": "Amplicon sequence to search for in reads",
+            "help": "Amplicon Sequence (can be comma-separated list of multiple sequences)",
             "type": "str", 
             "tools": ["Core", "Batch", "Pooled"]
         },
         "amplicon_name": {
             "name": "Amplicon Name",
             "keys": ["-an", "--amplicon_name"],
-            "help": "Amplicon Name is important and (can be comma-separated list of multiple names, corresponding to amplicon sequences given in --amplicon_seq",
+            "help": "Amplicon Name (can be comma-separated list of multiple names, corresponding to amplicon sequences given in --amplicon_seq",
             "type": "str",
             "default": "Reference",
             "tools": ["Core", "Batch", "Pooled"]
@@ -154,7 +155,7 @@
         "name": {
             "name": "Sample Name",
             "keys": ["-n", "--name"],
-            "help": "Output name of the report (default: the name is obtained from the filename of the file/s used in input)",
+            "help": "Output name of the report (default: the name is obtained from the filename of the fastq file/s used in input)",
             "type": "str",
             "default": "",
             "tools": ["Core", "Batch", "Pooled", "WGS", "Compare"]
@@ -174,7 +175,7 @@
         },
         "verbosity": {
             "keys": ["-v", "--verbosity"],
-            "help": "Verbosity level of output to the console (1-4), 4 is the most verbose",
+            "help": "Verbosity level of output to the console (1-4)",
             "type": "int",
             "default": 3,
             "tools": ["Core", "Batch", "Pooled", "WGS", "Compare"]
@@ -188,48 +189,55 @@
         "trim_sequences": {
             "name": "Trimming Adapter",
             "keys": ["--trim_sequences"],
-            "help": "Enable the trimming of Illumina adapters with Trimmomatic",
+            "help": "Enable the trimming with fastp",
             "action": "store_true",
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "trimmomatic_command": {
             "keys": ["--trimmomatic_command"],
-            "help": "Command to run trimmomatic",
+            "help": "DEPRECATED in v2.3.0, use `--fastp_command`",
             "type": "str",
-            "default": "trimmomatic",
+            "default": "None",
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "trimmomatic_options_string": {
             "keys": ["--trimmomatic_options_string"],
-            "help": "Override options for Trimmomatic, e.g. 'ILLUMINACLIP:/data/NexteraPE-PE.fa:0:90:10:0:true'",
+            "help": "DEPRECATED in v2.3.0, use `--fastp_options_string`",
             "type": "str",
             "default": "",
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "flash_command": {
             "keys": ["--flash_command"],
-            "help": "Command to run flash",
+            "help": "DEPRECATED in v2.3.0, use `--fastp_command`",
             "type": "str",
-            "default": "flash",
+            "default": "None",
             "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "fastp_command": {
+            "keys": ["--fastp_command"],
+            "help": "Command to run fastp",
+            "type": "str",
+            "default": "fastp",
+            "tools": ["Core"]
+        },
+        "fastp_options_string": {
+            "keys": ["--fastp_options_string"],
+            "help": "Override options for fastp, e.g. `--length_required 70 --umi`",
+            "type": "str",
+            "default": "",
+            "tools": ["Core"]
         },
         "min_paired_end_reads_overlap": {
             "keys": ["--min_paired_end_reads_overlap"],
-            "help": "Parameter for the FLASH read merging step. Minimum required overlap length between two reads to provide a confident overlap.",
+            "help": "Parameter for the fastp read merging step. Minimum required overlap length between two reads to provide a confident overlap",
             "type": "int",
             "default": 10,
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
-        "max_paired_end_reads_overlap": {
-            "keys": ["--max_paired_end_reads_overlap"],
-            "help": "Parameter for the FLASH merging step. Maximum overlap length expected in approximately 90%% of read pairs. Please see the FLASH manual for more information.",
-            "type": "int",
-            "default": 100,
-            "tools": ["Core", "Batch", "Pooled", "WGS"]
-        },
         "stringent_flash_merging": {
             "keys": ["--stringent_flash_merging"],
-            "help": "Use stringent parameters for flash merging. In the case where flash could merge R1 and R2 reads ambiguously, the expected overlap is calculated as 2*average_read_length - amplicon_length. The flash parameters for --min-overlap and --max-overlap will be set to prefer merged reads with length within 10bp of the expected overlap. These values override the --min_paired_end_reads_overlap or --max_paired_end_reads_overlap CRISPResso parameters.",
+            "help": "DEPRECATED in v2.3.0",
             "action": "store_true",
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
@@ -334,21 +342,21 @@
         },
         "aln_seed_count": {
             "keys": ["--aln_seed_count"],
-            "help": "Number of seeds to test whether read is forward or reverse",
+            "help": "number of seeds that must match to call the read forward/reverse",
             "type": "int",
             "default": 5,
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "aln_seed_len": {
             "keys": ["--aln_seed_len"],
-            "help": "ASK KENDELL FOR CORRECT HELP TO PUT HERE /TODO/",
+            "help": "Length of seeds to test whether read is forward or reverse",
             "type": "int",
             "default": 10,
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "aln_seed_min": {
             "keys": ["--aln_seed_min"],
-            "help": "ASK KENDELL FOR CORRECT HELP TO PUT HERE /TODO/",
+            "help": "Number of seeds that must match to call the read forward/reverse",
             "type": "int",
             "default": 2,
             "tools": ["Core", "Batch", "Pooled", "WGS"]
@@ -470,7 +478,7 @@
         },
         "write_cleaned_report": {
             "keys": ["--write_cleaned_report"],
-            "help": "Trims working directories from output in report (for web access)",
+            "help": "",
             "action": "store_true",
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
@@ -633,12 +641,12 @@
             "keys": ["-bs", "--batch_settings"],
             "help": "Settings file for batch. Must be tab-separated text file. The header row contains CRISPResso parameters (e.g., fastq_r1, fastq_r2, amplicon_seq, and other optional parameters). Each following row sets parameters for an additional batch.",
             "type": "str",
-            "required": "batch_settings",
+            "required": true,
             "tools": ["Batch"]
         },
         "skip_failed": {
             "keys": ["--skip_failed"],
-            "help": "Continue with analysis even if one sample fails",
+            "help": "Continue with batch analysis even if one sample fails",
             "action":"store_true",
             "tools": ["Batch", "Pooled", "WGS"]
         },
@@ -696,7 +704,7 @@
             "action": "store_true",
             "tools": ["Pooled"]
         },
-        "min_reads_to_use_region": {
+        "min_reads_to_use_region_pooled": {
             "keys": ["--min_reads_to_use_region"],
             "help": "Minimum number of reads that align to a region to perform the CRISPResso analysis",
             "type": "float",
@@ -751,6 +759,7 @@
             "keys": ["-b", "--bam_file"],
             "help": "WGS aligned bam file",
             "type": "str",
+            "required": true,
             "default": "bam filename",
             "tools": ["WGS"]
         },
@@ -758,12 +767,14 @@
             "keys": ["-f", "--region_file"],
             "help": "Regions description file. A BED format file containing the regions to analyze, one per line. The REQUIRED columns are: chr_id(chromosome name), bpstart(start position), bpend(end position), the optional columns are:name (an unique indentifier for the region), guide_seq, expected_hdr_amplicon_seq, coding_seq, see CRISPResso help for more details on these last 3 parameters)",
             "type": "str",
+            "required": true,
             "tools": ["WGS"]
         },
         "reference_file": {
             "keys": ["-r", "--reference_file"],
             "help": "A FASTA format reference file (for example hg19.fa for the human genome)",
             "type": "str",
+            "required": true,
             "default": "",
             "tools": ["WGS"]
         },
@@ -778,24 +789,26 @@
             "keys": ["crispresso_output_folder_1"],
             "help": "First output folder with CRISPResso analysis",
             "type": "str",
+            "required": true,
             "tools": ["Compare"]
         },
         "crispresso_output_folder_2": {
             "keys": ["crispresso_output_folder_2"],
             "help": "Second output folder with CRISPResso analysis",
             "type": "str",
+            "required": true,
             "tools": ["Compare"]
         },
         "sample_1_name": {
             "keys": ["-n1", "--sample_1_name"],
             "help": "Sample 1 name",
-            "required": "sample_1_name",
+            "required": "",
             "tools": ["Compare"]
         },
         "sample_2_name": {
             "keys": ["-n2", "--sample_2_name"],
             "help": "Sample 2 name",
-            "required": "sample_2_name",
+            "required": "",
             "tools": ["Compare"]
         },
         "reported_qvalue_cutoff": {
@@ -804,6 +817,12 @@
             "type": "float",
             "default": 0.05,
             "tools": ["Compare"]
+        },
+        "disable_guardrails":{
+            "keys": ["--disable_guardrails"],
+            "help": "isable guardrail warnings",
+            "action": "store_true",
+            "tools": ["Core"]
         }
     },
     "Sections": {
