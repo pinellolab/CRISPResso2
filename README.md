@@ -163,6 +163,69 @@ _Using Docker:_
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso --fastq_r1 reads.fastq.gz --amplicon_seq AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT
 ```
 
+### Guardrails
+
+Guardrails automatically check the inputs and results of experiments against standardized values. The guardrail warnings that are triggered are printed in the commandline and at the top of generated reports. In order to turn off the guardrails, add the `--disable_guardrails` argument.
+
+TotalReadsGuardrail : Checks if the number of reads is lower than expected. (Default: 10000)
+OverallReadsAlignedGuardrail : Checks if the number of aligned reads is lower than expected. (Default: 90% of the total reads)
+DisproportionateReadsAlignedGuardrail : Checks if the number of reads aligned to an amplicon is higher or lower than expected proportionally. (Default: 30% more or less than expected)
+LowRatioOfModsInWindowToOutGuardrail : Checks if the ratio of modifications inside to outside the quantification window is lower than expected. (Default: 0.01)
+HighRateOfModificationAtEndsGuardrail : Checks if there is a high rate of modifications at the ends of the read. (Default: 0.01)
+HighRateOfSubstitutionsOutsideWindowGuardrail : Checks if there is a high rate of substitutions outside of the quantification windows. (Default: 0.002)
+HighRateOfSubstitutionsGuardrail : Checks if the proportion of substitutions to other modifications is higher than expected. (Default: 0.3)
+ShortSequenceGuardrail : Checks if the provided sequences (both Amplicons and Guides) are shorter than expected. (Amplicon Default: 50, Guide Default: 19)
+LongAmpliconShortReadsGuardrail : Checks if the rovided amplicon is more than <value> times the average length of read. (Default: 1.5)
+
+### CRISPRessoPro
+
+CRISPResso is an open source tool for free use by academics. However, for-profit organizations are required to purchase a license to use CRISPResso. As a part of this license, organizations gain access to the CRISPRessoPro package which supplements CRISPResso
+with several useful features:
+- Interactive and improved plots using D3 and Plotly
+- Customizable colors
+- Customizable warnings based on potential issues in results (guardrails)
+
+#### Installation
+
+To add CRISPRessoPro to CRISPResso contact Edilytics - support@edilytics.com
+
+#### D3 and Plotly
+
+If CRISPRessoPro is installed, by default reports will include interactive plots. To use matplotlib for figures add the `--use_matplotlib` argument.
+
+#### Customizable Colors and Guardrails
+
+If CRISPRessoPro is installed, by default the colors and guardrails will remain the same as CRISPResso. To alter this, use the `--custom_config` argument and a filepath to a `.json` file with the following format:
+
+'''
+"colors": {
+    'Substitution': '#0000FF',
+    'Insertion': '#008000',
+    'Deletion': '#FF0000',
+    'A': '#7FC97F',
+    'T': '#BEAED4',
+    'C': '#FDC086',
+    'G': '#FFFF99',
+    'N': '#C8C8C8',
+    '-': '#1E1E1E',
+},
+"guardrails": {
+    'min_total_reads': 10000,
+    'aligned_cutoff': 0.9,
+    'alternate_alignment': 0.3,
+    'min_ratio_of_mods_in_to_out': 0.01,
+    'modifications_at_ends': 0.01,
+    'outside_window_max_sub_rate': 0.002,
+    'max_rate_of_subs': 0.3,
+    'guide_len': 19,
+    'amplicon_len': 50,
+    'amplicon_to_read_length': 1.5
+}
+'''
+(These are the default values as an example).
+
+Change the values as desired to any color or guardrail specification.
+
 ### Example run: Non-homologous end joining (NHEJ)
 
 Download the test datasets [nhej.r1.fastq.gz](https://crispresso.pinellolab.partners.org/static/demo/nhej.r1.fastq.gz) and [nhej.r2.fastq.gz](https://crispresso.pinellolab.partners.org/static/demo/nhej.r2.fastq.gz) to your current directory. This is the first 25,000 sequences from a paired-end sequencing experiment. To analyze this experiment, run the command:
@@ -390,6 +453,8 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 --bam_input BAM_INPUT: Aligned reads for processing in bam format. This parameter can be given instead of fastq_r1 to specify that reads are to be taken from this bam file. An output bam is produced that contains an additional field with CRISPResso2 information. (default: )
 
 --bam_chr_loc BAM_CHR_LOC: Chromosome location in bam for reads to process. For example: "chr1:50-100" or "chrX". (default: )
+
+--disable_guardrails: Don't show the guardrail warnings.
 
 ## CRISPResso2 output
 

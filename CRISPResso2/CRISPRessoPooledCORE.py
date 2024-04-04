@@ -19,7 +19,7 @@ import zipfile
 from CRISPResso2 import CRISPRessoShared
 from CRISPResso2 import CRISPRessoMultiProcessing
 from CRISPResso2.CRISPRessoReports import CRISPRessoReport
-from CRISPResso2 import CRISPRessoPlot
+
 import traceback
 
 import logging
@@ -334,6 +334,11 @@ def main():
         parser.add_argument('--demultiplex_only_at_amplicons', help='If set, and an amplicon file (--amplicons_file) and reference sequence (--bowtie2_index) are provided, reads overlapping alignment positions of amplicons will be demultiplexed and assigned to that amplicon. If this flag is not set, the entire genome will be demultiplexed and reads with the same start and stop coordinates as an amplicon will be assigned to that amplicon.', action='store_true')
 
         args = parser.parse_args()
+
+        if args.use_matplotlib or not CRISPRessoShared.is_C2Pro_installed():
+            from CRISPResso2 import CRISPRessoPlot
+        else:
+            from CRISPRessoPro import plot as CRISPRessoPlot
 
         CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
 

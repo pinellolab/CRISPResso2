@@ -177,7 +177,7 @@
 			{# end of global coding sequence analysis #}
 
 			{# start hdr summary #}
-			{% if report_data['figures']['locs'][report_data.amplicons[0]]['plot_4g'] %}
+			{% if report_data['figures']['locs'][report_data.amplicons[0]]['plot_4g'] or 'plot_4g' in report_data['figures']['htmls'][amplicon_name] %}
 			<div class='card text-center mb-2 breakinpage'>
 				<div class='card-header'>
 					{% if report_data.amplicons|length == 1 %} {# if only one amplicon #}
@@ -187,7 +187,11 @@
 					{% endif %}
 				</div>
 				<div class='card-body'>
-					{{ render_partial('shared/partials/fig_reports.html', report_data=report_data, fig_name='plot_4g', amplicon_name=report_data.amplicons[0])}}
+					{% if 'plot_4g' in report_data['figures']['htmls'][amplicon_name] %}
+						{{ report_data['figures']['htmls'][amplicon_name]['plot_4g']|safe }}
+					{% else %}
+						{{ render_partial('shared/partials/fig_reports.html', report_data=report_data, fig_name='plot_4g', amplicon_name=report_data.amplicons[0])}}
+					{% endif %}
 				</div>
 			</div>
 			{% endif %}
@@ -292,28 +296,33 @@
 								{% endif %}
       							</div>
       							<div class='card-body'>
-								{% if report_data['figures']['locs'][amplicon_name]['plot_2a'] %}
-								<div class='div_zoom_outer d-none d-md-block' style="height:100px;border:1px solid #DDDDDD;position:relative">
-									<div id="zoomview_nucs_{{amplicon_name}}" style="position:absolute;left:0;height:100%;width:100%;background-image: url({{report_data['crispresso_data_path']}}{{report_data['figures']['locs'][amplicon_name]['plot_2a']}}.png);background-size:auto 100%;background-repeat:no-repeat;"></div>
-  										<div class="d-lg-none" style="overflow-x:scroll;overflow-y:hidden;position:absolute;width:100%;height:100%">
-	  										<img src="{{report_data['crispresso_data_path']}}{{report_data['figures']['locs'][amplicon_name]['plot_2a']}}.png" style='height:100%'>
-  										</div>
-								</div>
+
+								{% if 'plot_2a' in report_data['figures']['htmls'][amplicon_name] %}
+								  	{{ report_data['figures']['htmls'][amplicon_name]['plot_2a']|safe }}
+								{% elif report_data['figures']['locs'][amplicon_name]['plot_2a'] %}
+									<div class='div_zoom_outer d-none d-md-block' style="height:100px;border:1px solid #DDDDDD;position:relative">
+										<div id="zoomview_nucs_{{amplicon_name}}" style="position:absolute;left:0;height:100%;width:100%;background-image: url({{report_data['crispresso_data_path']}}{{report_data['figures']['locs'][amplicon_name]['plot_2a']}}.png);background-size:auto 100%;background-repeat:no-repeat;"></div>
+											<div class="d-lg-none" style="overflow-x:scroll;overflow-y:hidden;position:absolute;width:100%;height:100%">
+												<img src="{{report_data['crispresso_data_path']}}{{report_data['figures']['locs'][amplicon_name]['plot_2a']}}.png" style='height:100%'>
+											</div>
+									</div>
 									<div style='position:relative;display:inline-block;width:95%'>
 										<a href="{{report_data['crispresso_data_path']}}{{report_data['figures']['locs'][amplicon_name]['plot_2a']}}.pdf">
     									<div id='zoomlens_nucs_{{amplicon_name}}' class="d-none d-lg-block" style='float: left;position: absolute;left: 0px;top: 0px;z-index: 1000;border: 1px solid #DDDDDD;height:100%;width:10%'></div>
     										<img id='tozoom_nucs_{{amplicon_name}}' src="{{report_data['crispresso_data_path']}}{{report_data['figures']['locs'][amplicon_name]['plot_2a']}}.png" width='100%' style='position:relative'></a>
-										</div>
-										<label class="labelpadding">
-  										<span class='d-none d-md-block'>Hover your mouse over the bottom image to zoom in on a specific region.</span><br>
-  											{{report_data['figures']['captions'][amplicon_name]['plot_2a']}}
-										</label>
-							  			{% for (data_label,data_path) in report_data['figures']['datas'][amplicon_name]['plot_2a'] %}
-							  			<p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
-                						{% endfor %}
+									</div>
+									<label class="labelpadding">
+										<span class='d-none d-md-block'>Hover your mouse over the bottom image to zoom in on a specific region.</span><br>
+											{{report_data['figures']['captions'][amplicon_name]['plot_2a']}}
+									</label>
 								{% endif %}
-
-								{% if report_data['figures']['sgRNA_based_names'][amplicon_name] and  report_data['figures']['sgRNA_based_names'][amplicon_name]['2b']%}
+								{% for (data_label,data_path) in report_data['figures']['datas'][amplicon_name]['plot_2a'] %}
+									<p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
+								{% endfor %}
+								
+								{% if 'plot_2b' in report_data['figures']['htmls'][amplicon_name] %}
+								  	{{ report_data['figures']['htmls'][amplicon_name]['plot_2b']|safe }}
+								{% elif report_data['figures']['sgRNA_based_names'][amplicon_name] and  report_data['figures']['sgRNA_based_names'][amplicon_name]['2b']%}
   									{% for fig_name in report_data['figures']['sgRNA_based_names'][amplicon_name]['2b'] %}
 									{{ render_partial('shared/partials/fig_reports.html', report_data=report_data, fig_name=fig_name, amplicon_name=amplicon_name)}}
   									{% endfor %}
@@ -712,4 +721,12 @@ try {
 		{% endif %}
 	{% endfor %}
 	</script>
+
+
+{% if C2PRO_INSTALLED %}
+  <script src="https://unpkg.com/d3@5"></script>
+  <script src="https://cdn.plot.ly/plotly-2.11.1.min.js"></script>
+  {{ render_partial('partials/batch_d3.html', nucleotide_quilt_slugs=(report_data['nuc_quilt_names'])) }}
+{% endif %}
+
 {% endblock %}

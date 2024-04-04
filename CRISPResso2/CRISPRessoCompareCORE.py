@@ -10,7 +10,6 @@ import sys
 import traceback
 import argparse
 from CRISPResso2 import CRISPRessoShared
-from CRISPResso2 import CRISPRessoPlot
 from CRISPResso2.CRISPRessoReports import CRISPRessoReport
 
 import logging
@@ -102,8 +101,17 @@ def main():
         parser.add_argument('--zip_output', help="If set, the output will be placed in a zip folder.", action='store_true')
         parser.add_argument('--debug', help='Show debug messages', action='store_true')
         parser.add_argument('-v', '--verbosity', type=int, help='Verbosity level of output to the console (1-4)', default=3)
+        
+        # CRISPRessoPro params
+        parser.add_argument('--use_matplotlib', action='store_true',
+                        help='Use matplotlib for plotting instead of plotly/d3 when CRISPRessoPro is installed')
 
         args = parser.parse_args()
+
+        if args.use_matplotlib or not CRISPRessoShared.is_C2Pro_installed():
+            from CRISPResso2 import CRISPRessoPlot
+        else:
+            from CRISPRessoPro import plot as CRISPRessoPlot
 
         CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
 
