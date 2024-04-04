@@ -86,6 +86,7 @@
 					{% if report_data['report_display_name'] != '' %}
 					<h5>{{report_data['report_display_name']}}</h5>
 					{% endif %}
+					{{ render_partial('shared/partials/guardrail_warnings.html', report_data=report_data) }}
 					<h5>CRISPResso2 run information</h5>
 					<ul class="nav nav-tabs justify-content-center card-header-tabs" id="log-tab" role="tablist">
 						<li class="nav-item">
