@@ -4,6 +4,7 @@
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/crispresso2/README.html)
 
 # CRISPResso2
+
 CRISPResso2 is a software pipeline designed to enable rapid and intuitive interpretation of genome editing experiments. A limited web implementation is available at: https://crispresso2.pinellolab.org/.
 
 Briefly, CRISPResso2:
@@ -13,6 +14,7 @@ Briefly, CRISPResso2:
 - summarizes editing results in intuitive plots and datasets
 
 ## What can I do with CRISPResso2?
+
 CRISPResso2 can be used to analyze genome editing outcomes using cleaving nucleases (e.g. Cas9 or Cpf1) or noncleaving nucleases (e.g. base editors). The following operations can be automatically performed:
 
 - filtering of low-quality reads
@@ -33,30 +35,44 @@ In addition, CRISPResso can be run as part of a larger tool suite:
 - [CRISPRessoAggregate](#crispressoaggregate) - for aggregating results from previously-run CRISPResso analyses
 
 ## CRISPResso2 processing
+
 ![CRISPResso2 Schematic](https://raw.githubusercontent.com/pinellolab/CRISPResso2/master/crispresso_schematic.png "CRISPResso2 Schematic")
 
 #### Quality filtering
+
 Input reads are first filtered based on the quality score (phred33) in order to remove potentially false positive indels. The filtering based on the phred33 quality score can be modulated by adjusting the optimal parameters (see additional notes below).
+
 #### Adapter trimming
-Next, adapters are trimmed from the reads. If no adapter are present, select 'No Trimming' under the 'Trimming adapter' heading in the optional parameters. If reads contain adapter sequences that need to be trimmed, select the adapters used for trimming under the ‘Trimming adapter’ heading in the optional parameters. Possible adapters include Nextera PE, TruSeq3 PE, TruSeq3 SE, TruSeq2 PE, and TruSeq2 SE. The adapters are trimmed from the reads using Trimmomatic.
+
+Next, adapters are trimmed from the reads. If no adapter are present, select 'No Trimming' under the 'Trimming adapter' heading in the optional parameters. If reads contain adapter sequences that need to be trimmed, select the adapters used for trimming under the ‘Trimming adapter’ heading in the optional parameters. Possible adapters include Nextera PE, TruSeq3 PE, TruSeq3 SE, TruSeq2 PE, and TruSeq2 SE. The adapters are trimmed from the reads using fastp.
+
 #### Read merging
-If paired-end reads are provided, reads are merged using FLASh . This produces a single read for alignment to the amplicon sequence, and reduces sequencing errors that may be present at the end of sequencing reads.
+
+If paired-end reads are provided, reads are merged using fastp. This produces a single read for alignment to the amplicon sequence, and reduces sequencing errors that may be present at the end of sequencing reads.
+
 #### Alignment
+
 The preprocessed reads are then aligned to the reference sequence with a global sequence alignment algorithm that takes into account our biological knowledge of nuclease function. If multiple alleles are present at the editing site, each allele can be passed to CRISPResso2 and sequenced reads will be assigned to the reference sequence or origin.
+
 #### Visualization and analysis
+
 Finally, after analyzing the aligned reads, a set of informative graphs are generated, allowing for the quantification and visualization of the position and type of outcomes within the amplicon sequence.
 
 ## How is CRISPResso2 different from CRISPResso?
+
 CRISPResso2 introduces four key innovations for the analysis of genome editing data:
-1) Comprehensive analysis of sequencing data from base editors. We have added additional analysis and visualization capabilities especially for experiments using base editors.
-2) Allele specific quantification of heterozygous references. If the targeted editing region has more than one allele, reads arising from each allele can be deconvoluted.
-3) A novel biologically-informed alignment algorithm. This algorithm incorporates knowledge about the mutations produced by gene editing tools to create more biologically-likely alignments.
-4) Ultra-fast processing time.
+
+1. Comprehensive analysis of sequencing data from base editors. We have added additional analysis and visualization capabilities especially for experiments using base editors.
+2. Allele specific quantification of heterozygous references. If the targeted editing region has more than one allele, reads arising from each allele can be deconvoluted.
+3. A novel biologically-informed alignment algorithm. This algorithm incorporates knowledge about the mutations produced by gene editing tools to create more biologically-likely alignments.
+4. Ultra-fast processing time.
 
 ## Installation
+
 CRISPResso2 can be installed using the [conda](http://conda.pydata.org/docs/intro.html) package manager [Bioconda](https://bioconda.github.io/), or it can be run using the [Docker](https://www.docker.com/) containerization system.
 
 ### Bioconda
+
 To install CRISPResso2 using Bioconda, download and install Anaconda Python, following the instructions at: https://www.anaconda.com/distribution/.
 
 Open a terminal and type:
@@ -95,7 +111,7 @@ CRISPResso -h
 
 If you would like to install CRISPResso using bioconda on a Mac with Apple silicon ([aren't sure?](https://support.apple.com/en-us/HT211814)), then there is a slight change you need to make. First, ensure that you have [Rosetta installed](https://support.apple.com/en-us/HT211861). Next, you must tell bioconda to install the Intel versions of the packages. If you would like to do this system wide, which we recommend, run the command:
 
-``` shell
+```shell
 conda config --add subdirs osx-64
 ```
 
@@ -103,13 +119,14 @@ Then you can proceed with the installation instructions above.
 
 If you would like to use the Intel versions in a single environment, then run:
 
-``` shell
+```shell
 CONDA_SUBDIR=osx-64 conda create -n crispresso2_env -c bioconda crispresso2
 ```
 
 If you choose to use the `CONDA_SUBDIR=osx-64` method, note that if you install additional packages into the environment you will need to add the `CONDA_SUBDIR=osx-64` to the beginning of each command. Alternatively, you could set this environment variable in your shell, but we recommend to use the `conda config --add subdirs osx-64` method because it is less error prone.
 
 ### Docker
+
 CRISPResso2 can be used via the Docker containerization system. This system allows CRISPResso2 to run on your system without configuring and installing additional packages. To run CRISPResso2, first download and install docker: https://docs.docker.com/engine/installation/
 
 Next, Docker must be configured to access your hard drive and to run with sufficient memory. These parameters can be found in the Docker settings menu. To allow Docker to access your hard drive, select 'Shared Drives' and make sure your drive name is selected. To adjust the memory allocation, select the 'Advanced' tab and allocate at least 4G of memory.
@@ -129,29 +146,35 @@ docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso -r1 sa
 ```
 
 ## CRISPResso2 usage
+
 CRISPResso2 is designed be run on a single amplicon. For experiments involving multiple amplicons in the same fastq, see the instructions for [CRISPRessoPooled](#crispressopooled) or [CRISPRessoWGS](#crispressoWGS) below.
 
 CRISPResso2 requires only two parameters: input sequences in the form of fastq files (given by the `--fastq_r1` and `--fastq_r2`) parameters, and the amplicon sequence to align to (given by the `--amplicon_seq` parameter). For example:
 
-*Using Bioconda:*
+_Using Bioconda:_
+
 ```
 CRISPResso --fastq_r1 reads.fastq.gz --amplicon_seq AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT
 ```
 
-*Using Docker:*
+_Using Docker:_
+
 ```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso --fastq_r1 reads.fastq.gz --amplicon_seq AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT
 ```
 
 ### Example run: Non-homologous end joining (NHEJ)
+
 Download the test datasets [nhej.r1.fastq.gz](https://crispresso.pinellolab.partners.org/static/demo/nhej.r1.fastq.gz) and [nhej.r2.fastq.gz](https://crispresso.pinellolab.partners.org/static/demo/nhej.r2.fastq.gz) to your current directory. This is the first 25,000 sequences from a paired-end sequencing experiment. To analyze this experiment, run the command:
 
-*Using Bioconda:*
+_Using Bioconda:_
+
 ```
 CRISPResso --fastq_r1 nhej.r1.fastq.gz --fastq_r2 nhej.r2.fastq.gz --amplicon_seq AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT -n nhej
 ```
 
-*Using Docker:*
+_Using Docker:_
+
 ```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso --fastq_r1 nhej.r1.fastq.gz --fastq_r2 nhej.r2.fastq.gz --amplicon_seq AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT -n nhej
 ```
@@ -159,14 +182,17 @@ docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso --fast
 This should produce a folder called 'CRISPResso_on_nhej'. Open the file called CRISPResso_on_nhej/CRISPResso2_report.html in a web browser, and you should see an output like this: [CRISPResso2_report.html](https://crispresso.pinellolab.partners.org/static/demo/CRISPResso_on_nhej/CRISPResso2_report.html).
 
 ### Example run: Multiple alleles
+
 Download the test dataset [allele_specific.fastq.gz](https://crispresso.pinellolab.partners.org/static/demo/allele_specific.fastq.gz) to your current directory. This is the first 25,000 sequences from a editing experiment targeting one allele. To analyze this experiment, run the following command:
 
-*Using Bioconda:*
+_Using Bioconda:_
+
 ```
 CRISPResso --fastq_r1 allele_specific.fastq.gz --amplicon_seq CGAGAGCCGCAGCCATGAACGGCACAGAGGGCCCCAATTTTTATGTGCCCTTCTCCAACGTCACAGGCGTGGTGCGGAGCCACTTCGAGCAGCCGCAGTACTACCTGGCGGAACCATGGCAGTTCTCCATGCTGGCAGCGTACATGTTCCTGCTCATCGTGCTGGG,CGAGAGCCGCAGCCATGAACGGCACAGAGGGCCCCAATTTTTATGTGCCCTTCTCCAACGTCACAGGCGTGGTGCGGAGCCCCTTCGAGCAGCCGCAGTACTACCTGGCGGAACCATGGCAGTTCTCCATGCTGGCAGCGTACATGTTCCTGCTCATCGTGCTGGG --amplicon_name P23H,WT --guide_seq GTGCGGAGCCACTTCGAGCAGC
 ```
 
-*Using Docker:*
+_Using Docker:_
+
 ```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso --fastq_r1 allele_specific.fastq.gz --amplicon_seq CGAGAGCCGCAGCCATGAACGGCACAGAGGGCCCCAATTTTTATGTGCCCTTCTCCAACGTCACAGGCGTGGTGCGGAGCCACTTCGAGCAGCCGCAGTACTACCTGGCGGAACCATGGCAGTTCTCCATGCTGGCAGCGTACATGTTCCTGCTCATCGTGCTGGG,CGAGAGCCGCAGCCATGAACGGCACAGAGGGCCCCAATTTTTATGTGCCCTTCTCCAACGTCACAGGCGTGGTGCGGAGCCCCTTCGAGCAGCCGCAGTACTACCTGGCGGAACCATGGCAGTTCTCCATGCTGGCAGCGTACATGTTCCTGCTCATCGTGCTGGG --amplicon_name P23H,WT --guide_seq GTGCGGAGCCACTTCGAGCAGC
 ```
@@ -174,14 +200,17 @@ docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso --fast
 This should produce a folder called 'CRISPResso_on_allele_specific'. Open the file called CRISPResso_on_allele_specific/CRISPResso2_report.html in a web browser, and you should see an output like this: [CRISPResso2_report.html](https://crispresso.pinellolab.partners.org/static/demo/CRISPResso_on_allele_specific/CRISPResso2_report.html).
 
 ### Example run: Base editing experiment
+
 Download the test dataset [base_editor.fastq.gz](https://crispresso.pinellolab.partners.org/static/demo/base_editor.fastq.gz) to your current directory. This is the first 25,000 sequences from an editing experiment performed at the EMX1 locus. To analyze this experiment, run the following command:
 
-*Using Bioconda:*
+_Using Bioconda:_
+
 ```
 CRISPResso --fastq_r1 base_editor.fastq.gz --amplicon_seq GGCCCCAGTGGCTGCTCTGGGGGCCTCCTGAGTTTCTCATCTGTGCCCCTCCCTCCCTGGCCCAGGTGAAGGTGTGGTTCCAGAACCGGAGGACAAAGTACAAACGGCAGAAGCTGGAGGAGGAAGGGCCTGAGTCCGAGCAGAAGAAGAAGGGCTCCCATCACATCAACCGGTGGCGCATTGCCACGAAGCAGGCCAATGGGGAGGACATCGATGTCACCTCCAATGACTAGGGTGG --guide_seq GAGTCCGAGCAGAAGAAGAA --quantification_window_size 10 --quantification_window_center -10 --base_editor_output
 ```
 
-*Using Docker:*
+_Using Docker:_
+
 ```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso --fastq_r1 base_editor.fastq.gz --amplicon_seq GGCCCCAGTGGCTGCTCTGGGGGCCTCCTGAGTTTCTCATCTGTGCCCCTCCCTCCCTGGCCCAGGTGAAGGTGTGGTTCCAGAACCGGAGGACAAAGTACAAACGGCAGAAGCTGGAGGAGGAAGGGCCTGAGTCCGAGCAGAAGAAGAAGGGCTCCCATCACATCAACCGGTGGCGCATTGCCACGAAGCAGGCCAATGGGGAGGACATCGATGTCACCTCCAATGACTAGGGTGG --guide_seq GAGTCCGAGCAGAAGAAGAA --quantification_window_size 10 --quantification_window_center -10 --base_editor_output
 ```
@@ -189,6 +218,7 @@ docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso --fast
 This should produce a folder called 'CRISPResso_on_base_editor'. Open the file called CRISPResso_on_base_editor/CRISPResso2_report.html in a web browser, and you should see an output like this: [CRISPResso2_report.html](https://crispresso.pinellolab.partners.org/static/demo/CRISPResso_on_base_editor/CRISPResso2_report.html).
 
 ### Parameter List
+
 -h or --help: show a help message and exit.
 
 -r1 or --fastq_r1: The first fastq file.
@@ -227,17 +257,11 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --min_bp_quality_or_N: Bases with a quality score (phred33) less than this value will be set to "N" (default: 0)
 
---trim_sequences: Enable the trimming of Illumina adapters with [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) (default: False)
+--trim_sequences: Enable the trimming of Illumina adapters with fastp (default: False)
 
---trimmomatic_command: Command to run [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic). Alternate executables for Trimmomatic should be specified here. The default uses the conda-installed trimmomatic. (default: trimmomatic)
+--fastp_options_string: Override options for fastp, e.g. `--length_required 70 --umi`
 
---trimmomatic_options_string: Override options for Trimmomatic (default: ). This parameter can be used to specify different adaptor sequences used in the experiment if you need to trim them. For example: ```ILLUMINACLIP:NexteraPE-PE.fa:0:90:10:0:true```, where NexteraPE-PE.fa is a file containing sequences of adapters to be trimmed.
-
---min_paired_end_reads_overlap: Parameter for the FLASH read merging step. Minimum required overlap length between two reads to provide a confident overlap. (default: 10)
-
---max_paired_end_reads_overlap: Parameter for the FLASH merging step. Maximum overlap length expected in approximately 90% of read pairs.  Please see the FLASH manual for more information.  (default: 100)
-
---stringent_flash_merging: Use stringent parameters for flash merging. In the case where flash could merge R1 and R2 reads ambiguously, the expected overlap is calculated as 2\*average_read_length - amplicon_length. The flash parameters for --min-overlap and --max-overlap will be set to prefer merged reads with length within 10bp of the expected overlap. These values override the --min_paired_end_reads_overlap or --max_paired_end_reads_overlap CRISPResso parameters. (default: False)
+--min_paired_end_reads_overlap: Parameter for the fastp read merging step. Minimum required overlap length between two reads to provide a confident overlap. (default: 10)
 
 #### Quantification window parameters
 
@@ -278,6 +302,7 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 --needleman_wunsch_aln_matrix_loc: Location of the matrix specifying substitution scores in the NCBI format (see ftp://ftp.ncbi.nih.gov/blast/matrices/) (default: EDNAFULL)
 
 #### Base editing parameters
+
 --base_editor_output: Outputs plots and tables to aid in analysis of base editor studies. If base editor output is selected, plots showing the frequency of substitutions in the quantification window are generated. The target and result bases can also be set to measure the rate of on-target conversion at bases in the quantification window. (default: False)
 
 --conversion_nuc_from: For base editor plots, this is the nucleotide targeted by the base editor (default: C)
@@ -290,7 +315,7 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 
 --prime_editing_pegRNA_extension_seq: Extension sequence used in prime editing. The sequence should be given in the RNA 5'->3' order, such that the sequence starts with the RT template including the edit, followed by the Primer-binding site (PBS). (default: )
 
---prime_editing_pegRNA_extension_quantification_window_size: Quantification window size (in bp) at flap site for measuring modifications anchored at the right side of the extension sequence. Similar to the --quantification_window parameter, the total length of  the quantification window will be 2x this parameter. Default: 5bp (10bp total window size) (default: 5)
+--prime_editing_pegRNA_extension_quantification_window_size: Quantification window size (in bp) at flap site for measuring modifications anchored at the right side of the extension sequence. Similar to the --quantification_window parameter, the total length of the quantification window will be 2x this parameter. Default: 5bp (10bp total window size) (default: 5)
 
 --prime_editing_pegRNA_scaffold_seq: If given, reads containing any of this scaffold sequence before extension sequence (provided by --prime_editing_extension_seq) will be classified as 'Scaffold-incorporated'. The sequence should be given in the 5'->3' order such that the RT template directly follows this sequence. A common value ends with 'GGCACCGAGUCGGUGC'. (default: )
 
@@ -367,76 +392,79 @@ This should produce a folder called 'CRISPResso_on_base_editor'. Open the file c
 --bam_chr_loc BAM_CHR_LOC: Chromosome location in bam for reads to process. For example: "chr1:50-100" or "chrX". (default: )
 
 ## CRISPResso2 output
+
 The output of CRISPResso2 consists of a set of informative graphs that allow for the quantification and visualization of the position and type of outcomes within an amplicon sequence.
 
 ### Data file descriptions
-*CRISPResso2_report.html* is a summary report that can be viewed in a web browser containing all of the output plots and summary statistics.
 
-*Alleles_frequency_table.zip* can be unzipped to a tab-separated text file that shows all reads and alignments to references. The first column shows the aligned sequence of the sequenced read. The second column shows the aligned sequence of the reference sequence. Gaps in each of these columns represent insertions and deletions. The next column 'Reference_Name' shows the name of the reference that the read aligned to. The fourth column, 'Read_Status' shows whether the read was modified or unmodified. The fifth through seventh columns ('n_deleted', 'n_inserted', 'n_substituted') show the number of bases deleted, inserted, and substituted as compared to the reference sequence. The eighth column shows the number of reads having that sequence, and the ninth column shows the percentage of all reads having that sequence.
+_CRISPResso2_report.html_ is a summary report that can be viewed in a web browser containing all of the output plots and summary statistics.
 
-*CRISPResso_mapping_statistics.txt* is a tab-delimited text file showing the number of reads in the input ('READS IN INPUTS') the number of reads after filtering, trimming and merging (READS AFTER PREPROCESSING), the number of reads aligned (READS ALIGNED) and the number of reads for which the alignment had to be computed vs read from cache.
+_Alleles_frequency_table.zip_ can be unzipped to a tab-separated text file that shows all reads and alignments to references. The first column shows the aligned sequence of the sequenced read. The second column shows the aligned sequence of the reference sequence. Gaps in each of these columns represent insertions and deletions. The next column 'Reference_Name' shows the name of the reference that the read aligned to. The fourth column, 'Read_Status' shows whether the read was modified or unmodified. The fifth through seventh columns ('n_deleted', 'n_inserted', 'n_substituted') show the number of bases deleted, inserted, and substituted as compared to the reference sequence. The eighth column shows the number of reads having that sequence, and the ninth column shows the percentage of all reads having that sequence.
 
-*CRISPResso_quantification_of_editing_frequency.txt* is a tab-delimited text file showing the number of reads aligning to each reference amplicon, as well as the status (modified/unmodified, number of insertions, deletions, and/or substitutions) of those reads.
+_CRISPResso_mapping_statistics.txt_ is a tab-delimited text file showing the number of reads in the input ('READS IN INPUTS') the number of reads after filtering, trimming and merging (READS AFTER PREPROCESSING), the number of reads aligned (READS ALIGNED) and the number of reads for which the alignment had to be computed vs read from cache.
 
-*CRISPResso_RUNNING_LOG.txt* is a text file and shows a log of the CRISPResso run.
+_CRISPResso_quantification_of_editing_frequency.txt_ is a tab-delimited text file showing the number of reads aligning to each reference amplicon, as well as the status (modified/unmodified, number of insertions, deletions, and/or substitutions) of those reads.
 
-*CRISPResso2_info.json* can be read by other CRISPResso tools and contains information about the run and results.
+_CRISPResso_RUNNING_LOG.txt_ is a text file and shows a log of the CRISPResso run.
+
+_CRISPResso2_info.json_ can be read by other CRISPResso tools and contains information about the run and results.
 
 The remainder of the files are produced for each amplicon, and each file is prefixed by the name of the amplicon if more than one amplicon is given.
 
-*Alleles_frequency_table_around_sgRNA_NNNNN.txt* is a tab-separated text file that shows alleles and alignments to the specified reference for a subsequence around the sgRNA (here, shown by 'NNNNN'). This data report is produced for each amplicon when a guide is found in the amplicon sequence. A report is generated for each guide. The number of nucleotides shown in this report can be modified by changing the `--plot_window_size` parameter.
+_Alleles_frequency_table_around_sgRNA_NNNNN.txt_ is a tab-separated text file that shows alleles and alignments to the specified reference for a subsequence around the sgRNA (here, shown by 'NNNNN'). This data report is produced for each amplicon when a guide is found in the amplicon sequence. A report is generated for each guide. The number of nucleotides shown in this report can be modified by changing the `--plot_window_size` parameter.
 
-*Substitution_frequency_table_around_sgRNA_NNNNN.txt* is a tab-separated text file that shows the frequency of substitutions in the amplicon sequence around the sgRNA (here, shown by 'NNNNN'). The first row shows the reference sequence. The following rows show the number of substitutions to each base. For example, the first numeric value in the second row (marked ‘A’) shows the number of bases that have a substitution resulting in an A at the first basepair of the amplicon sequence. The number of unmodified bases at each position is now shown in this table (because they aren’t substitutions). Thus, if the first basepair of the amplicon sequence is an A, the first value in the first row will show 0. A report is generated for each guide. The number of nucleotides shown in this report can be modified by changing the `--plot_window_size` parameter.
+_Substitution_frequency_table_around_sgRNA_NNNNN.txt_ is a tab-separated text file that shows the frequency of substitutions in the amplicon sequence around the sgRNA (here, shown by 'NNNNN'). The first row shows the reference sequence. The following rows show the number of substitutions to each base. For example, the first numeric value in the second row (marked ‘A’) shows the number of bases that have a substitution resulting in an A at the first basepair of the amplicon sequence. The number of unmodified bases at each position is now shown in this table (because they aren’t substitutions). Thus, if the first basepair of the amplicon sequence is an A, the first value in the first row will show 0. A report is generated for each guide. The number of nucleotides shown in this report can be modified by changing the `--plot_window_size` parameter.
 
-*Substitution_frequency_table.txt* is a tab-separated text file that shows the frequency of substitutions in the amplicon sequence across the entire amplicon. The first row shows the reference sequence. The following rows show the number of substitutions to each base. For example, the first numeric value in the second row (marked ‘A’) shows the number of bases that have a substitution resulting in an A at the first basepair of the amplicon sequence. The number of unmodified bases at each position is now shown in this table (because they aren’t substitutions). Thus, if the first basepair of the AMPLICON sequence is an A, the first value in the first row will show 0.
+_Substitution_frequency_table.txt_ is a tab-separated text file that shows the frequency of substitutions in the amplicon sequence across the entire amplicon. The first row shows the reference sequence. The following rows show the number of substitutions to each base. For example, the first numeric value in the second row (marked ‘A’) shows the number of bases that have a substitution resulting in an A at the first basepair of the amplicon sequence. The number of unmodified bases at each position is now shown in this table (because they aren’t substitutions). Thus, if the first basepair of the AMPLICON sequence is an A, the first value in the first row will show 0.
 
-*Insertion_histogram.txt* is a tab-separated text file that shows a histogram of the insertion sizes in the amplicon sequence in the quantification window. Insertions outside of the quantification window are not included. The ins_size column shows the insertion length, and the fq column shows the number of reads having that insertion size.
+_Insertion_histogram.txt_ is a tab-separated text file that shows a histogram of the insertion sizes in the amplicon sequence in the quantification window. Insertions outside of the quantification window are not included. The ins_size column shows the insertion length, and the fq column shows the number of reads having that insertion size.
 
-*Deletion_histogram.txt* is a tab-separated text file that shows a histogram of the deletion sizes in the amplicon sequence in the quantification window. Deletions outside of the quantification window are not included. The del_size column shows length of the deletion, and the fq column shows the number of reads having that number of substitutions.
+_Deletion_histogram.txt_ is a tab-separated text file that shows a histogram of the deletion sizes in the amplicon sequence in the quantification window. Deletions outside of the quantification window are not included. The del_size column shows length of the deletion, and the fq column shows the number of reads having that number of substitutions.
 
-*Substitution_histogram.txt* is a tab-separated text file that shows a histogram of the number of substitutions in the amplicon sequence in the quantification window. Substitutions outside of the quantification window are not included. The sub_count column shows the number of substitutions, and the fq column shows the number of reads having that number of substitutions.
+_Substitution_histogram.txt_ is a tab-separated text file that shows a histogram of the number of substitutions in the amplicon sequence in the quantification window. Substitutions outside of the quantification window are not included. The sub_count column shows the number of substitutions, and the fq column shows the number of reads having that number of substitutions.
 
-*Effect_vector_insertion.txt* is a tab-separated text file with a one-row header that shows the percentage of reads with an insertion at each base in the reference sequence. The first column shows the 1-based position of the amplicon, and the second column shows the percentage of reads with a insertion at that location.
+_Effect_vector_insertion.txt_ is a tab-separated text file with a one-row header that shows the percentage of reads with an insertion at each base in the reference sequence. The first column shows the 1-based position of the amplicon, and the second column shows the percentage of reads with a insertion at that location.
 
-*Effect_vector_deletion.txt* is a tab-separated text file with a one-row header that shows the percentage of reads with a deletion at each base in the reference sequence. The first column shows the 1-based position of the amplicon, and the second column shows the percentage of reads with a deletion at that location.
+_Effect_vector_deletion.txt_ is a tab-separated text file with a one-row header that shows the percentage of reads with a deletion at each base in the reference sequence. The first column shows the 1-based position of the amplicon, and the second column shows the percentage of reads with a deletion at that location.
 
-*Effect_vector_substitution.txt* is a tab-separated text file with a one-row header that shows the percentage of reads with a substitution at each base in the reference sequence. The first column shows the 1-based position of the amplicon, and the second column shows the percentage of reads with a substitution at that location.
+_Effect_vector_substitution.txt_ is a tab-separated text file with a one-row header that shows the percentage of reads with a substitution at each base in the reference sequence. The first column shows the 1-based position of the amplicon, and the second column shows the percentage of reads with a substitution at that location.
 
-*Effect_vector_combined.txt* is a tab-separated text file with a one-row header that shows the percentage of reads with any modification (insertion, deletion, or substitution) at each base in the reference sequence. The first column shows the 1-based position of the amplicon, and the second column shows the percentage of reads with a modification at that location.
+_Effect_vector_combined.txt_ is a tab-separated text file with a one-row header that shows the percentage of reads with any modification (insertion, deletion, or substitution) at each base in the reference sequence. The first column shows the 1-based position of the amplicon, and the second column shows the percentage of reads with a modification at that location.
 
-*Modification_count_vectors.txt* is a tab-separated file showing the number of modifications for each position in the amplicon. The first row shows the amplicon sequence, and successive rows show the number of reads with insertions (row 2), insertions_left (row 3), deletions (row 4), substitutions (row 5) and the sum of all modifications (row 6). Additionally, the last row shows the number of reads aligned.
+_Modification_count_vectors.txt_ is a tab-separated file showing the number of modifications for each position in the amplicon. The first row shows the amplicon sequence, and successive rows show the number of reads with insertions (row 2), insertions_left (row 3), deletions (row 4), substitutions (row 5) and the sum of all modifications (row 6). Additionally, the last row shows the number of reads aligned.
 
 If an insertion occurs between bases 5 and 6, the insertions vector will be incremented at bases 5 and 6. However, the insertions_left vector will only be incremented at base 5 so the sum of the insertions_left row represents an accurate count of the number of insertions, whereas the sum of the insertions row will yield twice the number of insertions.
 
-*Quantification_window_modification_count_vectors.txt* is a tab-separated file showing the number of modifications for positions in the quantification window of the amplicon. The first row shows the amplicon sequence in the quantification window, and successive rows show the number of reads with insertions (row 2), insertions_left (row 3), deletions (row 4), substitutions (row 5) and the sum of all modifications (row 6). Additionally, the last row shows the number of reads aligned.
+_Quantification_window_modification_count_vectors.txt_ is a tab-separated file showing the number of modifications for positions in the quantification window of the amplicon. The first row shows the amplicon sequence in the quantification window, and successive rows show the number of reads with insertions (row 2), insertions_left (row 3), deletions (row 4), substitutions (row 5) and the sum of all modifications (row 6). Additionally, the last row shows the number of reads aligned.
 
-*Nucleotide_frequency_table.txt* is a tab-separated file showing the number of each residue at each position in the amplicon. The first row shows the amplicon sequence, and successive rows show the number of reads with an A (row 2), C (row 3), G (row 4), T (row 5), N (row 6), or a deletion (-) (row 7) at each position.
+_Nucleotide_frequency_table.txt_ is a tab-separated file showing the number of each residue at each position in the amplicon. The first row shows the amplicon sequence, and successive rows show the number of reads with an A (row 2), C (row 3), G (row 4), T (row 5), N (row 6), or a deletion (-) (row 7) at each position.
 
-*Quantification_window_nucleotide_frequency_table.txt* is a tab-separated file showing the number of each residue at positions in the quantification window of the amplicon. The first row shows the amplicon sequence in the quantification window, and successive rows show the number of reads with an A (row 2), C (row 3), G (row 4), T (row 5), N (row 6), or a deletion (-) (row 7) at each position.
+_Quantification_window_nucleotide_frequency_table.txt_ is a tab-separated file showing the number of each residue at positions in the quantification window of the amplicon. The first row shows the amplicon sequence in the quantification window, and successive rows show the number of reads with an A (row 2), C (row 3), G (row 4), T (row 5), N (row 6), or a deletion (-) (row 7) at each position.
 
-*Nucleotide_percentage_table.txt* is a tab-separated file showing the percentage of each residue at each position in the amplicon. The first row shows the amplicon sequence, and successive rows show the percentage of reads with an A (row 2), C (row 3), G (row 4), T (row 5), N (row 6), or a deletion (-) (row 7) at each position.
+_Nucleotide_percentage_table.txt_ is a tab-separated file showing the percentage of each residue at each position in the amplicon. The first row shows the amplicon sequence, and successive rows show the percentage of reads with an A (row 2), C (row 3), G (row 4), T (row 5), N (row 6), or a deletion (-) (row 7) at each position.
 
-*Quantification_window_nucleotide_percentage_table.txt* is a tab-separated file showing the percentage of each residue at positions in the quantification window of the amplicon. The first row shows the amplicon sequence in the quantification window, and successive rows show the percentage of reads with an A (row 2), C (row 3), G (row 4), T (row 5), N (row 6), or a deletion (-) (row 7) at each position.
+_Quantification_window_nucleotide_percentage_table.txt_ is a tab-separated file showing the percentage of each residue at positions in the quantification window of the amplicon. The first row shows the amplicon sequence in the quantification window, and successive rows show the percentage of reads with an A (row 2), C (row 3), G (row 4), T (row 5), N (row 6), or a deletion (-) (row 7) at each position.
 
 The following report files are produced when the base editor mode is enabled:
 
-*Selected_nucleotide_percentage_table_around_sgRNA_NNNNN.txt* is a tab-separated text file that shows the percentage of each base at selected nucleotides in the amplicon sequence around the sgRNA (here, shown by 'NNNNN'). If the base editing experiment targets cytosines (as set by the --base_editor_from parameter), each C in the quantification window will be numbered (e.g. C5 represents the cytosine at the 5th position in the selected nucleotides). The percentage of each base at these selected target cytosines is reported, with the first row showing the numbered cytosines, and the remainder of the rows showing the percentage of each nucleotide present at these locations. This file shows nucleotides within '--plot_window_size' bp of the position specified by the parameter '--quantification_window_center' relative to the 3' end of each guide.
+_Selected_nucleotide_percentage_table_around_sgRNA_NNNNN.txt_ is a tab-separated text file that shows the percentage of each base at selected nucleotides in the amplicon sequence around the sgRNA (here, shown by 'NNNNN'). If the base editing experiment targets cytosines (as set by the --base_editor_from parameter), each C in the quantification window will be numbered (e.g. C5 represents the cytosine at the 5th position in the selected nucleotides). The percentage of each base at these selected target cytosines is reported, with the first row showing the numbered cytosines, and the remainder of the rows showing the percentage of each nucleotide present at these locations. This file shows nucleotides within '--plot_window_size' bp of the position specified by the parameter '--quantification_window_center' relative to the 3' end of each guide.
 
-*Selected_nucleotide_frequency_table_around_sgRNA_NNNNN.txt* is a tab-separated text file that shows the frequency of each base at selected nucleotides in the amplicon sequence around the sgRNA (here, shown by 'NNNNN'). If the base editing experiment targets cytosines (as set by the --base_editor_from parameter), each C in the quantification window will be numbered (e.g. C5 represents the cytosine at the 5th position in the selected nucleotides). The frequency of each base at these selected target cytosines is reported, with the first row showing the numbered cytosines, and the remainder of the rows showing the frequency of each nucleotide present at these locations. This file shows nucleotides within '--plot_window_size' bp of the position specified by the parameter '--quantification_window_center' relative to the 3' end of each guide.
+_Selected_nucleotide_frequency_table_around_sgRNA_NNNNN.txt_ is a tab-separated text file that shows the frequency of each base at selected nucleotides in the amplicon sequence around the sgRNA (here, shown by 'NNNNN'). If the base editing experiment targets cytosines (as set by the --base_editor_from parameter), each C in the quantification window will be numbered (e.g. C5 represents the cytosine at the 5th position in the selected nucleotides). The frequency of each base at these selected target cytosines is reported, with the first row showing the numbered cytosines, and the remainder of the rows showing the frequency of each nucleotide present at these locations. This file shows nucleotides within '--plot_window_size' bp of the position specified by the parameter '--quantification_window_center' relative to the 3' end of each guide.
 
 The following report files are produced when the amplicon contains a coding sequence:
 
-*Frameshift_analysis.txt* is a text file describing the number of noncoding, in-frame, and frameshift mutations. This report file is produced when the amplicon contains a coding sequence.
+_Frameshift_analysis.txt_ is a text file describing the number of noncoding, in-frame, and frameshift mutations. This report file is produced when the amplicon contains a coding sequence.
 
-*Splice_sites_analysis.txt* is a text file describing the number of splicing sites that are unmodified and modified. This file report is produced when the amplicon contains a coding sequence.
+_Splice_sites_analysis.txt_ is a text file describing the number of splicing sites that are unmodified and modified. This file report is produced when the amplicon contains a coding sequence.
 
-*Effect_vector_insertion_noncoding.txt* is a tab-separated text file with a one-row header that shows the percentage of reads with a noncoding insertion at each base in the reference sequence. The first column shows the 1-based position of the amplicon, and the second column shows the percentage of reads with a noncoding insertion at that location. This report file is produced when amplicon contains a coding sequence.
+_Effect_vector_insertion_noncoding.txt_ is a tab-separated text file with a one-row header that shows the percentage of reads with a noncoding insertion at each base in the reference sequence. The first column shows the 1-based position of the amplicon, and the second column shows the percentage of reads with a noncoding insertion at that location. This report file is produced when amplicon contains a coding sequence.
 
-*Effect_vector_deletion_noncoding.txt* is a tab-separated text file with a one-row header that shows the percentage of reads with a noncoding deletion at each base in the reference sequence. The first column shows the 1-based position of the amplicon, and the second column shows the percentage of reads with a noncoding deletion at that location. This report file is produced when amplicon contains a coding sequence.
+_Effect_vector_deletion_noncoding.txt_ is a tab-separated text file with a one-row header that shows the percentage of reads with a noncoding deletion at each base in the reference sequence. The first column shows the 1-based position of the amplicon, and the second column shows the percentage of reads with a noncoding deletion at that location. This report file is produced when amplicon contains a coding sequence.
 
-*Effect_vector_substitution_noncoding.txt* is a tab-separated text file with a one-row header that shows the percentage of reads with a noncoding substitution at each base in the reference sequence. The first column shows the 1-based position of the amplicon, and the second column shows the percentage of reads with a noncoding substitution at that location. This report file is produced when amplicon contains a coding sequence.
+_Effect_vector_substitution_noncoding.txt_ is a tab-separated text file with a one-row header that shows the percentage of reads with a noncoding substitution at each base in the reference sequence. The first column shows the 1-based position of the amplicon, and the second column shows the percentage of reads with a noncoding substitution at that location. This report file is produced when amplicon contains a coding sequence.
 
 ## Troubleshooting
+
 Please check that your input file(s) are in FASTQ format (compressed fastq.gz also accepted).
 
 If you get an empty report, please double check that your amplicon sequence is correct and in the correct orientation. It can be helpful to inspect the first few lines of your FASTQ file - the start of the amplicon sequence should match the start of your sequences. If not, check to see if the files are trimmed (see point below).
@@ -450,14 +478,17 @@ If your amplicon sequence is longer than your sequenced read length, the R1 and 
 Especially in repetitive regions, multiple alignments may have the best score. If you want to investigate alternate best-scoring alignments, you can view all alignments using this tool: http://rna.informatik.uni-freiburg.de/Teaching/index.jsp?toolName=Gotoh. As input, sequences from the 'Alleles_frequency_table.txt' can be used. Specifically, for a given row, the value in the 'Aligned_Sequence' should be entered into the 'Sequence a' box after removing any dashes, and the value in the 'Reference_Sequence' should be entered into the 'Sequence b' box after removing any dashes. The alternate alignments can be selected in the 'Results' panel in the Output section.
 
 ## Alternate running modes
+
 CRISPResso2 can be run for many fastqs ([CRISPRessoBatch](#crispressobatch)), for many amplicons in the same fastq ([CRISPRessoPooled](#crispressopooled)), or for whole-genome sequencing ([CRISPRessoWGS](#crispressowgs)).
 
 ### CRISPRessoBatch
+
 CRISPRessoBatch allows users to specify input files and other command line arguments in a single file, and then to run CRISPResso2 analysis on each file in parallel. Samples for which the amplicon and guide sequences are the same will be compared between batches, producing useful summary tables and coomparison plots.
 
 This flexible utility adds four additional parameters:
 
 --batch_settings: This parameter specifies the tab-separated batch file. The batch file consists of a header line listing the parameters specified, and then one line for each sample describing the parameters for that sample. Each of the parameters for CRISPResso2 given above can be specified for each sample. When CRISPRessoBatch is run, additional parameters can be specified that will be applied to all of the samples listed in the batch file. An example batch file looks like:
+
 ```
 name	fastq_r1
 sample1	sample1.fq
@@ -473,26 +504,28 @@ sample3	sample3.fq
 
 CRISPRessoBatch outputs several summary files and plots:
 
-*CRISPRessoBatch_quantification_of_editing_frequency* shows the number of reads that were modified for each amplicon in each sample.
+_CRISPRessoBatch_quantification_of_editing_frequency_ shows the number of reads that were modified for each amplicon in each sample.
 
-*CRISPRessoBatch_mapping_statistics.txt* aggregates the read mapping data from each sample.
+_CRISPRessoBatch_mapping_statistics.txt_ aggregates the read mapping data from each sample.
 
 For each amplicon, the following files are produced with the name of the amplicon as the filename prefix:
 
-*NUCLEOTIDE_FREQUENCY_SUMMARY.txt* and *NUCLEOTIDE_PERCENTAGE_SUMMARY.txt* aggregate the nucleotide counts and percentages at each position in the amplicon for each sample.
+_NUCLEOTIDE_FREQUENCY_SUMMARY.txt_ and _NUCLEOTIDE_PERCENTAGE_SUMMARY.txt_ aggregate the nucleotide counts and percentages at each position in the amplicon for each sample.
 
-
-*MODIFICATION_FREQUENCY_SUMMARY.txt* and *MODIFICATION_PERCENTAGE_SUMMARY.txt* aggregate the modification frequency and percentage at each position in the amplicon for each sample.
+_MODIFICATION_FREQUENCY_SUMMARY.txt_ and _MODIFICATION_PERCENTAGE_SUMMARY.txt_ aggregate the modification frequency and percentage at each position in the amplicon for each sample.
 
 #### Example run: Batch mode
+
 Download the test dataset files [SRR3305543.fastq.gz](https://crispresso.pinellolab.partners.org/static/demo/SRR3305543.fastq.gz), [SRR3305544.fastq.gz](https://crispresso.pinellolab.partners.org/static/demo/SRR3305544.fastq.gz), [SRR3305545.fastq.gz](https://crispresso.pinellolab.partners.org/static/demo/SRR3305545.fastq.gz), and [SRR3305546.fastq.gz](https://crispresso.pinellolab.partners.org/static/demo/SRR3305546.fastq.gz) to your current directory. These are files are the first 25,000 sequences from an editing experiment performed on several base editors. Also include a batch file that lists these files and the sample names: [batch.batch](https://crispresso.pinellolab.partners.org/static/demo/batch.batch) To analyze this experiment, run the following command:
 
-*Using Bioconda:*
+_Using Bioconda:_
+
 ```
 CRISPRessoBatch --batch_settings batch.batch --amplicon_seq CATTGCAGAGAGGCGTATCATTTCGCGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCC -p 4 --base_editor_output -g GGAATCCCTTCTGCAGCACC -wc -10 -w 20
 ```
 
-*Using Docker:*
+_Using Docker:_
+
 ```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoBatch --batch_settings batch.batch --amplicon_seq CATTGCAGAGAGGCGTATCATTTCGCGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCC -p 4 --base_editor_output -g GGAATCCCTTCTGCAGCACC -wc -10 -w 20
 ```
@@ -500,6 +533,7 @@ docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoBatch -
 This should produce a folder called 'CRISPRessoBatch_on_batch'. Open the file called CRISPRessoBatch_on_batch/CRISPResso2Batch_report.html in a web browser, and you should see an output like this: [CRISPResso2Batch_report.html](https://crispresso.pinellolab.partners.org/static/demo/CRISPRessoBatch_on_batch/CRISPResso2Batch_report.html).
 
 ### CRISPRessoPooled
+
 CRISPRessoPooled is a utility to analyze and quantify targeted sequencing CRISPR/Cas9 experiments involving pooled amplicon sequencing libraries. One common experimental strategy is to pool multiple amplicons (e.g. a single on-target site plus a set of potential off-target sites) into a single deep sequencing reaction (briefly, genomic DNA samples for pooled applications can be prepared by first amplifying the target regions for each gene/target of interest with
 regions of 150-400bp depending on the desired coverage. In a second round of PCR, with minimized cycle numbers, barcode and adaptors are added. With optimization, these two rounds of PCR can be merged into a single reaction. These reactions are then quantified, normalized, pooled, and undergo quality control before being sequenced).
 CRISPRessoPooled demultiplexes reads from multiple amplicons and runs the CRISPResso utility with appropriate reads for each amplicon separately.
@@ -527,64 +561,63 @@ To run the tool in this mode the user must provide:
     particular, this file, is a tab delimited text file with up to 12
     columns (first 2 columns required):
 
-- *AMPLICON\_NAME*: an identifier for the amplicon (*must be unique*).
+- _AMPLICON_NAME_: an identifier for the amplicon (_must be unique_).
 
-- *AMPLICON\_SEQUENCE*: amplicon sequence used in the design of
-    the experiment.
+- _AMPLICON_SEQUENCE_: amplicon sequence used in the design of
+  the experiment.
 
-- *sgRNA\_SEQUENCE (OPTIONAL)*: sgRNA sequence used for this amplicon
-    *without the PAM sequence.* If not available, enter *NA.*
+- _sgRNA_SEQUENCE (OPTIONAL)_: sgRNA sequence used for this amplicon
+  _without the PAM sequence._ If not available, enter _NA._
 
-- *EXPECTED\_AMPLICON\_AFTER\_HDR (OPTIONAL)*: expected amplicon
-    sequence in case of HDR. If more than one, separate by commas *and
-    not spaces*. If not available, enter *NA.*
+- _EXPECTED_AMPLICON_AFTER_HDR (OPTIONAL)_: expected amplicon
+  sequence in case of HDR. If more than one, separate by commas _and
+  not spaces_. If not available, enter _NA._
 
-- *CODING\_SEQUENCE (OPTIONAL)*: Subsequence(s) of the amplicon
-    corresponding to coding sequences. If more than one, separate by
-    commas *and not spaces*. If not available, enter *NA.*
+- _CODING_SEQUENCE (OPTIONAL)_: Subsequence(s) of the amplicon
+  corresponding to coding sequences. If more than one, separate by
+  commas _and not spaces_. If not available, enter _NA._
 
+- _PRIME_EDITING_PEGRNA_SPACER_SEQ (OPTIONAL)_: pegRNA spacer sgRNA sequence
+  used in prime editing. The spacer should not include the PAM sequence.
+  The sequence should be given in the RNA 5'->3' order, so for Cas9, the
+  PAM would be on the right side of the given sequence.
+  If not available, enter _NA._
 
-- *PRIME\_EDITING\_PEGRNA\_SPACER\_SEQ (OPTIONAL)*: pegRNA spacer sgRNA sequence
-    used in prime editing. The spacer should not include the PAM sequence.
-    The sequence should be given in the RNA 5'->3' order, so for Cas9, the
-    PAM would be on the right side of the given sequence.
-    If not available, enter *NA.*
+- _PRIME_EDITING_NICKING_GUIDE_SEQ (OPTIONAL)_: Nicking sgRNA sequence used in prime
+  editing. The sgRNA should not include the PAM sequence. The sequence should be given
+  in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the sequence.
+  If not available, enter _NA._
 
-- *PRIME\_EDITING\_NICKING\_GUIDE\_SEQ (OPTIONAL)*: Nicking sgRNA sequence used in prime
-    editing. The sgRNA should not include the PAM sequence. The sequence should be given
-    in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the sequence.
-    If not available, enter *NA.*
+- _PRIME_EDITING_PEGRNA_EXTENSION_SEQ (OPTIONAL)_: Extension sequence used in prime
+  editing. The sequence should be given in the RNA 5'->3' order, such that the sequence
+  starts with the RT template including the edit, followed by the Primer-binding site (PBS).
+  If not available, enter _NA._
 
-- *PRIME\_EDITING\_PEGRNA\_EXTENSION\_SEQ (OPTIONAL)*: Extension sequence used in prime
-    editing. The sequence should be given in the RNA 5'->3' order, such that the sequence
-    starts with the RT template including the edit, followed by the Primer-binding site (PBS).
-    If not available, enter *NA.*
+- _PRIME_EDITING_PEGRNA_SCAFFOLD_SEQ (OPTIONAL)_: If given, reads containing any of this scaffold sequence
+  before extension sequence (provided by --prime*editing_extension_seq) will be classified
+  as 'Scaffold-incorporated'. The sequence should be given in the 5'->3' order such that
+  the RT template directly follows this sequence. A common value ends with 'GGCACCGAGUCGGUGC'.
+  If not available, enter \_NA.*
 
-- *PRIME\_EDITING\_PEGRNA\_SCAFFOLD\_SEQ (OPTIONAL)*: If given, reads containing any of this scaffold sequence
-    before extension sequence (provided by --prime_editing_extension_seq) will be classified
-    as 'Scaffold-incorporated'. The sequence should be given in the 5'->3' order such that
-    the RT template directly follows this sequence. A common value ends with 'GGCACCGAGUCGGUGC'.
-    If not available, enter *NA.*
+- _PRIME_EDITING_PEGRNA_SCAFFOLD_MIN_MATCH_LENGTH (OPTIONAL)_: Minimum number of bases matching
+  scaffold sequence for the read to be counted as 'Scaffold-incorporated'. If the scaffold
+  sequence matches the reference sequence at the incorporation site, the minimum number of
+  bases to match will be minimally increased (beyond this parameter) to disambiguate between
+  prime-edited and scaffold-incorporated sequences. If not available, enter _NA._
 
-- *PRIME\_EDITING\_PEGRNA\_SCAFFOLD\_MIN\_MATCH\_LENGTH (OPTIONAL)*: Minimum number of bases matching
-    scaffold sequence for the read to be counted as 'Scaffold-incorporated'. If the scaffold
-    sequence matches the reference sequence at the incorporation site, the minimum number of
-    bases to match will be minimally increased (beyond this parameter) to disambiguate between
-    prime-edited and scaffold-incorporated sequences. If not available, enter *NA.*
+- _PRIME_EDITING_OVERRIDE_PRIME_EDITED_REF_SEQ (OPTIONAL)_:If given, this sequence will be used
+  as the prime-edited reference sequence. This may be useful if the prime-edited reference
+  sequence has large indels or the algorithm cannot otherwise infer the correct reference
+  sequence. If not available, enter _NA._
 
-- *PRIME\_EDITING\_OVERRIDE\_PRIME\_EDITED\_REF\_SEQ (OPTIONAL)*:If given, this sequence will be used
-    as the prime-edited reference sequence. This may be useful if the prime-edited reference
-    sequence has large indels or the algorithm cannot otherwise infer the correct reference
-    sequence. If not available, enter *NA.*
+- _QWC or QUANTIFICATION_WINDOW_COORDINATES (OPTIONAL)_: Bp positions in the amplicon sequence specifying the quantification window.
+  Any indels/substitutions outside this window are excluded. Indexes are 0-based, meaning that
+  the first nucleotide is position 0. Ranges are separated by the dash sign like "start-stop",
+  and multiple ranges can be separated by the underscore (\_). A value of 0 disables this filter.
+  If not available, enter _NA._
+- _W or QUANTIFICATION_WINDOW_SIZE (OPTIONAL)_: Defines the size (in bp) of the quantification window extending from the position specified by the "--cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence(s) (--sgRNA). Mutations within this number of bp from the quantification window center are used in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 1, 1bp on each side of the cleavage position for a total length of 2bp. (default: 1) If not available, enter \_NA.\*
 
-- *QWC or QUANTIFICATION\_WINDOW\_COORDINATES (OPTIONAL)*: Bp positions in the amplicon sequence specifying the quantification window.
-    Any indels/substitutions outside this window are excluded. Indexes are 0-based, meaning that
-    the first nucleotide is position 0. Ranges are separated by the dash sign like "start-stop",
-    and multiple ranges can be separated by the underscore (_). A value of 0 disables this filter.
-    If not available, enter *NA.*
-- *W or QUANTIFICATION\_WINDOW\_SIZE (OPTIONAL)*: Defines the size (in bp) of the quantification window extending from the position specified by the "--cleavage_offset" or "--quantification_window_center" parameter in relation to the provided guide RNA sequence(s) (--sgRNA). Mutations within this number of bp from the quantification window center are used in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 1, 1bp on each side of the cleavage position for a total length of 2bp. (default: 1) If not available, enter *NA.*
-
-- *WC or QUANTIFICATION\_WINDOW\_CENTER (OPTIONAL)*: Center of quantification window to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17. (default: -3) If not available, enter *NA.*
+- _WC or QUANTIFICATION_WINDOW_CENTER (OPTIONAL)_: Center of quantification window to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17. (default: -3) If not available, enter _NA._
 
 A file in the correct format should look like this:
 
@@ -594,48 +627,50 @@ Site2 GTCCTGGTTTTTGGTTTGGGAAATATAGTCATC NA GTCCTGGTTTTTGGTTTAAAAAAATATAGTCATC NA
 
 Site 3 TTTCTGGTTTTTGGTTTGGGAAATATAGTCATC NA NA GGAAATATA
 
-The user can easily create this file with *any text editor* or with
+The user can easily create this file with _any text editor_ or with
 spreadsheet software like Excel (Microsoft), Numbers (Apple) or Sheets
 (Google Docs) and then save it as tab delimited file.
 
 Example:
 
-*Using Bioconda:*
+_Using Bioconda:_
+
 ```
 CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -f AMPLICONS_FILE.txt --name ONLY_AMPLICONS_SRR1046762 --gene_annotations gencode_v19.gz
 ```
 
-*Using Docker:*
+_Using Docker:_
+
 ```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -f AMPLICONS_FILE.txt --name ONLY_AMPLICONS_SRR1046762 --gene_annotations gencode_v19.gz
 ```
 
 The output of CRISPRessoPooled Amplicons mode consists of:
 
-1.  REPORT\_READS\_ALIGNED\_TO\_AMPLICONS.txt: this file contains the
+1.  REPORT_READS_ALIGNED_TO_AMPLICONS.txt: this file contains the
     same information provided in the input description file, plus some
     additional columns:
 
-    a.  *Demultiplexed\_fastq.gz\_filename*: name of the files
-        containing the raw reads for each amplicon.
+    a. _Demultiplexed_fastq.gz_filename_: name of the files
+    containing the raw reads for each amplicon.
 
-    b.  *n\_reads*: number of reads recovered for each amplicon.
+    b. _n_reads_: number of reads recovered for each amplicon.
 
 2.  A set of fastq.gz files, one for each amplicon.
 
 3.  A set of folders, one for each amplicon, containing a full
     CRISPResso report.
 
-4.  SAMPLES_QUANTIFICATION_SUMMARY.txt: this file contains a summary of the quantification and the alignment statistics for each          region analyzed (read counts and percentages for the various classes: Unmodified, NHEJ, point mutations, and HDR).
+4.  SAMPLES_QUANTIFICATION_SUMMARY.txt: this file contains a summary of the quantification and the alignment statistics for each region analyzed (read counts and percentages for the various classes: Unmodified, NHEJ, point mutations, and HDR).
 
-5.  *CRISPRessoPooled\_RUNNING\_LOG.txt*:  execution log and messages
+5.  _CRISPRessoPooled_RUNNING_LOG.txt_: execution log and messages
     for the external utilities called.
 
 **Genome mode:** In this mode the tool aligns each read to the best
 location in the genome. Then potential amplicons are discovered looking
 for regions with enough reads (the default setting is to have at least
 1000 reads, but the parameter can be adjusted with the option
-*--min\_reads\_to\_use\_region*). If a gene annotation file from UCSC is
+_--min_reads_to_use_region_). If a gene annotation file from UCSC is
 provided, the tool also reports the overlapping gene/s to the region. In
 this way it is possible to check if the amplified regions map to
 expected genomic locations and/or also to pseudogenes or other
@@ -650,7 +685,7 @@ To run the tool in this mode the user must provide:
     are also accepted)
 
 2.  The full path of the reference genome in bowtie2 format (e.g.
-    /genomes/human\_hg19/hg19). Instructions on how to build
+    /genomes/human_hg19/hg19). Instructions on how to build
     a custom index or precomputed index for human and mouse genome
     assembly can be downloaded from the bowtie2
     website: http://bowtie-bio.sourceforge.net/bowtie2/index.shtml.
@@ -659,48 +694,50 @@ To run the tool in this mode the user must provide:
     user can download this file from the UCSC Genome Browser (
     http://genome.ucsc.edu/cgi-bin/hgTables?command=start ) selecting as
     table "knownGene", as output format "all fields from selected table"
-    and as file returned "gzip compressed". (e.g. /genomes/human\_hg19/gencode\_v19.gz)
+    and as file returned "gzip compressed". (e.g. /genomes/human_hg19/gencode_v19.gz)
 
 Example:
 
-*Using Bioconda:*
+_Using Bioconda:_
+
 ```
 CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -x /GENOMES/hg19/hg19 --name ONLY_GENOME_SRR1046762 --gene_annotations gencode_v19.gz
 ```
 
-*Using Docker:*
+_Using Docker:_
+
 ```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -x /GENOMES/hg19/hg19 --name ONLY_GENOME_SRR1046762 --gene_annotations gencode_v19.gz
 ```
 
 The output of CRISPRessoPooled Genome mode consists of:
 
-1.  REPORT\_READS\_ALIGNED\_TO\_GENOME\_ONLY.txt: this file contains the
+1.  REPORT_READS_ALIGNED_TO_GENOME_ONLY.txt: this file contains the
     list of all the regions discovered, one per line with the following
     information:
 
--   chr\_id: chromosome of the region in the reference genome.
+- chr_id: chromosome of the region in the reference genome.
 
--   bpstart: start coordinate of the region in the reference genome.
+- bpstart: start coordinate of the region in the reference genome.
 
--   bpend: end coordinate of the region in the reference genome.
+- bpend: end coordinate of the region in the reference genome.
 
--   fastq\_file: location of the fastq.gz file containing the reads
-    mapped to the region.
+- fastq_file: location of the fastq.gz file containing the reads
+  mapped to the region.
 
--   n\_reads: number of reads mapped to the region.
+- n_reads: number of reads mapped to the region.
 
--   sequence: the sequence, on the reference genome for the region.
+- sequence: the sequence, on the reference genome for the region.
 
-1.  MAPPED\_REGIONS (folder): this folder contains all the fastq.gz
+1.  MAPPED_REGIONS (folder): this folder contains all the fastq.gz
     files for the discovered regions.
 
 2.  A set of folders with the CRISPResso report on the regions with
     enough reads.
 
-3.  SAMPLES_QUANTIFICATION_SUMMARY.txt: this file contains a summary of the quantification and the alignment statistics for each          region analyzed (read counts and percentages for the various classes: Unmodified, NHEJ, point mutations, and HDR).
+3.  SAMPLES_QUANTIFICATION_SUMMARY.txt: this file contains a summary of the quantification and the alignment statistics for each region analyzed (read counts and percentages for the various classes: Unmodified, NHEJ, point mutations, and HDR).
 
-4.  *CRISPRessoPooled\_RUNNING\_LOG.txt*:  execution log and messages
+4.  _CRISPRessoPooled_RUNNING_LOG.txt_: execution log and messages
     for the external utilities called.
 
     This running mode is particularly useful to check for mapping
@@ -719,29 +756,31 @@ surviving regions.
 
 To run the tool in this mode the user must provide:
 
--   Paired-end reads (two files) or single-end reads (single file)
-    in [FASTQ
-    format ](http://en.wikipedia.org/wiki/FASTQ_format)(fastq.gz files
-    are also accepted)
+- Paired-end reads (two files) or single-end reads (single file)
+  in [FASTQ
+  format ](http://en.wikipedia.org/wiki/FASTQ_format)(fastq.gz files
+  are also accepted)
 
--   A description file containing the amplicon sequences used to enrich
-    regions in the genome and some additional information (as described
-    in the Amplicons mode section).
+- A description file containing the amplicon sequences used to enrich
+  regions in the genome and some additional information (as described
+  in the Amplicons mode section).
 
--   The reference genome in bowtie2 format (as described in Genome
-    mode section).
+- The reference genome in bowtie2 format (as described in Genome
+  mode section).
 
--   Optionally the gene annotations from UCSC (as described in Genome
-    mode section).
+- Optionally the gene annotations from UCSC (as described in Genome
+  mode section).
 
 Example:
 
-*Using Bioconda:*
+_Using Bioconda:_
+
 ```
 CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -f AMPLICONS_FILE.txt -x /GENOMES/hg19/hg19 --name AMPLICONS_AND_GENOME_SRR1046762 --gene_annotations gencode_v19.gz
 ```
 
-*Using Docker:*
+_Using Docker:_
+
 ```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -f AMPLICONS_FILE.txt -x /GENOMES/hg19/hg19 --name AMPLICONS_AND_GENOME_SRR1046762 --gene_annotations gencode_v19.gz
 ```
@@ -749,36 +788,36 @@ docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoPooled 
 The output of CRISPRessoPooled Mixed Amplicons + Genome mode consists of
 these files:
 
-1.  REPORT\_READS\_ALIGNED\_TO\_GENOME\_AND\_AMPLICONS.txt: this file
+1.  REPORT_READS_ALIGNED_TO_GENOME_AND_AMPLICONS.txt: this file
     contains the same information provided in the input description
     file, plus some additional columns:
 
-    a.  Amplicon\_Specific\_fastq.gz\_filename: name of the file
-        containing the raw reads recovered for the amplicon.
+    a. Amplicon_Specific_fastq.gz_filename: name of the file
+    containing the raw reads recovered for the amplicon.
 
-    b.  *n\_reads*: number of reads recovered for the amplicon.
+    b. _n_reads_: number of reads recovered for the amplicon.
 
-    c.  *Gene\_overlapping:* gene/s overlapping the amplicon region.
+    c. _Gene_overlapping:_ gene/s overlapping the amplicon region.
 
-    d.  chr\_id: chromosome of the amplicon in the reference genome.
+    d. chr_id: chromosome of the amplicon in the reference genome.
 
-    e.  bpstart: start coordinate of the amplicon in the
-        reference genome.
+    e. bpstart: start coordinate of the amplicon in the
+    reference genome.
 
-    f.  bpend: end coordinate of the amplicon in the reference genome.
+    f. bpend: end coordinate of the amplicon in the reference genome.
 
-    g.  Reference\_Sequence: sequence in the reference genome for the
-        region mapped for the amplicon.
+    g. Reference_Sequence: sequence in the reference genome for the
+    region mapped for the amplicon.
 
-2.  MAPPED\_REGIONS (folder): this folder contains all the fastq.gz
+2.  MAPPED_REGIONS (folder): this folder contains all the fastq.gz
     files for the discovered regions.
 
 3.  A set of folders with the CRISPResso report on the amplicons with
     enough reads.
 
-4.  SAMPLES_QUANTIFICATION_SUMMARY.txt: this file contains a summary of the quantification and the alignment statistics for each          region analyzed (read counts and percentages for the various classes: Unmodified, NHEJ, point mutations, and HDR).
+4.  SAMPLES_QUANTIFICATION_SUMMARY.txt: this file contains a summary of the quantification and the alignment statistics for each region analyzed (read counts and percentages for the various classes: Unmodified, NHEJ, point mutations, and HDR).
 
-5.  *CRISPRessoPooled\_RUNNING\_LOG.txt*:   execution log and messages
+5.  _CRISPRessoPooled_RUNNING_LOG.txt_: execution log and messages
     for the external utilities called.
 
 The Mixed mode combines the benefits of the two previous running modes.
@@ -799,13 +838,14 @@ his may be time consuming). Finally the Amplicon mode is the fastest,
 although the least reliable in terms of quantification accuracy.
 
 #### Parameter List
+
 -f or --amplicons_file: Amplicons description file (default: ''). This file is a tab-delimited text file with up to 14 columns (2 required):
 
---amplicon_name:  an identifier for the amplicon (must be unique)
+--amplicon_name: an identifier for the amplicon (must be unique)
 
---amplicon_seq:  amplicon sequence used in the experiment
+--amplicon_seq: amplicon sequence used in the experiment
 
---guide_seq (OPTIONAL):  sgRNA sequence used for this amplicon without the PAM sequence. Multiple guides can be given separated by commas and not spaces.
+--guide_seq (OPTIONAL): sgRNA sequence used for this amplicon without the PAM sequence. Multiple guides can be given separated by commas and not spaces.
 
 --expected_hdr_amplicon_seq (OPTIONAL): expected amplicon sequence in case of HDR.
 
@@ -865,38 +905,39 @@ are more suitable, and identified regions can be analyzed and visualized using
 CRISPRessoWGS.
 
 #### Usage
+
 To run CRISPRessoWGS you must provide:
 
-1.  A genome aligned *BAM* file. To align reads from a WGS experiment to
+1.  A genome aligned _BAM_ file. To align reads from a WGS experiment to
     the genome there are many options available, we suggest using either
     **Bowtie2 (**<http://bowtie-bio.sourceforge.net/bowtie2/>) or **BWA
     (**<http://bio-bwa.sourceforge.net/>**).**
 
-2.  A *FASTA* file containing the reference sequence used to align the
+2.  A _FASTA_ file containing the reference sequence used to align the
     reads and create the BAM file (the reference files for the most
     common organism can be download from
-    UCSC: http://hgdownload.soe.ucsc.edu/downloads.html. *Download and
-    uncompress only the file ending with .fa.gz*, for example for the
-    last version of the human genome download and *uncompress* the
+    UCSC: http://hgdownload.soe.ucsc.edu/downloads.html. _Download and
+    uncompress only the file ending with .fa.gz_, for example for the
+    last version of the human genome download and _uncompress_ the
     file hg38.fa.gz)
 
 3.  Descriptions file containing the coordinates of the regions to
     analyze and some additional information. In particular, this file is
     a tab delimited text file with up to 7 columns (4 required):
 
-    -   chr\_id: chromosome of the region in the reference genome.
+    - chr_id: chromosome of the region in the reference genome.
 
-    -   bpstart: start coordinate of the region in the reference genome.
+    - bpstart: start coordinate of the region in the reference genome.
 
-    -   bpend: end coordinate of the region in the reference genome.
+    - bpend: end coordinate of the region in the reference genome.
 
-    -   *REGION\_NAME*: an identifier for the region (*must be unique*).
+    - _REGION_NAME_: an identifier for the region (_must be unique_).
 
-    -   *sgRNA\_SEQUENCE (OPTIONAL)*: sgRNA sequence used for this genomic segment *without the PAM sequence.* If not available, enter *NA.*
+    - _sgRNA_SEQUENCE (OPTIONAL)_: sgRNA sequence used for this genomic segment _without the PAM sequence._ If not available, enter _NA._
 
-    -   *EXPECTED\_SEGMENT\_AFTER\_HDR (OPTIONAL)*: expected genomic segment sequence in case of HDR. If more than one, separate by commas *and not spaces*. If not available, enter *NA.*
+    - _EXPECTED_SEGMENT_AFTER_HDR (OPTIONAL)_: expected genomic segment sequence in case of HDR. If more than one, separate by commas _and not spaces_. If not available, enter _NA._
 
-    -   *CODING\_SEQUENCE (OPTIONAL)*: Subsequence(s) of the genomic segment corresponding to coding sequences. If more than one, separate by commas *and not spaces*. If not available, enter *NA.*
+    - _CODING_SEQUENCE (OPTIONAL)_: Subsequence(s) of the genomic segment corresponding to coding sequences. If more than one, separate by commas _and not spaces_. If not available, enter _NA._
 
 A file in the correct format should look like this (column entries must be separated by tabs):
 
@@ -906,8 +947,8 @@ chr1 65118211 65118261 R1 CTACAGAGCCCCAGTCCTGG NA NA
 chr6 51002798 51002820 R2 NA NA NA
 ```
 
-Note: *no column titles should be entered.* As you may have noticed this
-file is just a *BED* file with extra columns. For this reason a normal
+Note: _no column titles should be entered._ As you may have noticed this
+file is just a _BED_ file with extra columns. For this reason a normal
 BED file with 4 columns, is also **accepted** by this utility.
 
 4.  Optionally the full path of a gene annotations file from UCSC. You
@@ -915,58 +956,60 @@ BED file with 4 columns, is also **accepted** by this utility.
     Browser (http://genome.ucsc.edu/cgi-bin/hgTables?command=start)
     selecting as table "knownGene", as output format "all fields from
     selected table" and as file returned "gzip compressed". (something
-    like: /genomes/human\_hg19/gencode\_v19.gz)
+    like: /genomes/human_hg19/gencode_v19.gz)
 
 Example:
 
-*Using Bioconda:*
+_Using Bioconda:_
+
 ```
 CRISPRessoWGS -b WGS/50/50_sorted_rmdup_fixed_groups.bam -f WGS_TEST.txt -r /GENOMES/mm9/mm9.fa --gene_annotations ensemble_mm9.txt.gz --name CRISPR_WGS_SRR1542350
 ```
 
-*Using Docker:*
+_Using Docker:_
+
 ```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoWGS -b WGS/50/50_sorted_rmdup_fixed_groups.bam -f WGS_TEST.txt -r /GENOMES/mm9/mm9.fa --gene_annotations ensemble_mm9.txt.gz --name CRISPR_WGS_SRR1542350
 ```
 
 The output from these files will consist of:
 
-1.  REPORT\_READS\_ALIGNED\_TO\_SELECTED\_REGIONS\_WGS.txt: this file
+1.  REPORT_READS_ALIGNED_TO_SELECTED_REGIONS_WGS.txt: this file
     contains the same information provided in the input description
     file, plus some additional columns:
 
-    a.  sequence: sequence in the reference genome for the
-        region specified.
+    a. sequence: sequence in the reference genome for the
+    region specified.
 
-    b.  *gene\_overlapping:* gene/s overlapping the region specified.
+    b. _gene_overlapping:_ gene/s overlapping the region specified.
 
-    c.  *n\_reads*: number of reads recovered for the region.
+    c. _n_reads_: number of reads recovered for the region.
 
-    d.  bam\_file\_with\_reads\_in\_region: file containing only the
-        subset of the reads that overlap, also partially, with
-        the region. This file is indexed and can be easily loaded for
-        example on IGV for visualization of single reads or for the
-        comparison of two conditions. For example, in the figure below
-        (fig X) we show reads mapped to a region inside the coding
-        sequence of the gene Crygc subjected to
-        NHEJ (CRISPR\_WGS\_SRR1542350) vs reads from a control
-        experiment (CONTROL\_WGS\_SRR1542349).
+    d. bam_file_with_reads_in_region: file containing only the
+    subset of the reads that overlap, also partially, with
+    the region. This file is indexed and can be easily loaded for
+    example on IGV for visualization of single reads or for the
+    comparison of two conditions. For example, in the figure below
+    (fig X) we show reads mapped to a region inside the coding
+    sequence of the gene Crygc subjected to
+    NHEJ (CRISPR_WGS_SRR1542350) vs reads from a control
+    experiment (CONTROL_WGS_SRR1542349).
 
-    e.  fastq.gz\_file\_trimmed\_reads\_in\_region: file containing only
-        the subset of reads fully covering the specified regions, and
-        trimmed to match the sequence in that region. These reads are
-        used for the subsequent analysis with CRISPResso.
+    e. fastq.gz_file_trimmed_reads_in_region: file containing only
+    the subset of reads fully covering the specified regions, and
+    trimmed to match the sequence in that region. These reads are
+    used for the subsequent analysis with CRISPResso.
 
-2.  ANALYZED\_REGIONS (folder): this folder contains all the BAM and
+2.  ANALYZED_REGIONS (folder): this folder contains all the BAM and
     FASTQ files, one for each region analyzed.
 
 3.  A set of folders with the CRISPResso report on the regions provided
     in input with enough reads (the default setting is to have at least
     10 reads, but the parameter can be adjusted with the option
 
-    *--min\_reads\_to\_use\_region*).
+    _--min_reads_to_use_region_).
 
-4.  *CRISPRessoPooled\_RUNNING\_LOG.txt*:   execution log and messages
+4.  _CRISPRessoPooled_RUNNING_LOG.txt_: execution log and messages
     for the external utilities called.
 
 This utility is particular useful to investigate and quantify mutation
@@ -995,29 +1038,32 @@ CRISPRessoCompare is a utility for the comparison of a pair of CRISPResso analys
 
 To run CRISPRessoCompare you must provide:
 
-1.	Two output folders generated with CRISPResso using the same reference amplicon and settings but on different datasets.
-2.	Optionally a name for each condition to use for the plots, and the name of the output folder
+1. Two output folders generated with CRISPResso using the same reference amplicon and settings but on different datasets.
+2. Optionally a name for each condition to use for the plots, and the name of the output folder
 
 Example:
 
-*Using Bioconda:*
+_Using Bioconda:_
+
 ```
 CRISPRessoCompare -n1 "VEGFA CRISPR" -n2 "VEGFA CONTROL"  -n VEGFA_Site_1_SRR10467_VS_SRR1046787 CRISPResso_on_VEGFA_Site_1_SRR1046762/ CRISPResso_on_VEGFA_Site_1_SRR1046787/
 ```
 
-*Using Docker:*
+_Using Docker:_
+
 ```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoCompare -n1 "VEGFA CRISPR" -n2 "VEGFA CONTROL"  -n VEGFA_Site_1_SRR10467_VS_SRR1046787 CRISPResso_on_VEGFA_Site_1_SRR1046762/ CRISPResso_on_VEGFA_Site_1_SRR1046787/
 ```
 
 The output will consist of:
 
-1.	Comparison_Efficiency.pdf: a figure containing a comparison of the edit frequencies for each category (NHEJ, MIXED NHEJ-HDR and HDR) and as well the net effect subtracting the second sample (second folder in the command line) provided in the analysis from the first sample (first folder in the command line).
-2.	Comparison_Combined_Insertion_Deletion_Substitution_Locations.pdf: a figure showing the average profile for the mutations for the two samples in the same scale and their difference with the same convention used in the previous figure (first sample – second sample).
-3.	CRISPRessoCompare_significant_base_counts.txt: a text file reporting the number of bases for each amplicon and in the quantification window for each amplicon that were significantly enriched for Insertions, Deletions, and Substitutions, as well as All Modifications (Fisher's exact test, Bonferonni corrected p-values).
-4.	CRISPRessoCompare_RUNNING_LOG.txt: detailed execution log.
+1. Comparison_Efficiency.pdf: a figure containing a comparison of the edit frequencies for each category (NHEJ, MIXED NHEJ-HDR and HDR) and as well the net effect subtracting the second sample (second folder in the command line) provided in the analysis from the first sample (first folder in the command line).
+2. Comparison_Combined_Insertion_Deletion_Substitution_Locations.pdf: a figure showing the average profile for the mutations for the two samples in the same scale and their difference with the same convention used in the previous figure (first sample – second sample).
+3. CRISPRessoCompare_significant_base_counts.txt: a text file reporting the number of bases for each amplicon and in the quantification window for each amplicon that were significantly enriched for Insertions, Deletions, and Substitutions, as well as All Modifications (Fisher's exact test, Bonferonni corrected p-values).
+4. CRISPRessoCompare_RUNNING_LOG.txt: detailed execution log.
 
 #### Parameter List
+
 crispresso_output_folder_1: First output folder with CRISPResso analysis (Required)
 crispresso_output_folder_2: Second output folder with CRISPResso analysis (Required)
 
@@ -1035,32 +1081,36 @@ crispresso_output_folder_2: Second output folder with CRISPResso analysis (Requi
 
 CRISPRessoPooledWGSCompare is an extension of the CRIPRessoCompare utility allowing the user to run and summarize multiple CRISPRessoCompare analyses where several regions are analyzed in two different conditions, as in the case of the CRISPRessoPooled or CRISPRessoWGS utilities.
 
-
 #### Usage
 
 To run CRISPRessoPooledWGSCompare you must provide:
-1.	Two output folders generated with CRISPRessoPooled or CRISPRessoWGS using the same reference amplicon and settings but on different datasets.
-2.	Optionally a name for each condition to use for the plots, and the name of the output folder
+
+1. Two output folders generated with CRISPRessoPooled or CRISPRessoWGS using the same reference amplicon and settings but on different datasets.
+2. Optionally a name for each condition to use for the plots, and the name of the output folder
 
 Example:
 
-*Using Bioconda:*
+_Using Bioconda:_
+
 ```
 CRISPRessoPooledWGSCompare CRISPRessoPooled_on_AMPLICONS_AND_GENOME_SRR1046762/ CRISPRessoPooled_on_AMPLICONS_AND_GENOME_SRR1046787/ -n1 SRR1046762 -n2 SRR1046787 -n AMPLICONS_AND_GENOME_SRR1046762_VS_SRR1046787
 ```
 
-*Using Docker:*
+_Using Docker:_
+
 ```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoPooledWGSCompare CRISPRessoPooled_on_AMPLICONS_AND_GENOME_SRR1046762/ CRISPRessoPooled_on_AMPLICONS_AND_GENOME_SRR1046787/ -n1 SRR1046762 -n2 SRR1046787 -n AMPLICONS_AND_GENOME_SRR1046762_VS_SRR1046787
 ```
 
 The output from these files will consist of:
-1.	COMPARISON_SAMPLES_QUANTIFICATION_SUMMARIES.txt: this file contains a summary of the quantification for each of the two conditions for each region and their difference (read counts and percentages for the various classes: Unmodified, NHEJ, MIXED NHEJ-HDR  and HDR).
-2.	A set of folders with CRISPRessoCompare reports on the common regions with enough reads in both conditions.
-3.	CRISPRessoPooledWGSCompare_significant_base_count_summary.txt: a text file summarizing for each sample and amplicon in both conditions the number of bases for each amplicon and in the quantification window for each amplicon that were significantly enriched for Insertions, Deletions, and Substitutions, as well as All Modifications (Fisher's exact test, Bonferonni corrected p-values).
-4.	CRISPRessoPooledWGSCompare_RUNNING_LOG.txt: detailed execution log.
+
+1. COMPARISON_SAMPLES_QUANTIFICATION_SUMMARIES.txt: this file contains a summary of the quantification for each of the two conditions for each region and their difference (read counts and percentages for the various classes: Unmodified, NHEJ, MIXED NHEJ-HDR and HDR).
+2. A set of folders with CRISPRessoCompare reports on the common regions with enough reads in both conditions.
+3. CRISPRessoPooledWGSCompare_significant_base_count_summary.txt: a text file summarizing for each sample and amplicon in both conditions the number of bases for each amplicon and in the quantification window for each amplicon that were significantly enriched for Insertions, Deletions, and Substitutions, as well as All Modifications (Fisher's exact test, Bonferonni corrected p-values).
+4. CRISPRessoPooledWGSCompare_RUNNING_LOG.txt: detailed execution log.
 
 #### Parameter List
+
 crispresso_pooled_wgs_output_folder_1: First output folder with CRISPRessoPooled or CRISPRessoWGS analysis (Required)
 crispresso_pooled_wgs_output_folder_2: Second output folder with CRISPRessoPooled or CRISPRessoWGS analysis (Required)
 
@@ -1101,12 +1151,14 @@ To run CRISPRessoCompare you must provide the --name parameter, and CRISPResso f
 
 Example:
 
-*Using Bioconda:*
+_Using Bioconda:_
+
 ```
 CRISPRessoAggregate --name "VEGFA" --prefix CRISPRessoRuns/VEGFA/
 ```
 
-*Using Docker:*
+_Using Docker:_
+
 ```
 docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoAggregate --name "VEGFA" --prefix CRISPRessoRuns/VEGFA/
 ```

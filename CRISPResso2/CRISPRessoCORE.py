@@ -81,12 +81,49 @@ def which(program):
 
     return None
 
-def check_program(binary_name,download_url=None):
+
+def check_program(binary_name, download_url=None, version_flag=None, version_regex=None, version=None):
+    """Check if a program is installed and accessible.
+
+    Parameters
+    ----------
+    binary_name : str
+        Name of the binary to check.
+    download_url : str, optional
+        URL to download the program from that is displayed if not installed.
+    version_flag : str, optional
+        Flag to pass to the program to get the version.
+    version_regex : str, optional
+        Regex to extract the version from the output of the program.
+    version : str, optional
+        Version to check against.
+
+    Returns
+    -------
+    None, will exit if program is not installed.
+    """
     if not which(binary_name):
-        error('You need to install and have the command #####%s##### in your PATH variable to use CRISPResso!\n Please read the documentation!' % binary_name)
+        error('You need to install and have the command #####{0}##### in your PATH variable to use CRISPResso!\n Please read the documentation!'.format(binary_name))
         if download_url:
-            error('You can download it here:%s' % download_url)
+            error('You can download it here: {0}'.format(download_url))
         sys.exit(1)
+
+    if version_flag:
+        p = sb.Popen('{0} {1}'.format(binary_name, version_flag), shell=True, stdout=sb.PIPE, stderr=sb.STDOUT)
+        if binary_name == 'fastp':
+            p_output = p.communicate()[0].decode('utf-8')
+        else:
+            p_output = p.communicate()[1].decode('utf-8')
+        major_version, minor_version, patch_version = map(int, re.search(version_regex, p_output).groups())
+        if major_version <= version[0] and minor_version <= version[1] and patch_version < version[2]:
+            error('You need to install version {0} of {1} to use CRISPResso!'.format(version, binary_name))
+            error('You have version {0}.{1}.{2} installed'.format(major_version, minor_version, patch_version))
+            if download_url:
+                error('You can download it here: {0}'.format(download_url))
+            sys.exit(1)
+
+
+check_fastp = lambda: check_program('fastp', download_url='http://opengene.org/fastp/fastp', version_flag='--version', version_regex=r'fastp (\d+)\.(\d+)\.(\d+)', version=(0, 19, 8))
 
 def get_avg_read_length_fastq(fastq_filename):
      cmd=('z' if fastq_filename.endswith('.gz') else '' ) +('cat < \"%s\"' % fastq_filename)+\
@@ -125,7 +162,6 @@ import matplotlib.gridspec as gridspec
 
 pd=check_library('pandas')
 np=check_library('numpy')
-check_program('flash')
 
 #start = time.time()
 sns=check_library('seaborn')
@@ -205,7 +241,7 @@ def get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinat
             idxs[i] = -1 * abs(idxs[i])
     for coord in split_quant_window_coordinates(quant_window_coordinates):
         include_idxs.extend(idxs[coord[0]:coord[1] + 1])
-        
+
     return list(filter(lambda x: x >= 0, include_idxs))
 
 
@@ -397,7 +433,7 @@ def get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaf
 
 def process_fastq(fastq_filename, variantCache, ref_names, refs, args):
     """process_fastq processes each of the reads contained in a fastq file, given a cache of pre-computed variants
-        fastqIn: name of fastq (e.g. output of FLASH)
+        fastqIn: name of fastq (e.g. output of fastp)
             This file can be gzipped or plain text
 
         variantCache: dict with keys: sequence
@@ -1125,7 +1161,7 @@ def main():
             with open(log_filename, 'w+') as outfile:
                 outfile.write('CRISPResso version %s\n[Command used]:\n%s\n\n[Execution log]:\n' %(CRISPRessoShared.__version__, crispresso_cmd_to_write))
 
-        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('CRISPResso_status.txt')))
+        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('CRISPResso_status.json')))
 
         aln_matrix_loc = os.path.join(_ROOT, "EDNAFULL")
         CRISPRessoShared.check_file(aln_matrix_loc)
@@ -1299,6 +1335,7 @@ def main():
 
             info('Inferring reference amplicon sequence..', {'percent_complete': 1})
 
+            check_fastp()
             auto_fastq_r1 = args.fastq_r1 #paths to fastq files for performing auto functions
             auto_fastq_r2 = args.fastq_r2
             if args.bam_input != "": #if input is a bam, create temp files with reads for processing here
@@ -1321,8 +1358,7 @@ def main():
                         fastq_r1=auto_fastq_r1,
                         fastq_r2=auto_fastq_r2,
                         number_of_reads_to_consider=number_of_reads_to_consider,
-                        flash_command=args.flash_command,
-                        max_paired_end_reads_overlap=args.max_paired_end_reads_overlap,
+                        fastp_command=args.fastp_command,
                         min_paired_end_reads_overlap=args.min_paired_end_reads_overlap,
                         aln_matrix=aln_matrix,
                         needleman_wunsch_gap_open=args.needleman_wunsch_gap_open,
@@ -1350,8 +1386,7 @@ def main():
                                     fastq_r1=auto_fastq_r1,
                                     fastq_r2=auto_fastq_r2,
                                     number_of_reads_to_consider=number_of_reads_to_consider,
-                                    flash_command=args.flash_command,
-                                    max_paired_end_reads_overlap=args.max_paired_end_reads_overlap,
+                                    fastp_command=args.fastp_command,
                                     min_paired_end_reads_overlap=args.min_paired_end_reads_overlap,
                                     exclude_bp_from_left=args.exclude_bp_from_left,
                                     exclude_bp_from_right=args.exclude_bp_from_right,
@@ -1669,16 +1704,9 @@ def main():
         found_guide_seq = [False]*len(guides)
         found_coding_seq = [False]*len(coding_seqs)
 
-        max_amplicon_len = 0 #for flash
-        min_amplicon_len = 99**99 #for flash
-
         for idx, seq in enumerate(amplicon_seq_arr):
             this_seq = seq.strip().upper()
             this_seq_length = len(this_seq)
-            if this_seq_length > max_amplicon_len:
-                max_amplicon_len = this_seq_length
-            if this_seq_length < min_amplicon_len:
-                min_amplicon_len = this_seq_length
 
             this_name = 'Amplicon'+str(idx)
             if idx < len(amplicon_name_arr):
@@ -2189,134 +2217,89 @@ def main():
             raise CRISPRessoShared.BadParameterException('Read trimming options are not available with bam input')
         elif args.fastq_r1 != '' and args.fastq_r2 == '': #single end reads
             if not args.trim_sequences: #no trimming or merging required
-                output_forward_filename=args.fastq_r1
+                output_forward_filename = args.fastq_r1
             else:
+                check_fastp()
+                info('Trimming sequences with fastp...')
                 output_forward_filename=_jp('reads.trimmed.fq.gz')
-                #Trimming with trimmomatic
-                cmd='%s SE -phred33 %s  %s %s >>%s 2>&1'\
-                % (args.trimmomatic_command, args.fastq_r1,
-                   output_forward_filename,
-                   args.trimmomatic_options_string.replace('NexteraPE-PE.fa', 'TruSeq3-SE.fa'),
-                   log_filename)
-                #print cmd
-                TRIMMOMATIC_STATUS=sb.call(cmd, shell=True)
+                cmd = '{command} -i {r1} -o {out} {options} --json {json_report} --html {html_report} >> {log} 2>&1'.format(
+                    command=args.fastp_command,
+                    r1=args.fastq_r1,
+                    out=output_forward_filename,
+                    options=args.fastp_options_string,
+                    json_report=_jp('fastp_report.json'),
+                    html_report=_jp('fastp_report.html'),
+                    log=log_filename,
+                )
+                fastp_status = sb.call(cmd, shell=True)
 
-                if TRIMMOMATIC_STATUS:
-                        raise CRISPRessoShared.TrimmomaticException('TRIMMOMATIC failed to run, please check the log file.')
-                crispresso2_info['trimmomatic_command'] = cmd
+                if fastp_status:
+                    raise CRISPRessoShared.FastpException('FASTP failed to run, please check the log file.')
+                crispresso2_info['fastp_command'] = cmd
 
                 files_to_remove += [output_forward_filename]
 
-            processed_output_filename=output_forward_filename
+                info('Done!')
+
+            processed_output_filename = output_forward_filename
 
         elif args.fastq_r1 != '' and args.fastq_r2 != '':#paired end reads
+            processed_output_filename = _jp('oet.extendedFrags.fastq.gz')
+            not_combined_1_filename = _jp('out.notCombined_1.fastq.gz')
+            not_combined_2_filename = _jp('out.notCombined_2.fastq.gz')
+            check_fastp()
+            info('Processing sequences with fastp...')
             if not args.trim_sequences:
-                output_forward_paired_filename=args.fastq_r1
-                output_reverse_paired_filename=args.fastq_r2
+                args.fastp_options_string += ' --disable_adapter_trimming --disable_trim_poly_g --disable_quality_filtering --disable_length_filtering'
             else:
-                info('Trimming sequences with Trimmomatic...')
-                output_forward_paired_filename=_jp('output_forward_paired.fq.gz')
-                output_forward_unpaired_filename=_jp('output_forward_unpaired.fq.gz')
-                output_reverse_paired_filename=_jp('output_reverse_paired.fq.gz')
-                output_reverse_unpaired_filename=_jp('output_reverse_unpaired.fq.gz')
+                args.fastp_options_string += ' --detect_adapter_for_pe'
 
-                #Trimming with trimmomatic
-                cmd='%s PE -phred33 %s  %s %s  %s  %s  %s %s >>%s 2>&1'\
-                    % (args.trimmomatic_command,
-                        args.fastq_r1, args.fastq_r2, output_forward_paired_filename,
-                        output_forward_unpaired_filename, output_reverse_paired_filename,
-                        output_reverse_unpaired_filename, args.trimmomatic_options_string, log_filename)
-                #print cmd
-                TRIMMOMATIC_STATUS=sb.call(cmd, shell=True)
-                if TRIMMOMATIC_STATUS:
-                    raise CRISPRessoShared.TrimmomaticException('TRIMMOMATIC failed to run, please check the log file.')
-                crispresso2_info['trimmomatic_command'] = cmd
+            fastp_cmd = '{command} -i {r1} -I {r2} --merge --merged_out {out_merged} --unpaired1 {unpaired1} --unpaired2 {unpaired2} --overlap_len_require {min_overlap} --thread {num_threads} --json {json_report} --html {html_report} {options} >> {log} 2>&1'.format(
+                command=args.fastp_command,
+                r1=args.fastq_r1,
+                r2=args.fastq_r2,
+                out_merged=processed_output_filename,
+                unpaired1=not_combined_1_filename,
+                unpaired2=not_combined_2_filename,
+                min_overlap=args.min_paired_end_reads_overlap,
+                num_threads=n_processes,
+                json_report=_jp('fastp_report.json'),
+                html_report=_jp('fastp_report.html'),
+                options=args.fastp_options_string,
+                log=log_filename,
+            )
+            fastp_status = sb.call(fastp_cmd, shell=True)
+            if fastp_status:
+                raise CRISPRessoShared.FastpException('Fastp failed to run, please check the log file.')
+            crispresso2_info['running_info']['fastp_command'] = fastp_cmd
 
-                files_to_remove += [output_forward_paired_filename]
-                files_to_remove += [output_reverse_paired_filename]
+            if not os.path.isfile(processed_output_filename):
+                raise CRISPRessoShared.FastpException('Fastp failed to produce merged reads file, please check the log file.')
 
-                info('Done!', {'percent_complete': 6})
+            info('Done!', {'percent_complete': 6})
 
-            #for paired-end reads, merge them
-            info('Estimating average read length...')
-            if args.debug:
-                info('Checking average read length from ' + output_forward_paired_filename)
-            if get_n_reads_fastq(output_forward_paired_filename):
-                avg_read_length=get_avg_read_length_fastq(output_forward_paired_filename)
-                if args.debug:
-                    info('Average read length is ' + str(avg_read_length) + ' from ' + output_forward_paired_filename)
-            else:
-               raise CRISPRessoShared.NoReadsAfterQualityFilteringException('No reads survived the average or single bp quality filtering.')
+            files_to_remove += [
+                processed_output_filename,
+                not_combined_1_filename,
+                not_combined_2_filename,
+            ]
 
-            #Merging with Flash
-            info('Merging paired sequences with Flash...')
-            min_overlap = args.min_paired_end_reads_overlap
-            max_overlap = args.max_paired_end_reads_overlap
-            if args.stringent_flash_merging:
-                expected_max_overlap=2*avg_read_length - min_amplicon_len
-                expected_min_overlap=2*avg_read_length - max_amplicon_len
-    #            print('avg read len: ' + str(avg_read_length))
-    #            print('expected_max_overlap' + str(expected_max_overlap))
-    #            print('expected_min_overlap' + str(expected_min_overlap))
-    #            print('min amplicon len:' + str(min_amplicon_len))
-    #            print('max amplicon len:' + str(max_amplicon_len))
-                indel_overlap_tolerance = 10 # magic number bound on how many bp inserted/deleted in ~90% of reads (for flash)
-                #max overlap is either the entire read (avg_read_length) or the expected amplicon length + indel tolerance
-                max_overlap = max(10, min(avg_read_length, expected_max_overlap+indel_overlap_tolerance))
-                #min overlap is either 4bp (as in crispresso1) or the expected amplicon length - indel tolerance
-                min_overlap = max(4, expected_min_overlap-indel_overlap_tolerance)
-    #            print('max_overlap: ' + str(max_overlap))
-    #            print('min_overlap: ' + str(min_overlap))
-                # if reads are longer than the amplicon, there is no way to tell flash to have them overlap like this..
-                if avg_read_length > min_amplicon_len:
-                    info('Warning: Reads are longer than amplicon.')
-                    min_overlap = avg_read_length-10
-                    max_overlap = 2*avg_read_length
-
-            output_prefix = "out"
-            if clean_file_prefix != "":
-                output_prefix = clean_file_prefix + "out"
-            cmd='%s "%s" "%s" --min-overlap %d --max-overlap %d --allow-outies -z -d %s -o %s >>%s 2>&1' %\
-            (args.flash_command,
-                 output_forward_paired_filename,
-                 output_reverse_paired_filename,
-                 min_overlap,
-                 max_overlap,
-                 OUTPUT_DIRECTORY,
-                 output_prefix,
-                 log_filename)
-
-            info('Running FLASH command: ' + cmd)
-            crispresso2_info['flash_command'] = cmd
-            FLASH_STATUS=sb.call(cmd, shell=True)
-            if FLASH_STATUS:
-                raise CRISPRessoShared.FlashException('Flash failed to run, please check the log file.')
-
-            flash_hist_filename=_jp('out.hist')
-            flash_histogram_filename=_jp('out.histogram')
-            flash_not_combined_1_filename=_jp('out.notCombined_1.fastq.gz')
-            flash_not_combined_2_filename=_jp('out.notCombined_2.fastq.gz')
-
-            processed_output_filename=_jp('out.extendedFrags.fastq.gz')
-            if os.path.isfile(processed_output_filename) is False:
-                raise CRISPRessoShared.FlashException('Flash failed to produce merged reads file, please check the log file.')
-
-            files_to_remove+=[processed_output_filename, flash_hist_filename, flash_histogram_filename,\
-                    flash_not_combined_1_filename, flash_not_combined_2_filename, _jp('out.hist.innie'), _jp('out.histogram.innie'), _jp('out.histogram.outie'), _jp('out.hist.outie')]
-
-            if (args.force_merge_pairs):
-                 old_flashed_filename = processed_output_filename
+            if args.force_merge_pairs:
                  new_merged_filename=_jp('out.forcemerged_uncombined.fastq.gz')
-                 num_reads_force_merged = CRISPRessoShared.force_merge_pairs(flash_not_combined_1_filename, flash_not_combined_2_filename, new_merged_filename)
+                 num_reads_force_merged = CRISPRessoShared.force_merge_pairs(not_combined_1_filename, not_combined_2_filename, new_merged_filename)
                  new_output_filename=_jp('out.forcemerged.fastq.gz')
-                 merge_command = "cat %s %s > %s"%(processed_output_filename, new_merged_filename, new_output_filename)
-                 MERGE_STATUS=sb.call(merge_command, shell=True)
-                 if MERGE_STATUS:
-                     raise FlashException('Force-merging read pairs failed to run, please check the log file.')
+                 merge_command = "cat {0} {1} > {2}".format(
+                     processed_output_filename, new_merged_filename, new_output_filename,
+                 )
+                 merge_status = sb.call(merge_command, shell=True)
+                 if merge_status:
+                     raise CRISPRessoShared.FastpException('Force-merging read pairs failed to run, please check the log file.')
+                 else:
+                     info(f'Forced {num_reads_force_merged} read paisr together.')
                  processed_output_filename = new_output_filename
 
-                 files_to_remove+=[new_merged_filename]
-                 files_to_remove+=[new_output_filename]
+                 files_to_remove += [new_merged_filename]
+                 files_to_remove += [new_output_filename]
                  if args.debug:
                      info('Wrote force-merged reads to ' + new_merged_filename)
 
@@ -4833,13 +4816,9 @@ def main():
         print_stacktrace_if_debug()
         error('sgRNA error, please check your input.\n\nERROR: %s' % e)
         sys.exit(2)
-    except CRISPRessoShared.TrimmomaticException as e:
+    except CRISPRessoShared.FastpException as e:
         print_stacktrace_if_debug()
-        error('Trimming error, please check your input.\n\nERROR: %s' % e)
-        sys.exit(4)
-    except CRISPRessoShared.FlashException as e:
-        print_stacktrace_if_debug()
-        error('Merging error, please check your input.\n\nERROR: %s' % e)
+        error('Merging or trimming error, please check your input.\n\nERROR: %s' % e)
         sys.exit(5)
     except CRISPRessoShared.BadParameterException as e:
         print_stacktrace_if_debug()

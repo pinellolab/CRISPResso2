@@ -28,15 +28,11 @@ from inspect import getmodule, stack
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoCOREResources
 
-__version__ = "2.2.15"
+__version__ = "2.3.0"
 
 
 ###EXCEPTIONS############################
-class FlashException(Exception):
-    pass
-
-
-class TrimmomaticException(Exception):
+class FastpException(Exception):
     pass
 
 
@@ -92,7 +88,7 @@ class StatusFormatter(logging.Formatter):
     def format(self, record):
         record.percent_complete = ''
         if record.args and 'percent_complete' in record.args:
-            record.percent_complete = '{0:.2f}% '.format(record.args['percent_complete'])
+            record.percent_complete = float(record.args['percent_complete'])
             self.last_percent_complete = record.percent_complete
         elif hasattr(self, 'last_percent_complete'): # if we don't have a percent complete, use the last one
             record.percent_complete = self.last_percent_complete
@@ -102,7 +98,7 @@ class StatusFormatter(logging.Formatter):
 class StatusHandler(logging.FileHandler):
     def __init__(self, filename):
         super().__init__(filename, 'w')
-        self.setFormatter(StatusFormatter('%(percent_complete)s%(message)s'))
+        self.setFormatter(StatusFormatter('{\n  "message": "%(message)s",\n  "percent_complete": %(percent_complete)s\n}'))
 
     def emit(self, record):
         """Overwrite the existing file and write the new log."""
@@ -257,25 +253,28 @@ def getCRISPRessoArgParser(tool, parser_title="CRISPResso Parameters"):
     #                     default='')
     # parser.add_argument('-v', '--verbosity', type=int, help='Verbosity level of output to the console (1-4), 4 is the most verbose', default=3)
 
-    # ## read preprocessing params
-    # parser.add_argument('--split_interleaved_input', '--split_paired_end',
-    #                     help='Splits a single fastq file containing paired end reads into two files before running CRISPResso',
+    ## read preprocessing params
+    # if 'split_interleaved_input' not in suppress_params:
+    #     parser.add_argument('--split_interleaved_input', '--split_paired_end',
+    #                         help='Splits a single fastq file containing paired end reads into two files before running CRISPResso',
+    #                         action='store_true')
+    # parser.add_argument('--trim_sequences', help='Enable the trimming with fastp',
     #                     action='store_true')
-    # parser.add_argument('--trim_sequences', help='Enable the trimming of Illumina adapters with Trimmomatic',
-    #                     action='store_true')
-    # parser.add_argument('--trimmomatic_command', type=str, help='Command to run trimmomatic', default='trimmomatic')
+    # parser.add_argument('--trimmomatic_command', type=str, help='DEPRECATED in v2.3.0, use `--fastp_command`')
     # parser.add_argument('--trimmomatic_options_string', type=str,
-    #                     help='Override options for Trimmomatic, e.g. "ILLUMINACLIP:/data/NexteraPE-PE.fa:0:90:10:0:true"',
+    #                     help='DEPRECATED in v2.3.0, use `--fastp_options_string`',
     #                     default='')
-    # parser.add_argument('--flash_command', type=str, help='Command to run flash', default='flash')
+    # parser.add_argument('--fastp_command', type=str, help='Command to run fastp', default='fastp')
+    # parser.add_argument('--fastp_options_string', type=str, help='Override options for fastp, e.g. `--length_required 70 --umi`', default='')
+    # parser.add_argument('--flash_command', type=str, help='DEPRECATED in v2.3.0, use `--fastp_command`')
     # parser.add_argument('--min_paired_end_reads_overlap', type=int,
-    #                     help='Parameter for the FLASH read merging step. Minimum required overlap length between two reads to provide a confident overlap. ',
+    #                     help='Parameter for the fastp read merging step. Minimum required overlap length between two reads to provide a confident overlap',
     #                     default=10)
     # parser.add_argument('--max_paired_end_reads_overlap', type=int,
-    #                     help='Parameter for the FLASH merging step.  Maximum overlap length expected in approximately 90%% of read pairs. Please see the FLASH manual for more information.',
+    #                     help='DEPRECATED in v2.3.0',
     #                     default=100)
     # parser.add_argument('--stringent_flash_merging',
-    #                     help='Use stringent parameters for flash merging. In the case where flash could merge R1 and R2 reads ambiguously, the expected overlap is calculated as 2*average_read_length - amplicon_length. The flash parameters for --min-overlap and --max-overlap will be set to prefer merged reads with length within 10bp of the expected overlap. These values override the --min_paired_end_reads_overlap or --max_paired_end_reads_overlap CRISPResso parameters.',
+    #                     help='DEPRECATED in v2.3.0',
     #                     action='store_true')
     # parser.add_argument('--force_merge_pairs', help=argparse.SUPPRESS,
     #                     action='store_true')  # help=Force-merges R1 and R2 if they cannot be merged using flash (use with caution -- may create non-biological apparent indels at the joining site)
@@ -445,8 +444,8 @@ def getCRISPRessoArgParser(tool, parser_title="CRISPResso Parameters"):
     return parser
 
 
-def get_crispresso_options(tool):
-    parser = getCRISPRessoArgParser(tool)
+def get_core_crispresso_options():
+    parser = getCRISPRessoArgParser("Core")
     crispresso_options = set()
     d = parser.__dict__['_option_string_actions']
     for key in d.keys():
@@ -951,7 +950,7 @@ def write_crispresso_info(crispresso_output_file, crispresso2_info):
 
     """
     with open(crispresso_output_file, 'w') as fh:
-        json.dump(crispresso2_info, fh, cls=CRISPRessoJSONEncoder)
+        json.dump(crispresso2_info, fh, cls=CRISPRessoJSONEncoder, indent=2)
 
 
 def get_command_output(command):
@@ -978,7 +977,7 @@ def get_command_output(command):
             break
 
 
-def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command, max_paired_end_reads_overlap, min_paired_end_reads_overlap, split_interleaved_input=False, debug=False):
+def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, fastp_command, min_paired_end_reads_overlap, split_interleaved_input=False, debug=False):
     """
     Get the most frequent amplicon from a fastq file (or after merging a r1 and r2 fastq file).
 
@@ -1048,15 +1047,22 @@ def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, fla
         view_cmd_2 = 'cat'
         if fastq_r2.endswith('.gz'):
             view_cmd_2 = 'zcat'
-        max_overlap_param = ""
         min_overlap_param = ""
-        if max_paired_end_reads_overlap:
-            max_overlap_param = "--max-overlap=" + str(max_paired_end_reads_overlap)
         if min_paired_end_reads_overlap:
-            min_overlap_param = "--min-overlap=" + str(min_paired_end_reads_overlap)
-        file_generation_command = "bash -c 'paste <(%s \"%s\") <(%s \"%s\")' | head -n %d | paste - - - - | awk -v OFS=\"\\n\" -v FS=\"\\t\" '{print($1,$3,$5,$7,$2,$4,$6,$8)}' | %s - --interleaved-input --allow-outies %s %s --to-stdout 2>/dev/null " % (
-        view_cmd_1, fastq_r1, view_cmd_2, fastq_r2, number_of_reads_to_consider * 4, flash_command, max_overlap_param,
-        min_overlap_param)
+            min_overlap_param = "--overlap_len_require {0}".format(min_paired_end_reads_overlap)
+        file_generation_command = "{paste} | {head} | paste - - - - | {awk} | {fastp}".format(
+            paste="bash -c 'paste <({view_cmd_1} \"{fastq_r1}\") <({view_cmd_2} \"{fastq_r2}\")'".format(
+                view_cmd_1=view_cmd_1, fastq_r1=fastq_r1, view_cmd_2=view_cmd_2, fastq_r2=fastq_r2,
+            ),
+            head='head -n {num_reads}'.format(
+                num_reads=number_of_reads_to_consider * 4,
+            ),
+            awk="awk -v OFS=\"\\n\" -v FS=\"\\t\" '{{print($1,$3,$5,$7,$2,$4,$6,$8)}}'",
+            fastp='{fastp_command} --disable_adapter_trimming --disable_trim_poly_g --disable_quality_filtering --disable_length_filtering --stdin --interleaved_in --merge {min_overlap_param} --stdout 2>/dev/null'.format(
+                fastp_command=fastp_command,
+                min_overlap_param=min_overlap_param,
+            ),
+        )
     count_frequent_cmd = file_generation_command + " | awk '((NR-2)%4==0){print $1}' | sort | uniq -c | sort -nr "
 
     def default_sigpipe():
@@ -1100,7 +1106,7 @@ def check_if_failed_run(folder_name, info):
     """
 
     run_data_file = os.path.join(folder_name, 'CRISPResso2_info.json')
-    status_info = os.path.join(folder_name, 'CRISPResso_status.txt')
+    status_info = os.path.join(folder_name, 'CRISPResso_status.json')
     if not os.path.isfile(run_data_file) or not os.path.isfile(status_info):
         info("Skipping folder '%s'. Cannot find run data status file at '%s'."%(folder_name, run_data_file))
         if "CRISPRessoPooled" in folder_name:
@@ -1114,32 +1120,42 @@ def check_if_failed_run(folder_name, info):
     else:
         with open(status_info) as fh:
             try:
-                file_contents = fh.read()
-                search_result = re.search(r'(\d+\.\d+)% (.+)', file_contents)
-                if search_result:
-                    percent_complete, status = search_result.groups()
-                    if percent_complete != '100.00':
-                        info("Skipping folder '%s'. Run is not complete (%s)." % (folder_name, status))
-                        return True, status
+                status_dict = json.load(fh)
+                if status_dict['percent_complete'] != 100.0:
+                    info("Skipping folder '%s'. Run is not complete (%s)." % (folder_name, status_dict['status']))
+                    return True, str(status_dict['message'])
                 else:
-                    return True, file_contents
-            except Exception as e:
-                print(e)
-                info("Skipping folder '%s'. Cannot parse status file '%s'." % (folder_name, status_info))
-                return True, "Cannot parse status file '%s'." % (status_info)
-    return False, ""
+                    return False, ""
+            except:
+                pass
+
+        with open(status_info) as fh:
+                try:
+                    file_contents = fh.read()
+                    search_result = re.search(r'(\d+\.\d+)% (.+)', file_contents)
+                    if search_result:
+                        percent_complete, status = search_result.groups()
+                        if percent_complete != '100.00':
+                            info("Skipping folder '%s'. Run is not complete (%s)." % (folder_name, status))
+                            return True, status
+                    else:
+                        return True, file_contents
+                except Exception as e:
+                    print(e)
+                    info("Skipping folder '%s'. Cannot parse status file '%s'." % (folder_name, status_info))
+                    return True, "Cannot parse status file '%s'." % (status_info)
+        return False, ""
 
 
-def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,min_paired_end_reads_overlap,aln_matrix,needleman_wunsch_gap_open,needleman_wunsch_gap_extend,split_interleaved_input=False,min_freq_to_consider=0.2,amplicon_similarity_cutoff=0.95):
+def guess_amplicons(fastq_r1, fastq_r2, number_of_reads_to_consider, fastp_command, min_paired_end_reads_overlap, aln_matrix, needleman_wunsch_gap_open, needleman_wunsch_gap_extend, split_interleaved_input=False, min_freq_to_consider=0.2, amplicon_similarity_cutoff=0.95):
     """
     guesses the amplicons used in an experiment by examining the most frequent read (giant caveat -- most frequent read should be unmodified)
     input:
     fastq_r1: path to fastq r1 (can be gzipped)
     fastq_r2: path to fastq r2 (can be gzipped)
     number_of_reads_to_consider: number of reads from the top of the file to examine
-    flash_command: command to call flash
-    min_paired_end_reads_overlap: min overlap in bp for flashing (merging) r1 and r2
-    max_paired_end_reads_overlap: max overlap in bp for flashing (merging) r1 and r2
+    fastp_command: command to call fastp
+    min_paired_end_reads_overlap: min overlap in bp for merging r1 and r2
     aln_matrix: matrix specifying alignment substitution scores in the NCBI format
     needleman_wunsch_gap_open: alignment penalty assignment used to determine similarity of two sequences
     needleman_wunsch_gap_extend: alignment penalty assignment used to determine similarity of two sequences
@@ -1150,7 +1166,7 @@ def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,
     returns:
     list of putative amplicons
     """
-    seq_lines = get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command, max_paired_end_reads_overlap, min_paired_end_reads_overlap, split_interleaved_input=split_interleaved_input)
+    seq_lines = get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, fastp_command, min_paired_end_reads_overlap, split_interleaved_input=split_interleaved_input)
 
     curr_amplicon_id = 1
 
@@ -1195,11 +1211,11 @@ def guess_amplicons(fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,
     return amplicon_seq_arr
 
 
-def guess_guides(amplicon_sequence,fastq_r1,fastq_r2,number_of_reads_to_consider,flash_command,max_paired_end_reads_overlap,
-            min_paired_end_reads_overlap,exclude_bp_from_left,exclude_bp_from_right,
-            aln_matrix,needleman_wunsch_gap_open,needleman_wunsch_gap_extend,
-            min_edit_freq_to_consider=0.1,min_edit_fold_change_to_consider=3,
-            pam_seq="NGG", min_pct_subs_in_base_editor_win=0.8,split_interleaved_input=False):
+def guess_guides(amplicon_sequence, fastq_r1, fastq_r2, number_of_reads_to_consider, fastp_command,
+            min_paired_end_reads_overlap, exclude_bp_from_left, exclude_bp_from_right,
+            aln_matrix, needleman_wunsch_gap_open, needleman_wunsch_gap_extend,
+            min_edit_freq_to_consider=0.1, min_edit_fold_change_to_consider=3,
+            pam_seq="NGG", min_pct_subs_in_base_editor_win=0.8, split_interleaved_input=False):
     """
     guesses the guides used in an experiment by identifying the most-frequently edited positions, editing types, and PAM sites
     input:
@@ -1207,9 +1223,8 @@ def guess_guides(amplicon_sequence,fastq_r1,fastq_r2,number_of_reads_to_consider
     fastq_r1: path to fastq r1 (can be gzipped)
     fastq_r2: path to fastq r2 (can be gzipped)
     number_of_reads_to_consider: number of reads from the top of the file to examine
-    flash_command: command to call flash
+    fastp_command: command to call fastp
     min_paired_end_reads_overlap: min overlap in bp for flashing (merging) r1 and r2
-    max_paired_end_reads_overlap: max overlap in bp for flashing (merging) r1 and r2
     exclude_bp_from_left: number of bp to exclude from the left side of the amplicon sequence for the quantification of the indels
     exclude_bp_from_right: number of bp to exclude from the right side of the amplicon sequence for the quantification of the indels
     aln_matrix: matrix specifying alignment substitution scores in the NCBI format
@@ -1225,7 +1240,7 @@ def guess_guides(amplicon_sequence,fastq_r1,fastq_r2,number_of_reads_to_consider
     tuple of (putative guide, boolean is_base_editor)
     or (None, None)
     """
-    seq_lines = get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, flash_command, max_paired_end_reads_overlap, min_paired_end_reads_overlap,split_interleaved_input=split_interleaved_input)
+    seq_lines = get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, fastp_command, min_paired_end_reads_overlap,split_interleaved_input=split_interleaved_input)
 
     amp_len = len(amplicon_sequence)
     gap_incentive = np.zeros(amp_len + 1, dtype=int)
@@ -1732,7 +1747,7 @@ def set_guide_array(vals, guides, property_name):
     for idx, val in enumerate(vals_array):
         if val != '':
             ret_array[idx] = int(val)
-    return ret_array        
+    return ret_array
 
 
 def get_relative_coordinates(to_sequence, from_sequence):
@@ -1955,7 +1970,7 @@ def get_crispresso_header(description, header_str):
                 term_width) + "\n" + output_line
 
     output_line += '\n' + ('[CRISPResso version ' + __version__ + ']').center(term_width) + '\n' + (
-        '[Note that starting in version 2.3.0 FLASh and Trimmomatic will be replaced by fastp for read merging and trimming. Accordingly, the --flash_command and --trimmomatic_command parameters will be replaced with --fastp_command. Also, --trimmomatic_options_string will be replaced with --fastp_options_string.\n\nAlso in version 2.3.0, when running CRISPRessoPooled in mixed-mode (amplicon file and genome are provided) the default behavior will be as if the --demultiplex_only_at_amplicons parameter is provided. This change means that reads and amplicons do not need to align to the exact locations.]').center(
+        '[Note that as of version 2.3.0 FLASh and Trimmomatic have been replaced by fastp for read merging and trimming. Accordingly, the --flash_command and --trimmomatic_command parameters have been replaced with --fastp_command. Also, --trimmomatic_options_string has been replaced with --fastp_options_string.\n\nAlso in version 2.3.0, when running CRISPRessoPooled in mixed-mode (amplicon file and genome are provided) the default behavior will be as if the --demultiplex_only_at_amplicons parameter is provided. This change means that reads and amplicons do not need to align to the exact locations.]').center(
         term_width) + "\n" + ('[For support contact k.clement@utah.edu or support@edilytics.com]').center(term_width) + "\n"
 
     description_str = ""

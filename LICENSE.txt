@@ -18,8 +18,7 @@ The Software Tool is free for your use subject to the terms and conditions set f
 MGH owns all right, title and interest in the Software Tool. MGH grants to you, the “Licensee,” a royalty-free, non-exclusive, non-transferable, revocable license to use the Software Tool for non-commercial research or academic purposes only; it is NOT made available here as a free tool or download for any commercial or clinical use. You may not copy or distribute the Software Tool in any form. This license is limited to the individual that accesses the Software Tool. No right to sublicense or assign this EULA is granted herein.
 
 The Software Tool optionally makes calls to unmodified versions of
-FLASh (https://ccb.jhu.edu/software/FLASH/) and
-Trimmomatic (http://www.usadellab.org/cms/?page=trimmomatic) software, both of which are covered under their own licenses (GPLv3).
+fastp <https://github.com/OpenGene/fastp> software, which is covered under its own license (MIT).
 
 By using this Software Tool, you agree to allow MGH the right to collect data and statistics (i) on system usage patterns and (ii) to improve this Software Tool.
 

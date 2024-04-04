@@ -86,7 +86,7 @@ def main():
 
         debug_flag = args.debug
 
-        crispresso_options = CRISPRessoShared.get_crispresso_options("Core")
+        crispresso_options = CRISPRessoShared.get_core_crispresso_options()
         options_to_ignore = {'name', 'output_folder', 'zip_output'}
         crispresso_options_for_batch = list(crispresso_options-options_to_ignore)
 
@@ -124,7 +124,7 @@ def main():
 
         log_filename = _jp('CRISPRessoBatch_RUNNING_LOG.txt')
         logger.addHandler(logging.FileHandler(log_filename))
-        status_handler = CRISPRessoShared.StatusHandler(_jp('CRISPRessoBatch_status.txt'))
+        status_handler = CRISPRessoShared.StatusHandler(_jp('CRISPRessoBatch_status.json'))
         logger.addHandler(status_handler)
 
         with open(log_filename, 'w+') as outfile:
