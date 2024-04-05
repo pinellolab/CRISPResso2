@@ -30,7 +30,13 @@ import traceback
 from CRISPResso2 import CRISPRessoCOREResources
 from CRISPResso2.CRISPRessoReports import CRISPRessoReport
 from CRISPResso2 import CRISPRessoShared
-from CRISPResso2 import CRISPRessoPlot
+
+if CRISPRessoShared.is_C2Pro_installed():
+    from CRISPRessoPro import __version__ as CRISPRessoProVersion
+    C2PRO_INSTALLED = True
+else:
+    C2PRO_INSTALLED = False
+
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoMultiProcessing
 
@@ -81,12 +87,49 @@ def which(program):
 
     return None
 
-def check_program(binary_name,download_url=None):
+
+def check_program(binary_name, download_url=None, version_flag=None, version_regex=None, version=None):
+    """Check if a program is installed and accessible.
+
+    Parameters
+    ----------
+    binary_name : str
+        Name of the binary to check.
+    download_url : str, optional
+        URL to download the program from that is displayed if not installed.
+    version_flag : str, optional
+        Flag to pass to the program to get the version.
+    version_regex : str, optional
+        Regex to extract the version from the output of the program.
+    version : str, optional
+        Version to check against.
+
+    Returns
+    -------
+    None, will exit if program is not installed.
+    """
     if not which(binary_name):
-        error('You need to install and have the command #####%s##### in your PATH variable to use CRISPResso!\n Please read the documentation!' % binary_name)
+        error('You need to install and have the command #####{0}##### in your PATH variable to use CRISPResso!\n Please read the documentation!'.format(binary_name))
         if download_url:
-            error('You can download it here:%s' % download_url)
+            error('You can download it here: {0}'.format(download_url))
         sys.exit(1)
+
+    if version_flag:
+        p = sb.Popen('{0} {1}'.format(binary_name, version_flag), shell=True, stdout=sb.PIPE, stderr=sb.STDOUT)
+        if binary_name == 'fastp':
+            p_output = p.communicate()[0].decode('utf-8')
+        else:
+            p_output = p.communicate()[1].decode('utf-8')
+        major_version, minor_version, patch_version = map(int, re.search(version_regex, p_output).groups())
+        if major_version <= version[0] and minor_version <= version[1] and patch_version < version[2]:
+            error('You need to install version {0} of {1} to use CRISPResso!'.format(version, binary_name))
+            error('You have version {0}.{1}.{2} installed'.format(major_version, minor_version, patch_version))
+            if download_url:
+                error('You can download it here: {0}'.format(download_url))
+            sys.exit(1)
+
+
+check_fastp = lambda: check_program('fastp', download_url='http://opengene.org/fastp/fastp', version_flag='--version', version_regex=r'fastp (\d+)\.(\d+)\.(\d+)', version=(0, 19, 8))
 
 def get_avg_read_length_fastq(fastq_filename):
      cmd=('z' if fastq_filename.endswith('.gz') else '' ) +('cat < \"%s\"' % fastq_filename)+\
@@ -113,7 +156,6 @@ matplotlib=check_library('matplotlib')
 #end = time.time()
 #start = time.time()
 from matplotlib import font_manager as fm
-CRISPRessoPlot.setMatplotlibDefaults()
 #end = time.time()
 
 #start = time.time()
@@ -125,7 +167,6 @@ import matplotlib.gridspec as gridspec
 
 pd=check_library('pandas')
 np=check_library('numpy')
-check_program('flash')
 
 #start = time.time()
 sns=check_library('seaborn')
@@ -205,7 +246,7 @@ def get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinat
             idxs[i] = -1 * abs(idxs[i])
     for coord in split_quant_window_coordinates(quant_window_coordinates):
         include_idxs.extend(idxs[coord[0]:coord[1] + 1])
-        
+
     return list(filter(lambda x: x >= 0, include_idxs))
 
 
@@ -225,7 +266,7 @@ def get_pe_scaffold_search(prime_edited_ref_sequence, prime_editing_pegRNA_exten
     """
     info('Processing pegRNA scaffold sequence...')
     #first, define the sequence we are looking for (extension plus the first base(s) of the scaffold)
-    scaffold_dna = CRISPRessoShared.reverse_complement(prime_editing_pegRNA_scaffold_seq)
+    scaffold_dna = CRISPRessoShared.reverse_complement(prime_editing_pegRNA_scaffold_seq.upper().replace('U','T'))
 
     extension_seq_dna_top_strand = prime_editing_pegRNA_extension_seq.upper().replace('U', 'T')
     prime_editing_extension_seq_dna = CRISPRessoShared.reverse_complement(extension_seq_dna_top_strand)
@@ -341,6 +382,24 @@ def get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaf
 
             payload['ref_name'] = best_match_name
             payload['aln_scores'] = aln_scores
+
+            payload['irregular_ends'] = False
+            if best_match_s1s[idx][0] == '-' or best_match_s2s[idx][0] == '-' or best_match_s1s[idx][0] != best_match_s2s[idx][0]:
+                payload['irregular_ends'] = True
+            elif best_match_s1s[idx][-1] == '-' or best_match_s2s[idx][-1] == '-' or best_match_s1s[idx][-1] != best_match_s2s[idx][-1]:
+                payload['irregular_ends'] = True
+
+            #Insertions out of quantification window
+            payload['insertions_outside_window'] = (len(payload['all_insertion_positions'])/2) - (len(payload['insertion_positions'])/2)
+            #Deletions out of quantification window
+            payload['deletions_outside_window'] = len(payload['all_deletion_coordinates']) - len(payload['deletion_coordinates'])
+            #Substitutions out of quantification window
+            payload['substitutions_outside_window'] = len(payload['all_substitution_positions']) - len(payload['substitution_positions'])
+            #Sums
+            payload['total_mods'] = (len(payload['all_insertion_positions'])/2) + len(payload['all_deletion_positions']) + len(payload['all_substitution_positions'])
+            payload['mods_in_window'] = payload['substitution_n'] + payload['deletion_n'] + payload['insertion_n']
+            payload['mods_outside_window'] = payload['total_mods'] - payload['mods_in_window']
+
             # If there is an insertion/deletion/substitution in the quantification window, the read is modified.
             is_modified = False
             if not args.ignore_deletions and payload['deletion_n'] > 0:
@@ -362,6 +421,7 @@ def get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaf
             payload['aln_strand'] = best_match_strands[idx]
 
             new_variant['variant_'+best_match_name] = payload
+            new_variant['best_match_name'] = best_match_name
 
         new_variant['class_name'] = "&".join(class_names)
 
@@ -397,7 +457,7 @@ def get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaf
 
 def process_fastq(fastq_filename, variantCache, ref_names, refs, args):
     """process_fastq processes each of the reads contained in a fastq file, given a cache of pre-computed variants
-        fastqIn: name of fastq (e.g. output of FLASH)
+        fastqIn: name of fastq (e.g. output of fastp)
             This file can be gzipped or plain text
 
         variantCache: dict with keys: sequence
@@ -468,12 +528,18 @@ def process_fastq(fastq_filename, variantCache, ref_names, refs, args):
            -allelic varaints if two variants are known to exist
 
         """
-
     N_TOT_READS = 0
     N_CACHED_ALN = 0 # read was found in cache
     N_CACHED_NOTALN = 0 #read was found in 'not aligned' cache
     N_COMPUTED_ALN = 0 # not in cache, aligned to at least 1 sequence with min cutoff
     N_COMPUTED_NOTALN = 0 #not in cache, not aligned to any sequence with min cutoff
+
+    N_GLOBAL_SUBS = 0 #number of substitutions across all reads - indicator of sequencing quality
+    N_SUBS_OUTSIDE_WINDOW = 0
+    N_MODS_IN_WINDOW = 0 #number of modifications found inside the quantification window
+    N_MODS_OUTSIDE_WINDOW = 0 #number of modifications found outside the quantification window
+    N_READS_IRREGULAR_ENDS = 0 #number of reads with modifications at the 0 or -1 position
+    READ_LENGTH = 0
 
     aln_matrix_loc = os.path.join(_ROOT, args.needleman_wunsch_aln_matrix_loc)
     CRISPRessoShared.check_file(aln_matrix_loc)
@@ -500,7 +566,6 @@ def process_fastq(fastq_filename, variantCache, ref_names, refs, args):
             info("Processing reads; N_TOT_READS: %d N_COMPUTED_ALN: %d N_CACHED_ALN: %d N_COMPUTED_NOTALN: %d N_CACHED_NOTALN: %d"%(N_TOT_READS, N_COMPUTED_ALN, N_CACHED_ALN, N_COMPUTED_NOTALN, N_CACHED_NOTALN))
 
         N_TOT_READS+=1
-
         #if the sequence has been seen and can't be aligned, skip it
         if (fastq_seq in not_aln):
             N_CACHED_NOTALN += 1
@@ -509,6 +574,13 @@ def process_fastq(fastq_filename, variantCache, ref_names, refs, args):
         if (fastq_seq in variantCache):
             N_CACHED_ALN+=1
             variantCache[fastq_seq]['count'] += 1
+            match_name = "variant_" + variantCache[fastq_seq]['best_match_name']
+            N_GLOBAL_SUBS += variantCache[fastq_seq][match_name]['substitution_n'] + variantCache[fastq_seq][match_name]['substitutions_outside_window']
+            N_SUBS_OUTSIDE_WINDOW += variantCache[fastq_seq][match_name]['substitutions_outside_window']
+            N_MODS_IN_WINDOW += variantCache[fastq_seq][match_name]['mods_in_window']
+            N_MODS_OUTSIDE_WINDOW += variantCache[fastq_seq][match_name]['mods_outside_window']
+            if variantCache[fastq_seq][match_name]['irregular_ends']:
+                N_READS_IRREGULAR_ENDS += 1
 
         #otherwise, create a new variant object, and put it in the cache
         else:
@@ -519,6 +591,16 @@ def process_fastq(fastq_filename, variantCache, ref_names, refs, args):
             else:
                 N_COMPUTED_ALN+=1
                 variantCache[fastq_seq] = new_variant
+                match_name = "variant_" + new_variant['best_match_name']
+                if READ_LENGTH == 0:
+                    READ_LENGTH = len(new_variant[match_name]['aln_seq'])
+                N_GLOBAL_SUBS += new_variant[match_name]['substitution_n'] + new_variant[match_name]['substitutions_outside_window']
+                N_SUBS_OUTSIDE_WINDOW += new_variant[match_name]['substitutions_outside_window']
+                N_MODS_IN_WINDOW += new_variant[match_name]['mods_in_window']
+                N_MODS_OUTSIDE_WINDOW += new_variant[match_name]['mods_outside_window']
+                if new_variant[match_name]['irregular_ends']:
+                    N_READS_IRREGULAR_ENDS += 1
+                
 
     fastq_handle.close()
 
@@ -527,9 +609,16 @@ def process_fastq(fastq_filename, variantCache, ref_names, refs, args):
                "N_CACHED_ALN" : N_CACHED_ALN,
                "N_CACHED_NOTALN" : N_CACHED_NOTALN,
                "N_COMPUTED_ALN" : N_COMPUTED_ALN,
-               "N_COMPUTED_NOTALN" : N_COMPUTED_NOTALN
+               "N_COMPUTED_NOTALN" : N_COMPUTED_NOTALN,
+               "N_GLOBAL_SUBS": N_GLOBAL_SUBS,
+               "N_SUBS_OUTSIDE_WINDOW": N_SUBS_OUTSIDE_WINDOW,
+               "N_MODS_IN_WINDOW": N_MODS_IN_WINDOW,
+               "N_MODS_OUTSIDE_WINDOW": N_MODS_OUTSIDE_WINDOW,
+               "N_READS_IRREGULAR_ENDS": N_READS_IRREGULAR_ENDS,
+               "READ_LENGTH": READ_LENGTH
                }
     return(aln_stats)
+
 
 def process_bam(bam_filename, bam_chr_loc, output_bam, variantCache, ref_names, refs, args):
     """
@@ -549,6 +638,13 @@ def process_bam(bam_filename, bam_chr_loc, output_bam, variantCache, ref_names, 
     N_CACHED_NOTALN = 0 #read was found in 'not aligned' cache
     N_COMPUTED_ALN = 0 # not in cache, aligned to at least 1 sequence with min cutoff
     N_COMPUTED_NOTALN = 0 #not in cache, not aligned to any sequence with min cutoff
+
+    N_GLOBAL_SUBS = 0 #number of substitutions across all reads - indicator of sequencing quality
+    N_SUBS_OUTSIDE_WINDOW = 0
+    N_MODS_IN_WINDOW = 0 #number of modifications found inside the quantification window
+    N_MODS_OUTSIDE_WINDOW = 0 #number of modifications found outside the quantification window
+    N_READS_IRREGULAR_ENDS = 0 #number of reads with modifications at the 0 or -1 position
+    READ_LENGTH = 0
 
     aln_matrix_loc = os.path.join(_ROOT, args.needleman_wunsch_aln_matrix_loc)
     CRISPRessoShared.check_file(aln_matrix_loc)
@@ -593,6 +689,13 @@ def process_bam(bam_filename, bam_chr_loc, output_bam, variantCache, ref_names, 
             if (fastq_seq in variantCache):
                 N_CACHED_ALN+=1
                 variantCache[fastq_seq]['count'] += 1
+                match_name = "variant_" + variantCache[fastq_seq]['best_match_name']
+                N_GLOBAL_SUBS += variantCache[fastq_seq][match_name]['substitution_n'] + variantCache[fastq_seq][match_name]['substitutions_outside_window']
+                N_SUBS_OUTSIDE_WINDOW += variantCache[fastq_seq][match_name]['substitutions_outside_window']
+                N_MODS_IN_WINDOW += variantCache[fastq_seq][match_name]['mods_in_window']
+                N_MODS_OUTSIDE_WINDOW += variantCache[fastq_seq][match_name]['mods_outside_window']
+                if variantCache[fastq_seq][match_name]['irregular_ends']:
+                    N_READS_IRREGULAR_ENDS += 1
                 #sam_line_els[5] = variantCache[fastq_seq]['sam_cigar']
                 sam_line_els.append(variantCache[fastq_seq]['crispresso2_annotation'])
                 sam_out.write("\t".join(sam_line_els)+"\n")
@@ -654,6 +757,16 @@ def process_bam(bam_filename, bam_chr_loc, output_bam, variantCache, ref_names, 
 
                     variantCache[fastq_seq] = new_variant
 
+                    match_name = 'variant_' + new_variant['best_match_name']
+                    if READ_LENGTH == 0:
+                        READ_LENGTH = len(new_variant[match_name]['aln_seq'])
+                    N_GLOBAL_SUBS += new_variant[match_name]['substitution_n'] + new_variant[match_name]['substitutions_outside_window']
+                    N_SUBS_OUTSIDE_WINDOW += new_variant[match_name]['substitutions_outside_window']
+                    N_MODS_IN_WINDOW += new_variant[match_name]['mods_in_window']
+                    N_MODS_OUTSIDE_WINDOW += new_variant[match_name]['mods_outside_window']
+                    if new_variant[match_name]['irregular_ends']:
+                        N_READS_IRREGULAR_ENDS += 1
+
     output_sam = output_bam+".sam"
     cmd = 'samtools view -Sb '+output_sam + '>'+output_bam + ' && samtools index ' + output_bam
     bam_status=sb.call(cmd, shell=True)
@@ -663,13 +776,20 @@ def process_bam(bam_filename, bam_chr_loc, output_bam, variantCache, ref_names, 
             )
 
     info("Finished reads; N_TOT_READS: %d N_COMPUTED_ALN: %d N_CACHED_ALN: %d N_COMPUTED_NOTALN: %d N_CACHED_NOTALN: %d"%(N_TOT_READS, N_COMPUTED_ALN, N_CACHED_ALN, N_COMPUTED_NOTALN, N_CACHED_NOTALN))
-    aln_stats = {"N_TOT_READS": N_TOT_READS,
-               "N_CACHED_ALN": N_CACHED_ALN,
-               "N_CACHED_NOTALN": N_CACHED_NOTALN,
-               "N_COMPUTED_ALN": N_COMPUTED_ALN,
-               "N_COMPUTED_NOTALN": N_COMPUTED_NOTALN,
+    aln_stats = {"N_TOT_READS" : N_TOT_READS,
+               "N_CACHED_ALN" : N_CACHED_ALN,
+               "N_CACHED_NOTALN" : N_CACHED_NOTALN,
+               "N_COMPUTED_ALN" : N_COMPUTED_ALN,
+               "N_COMPUTED_NOTALN" : N_COMPUTED_NOTALN,
+               "N_GLOBAL_SUBS": N_GLOBAL_SUBS,
+               "N_SUBS_OUTSIDE_WINDOW": N_SUBS_OUTSIDE_WINDOW,
+               "N_MODS_IN_WINDOW": N_MODS_IN_WINDOW,
+               "N_MODS_OUTSIDE_WINDOW": N_MODS_OUTSIDE_WINDOW,
+               "N_READS_IRREGULAR_ENDS": N_READS_IRREGULAR_ENDS,
+               "READ_LENGTH": READ_LENGTH
                }
     return(aln_stats)
+
 
 def process_fastq_write_out(fastq_input, fastq_output, variantCache, ref_names, refs, args):
     """
@@ -688,6 +808,13 @@ def process_fastq_write_out(fastq_input, fastq_output, variantCache, ref_names, 
     N_CACHED_NOTALN = 0 #read was found in 'not aligned' cache
     N_COMPUTED_ALN = 0 # not in cache, aligned to at least 1 sequence with min cutoff
     N_COMPUTED_NOTALN = 0 #not in cache, not aligned to any sequence with min cutoff
+
+    N_GLOBAL_SUBS = 0 #number of substitutions across all reads - indicator of sequencing quality
+    N_SUBS_OUTSIDE_WINDOW = 0
+    N_MODS_IN_WINDOW = 0 #number of modifications found inside the quantification window
+    N_MODS_OUTSIDE_WINDOW = 0 #number of modifications found outside the quantification window
+    N_READS_IRREGULAR_ENDS = 0 #number of reads with modifications at the 0 or -1 position
+    READ_LENGTH = 0
 
     aln_matrix_loc = os.path.join(_ROOT, args.needleman_wunsch_aln_matrix_loc)
     CRISPRessoShared.check_file(aln_matrix_loc)
@@ -725,6 +852,13 @@ def process_fastq_write_out(fastq_input, fastq_output, variantCache, ref_names, 
         elif fastq_seq in variantCache: #if the sequence is already associated with a variant in the variant cache, pull it out
             N_CACHED_ALN+=1
             variantCache[fastq_seq]['count'] += 1
+            match_name = "variant_" + variantCache[fastq_seq]['best_match_name']
+            N_GLOBAL_SUBS += variantCache[fastq_seq][match_name]['substitution_n'] + variantCache[fastq_seq][match_name]['substitutions_outside_window']
+            N_SUBS_OUTSIDE_WINDOW += variantCache[fastq_seq][match_name]['substitutions_outside_window']
+            N_MODS_IN_WINDOW += variantCache[fastq_seq][match_name]['mods_in_window']
+            N_MODS_OUTSIDE_WINDOW += variantCache[fastq_seq][match_name]['mods_outside_window']
+            if variantCache[fastq_seq][match_name]['irregular_ends']:
+                N_READS_IRREGULAR_ENDS += 1
             fastq_out_handle.write(fastq_id+fastq_seq+"\n"+fastq_plus+variantCache[fastq_seq]['crispresso2_annotation']+"\n"+fastq_qual)
 
         #otherwise, create a new variant object, and put it in the cache
@@ -775,6 +909,15 @@ def process_fastq_write_out(fastq_input, fastq_output, variantCache, ref_names, 
                 fastq_out_handle.write(fastq_id+fastq_seq+"\n"+fastq_plus+crispresso2_annotation+"\n"+fastq_qual)
 
                 variantCache[fastq_seq] = new_variant
+                match_name = 'variant_' + new_variant['best_match_name']
+                if READ_LENGTH == 0:
+                    READ_LENGTH = len(new_variant[match_name]['aln_seq'])
+                N_GLOBAL_SUBS += new_variant[match_name]['substitution_n'] + new_variant[match_name]['substitutions_outside_window']
+                N_SUBS_OUTSIDE_WINDOW += new_variant[match_name]['substitutions_outside_window']
+                N_MODS_IN_WINDOW += new_variant[match_name]['mods_in_window']
+                N_MODS_OUTSIDE_WINDOW += new_variant[match_name]['mods_outside_window']
+                if new_variant[match_name]['irregular_ends']:
+                    N_READS_IRREGULAR_ENDS += 1
 
         #last step of loop = read next line
         fastq_id = fastq_input_handle.readline()
@@ -782,11 +925,17 @@ def process_fastq_write_out(fastq_input, fastq_output, variantCache, ref_names, 
     fastq_out_handle.close()
 
     info("Finished reads; N_TOT_READS: %d N_COMPUTED_ALN: %d N_CACHED_ALN: %d N_COMPUTED_NOTALN: %d N_CACHED_NOTALN: %d"%(N_TOT_READS, N_COMPUTED_ALN, N_CACHED_ALN, N_COMPUTED_NOTALN, N_CACHED_NOTALN))
-    aln_stats = {"N_TOT_READS": N_TOT_READS,
-               "N_CACHED_ALN": N_CACHED_ALN,
-               "N_CACHED_NOTALN": N_CACHED_NOTALN,
-               "N_COMPUTED_ALN": N_COMPUTED_ALN,
-               "N_COMPUTED_NOTALN": N_COMPUTED_NOTALN,
+    aln_stats = {"N_TOT_READS" : N_TOT_READS,
+               "N_CACHED_ALN" : N_CACHED_ALN,
+               "N_CACHED_NOTALN" : N_CACHED_NOTALN,
+               "N_COMPUTED_ALN" : N_COMPUTED_ALN,
+               "N_COMPUTED_NOTALN" : N_COMPUTED_NOTALN,
+               "N_GLOBAL_SUBS": N_GLOBAL_SUBS,
+               "N_SUBS_OUTSIDE_WINDOW": N_SUBS_OUTSIDE_WINDOW,
+               "N_MODS_IN_WINDOW": N_MODS_IN_WINDOW,
+               "N_MODS_OUTSIDE_WINDOW": N_MODS_OUTSIDE_WINDOW,
+               "N_READS_IRREGULAR_ENDS": N_READS_IRREGULAR_ENDS,
+               "READ_LENGTH": READ_LENGTH
                }
     return(aln_stats)
 
@@ -817,6 +966,13 @@ def process_single_fastq_write_bam_out(fastq_input, bam_output, bam_header, vari
     N_CACHED_NOTALN = 0  # read was found in 'not aligned' cache
     N_COMPUTED_ALN = 0  # not in cache, aligned to at least 1 sequence with min cutoff
     N_COMPUTED_NOTALN = 0  # not in cache, not aligned to any sequence with min cutoff
+
+    N_GLOBAL_SUBS = 0 #number of substitutions across all reads - indicator of sequencing quality
+    N_SUBS_OUTSIDE_WINDOW = 0
+    N_MODS_IN_WINDOW = 0 #number of modifications found inside the quantification window
+    N_MODS_OUTSIDE_WINDOW = 0 #number of modifications found outside the quantification window
+    N_READS_IRREGULAR_ENDS = 0 #number of reads with modifications at the 0 or -1 position
+    READ_LENGTH = 0
 
     aln_matrix_loc = os.path.join(_ROOT, args.needleman_wunsch_aln_matrix_loc)
     CRISPRessoShared.check_file(aln_matrix_loc)
@@ -861,6 +1017,13 @@ def process_single_fastq_write_bam_out(fastq_input, bam_output, bam_header, vari
         elif fastq_seq in variantCache:  # if the sequence is already associated with a variant in the variant cache, pull it out
             N_CACHED_ALN += 1
             variantCache[fastq_seq]['count'] += 1
+            match_name = "variant_" + variantCache[fastq_seq]['best_match_name']
+            N_GLOBAL_SUBS += variantCache[fastq_seq][match_name]['substitution_n'] + variantCache[fastq_seq][match_name]['substitutions_outside_window']
+            N_SUBS_OUTSIDE_WINDOW += variantCache[fastq_seq][match_name]['substitutions_outside_window']
+            N_MODS_IN_WINDOW += variantCache[fastq_seq][match_name]['mods_in_window']
+            N_MODS_OUTSIDE_WINDOW += variantCache[fastq_seq][match_name]['mods_outside_window']
+            if variantCache[fastq_seq][match_name]['irregular_ends']:
+                N_READS_IRREGULAR_ENDS += 1
             new_sam_entry = variantCache[fastq_seq]['sam_entry'][:]
             new_sam_entry[0] = fastq_id
             new_sam_entry[10] = fastq_qual
@@ -973,12 +1136,20 @@ def process_single_fastq_write_bam_out(fastq_input, bam_output, bam_header, vari
                 sam_out_handle.write("\t".join(new_sam_entry)+"\n")  # write cached alignment with modified read id and qual
 
                 variantCache[fastq_seq] = new_variant
+                match_name = 'variant_' + new_variant['best_match_name']
+                if READ_LENGTH == 0:
+                    READ_LENGTH = len(new_variant[match_name]['aln_seq'])
+                N_GLOBAL_SUBS += new_variant[match_name]['substitution_n'] + new_variant[match_name]['substitutions_outside_window']
+                N_SUBS_OUTSIDE_WINDOW += new_variant[match_name]['substitutions_outside_window']
+                N_MODS_IN_WINDOW += new_variant[match_name]['mods_in_window']
+                N_MODS_OUTSIDE_WINDOW += new_variant[match_name]['mods_outside_window']
+                if new_variant[match_name]['irregular_ends']:
+                    N_READS_IRREGULAR_ENDS += 1
 
         #last step of loop = read next line
         fastq_id = fastq_input_handle.readline().strip()[1:]
     fastq_input_handle.close()
     sam_out_handle.close()
-
     sort_and_index_cmd = 'samtools sort ' + sam_out + ' -o ' + bam_output + ' && samtools index ' + bam_output
     sort_bam_status = sb.call(sort_and_index_cmd, shell=True)
     if sort_bam_status:
@@ -990,11 +1161,17 @@ def process_single_fastq_write_bam_out(fastq_input, bam_output, bam_header, vari
         os.remove(sam_out)
 
     info("Finished reads; N_TOT_READS: %d N_COMPUTED_ALN: %d N_CACHED_ALN: %d N_COMPUTED_NOTALN: %d N_CACHED_NOTALN: %d"%(N_TOT_READS, N_COMPUTED_ALN, N_CACHED_ALN, N_COMPUTED_NOTALN, N_CACHED_NOTALN))
-    aln_stats = {"N_TOT_READS": N_TOT_READS,
-               "N_CACHED_ALN": N_CACHED_ALN,
-               "N_CACHED_NOTALN": N_CACHED_NOTALN,
-               "N_COMPUTED_ALN": N_COMPUTED_ALN,
-               "N_COMPUTED_NOTALN": N_COMPUTED_NOTALN,
+    aln_stats = {"N_TOT_READS" : N_TOT_READS,
+               "N_CACHED_ALN" : N_CACHED_ALN,
+               "N_CACHED_NOTALN" : N_CACHED_NOTALN,
+               "N_COMPUTED_ALN" : N_COMPUTED_ALN,
+               "N_COMPUTED_NOTALN" : N_COMPUTED_NOTALN,
+               "N_GLOBAL_SUBS": N_GLOBAL_SUBS,
+               "N_SUBS_OUTSIDE_WINDOW": N_SUBS_OUTSIDE_WINDOW,
+               "N_MODS_IN_WINDOW": N_MODS_IN_WINDOW,
+               "N_MODS_OUTSIDE_WINDOW": N_MODS_OUTSIDE_WINDOW,
+               "N_READS_IRREGULAR_ENDS": N_READS_IRREGULAR_ENDS,
+               "READ_LENGTH": READ_LENGTH
                }
     return(aln_stats)
 
@@ -1092,7 +1269,7 @@ def main():
             sys.exit()
 
 
-        arg_parser = CRISPRessoShared.getCRISPRessoArgParser()
+        arg_parser = CRISPRessoShared.getCRISPRessoArgParser("Core")
         args = arg_parser.parse_args()
 
         CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
@@ -1125,7 +1302,7 @@ def main():
             with open(log_filename, 'w+') as outfile:
                 outfile.write('CRISPResso version %s\n[Command used]:\n%s\n\n[Execution log]:\n' %(CRISPRessoShared.__version__, crispresso_cmd_to_write))
 
-        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('CRISPResso_status.txt')))
+        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('CRISPResso_status.json')))
 
         aln_matrix_loc = os.path.join(_ROOT, "EDNAFULL")
         CRISPRessoShared.check_file(aln_matrix_loc)
@@ -1159,12 +1336,19 @@ def main():
 
         if args.amplicon_seq is None and args.auto is False:
             arg_parser.print_help()
-            raise CRISPRessoShared.BadParameterException('Please provide an amplicon sequence for analysis using the --amplicon_seq parameter.')
+            raise CRISPRessoShared.BadParameterException('Please provide an amplicon sequence for analysis using the --amplicon_seq parameter or use the --auto parameter to automatically assign amplicon to most common read.')
 
         if (args.needleman_wunsch_gap_open > 0):
             raise CRISPRessoShared.BadParameterException("Needleman Wunsch gap open penalty must be <= 0")
         if (args.needleman_wunsch_gap_extend > 0):
             raise CRISPRessoShared.BadParameterException("Needleman Wunsch gap extend penalty must be <= 0")
+
+
+        if args.use_matplotlib or not C2PRO_INSTALLED:
+            from CRISPResso2 import CRISPRessoPlot
+        else:
+            from CRISPRessoPro import plot as CRISPRessoPlot
+        CRISPRessoPlot.setMatplotlibDefaults()
 
 
         #create output directory
@@ -1299,6 +1483,7 @@ def main():
 
             info('Inferring reference amplicon sequence..', {'percent_complete': 1})
 
+            check_fastp()
             auto_fastq_r1 = args.fastq_r1 #paths to fastq files for performing auto functions
             auto_fastq_r2 = args.fastq_r2
             if args.bam_input != "": #if input is a bam, create temp files with reads for processing here
@@ -1321,8 +1506,7 @@ def main():
                         fastq_r1=auto_fastq_r1,
                         fastq_r2=auto_fastq_r2,
                         number_of_reads_to_consider=number_of_reads_to_consider,
-                        flash_command=args.flash_command,
-                        max_paired_end_reads_overlap=args.max_paired_end_reads_overlap,
+                        fastp_command=args.fastp_command,
                         min_paired_end_reads_overlap=args.min_paired_end_reads_overlap,
                         aln_matrix=aln_matrix,
                         needleman_wunsch_gap_open=args.needleman_wunsch_gap_open,
@@ -1350,8 +1534,7 @@ def main():
                                     fastq_r1=auto_fastq_r1,
                                     fastq_r2=auto_fastq_r2,
                                     number_of_reads_to_consider=number_of_reads_to_consider,
-                                    flash_command=args.flash_command,
-                                    max_paired_end_reads_overlap=args.max_paired_end_reads_overlap,
+                                    fastp_command=args.fastp_command,
                                     min_paired_end_reads_overlap=args.min_paired_end_reads_overlap,
                                     exclude_bp_from_left=args.exclude_bp_from_left,
                                     exclude_bp_from_right=args.exclude_bp_from_right,
@@ -1389,7 +1572,7 @@ def main():
                 )
 
         else: #not auto
-            amplicon_seq_arr = args.amplicon_seq.split(",")
+            amplicon_seq_arr = list(map(lambda x: x.upper(), args.amplicon_seq.split(",")))
             amplicon_name_arr = args.amplicon_name.split(",")
             #split on commas, only accept empty values
             amplicon_min_alignment_score_arr = [float(x) for x in args.amplicon_min_alignment_score.split(",") if x]
@@ -1665,20 +1848,17 @@ def main():
 
         #now that we're done with adding possible guides and amplicons, go through each amplicon and compute quantification windows
         info('Computing quantification windows', {'percent_complete': 2})
+        if C2PRO_INSTALLED:
+            info(f'CRISPRessoPro v{CRISPRessoProVersion} installed', {'percent_complete': 3})
+        else:
+            info(f'CRISPRessoPro not installed', {'percent_complete': 3})
 
         found_guide_seq = [False]*len(guides)
         found_coding_seq = [False]*len(coding_seqs)
 
-        max_amplicon_len = 0 #for flash
-        min_amplicon_len = 99**99 #for flash
-
         for idx, seq in enumerate(amplicon_seq_arr):
             this_seq = seq.strip().upper()
             this_seq_length = len(this_seq)
-            if this_seq_length > max_amplicon_len:
-                max_amplicon_len = this_seq_length
-            if this_seq_length < min_amplicon_len:
-                min_amplicon_len = this_seq_length
 
             this_name = 'Amplicon'+str(idx)
             if idx < len(amplicon_name_arr):
@@ -2189,134 +2369,89 @@ def main():
             raise CRISPRessoShared.BadParameterException('Read trimming options are not available with bam input')
         elif args.fastq_r1 != '' and args.fastq_r2 == '': #single end reads
             if not args.trim_sequences: #no trimming or merging required
-                output_forward_filename=args.fastq_r1
+                output_forward_filename = args.fastq_r1
             else:
+                check_fastp()
+                info('Trimming sequences with fastp...')
                 output_forward_filename=_jp('reads.trimmed.fq.gz')
-                #Trimming with trimmomatic
-                cmd='%s SE -phred33 %s  %s %s >>%s 2>&1'\
-                % (args.trimmomatic_command, args.fastq_r1,
-                   output_forward_filename,
-                   args.trimmomatic_options_string.replace('NexteraPE-PE.fa', 'TruSeq3-SE.fa'),
-                   log_filename)
-                #print cmd
-                TRIMMOMATIC_STATUS=sb.call(cmd, shell=True)
+                cmd = '{command} -i {r1} -o {out} {options} --json {json_report} --html {html_report} >> {log} 2>&1'.format(
+                    command=args.fastp_command,
+                    r1=args.fastq_r1,
+                    out=output_forward_filename,
+                    options=args.fastp_options_string,
+                    json_report=_jp('fastp_report.json'),
+                    html_report=_jp('fastp_report.html'),
+                    log=log_filename,
+                )
+                fastp_status = sb.call(cmd, shell=True)
 
-                if TRIMMOMATIC_STATUS:
-                        raise CRISPRessoShared.TrimmomaticException('TRIMMOMATIC failed to run, please check the log file.')
-                crispresso2_info['trimmomatic_command'] = cmd
+                if fastp_status:
+                    raise CRISPRessoShared.FastpException('FASTP failed to run, please check the log file.')
+                crispresso2_info['fastp_command'] = cmd
 
                 files_to_remove += [output_forward_filename]
 
-            processed_output_filename=output_forward_filename
+                info('Done!')
+
+            processed_output_filename = output_forward_filename
 
         elif args.fastq_r1 != '' and args.fastq_r2 != '':#paired end reads
+            processed_output_filename = _jp('oet.extendedFrags.fastq.gz')
+            not_combined_1_filename = _jp('out.notCombined_1.fastq.gz')
+            not_combined_2_filename = _jp('out.notCombined_2.fastq.gz')
+            check_fastp()
+            info('Processing sequences with fastp...')
             if not args.trim_sequences:
-                output_forward_paired_filename=args.fastq_r1
-                output_reverse_paired_filename=args.fastq_r2
+                args.fastp_options_string += ' --disable_adapter_trimming --disable_trim_poly_g --disable_quality_filtering --disable_length_filtering'
             else:
-                info('Trimming sequences with Trimmomatic...')
-                output_forward_paired_filename=_jp('output_forward_paired.fq.gz')
-                output_forward_unpaired_filename=_jp('output_forward_unpaired.fq.gz')
-                output_reverse_paired_filename=_jp('output_reverse_paired.fq.gz')
-                output_reverse_unpaired_filename=_jp('output_reverse_unpaired.fq.gz')
+                args.fastp_options_string += ' --detect_adapter_for_pe'
 
-                #Trimming with trimmomatic
-                cmd='%s PE -phred33 %s  %s %s  %s  %s  %s %s >>%s 2>&1'\
-                    % (args.trimmomatic_command,
-                        args.fastq_r1, args.fastq_r2, output_forward_paired_filename,
-                        output_forward_unpaired_filename, output_reverse_paired_filename,
-                        output_reverse_unpaired_filename, args.trimmomatic_options_string, log_filename)
-                #print cmd
-                TRIMMOMATIC_STATUS=sb.call(cmd, shell=True)
-                if TRIMMOMATIC_STATUS:
-                    raise CRISPRessoShared.TrimmomaticException('TRIMMOMATIC failed to run, please check the log file.')
-                crispresso2_info['trimmomatic_command'] = cmd
+            fastp_cmd = '{command} -i {r1} -I {r2} --merge --merged_out {out_merged} --unpaired1 {unpaired1} --unpaired2 {unpaired2} --overlap_len_require {min_overlap} --thread {num_threads} --json {json_report} --html {html_report} {options} >> {log} 2>&1'.format(
+                command=args.fastp_command,
+                r1=args.fastq_r1,
+                r2=args.fastq_r2,
+                out_merged=processed_output_filename,
+                unpaired1=not_combined_1_filename,
+                unpaired2=not_combined_2_filename,
+                min_overlap=args.min_paired_end_reads_overlap,
+                num_threads=n_processes,
+                json_report=_jp('fastp_report.json'),
+                html_report=_jp('fastp_report.html'),
+                options=args.fastp_options_string,
+                log=log_filename,
+            )
+            fastp_status = sb.call(fastp_cmd, shell=True)
+            if fastp_status:
+                raise CRISPRessoShared.FastpException('Fastp failed to run, please check the log file.')
+            crispresso2_info['running_info']['fastp_command'] = fastp_cmd
 
-                files_to_remove += [output_forward_paired_filename]
-                files_to_remove += [output_reverse_paired_filename]
+            if not os.path.isfile(processed_output_filename):
+                raise CRISPRessoShared.FastpException('Fastp failed to produce merged reads file, please check the log file.')
 
-                info('Done!', {'percent_complete': 6})
+            info('Done!', {'percent_complete': 6})
 
-            #for paired-end reads, merge them
-            info('Estimating average read length...')
-            if args.debug:
-                info('Checking average read length from ' + output_forward_paired_filename)
-            if get_n_reads_fastq(output_forward_paired_filename):
-                avg_read_length=get_avg_read_length_fastq(output_forward_paired_filename)
-                if args.debug:
-                    info('Average read length is ' + str(avg_read_length) + ' from ' + output_forward_paired_filename)
-            else:
-               raise CRISPRessoShared.NoReadsAfterQualityFilteringException('No reads survived the average or single bp quality filtering.')
+            files_to_remove += [
+                processed_output_filename,
+                not_combined_1_filename,
+                not_combined_2_filename,
+            ]
 
-            #Merging with Flash
-            info('Merging paired sequences with Flash...')
-            min_overlap = args.min_paired_end_reads_overlap
-            max_overlap = args.max_paired_end_reads_overlap
-            if args.stringent_flash_merging:
-                expected_max_overlap=2*avg_read_length - min_amplicon_len
-                expected_min_overlap=2*avg_read_length - max_amplicon_len
-    #            print('avg read len: ' + str(avg_read_length))
-    #            print('expected_max_overlap' + str(expected_max_overlap))
-    #            print('expected_min_overlap' + str(expected_min_overlap))
-    #            print('min amplicon len:' + str(min_amplicon_len))
-    #            print('max amplicon len:' + str(max_amplicon_len))
-                indel_overlap_tolerance = 10 # magic number bound on how many bp inserted/deleted in ~90% of reads (for flash)
-                #max overlap is either the entire read (avg_read_length) or the expected amplicon length + indel tolerance
-                max_overlap = max(10, min(avg_read_length, expected_max_overlap+indel_overlap_tolerance))
-                #min overlap is either 4bp (as in crispresso1) or the expected amplicon length - indel tolerance
-                min_overlap = max(4, expected_min_overlap-indel_overlap_tolerance)
-    #            print('max_overlap: ' + str(max_overlap))
-    #            print('min_overlap: ' + str(min_overlap))
-                # if reads are longer than the amplicon, there is no way to tell flash to have them overlap like this..
-                if avg_read_length > min_amplicon_len:
-                    info('Warning: Reads are longer than amplicon.')
-                    min_overlap = avg_read_length-10
-                    max_overlap = 2*avg_read_length
-
-            output_prefix = "out"
-            if clean_file_prefix != "":
-                output_prefix = clean_file_prefix + "out"
-            cmd='%s "%s" "%s" --min-overlap %d --max-overlap %d --allow-outies -z -d %s -o %s >>%s 2>&1' %\
-            (args.flash_command,
-                 output_forward_paired_filename,
-                 output_reverse_paired_filename,
-                 min_overlap,
-                 max_overlap,
-                 OUTPUT_DIRECTORY,
-                 output_prefix,
-                 log_filename)
-
-            info('Running FLASH command: ' + cmd)
-            crispresso2_info['flash_command'] = cmd
-            FLASH_STATUS=sb.call(cmd, shell=True)
-            if FLASH_STATUS:
-                raise CRISPRessoShared.FlashException('Flash failed to run, please check the log file.')
-
-            flash_hist_filename=_jp('out.hist')
-            flash_histogram_filename=_jp('out.histogram')
-            flash_not_combined_1_filename=_jp('out.notCombined_1.fastq.gz')
-            flash_not_combined_2_filename=_jp('out.notCombined_2.fastq.gz')
-
-            processed_output_filename=_jp('out.extendedFrags.fastq.gz')
-            if os.path.isfile(processed_output_filename) is False:
-                raise CRISPRessoShared.FlashException('Flash failed to produce merged reads file, please check the log file.')
-
-            files_to_remove+=[processed_output_filename, flash_hist_filename, flash_histogram_filename,\
-                    flash_not_combined_1_filename, flash_not_combined_2_filename, _jp('out.hist.innie'), _jp('out.histogram.innie'), _jp('out.histogram.outie'), _jp('out.hist.outie')]
-
-            if (args.force_merge_pairs):
-                 old_flashed_filename = processed_output_filename
+            if args.force_merge_pairs:
                  new_merged_filename=_jp('out.forcemerged_uncombined.fastq.gz')
-                 num_reads_force_merged = CRISPRessoShared.force_merge_pairs(flash_not_combined_1_filename, flash_not_combined_2_filename, new_merged_filename)
+                 num_reads_force_merged = CRISPRessoShared.force_merge_pairs(not_combined_1_filename, not_combined_2_filename, new_merged_filename)
                  new_output_filename=_jp('out.forcemerged.fastq.gz')
-                 merge_command = "cat %s %s > %s"%(processed_output_filename, new_merged_filename, new_output_filename)
-                 MERGE_STATUS=sb.call(merge_command, shell=True)
-                 if MERGE_STATUS:
-                     raise FlashException('Force-merging read pairs failed to run, please check the log file.')
+                 merge_command = "cat {0} {1} > {2}".format(
+                     processed_output_filename, new_merged_filename, new_output_filename,
+                 )
+                 merge_status = sb.call(merge_command, shell=True)
+                 if merge_status:
+                     raise CRISPRessoShared.FastpException('Force-merging read pairs failed to run, please check the log file.')
+                 else:
+                     info(f'Forced {num_reads_force_merged} read paisr together.')
                  processed_output_filename = new_output_filename
 
-                 files_to_remove+=[new_merged_filename]
-                 files_to_remove+=[new_output_filename]
+                 files_to_remove += [new_merged_filename]
+                 files_to_remove += [new_output_filename]
                  if args.debug:
                      info('Wrote force-merged reads to ' + new_merged_filename)
 
@@ -3432,7 +3567,7 @@ def main():
             info('Making Plots...')
         ###############################################################################################################################################
         save_png = True
-        config = CRISPRessoShared.check_custom_config(args)
+        custom_config = CRISPRessoShared.check_custom_config(args)
         if args.suppress_report:
             save_png = False
 
@@ -3511,6 +3646,7 @@ def main():
                 'N_TOTAL': N_TOTAL,
                 'piechart_plot_root': plot_1b_root,
                 'barplot_plot_root': plot_1c_root,
+                'custom_colors': custom_config['colors'],
                 'save_png': save_png
             }
             crispresso2_info['results']['general_plots']['plot_1b_root'] = os.path.basename(plot_1b_root)
@@ -3653,17 +3789,18 @@ def main():
                     mod_df_for_plot = modification_percentage_summary_df.copy()
                     mod_df_for_plot.insert(0, 'Batch', ref_name)
 
-                    plot_root = _jp('2a.'+ref_plot_name + 'Nucleotide_percentage_quilt')
+                    plot_root = _jp('2a.'+ ref_plot_name + 'Nucleotide_percentage_quilt')
+                    pro_output_name = f'plot_{os.path.basename(plot_root)}.json'
                     plot_2a_input = {
                         'nuc_pct_df': nuc_df_for_plot,
                         'mod_pct_df': mod_df_for_plot,
-                        'fig_filename_root': plot_root,
+                        'fig_filename_root': f'{_jp(pro_output_name)}' if not args.use_matplotlib and C2PRO_INSTALLED else plot_root,
                         'save_also_png': save_png,
                         'sgRNA_intervals': sgRNA_intervals,
                         'sgRNA_names': sgRNA_names,
                         'sgRNA_mismatches': sgRNA_mismatches,
                         'quantification_window_idxs': include_idxs_list,
-                        'custom_colors': config["colors"],
+                        'custom_colors': custom_config["colors"],
                     }
                     debug('Plotting nucleotide quilt across amplicon')
                     plot(CRISPRessoPlot.plot_nucleotide_quilt, plot_2a_input)
@@ -3700,17 +3837,18 @@ def main():
                         new_include_idx = []
                         for x in include_idxs_list:
                             new_include_idx += [x - new_sel_cols_start]
-                        plot_root = _jp('2b.'+ref_plot_name + 'Nucleotide_percentage_quilt_around_' + sgRNA_label)
+                        plot_root = _jp('2b.'+ ref_plot_name + 'Nucleotide_percentage_quilt_around_' + sgRNA_label)
+                        pro_output_name = f'plot_{os.path.basename(plot_root)}.json'
                         plot_2b_input = {
                             'nuc_pct_df': nuc_df_for_plot.iloc[:, sel_cols],
                             'mod_pct_df': mod_df_for_plot.iloc[:, sel_cols],
-                            'fig_filename_root': plot_root,
+                            'fig_filename_root': f'{_jp(pro_output_name)}' if not args.use_matplotlib and C2PRO_INSTALLED else plot_root,
                             'save_also_png': save_png,
                             'sgRNA_intervals': new_sgRNA_intervals,
                             'sgRNA_names': sgRNA_names,
                             'sgRNA_mismatches': sgRNA_mismatches,
                             'quantification_window_idxs': new_include_idx,
-                            'custom_colors': config["colors"],
+                            'custom_colors': custom_config["colors"],
                         }
                         debug('Plotting nucleotide distribuition around {0} for {1}'.format(sgRNA_legend, ref_name))
                         plot(CRISPRessoPlot.plot_nucleotide_quilt, plot_2b_input)
@@ -3762,6 +3900,7 @@ def main():
                     ),
                     'plot_root': plot_root,
                     'save_also_png': save_png,
+                    'ref_name': ref_name,
                 }
                 debug('Plotting indel size distribution for {0}'.format(ref_name))
                 plot(CRISPRessoPlot.plot_indel_size_distribution, plot_3a_input)
@@ -3843,6 +3982,8 @@ def main():
                     'xmax_ins': xmax_ins,
                     'xmax_mut': xmax_mut,
                     'save_also_png': save_png,
+                    'custom_colors': custom_config["colors"],
+                    'ref_name' : ref_name,
                 }
                 debug('Plotting frequency deletions/insertions for {0}'.format(ref_name))
                 plot(CRISPRessoPlot.plot_frequency_deletions_insertions, plot_3b_input)
@@ -3888,7 +4029,7 @@ def main():
                         ),
                     },
                     'plot_root': plot_root,
-                    'custom_colors': config["colors"],
+                    'custom_colors': custom_config["colors"],
                     'save_also_png': save_png,
                 }
                 debug('Plotting amplication modifications for {0}'.format(ref_name))
@@ -3918,7 +4059,7 @@ def main():
                         'Mutation position distribution', ref_name,
                     ),
                     'plot_root': plot_root,
-                    'custom_colors': config["colors"],
+                    'custom_colors': custom_config["colors"],
                     'save_also_png': save_png,
                 }
                 debug('Plotting modification frequency for {0}'.format(ref_name))
@@ -3947,7 +4088,7 @@ def main():
                     ),
                     'ref_name': ref_name,
                     'plot_root': plot_root,
-                    'custom_colors': config["colors"],
+                    'custom_colors': custom_config["colors"],
                     'save_also_png': save_png,
                 }
                 debug('Plotting quantification window locations for {0}'.format(ref_name))
@@ -3979,6 +4120,7 @@ def main():
                     },
                     'plot_root': plot_root,
                     'save_also_png': save_png,
+                    'ref_name': ref_name,
                 }
                 debug('Plotting position dependent indel for {0}'.format(ref_name))
                 plot(
@@ -4004,7 +4146,7 @@ def main():
                         'n_total': N_TOTAL,
                         'ref_len': ref_len,
                         'ref_name': ref_names[0],
-                        'custom_colors': config["colors"],
+                        'custom_colors': custom_config["colors"],
                         'save_also_png': save_png,
                     }
                     if ref_name == ref_names[0]:
@@ -4066,16 +4208,17 @@ def main():
                     hdr_nucleotide_percentage_summary_df.rename(columns={'Batch':'Amplicon'}).to_csv(nuc_freq_filename,sep='\t',header=True,index=False)
 
                     plot_root = _jp('4g.HDR_nucleotide_percentage_quilt')
+                    pro_output_name = f'plot_{os.path.basename(plot_root)}.json'
                     plot_4g_input = {
                         'nuc_pct_df': hdr_nucleotide_percentage_summary_df,
                         'mod_pct_df': hdr_modification_percentage_summary_df,
-                        'fig_filename_root': plot_root,
+                        'fig_filename_root': f'{_jp(pro_output_name)}' if not args.use_matplotlib and C2PRO_INSTALLED else plot_root,
                         'save_also_png': save_png,
                         'sgRNA_intervals': sgRNA_intervals,
                         'quantification_window_idxs': include_idxs_list,
                         'sgRNA_names': sgRNA_names,
                         'sgRNA_mismatches': sgRNA_mismatches,
-                        'custom_colors': config["colors"],
+                        'custom_colors': custom_config["colors"],
                     }
                     debug('Plotting HDR nucleotide quilt')
                     plot(CRISPRessoPlot.plot_nucleotide_quilt, plot_4g_input)
@@ -4124,6 +4267,7 @@ def main():
                             'ref_name': ref_name,
                             'plot_root': plot_root,
                             'save_also_png': save_png,
+                            'custom_colors': custom_config['colors'],
                         }
                         debug('Plotting frameshift analysis for {0}'.format(ref_name))
                         plot(CRISPRessoPlot.plot_frameshift_analysis, plot_5_input)
@@ -4149,6 +4293,7 @@ def main():
 
                         'plot_root': plot_root,
                         'save_also_png': save_png,
+                        'ref_name': ref_name,
                     }
                     debug('Plotting frameshift frequency for {0}'.format(ref_name))
                     plot(CRISPRessoPlot.plot_frameshift_frequency, plot_6_input)
@@ -4176,8 +4321,9 @@ def main():
                             ref_name,
                         ),
                         'plot_root': plot_root,
-                        'custom_colors': config["colors"],
+                        'custom_colors': custom_config["colors"],
                         'save_also_png': save_png,
+                        'ref_name': ref_name,
                     }
                     debug('Plotting non-coding mutation positions for {0}'.format(ref_name))
                     plot(CRISPRessoPlot.plot_non_coding_mutations, plot_7_input)
@@ -4191,6 +4337,8 @@ def main():
                         'count_total': count_total,
                         'plot_root': plot_root,
                         'save_also_png': save_png,
+                        'ref_name': ref_name,
+                        'custom_colors': custom_config['colors'],
                     }
                     debug('Plotting potential splice sites')
                     plot(CRISPRessoPlot.plot_potential_splice_sites, plot_8_input)
@@ -4216,7 +4364,8 @@ def main():
                         'fig_filename_root': fig_filename_root,
                         'save_also_png': save_png,
                         'quantification_window_idxs': include_idxs_list,
-                        'custom_colors': config['colors']
+                        'custom_colors': custom_config['colors'],
+                        'ref_name': ref_name,
                     }
                     debug('Plotting substitutions across reference for {0}'.format(ref_name))
                     plot(CRISPRessoPlot.plot_subs_across_ref, plot_10a_input)
@@ -4235,7 +4384,7 @@ def main():
                         ),
                         'fig_filename_root': fig_filename_root,
                         'save_also_png': save_png,
-                        'custom_colors': config['colors']
+                        'custom_colors': custom_config['colors']
                     }
                     debug('Plotting substitution frequency barplot for {0}'.format(ref_name))
                     plot(CRISPRessoPlot.plot_sub_freqs, plot_10b_input)
@@ -4250,7 +4399,7 @@ def main():
                         'plot_title': get_plot_title_with_ref_name('Substitution frequency\nin quantification window', ref_name),
                         'fig_filename_root': fig_filename_root,
                         'save_also_png': save_png,
-                        'custom_colors': config['colors']
+                        'custom_colors': custom_config['colors']
                     }
                     debug('Plotting substitution frequency barplot in quantification window for {0}'.format(ref_name))
                     plot(CRISPRessoPlot.plot_sub_freqs, plot_10c_input)
@@ -4333,6 +4482,7 @@ def main():
                         'reference_seq': ref_seq_around_cut,
                         'df_alleles': df_to_plot,
                         'fig_filename_root': fig_filename_root,
+                        'custom_colors': custom_config["colors"],
                         'MIN_FREQUENCY': args.min_frequency_alleles_around_cut_to_plot,
                         'MAX_N_ROWS': args.max_rows_alleles_around_cut_to_plot,
                         'SAVE_ALSO_PNG': save_png,
@@ -4341,7 +4491,6 @@ def main():
                         'sgRNA_names': sgRNA_names,
                         'sgRNA_mismatches': sgRNA_mismatches,
                         'annotate_wildtype_allele': args.annotate_wildtype_allele,
-                        'custom_colors': config["colors"],
                     }
                     debug('Plotting allele distribution around cut for {0}'.format(ref_name))
                     plot(CRISPRessoPlot.plot_alleles_table, plot_9_input)
@@ -4428,7 +4577,7 @@ def main():
                             'conversion_nuc_from': args.conversion_nuc_from,
                             'fig_filename_root': fig_filename_root,
                             'save_also_png': save_png,
-                            'custom_colors': config['colors'],
+                            'custom_colors': custom_config['colors'],
                         }
                         debug('Plotting conversion at {0}s around the {1} for {2}'.format(args.conversion_nuc_from, sgRNA_legend, ref_name))
                         plot(
@@ -4448,7 +4597,7 @@ def main():
                             'conversion_nuc_from': args.conversion_nuc_from,
                             'fig_filename_root': fig_filename_root,
                             'save_also_png': save_png,
-                            'custom_colors': config['colors']
+                            'custom_colors': custom_config['colors']
                         }
                         debug('Plotting non-reference conversion at {0}s around the {1} for {2}'.format(args.conversion_nuc_from, sgRNA_legend, ref_name))
                         plot(
@@ -4471,7 +4620,7 @@ def main():
                             'conversion_nuc_from': args.conversion_nuc_from,
                             'fig_filename_root': fig_filename_root,
                             'save_also_png': save_png,
-                            'custom_colors': config['colors']
+                            'custom_colors': custom_config['colors']
                         }
                         debug('Plotting scaled non-reference conversion at {0}s around the {1} for {2}'.format(args.conversion_nuc_from, sgRNA_legend, ref_name))
                         plot(
@@ -4538,6 +4687,7 @@ def main():
                         'global_non_modified_non_frameshift': global_NON_MODIFIED_NON_FRAMESHIFT,
                         'plot_root': plot_root,
                         'save_also_png': save_png,
+                        'custom_colors': custom_config['colors'],
                     }
                     debug('Plotting global frameshift in-frame mutations pie chart', {'percent_complete': 90})
                     plot(
@@ -4577,6 +4727,7 @@ def main():
                     'global_count_total': global_count_total,
                     'plot_root': plot_root,
                     'save_also_png': save_png,
+                    'custom_colors': custom_config['colors'],
                 }
                 debug('Plotting global potential splice sites pie chart', {'percent_complete': 94})
                 plot(CRISPRessoPlot.plot_impact_on_splice_sites, plot_8a_input)
@@ -4592,7 +4743,7 @@ def main():
             scaffold_insertion_sizes_filename = ""
             if args.prime_editing_pegRNA_scaffold_seq != "":
                 #first, define the sequence we are looking for (extension plus the first base(s) of the scaffold)
-                scaffold_dna_seq = CRISPRessoShared.reverse_complement(args.prime_editing_pegRNA_scaffold_seq)
+                scaffold_dna_seq = CRISPRessoShared.reverse_complement(args.prime_editing_pegRNA_scaffold_seq.upper().replace('U','T'))
                 pe_seq = refs['Prime-edited']['sequence']
                 pe_scaffold_dna_info = get_pe_scaffold_search(pe_seq, args.prime_editing_pegRNA_extension_seq, args.prime_editing_pegRNA_scaffold_seq, args.prime_editing_pegRNA_scaffold_min_match_length)
 
@@ -4655,16 +4806,17 @@ def main():
                 include_idxs_list = refs[ref_names[0]]['include_idxs']
 
                 plot_root = _jp('11a.Prime_editing_nucleotide_percentage_quilt')
+                pro_output_name = f'plot_{os.path.basename(plot_root)}.json'
                 plot_11a_input = {
                     'nuc_pct_df': pe_nucleotide_percentage_summary_df,
                     'mod_pct_df': pe_modification_percentage_summary_df,
-                    'fig_filename_root': plot_root,
+                    'fig_filename_root': f'{_jp(pro_output_name)}' if not args.use_matplotlib and C2PRO_INSTALLED else plot_root,
                     'save_also_png': save_png,
                     'sgRNA_intervals': sgRNA_intervals,
                     'sgRNA_names': sgRNA_names,
                     'sgRNA_mismatches': sgRNA_mismatches,
                     'quantification_window_idxs': include_idxs_list,
-                    'custom_colors': config['colors']
+                    'custom_colors': custom_config['colors']
                 }
                 info('Plotting prime editing nucleotide percentage quilt', {'percent_complete': 96})
                 plot(CRISPRessoPlot.plot_nucleotide_quilt, plot_11a_input)
@@ -4714,16 +4866,17 @@ def main():
                     for x in pe_include_idxs_list:
                         new_include_idx += [x - new_sel_cols_start]
                     plot_root = _jp('11b.Nucleotide_percentage_quilt_around_' + sgRNA_label)
+                    pro_output_name = f'plot_{os.path.basename(plot_root)}.json'
                     plot_11b_input = {
                         'nuc_pct_df': pe_nucleotide_percentage_summary_df.iloc[:, sel_cols],
                         'mod_pct_df': pe_modification_percentage_summary_df.iloc[:, sel_cols],
-                        'fig_filename_root': plot_root,
+                        'fig_filename_root': f'{_jp(pro_output_name)}' if not args.use_matplotlib and C2PRO_INSTALLED else plot_root,
                         'save_also_png': save_png,
                         'sgRNA_intervals': new_sgRNA_intervals,
                         'sgRNA_names': sgRNA_names,
                         'sgRNA_mismatches': sgRNA_mismatches,
                         'quantification_window_idxs': new_include_idx,
-                        'custom_colors': config['colors']
+                        'custom_colors': custom_config['colors']
                     }
                     info('Plotting nucleotide quilt', {'percent_complete': 97})
                     plot(CRISPRessoPlot.plot_nucleotide_quilt, plot_11b_input)
@@ -4803,6 +4956,11 @@ def main():
         crispresso2_info['running_info']['running_time'] = running_time
         crispresso2_info['running_info']['running_time_string'] = running_time_string
 
+        if args.disable_guardrails:
+            crispresso2_info['results']['guardrails_htmls'] = []
+        else:
+            crispresso2_info['results']['guardrails_htmls'] = CRISPRessoShared.safety_check(crispresso2_info, aln_stats, custom_config['guardrails'])
+
 
         if not args.suppress_report:
             if (args.place_report_in_output_folder):
@@ -4833,13 +4991,9 @@ def main():
         print_stacktrace_if_debug()
         error('sgRNA error, please check your input.\n\nERROR: %s' % e)
         sys.exit(2)
-    except CRISPRessoShared.TrimmomaticException as e:
+    except CRISPRessoShared.FastpException as e:
         print_stacktrace_if_debug()
-        error('Trimming error, please check your input.\n\nERROR: %s' % e)
-        sys.exit(4)
-    except CRISPRessoShared.FlashException as e:
-        print_stacktrace_if_debug()
-        error('Merging error, please check your input.\n\nERROR: %s' % e)
+        error('Merging or trimming error, please check your input.\n\nERROR: %s' % e)
         sys.exit(5)
     except CRISPRessoShared.BadParameterException as e:
         print_stacktrace_if_debug()
