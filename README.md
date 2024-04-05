@@ -134,7 +134,7 @@ Next, Docker must be configured to access your hard drive and to run with suffic
 To run CRISPResso2, make sure Docker is running, then open a command prompt (Mac) or Powershell (Windows). Change directories to the location where your data is, and run the following command:
 
 ```
-docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso -h
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso -h
 ```
 
 The first time you run this command, it will download the Docker image. The `-v` parameter mounts the current directory to be accessible by CRISPResso2, and the `-w` parameter sets the CRISPResso2 working directory. As long as you are running the command from the directory containing your data, you should not change the Docker `-v` or `-w` parameters.
@@ -142,7 +142,7 @@ The first time you run this command, it will download the Docker image. The `-v`
 Additional parameters for CRISPResso2 as described below can be added to this command. For example,
 
 ```
-docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso -r1 sample.fastq.gz -a ATTAACCAAG
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso -r1 sample.fastq.gz -a ATTAACCAAG
 ```
 
 ## CRISPResso2 usage
@@ -160,7 +160,7 @@ CRISPResso --fastq_r1 reads.fastq.gz --amplicon_seq AATGTCCCCCAATGGGAAGTTCATCTGG
 _Using Docker:_
 
 ```
-docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso --fastq_r1 reads.fastq.gz --amplicon_seq AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso --fastq_r1 reads.fastq.gz --amplicon_seq AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT
 ```
 
 ### Guardrails
@@ -239,7 +239,7 @@ CRISPResso --fastq_r1 nhej.r1.fastq.gz --fastq_r2 nhej.r2.fastq.gz --amplicon_se
 _Using Docker:_
 
 ```
-docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso --fastq_r1 nhej.r1.fastq.gz --fastq_r2 nhej.r2.fastq.gz --amplicon_seq AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT -n nhej
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso --fastq_r1 nhej.r1.fastq.gz --fastq_r2 nhej.r2.fastq.gz --amplicon_seq AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT -n nhej
 ```
 
 This should produce a folder called 'CRISPResso_on_nhej'. Open the file called CRISPResso_on_nhej/CRISPResso2_report.html in a web browser, and you should see an output like this: [CRISPResso2_report.html](https://crispresso.pinellolab.partners.org/static/demo/CRISPResso_on_nhej/CRISPResso2_report.html).
@@ -257,7 +257,7 @@ CRISPResso --fastq_r1 allele_specific.fastq.gz --amplicon_seq CGAGAGCCGCAGCCATGA
 _Using Docker:_
 
 ```
-docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso --fastq_r1 allele_specific.fastq.gz --amplicon_seq CGAGAGCCGCAGCCATGAACGGCACAGAGGGCCCCAATTTTTATGTGCCCTTCTCCAACGTCACAGGCGTGGTGCGGAGCCACTTCGAGCAGCCGCAGTACTACCTGGCGGAACCATGGCAGTTCTCCATGCTGGCAGCGTACATGTTCCTGCTCATCGTGCTGGG,CGAGAGCCGCAGCCATGAACGGCACAGAGGGCCCCAATTTTTATGTGCCCTTCTCCAACGTCACAGGCGTGGTGCGGAGCCCCTTCGAGCAGCCGCAGTACTACCTGGCGGAACCATGGCAGTTCTCCATGCTGGCAGCGTACATGTTCCTGCTCATCGTGCTGGG --amplicon_name P23H,WT --guide_seq GTGCGGAGCCACTTCGAGCAGC
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso --fastq_r1 allele_specific.fastq.gz --amplicon_seq CGAGAGCCGCAGCCATGAACGGCACAGAGGGCCCCAATTTTTATGTGCCCTTCTCCAACGTCACAGGCGTGGTGCGGAGCCACTTCGAGCAGCCGCAGTACTACCTGGCGGAACCATGGCAGTTCTCCATGCTGGCAGCGTACATGTTCCTGCTCATCGTGCTGGG,CGAGAGCCGCAGCCATGAACGGCACAGAGGGCCCCAATTTTTATGTGCCCTTCTCCAACGTCACAGGCGTGGTGCGGAGCCCCTTCGAGCAGCCGCAGTACTACCTGGCGGAACCATGGCAGTTCTCCATGCTGGCAGCGTACATGTTCCTGCTCATCGTGCTGGG --amplicon_name P23H,WT --guide_seq GTGCGGAGCCACTTCGAGCAGC
 ```
 
 This should produce a folder called 'CRISPResso_on_allele_specific'. Open the file called CRISPResso_on_allele_specific/CRISPResso2_report.html in a web browser, and you should see an output like this: [CRISPResso2_report.html](https://crispresso.pinellolab.partners.org/static/demo/CRISPResso_on_allele_specific/CRISPResso2_report.html).
@@ -275,7 +275,7 @@ CRISPResso --fastq_r1 base_editor.fastq.gz --amplicon_seq GGCCCCAGTGGCTGCTCTGGGG
 _Using Docker:_
 
 ```
-docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso --fastq_r1 base_editor.fastq.gz --amplicon_seq GGCCCCAGTGGCTGCTCTGGGGGCCTCCTGAGTTTCTCATCTGTGCCCCTCCCTCCCTGGCCCAGGTGAAGGTGTGGTTCCAGAACCGGAGGACAAAGTACAAACGGCAGAAGCTGGAGGAGGAAGGGCCTGAGTCCGAGCAGAAGAAGAAGGGCTCCCATCACATCAACCGGTGGCGCATTGCCACGAAGCAGGCCAATGGGGAGGACATCGATGTCACCTCCAATGACTAGGGTGG --guide_seq GAGTCCGAGCAGAAGAAGAA --quantification_window_size 10 --quantification_window_center -10 --base_editor_output
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPResso --fastq_r1 base_editor.fastq.gz --amplicon_seq GGCCCCAGTGGCTGCTCTGGGGGCCTCCTGAGTTTCTCATCTGTGCCCCTCCCTCCCTGGCCCAGGTGAAGGTGTGGTTCCAGAACCGGAGGACAAAGTACAAACGGCAGAAGCTGGAGGAGGAAGGGCCTGAGTCCGAGCAGAAGAAGAAGGGCTCCCATCACATCAACCGGTGGCGCATTGCCACGAAGCAGGCCAATGGGGAGGACATCGATGTCACCTCCAATGACTAGGGTGG --guide_seq GAGTCCGAGCAGAAGAAGAA --quantification_window_size 10 --quantification_window_center -10 --base_editor_output
 ```
 
 This should produce a folder called 'CRISPResso_on_base_editor'. Open the file called CRISPResso_on_base_editor/CRISPResso2_report.html in a web browser, and you should see an output like this: [CRISPResso2_report.html](https://crispresso.pinellolab.partners.org/static/demo/CRISPResso_on_base_editor/CRISPResso2_report.html).
@@ -592,7 +592,7 @@ CRISPRessoBatch --batch_settings batch.batch --amplicon_seq CATTGCAGAGAGGCGTATCA
 _Using Docker:_
 
 ```
-docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoBatch --batch_settings batch.batch --amplicon_seq CATTGCAGAGAGGCGTATCATTTCGCGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCC -p 4 --base_editor_output -g GGAATCCCTTCTGCAGCACC -wc -10 -w 20
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoBatch --batch_settings batch.batch --amplicon_seq CATTGCAGAGAGGCGTATCATTTCGCGGATGTTCCAATCAGTACGCAGAGAGTCGCCGTCTCCAAGGTGAAAGCGGAAGTAGGGCCTTCGCGCACCTCATGGAATCCCTTCTGCAGCACCTGGATCGCTTTTCCGAGCTTCTGGCGGTCTCAAGCACTACCTACGTCAGCACCTGGGACCCC -p 4 --base_editor_output -g GGAATCCCTTCTGCAGCACC -wc -10 -w 20
 ```
 
 This should produce a folder called 'CRISPRessoBatch_on_batch'. Open the file called CRISPRessoBatch_on_batch/CRISPResso2Batch_report.html in a web browser, and you should see an output like this: [CRISPResso2Batch_report.html](https://crispresso.pinellolab.partners.org/static/demo/CRISPRessoBatch_on_batch/CRISPResso2Batch_report.html).
@@ -707,7 +707,7 @@ CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -f AMPLICON
 _Using Docker:_
 
 ```
-docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -f AMPLICONS_FILE.txt --name ONLY_AMPLICONS_SRR1046762 --gene_annotations gencode_v19.gz
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -f AMPLICONS_FILE.txt --name ONLY_AMPLICONS_SRR1046762 --gene_annotations gencode_v19.gz
 ```
 
 The output of CRISPRessoPooled Amplicons mode consists of:
@@ -772,7 +772,7 @@ CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -x /GENOMES
 _Using Docker:_
 
 ```
-docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -x /GENOMES/hg19/hg19 --name ONLY_GENOME_SRR1046762 --gene_annotations gencode_v19.gz
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -x /GENOMES/hg19/hg19 --name ONLY_GENOME_SRR1046762 --gene_annotations gencode_v19.gz
 ```
 
 The output of CRISPRessoPooled Genome mode consists of:
@@ -847,7 +847,7 @@ CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -f AMPLICON
 _Using Docker:_
 
 ```
-docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -f AMPLICONS_FILE.txt -x /GENOMES/hg19/hg19 --name AMPLICONS_AND_GENOME_SRR1046762 --gene_annotations gencode_v19.gz
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoPooled -r1 SRR1046762_1.fastq.gz -r2 SRR1046762_2.fastq.gz -f AMPLICONS_FILE.txt -x /GENOMES/hg19/hg19 --name AMPLICONS_AND_GENOME_SRR1046762 --gene_annotations gencode_v19.gz
 ```
 
 The output of CRISPRessoPooled Mixed Amplicons + Genome mode consists of
@@ -1034,7 +1034,7 @@ CRISPRessoWGS -b WGS/50/50_sorted_rmdup_fixed_groups.bam -f WGS_TEST.txt -r /GEN
 _Using Docker:_
 
 ```
-docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoWGS -b WGS/50/50_sorted_rmdup_fixed_groups.bam -f WGS_TEST.txt -r /GENOMES/mm9/mm9.fa --gene_annotations ensemble_mm9.txt.gz --name CRISPR_WGS_SRR1542350
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoWGS -b WGS/50/50_sorted_rmdup_fixed_groups.bam -f WGS_TEST.txt -r /GENOMES/mm9/mm9.fa --gene_annotations ensemble_mm9.txt.gz --name CRISPR_WGS_SRR1542350
 ```
 
 The output from these files will consist of:
@@ -1117,7 +1117,7 @@ CRISPRessoCompare -n1 "VEGFA CRISPR" -n2 "VEGFA CONTROL"  -n VEGFA_Site_1_SRR104
 _Using Docker:_
 
 ```
-docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoCompare -n1 "VEGFA CRISPR" -n2 "VEGFA CONTROL"  -n VEGFA_Site_1_SRR10467_VS_SRR1046787 CRISPResso_on_VEGFA_Site_1_SRR1046762/ CRISPResso_on_VEGFA_Site_1_SRR1046787/
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoCompare -n1 "VEGFA CRISPR" -n2 "VEGFA CONTROL"  -n VEGFA_Site_1_SRR10467_VS_SRR1046787 CRISPResso_on_VEGFA_Site_1_SRR1046762/ CRISPResso_on_VEGFA_Site_1_SRR1046787/
 ```
 
 The output will consist of:
@@ -1164,7 +1164,7 @@ CRISPRessoPooledWGSCompare CRISPRessoPooled_on_AMPLICONS_AND_GENOME_SRR1046762/ 
 _Using Docker:_
 
 ```
-docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoPooledWGSCompare CRISPRessoPooled_on_AMPLICONS_AND_GENOME_SRR1046762/ CRISPRessoPooled_on_AMPLICONS_AND_GENOME_SRR1046787/ -n1 SRR1046762 -n2 SRR1046787 -n AMPLICONS_AND_GENOME_SRR1046762_VS_SRR1046787
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoPooledWGSCompare CRISPRessoPooled_on_AMPLICONS_AND_GENOME_SRR1046762/ CRISPRessoPooled_on_AMPLICONS_AND_GENOME_SRR1046787/ -n1 SRR1046762 -n2 SRR1046787 -n AMPLICONS_AND_GENOME_SRR1046762_VS_SRR1046787
 ```
 
 The output from these files will consist of:
@@ -1225,7 +1225,7 @@ CRISPRessoAggregate --name "VEGFA" --prefix CRISPRessoRuns/VEGFA/
 _Using Docker:_
 
 ```
-docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoAggregate --name "VEGFA" --prefix CRISPRessoRuns/VEGFA/
+docker run -v ${PWD}:/DATA -w /DATA -i pinellolab/crispresso2 CRISPRessoAggregate --name "VEGFA" --prefix CRISPRessoRuns/VEGFA/
 ```
 
 The output will consist of:
