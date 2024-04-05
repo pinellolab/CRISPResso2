@@ -2298,7 +2298,7 @@ class DisproportionateReadsAlignedGuardrail:
         expected_per_amplicon = n_read_aligned / len(reads_aln_amplicon.keys())
         for amplicon, aligned in reads_aln_amplicon.items():
             if aligned <= (expected_per_amplicon * self.cutoff) or aligned >= (expected_per_amplicon * (1 - self.cutoff)):
-                amplicon_message = self.message + amplicon + ", Percent of aligned reads aligned to this amplicon: {}.".format((aligned/n_read_aligned) * 100)
+                amplicon_message = self.message + amplicon + ", Percent of aligned reads aligned to this amplicon: {}.".format(round((aligned/n_read_aligned) * 100, 2))
                 self.messageHandler.display_warning('DisproportionateReadsAlignedGuardrail', amplicon_message)
                 self.messageHandler.report_warning(amplicon_message)
 
@@ -2351,7 +2351,7 @@ class HighRateOfModificationAtEndsGuardrail:
             The float representation of the maximum percentage reads that have modifications on either end
         """
         self.messageHandler = messageHandler
-        self.message = " >={}% of reads have modifications at the start or end.".format(percentage_start_end * 100)
+        self.message = " >={}% of reads have modifications at the start or end.".format(round(percentage_start_end * 100, 2))
         self.percent = percentage_start_end
 
     def safety(self, total_reads, irregular_reads):
