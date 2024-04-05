@@ -162,7 +162,7 @@ def getCRISPRessoArgParser(tool, parser_title="CRISPResso Parameters"):
             default = value.get('default')  # Use None as default if 'default' is not found
             type_value = value.get('type', 'str')  # Assume 'str' as default type if 'type' is not specified
             arg_help = value.get('help', '') if value.get('help') != "SUPPRESS" else argparse.SUPPRESS
-            
+
             # Determine the correct function based on conditions
             if action:
                 parser.add_argument(*value['keys'], help=arg_help, action=action)
@@ -1701,7 +1701,7 @@ def get_crispresso_header(description, header_str):
                 term_width) + "\n" + output_line
 
     output_line += '\n' + ('[CRISPResso version ' + __version__ + ']').center(term_width) + '\n' + (
-        '[Note that as of version 2.3.0 FLASh and Trimmomatic have been replaced by fastp for read merging and trimming. Accordingly, the --flash_command and --trimmomatic_command parameters have been replaced with --fastp_command. Also, --trimmomatic_options_string has been replaced with --fastp_options_string.\n\nAlso as of version 2.3.0, when running CRISPRessoPooled in mixed-mode (amplicon file and genome are provided) the default behavior will be as if the --demultiplex_only_at_amplicons parameter is provided. This change means that reads and amplicons do not need to align to the exact locations.]').center(
+        '[Note that as of version 2.3.0 FLASh and Trimmomatic have been replaced by fastp for read merging and trimming. Accordingly, the --flash_command and --trimmomatic_command parameters have been replaced with --fastp_command. Also, --trimmomatic_options_string has been replaced with --fastp_options_string.\n\nAlso in version 2.3.1, when running CRISPRessoPooled in mixed-mode (amplicon file and genome are provided) the default behavior will be as if the --demultiplex_only_at_amplicons parameter is provided. This change means that reads and amplicons do not need to align to the exact locations.]').center(
         term_width) + "\n" + ('[For support contact k.clement@utah.edu or support@edilytics.com]').center(term_width) + "\n"
 
     description_str = ""
@@ -1979,7 +1979,7 @@ class GuardrailMessageHandler:
     def get_messages(self):
         """Return the messages accumulated by the message handler"""
         return self.messages
-    
+
     def get_html_messages(self):
         """Return the html messages accumulated by the message handler"""
         return self.html_messages
