@@ -1269,7 +1269,7 @@ def main():
             sys.exit()
 
 
-        arg_parser = CRISPRessoShared.getCRISPRessoArgParser()
+        arg_parser = CRISPRessoShared.getCRISPRessoArgParser("Core")
         args = arg_parser.parse_args()
 
         CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
@@ -1336,7 +1336,7 @@ def main():
 
         if args.amplicon_seq is None and args.auto is False:
             arg_parser.print_help()
-            raise CRISPRessoShared.BadParameterException('Please provide an amplicon sequence for analysis using the --amplicon_seq parameter.')
+            raise CRISPRessoShared.BadParameterException('Please provide an amplicon sequence for analysis using the --amplicon_seq parameter or use the --auto parameter to automatically assign amplicon to most common read.')
 
         if (args.needleman_wunsch_gap_open > 0):
             raise CRISPRessoShared.BadParameterException("Needleman Wunsch gap open penalty must be <= 0")

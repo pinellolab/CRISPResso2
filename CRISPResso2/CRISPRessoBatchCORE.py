@@ -75,15 +75,7 @@ def main():
             ))
             sys.exit()
 
-        parser = CRISPRessoShared.getCRISPRessoArgParser(parser_title = 'CRISPRessoBatch Parameters')
-
-        #batch specific params
-        parser.add_argument('-bs', '--batch_settings', type=str, help='Settings file for batch. Must be tab-separated text file. The header row contains CRISPResso parameters (e.g., fastq_r1, fastq_r2, amplicon_seq, and other optional parameters). Each following row sets parameters for an additional batch.', required=True)
-        parser.add_argument('--skip_failed',  help='Continue with batch analysis even if one sample fails', action='store_true')
-        parser.add_argument('--min_reads_for_inclusion',  help='Minimum number of reads for a batch to be included in the batch summary', type=int, default=0)
-        parser.add_argument('-bo', '--batch_output_folder',  help='Directory where batch analysis output will be stored')
-        parser.add_argument('--suppress_batch_summary_plots',  help='Suppress batch summary plots - e.g. if many samples are run at once, the summary plots of all sub-runs may be too large. This parameter suppresses the production of these plots.', action='store_true')
-        parser.add_argument('--crispresso_command', help='CRISPResso command to call', default='CRISPResso')
+        parser = CRISPRessoShared.getCRISPRessoArgParser("Batch", parser_title = 'CRISPRessoBatch Parameters')
 
         args = parser.parse_args()
 
@@ -91,7 +83,7 @@ def main():
 
         debug_flag = args.debug
 
-        crispresso_options = CRISPRessoShared.get_crispresso_options()
+        crispresso_options = CRISPRessoShared.get_core_crispresso_options()
         options_to_ignore = {'name', 'output_folder', 'zip_output'}
         crispresso_options_for_batch = list(crispresso_options-options_to_ignore)
 
@@ -190,7 +182,7 @@ def main():
                 batch_params[int_col] = batch_params[int_col].astype(int)
 
         # rename column "a" to "amplicon_seq", etc
-        batch_params.rename(index=str, columns=CRISPRessoShared.get_crispresso_options_lookup(), inplace=True)
+        batch_params.rename(index=str, columns=CRISPRessoShared.get_crispresso_options_lookup("Core"), inplace=True)
         batch_count = batch_params.shape[0]
         batch_params.index = range(batch_count)
 
@@ -309,7 +301,6 @@ def main():
 
         crispresso2_info['results']['batch_names_arr'] = batch_names_arr
         crispresso2_info['results']['batch_input_names'] = batch_input_names
-
         CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_batch, 'batch', args.skip_failed, start_end_percent=[10, 90])
 
         run_datas = [] # crispresso2 info from each row

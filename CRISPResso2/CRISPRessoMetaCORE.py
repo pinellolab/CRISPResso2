@@ -86,7 +86,7 @@ def main():
         '''
         print(CRISPRessoShared.get_crispresso_header(description, meta_string))
 
-        parser = CRISPRessoShared.getCRISPRessoArgParser(parser_title = 'CRISPRessoMeta Parameters')
+        parser = CRISPRessoShared.getCRISPRessoArgParser("Meta", parser_title = 'CRISPRessoMeta Parameters')
 
         #batch specific params
         parser.add_argument('--metadata', type=str, help='Metadata file according to NIST specification', required=True)
@@ -104,7 +104,7 @@ def main():
 
         debug_flag = args.debug
 
-        crispresso_options = CRISPRessoShared.get_crispresso_options()
+        crispresso_options = CRISPRessoShared.get_core_crispresso_options()
         options_to_ignore = {'name', 'output_folder'}
         crispresso_options_for_meta = list(crispresso_options-options_to_ignore)
 
@@ -127,7 +127,7 @@ def main():
         print('table:')
         print(meta_params)
         #rename column "a" to "amplicon_seq", etc
-        meta_params.rename(index=str, columns=CRISPRessoShared.get_crispresso_options_lookup(), inplace=True)
+        meta_params.rename(index=str, columns=CRISPRessoShared.get_crispresso_options_lookup("Core"), inplace=True)
         meta_count = meta_params.shape[0]
         meta_params.index = range(meta_count)
 
