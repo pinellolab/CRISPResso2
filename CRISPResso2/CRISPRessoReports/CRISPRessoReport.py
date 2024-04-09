@@ -5,22 +5,27 @@ Software pipeline for the analysis of genome editing outcomes from deep sequenci
 '''
 
 import os
-from jinja2 import Environment, FileSystemLoader, PackageLoader, ChoiceLoader
+from jinja2 import Environment, FileSystemLoader, ChoiceLoader
 from jinja_partials import generate_render_partial, render_partial
 from CRISPResso2 import CRISPRessoShared
 
 if CRISPRessoShared.is_C2Pro_installed():
-    from CRISPRessoPro import __version__ as CRISPRessoProVersion
+    import CRISPRessoPro
     C2PRO_INSTALLED = True
 else:
     C2PRO_INSTALLED = False
 
 
-def get_jinja_loader(_ROOT):
-    if CRISPRessoShared.is_C2Pro_installed():
-        return Environment(loader=ChoiceLoader([FileSystemLoader(os.path.join(_ROOT, 'CRISPRessoReports', 'templates')), PackageLoader('CRISPRessoPro', 'templates')]))    
+def get_jinja_loader(root):
+    if C2PRO_INSTALLED:
+        return Environment(
+            loader=ChoiceLoader([
+                FileSystemLoader(os.path.join(root, 'CRISPRessoReports', 'templates')),
+                FileSystemLoader(os.path.join(os.path.dirname(CRISPRessoPro.__file__), 'templates')),
+            ]),
+        )
     else:
-        return Environment(loader=FileSystemLoader(os.path.join(_ROOT, 'CRISPRessoReports', 'templates')))
+        return Environment(loader=FileSystemLoader(os.path.join(root, 'CRISPRessoReports', 'templates')))
 
 
 def render_template(template_name, jinja2_env, **data):
