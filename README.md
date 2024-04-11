@@ -181,13 +181,14 @@ LongAmpliconShortReadsGuardrail : Checks if the rovided amplicon is more than <v
 
 CRISPResso is an open source tool for free use by academics. However, for-profit organizations are required to purchase a license to use CRISPResso. As a part of this license, organizations gain access to the CRISPRessoPro package which supplements CRISPResso
 with several useful features:
+
 - Interactive and improved plots using D3 and Plotly
 - Customizable colors
 - Customizable warnings based on potential issues in results (guardrails)
 
 #### Installation
 
-To add CRISPRessoPro to CRISPResso contact Edilytics - support@edilytics.com
+To add CRISPRessoPro to CRISPResso contact Edilytics - licensing@edilytics.com
 
 #### D3 and Plotly
 
@@ -195,33 +196,31 @@ If CRISPRessoPro is installed, by default reports will include interactive plots
 
 #### Customizable Colors and Guardrails
 
-If CRISPRessoPro is installed, by default the colors and guardrails will remain the same as CRISPResso. To alter this, use the `--custom_config` argument and a filepath to a `.json` file with the following format:
+If CRISPRessoPro is installed, by default the colors and guardrails will remain the same as CRISPResso. To alter this, use the `--config_file` argument and a filepath to a `.json` file with the following format:
 
-'''
-"colors": {
-    'Substitution': '#0000FF',
-    'Insertion': '#008000',
-    'Deletion': '#FF0000',
-    'A': '#7FC97F',
-    'T': '#BEAED4',
-    'C': '#FDC086',
-    'G': '#FFFF99',
-    'N': '#C8C8C8',
-    '-': '#1E1E1E',
+`"colors": {
+'Substitution': '#0000FF',
+'Insertion': '#008000',
+'Deletion': '#FF0000',
+'A': '#7FC97F',
+'T': '#BEAED4',
+'C': '#FDC086',
+'G': '#FFFF99',
+'N': '#C8C8C8',
+'-': '#1E1E1E',
 },
 "guardrails": {
-    'min_total_reads': 10000,
-    'aligned_cutoff': 0.9,
-    'alternate_alignment': 0.3,
-    'min_ratio_of_mods_in_to_out': 0.01,
-    'modifications_at_ends': 0.01,
-    'outside_window_max_sub_rate': 0.002,
-    'max_rate_of_subs': 0.3,
-    'guide_len': 19,
-    'amplicon_len': 50,
-    'amplicon_to_read_length': 1.5
-}
-'''
+'min_total_reads': 10000,
+'aligned_cutoff': 0.9,
+'alternate_alignment': 0.3,
+'min_ratio_of_mods_in_to_out': 0.01,
+'modifications_at_ends': 0.01,
+'outside_window_max_sub_rate': 0.002,
+'max_rate_of_subs': 0.3,
+'guide_len': 19,
+'amplicon_len': 50,
+'amplicon_to_read_length': 1.5
+}`
 (These are the default values as an example).
 
 Change the values as desired to any color or guardrail specification.
