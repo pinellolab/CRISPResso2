@@ -83,7 +83,7 @@ def main():
         '''
         compare_header = CRISPRessoShared.get_crispresso_header(description, compare_header)
         print(compare_header)
-        
+
         parser = CRISPRessoShared.getCRISPRessoArgParser("Compare", parser_title = 'CRISPRessoCompare Parameters')
 
         args = parser.parse_args()
@@ -429,7 +429,7 @@ def main():
                 report_name = _jp("CRISPResso2Compare_report.html")
             else:
                 report_name = OUTPUT_DIRECTORY+'.html'
-            CRISPRessoReport.make_compare_report_from_folder(report_name, crispresso2_info, OUTPUT_DIRECTORY, _ROOT)
+            CRISPRessoReport.make_compare_report_from_folder(report_name, crispresso2_info, OUTPUT_DIRECTORY, _ROOT, logger)
             crispresso2_info['running_info']['report_location'] = report_name
             crispresso2_info['running_info']['report_filename'] = os.path.basename(report_name)
 

@@ -600,7 +600,7 @@ def process_fastq(fastq_filename, variantCache, ref_names, refs, args):
                 N_MODS_OUTSIDE_WINDOW += new_variant[match_name]['mods_outside_window']
                 if new_variant[match_name]['irregular_ends']:
                     N_READS_IRREGULAR_ENDS += 1
-                
+
 
     fastq_handle.close()
 
@@ -4967,7 +4967,7 @@ def main():
                 report_name = _jp("CRISPResso2_report.html")
             else:
                 report_name = OUTPUT_DIRECTORY+'.html'
-            CRISPRessoReport.make_report(crispresso2_info, report_name, OUTPUT_DIRECTORY, _ROOT)
+            CRISPRessoReport.make_report(crispresso2_info, report_name, OUTPUT_DIRECTORY, _ROOT, logger)
             crispresso2_info['running_info']['report_location'] = report_name
             crispresso2_info['running_info']['report_filename'] = os.path.basename(report_name)
 
