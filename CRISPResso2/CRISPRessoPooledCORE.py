@@ -1593,7 +1593,7 @@ def main():
                 report_name = _jp("CRISPResso2Pooled_report.html")
             else:
                 report_name = OUTPUT_DIRECTORY+'.html'
-            CRISPRessoReport.make_pooled_report_from_folder(report_name, crispresso2_info, OUTPUT_DIRECTORY, _ROOT)
+            CRISPRessoReport.make_pooled_report_from_folder(report_name, crispresso2_info, OUTPUT_DIRECTORY, _ROOT, logger)
             crispresso2_info['running_info']['report_location'] = report_name
             crispresso2_info['running_info']['report_filename'] = os.path.basename(report_name)
 

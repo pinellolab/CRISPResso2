@@ -367,6 +367,7 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
                 'CRISPREssoPooledWGSCompare Report<br>{0} vs {1}'.format(
                     sample_1_name, sample_2_name,
                 ),
+                logger,
             )
             crispresso2_info['running_info']['report_location'] = report_name
             crispresso2_info['running_info']['report_filename'] = os.path.basename(report_name)

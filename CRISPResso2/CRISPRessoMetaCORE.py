@@ -358,7 +358,7 @@ def main():
                 report_name = _jp("CRISPResso2Meta_report.html")
             else:
                 report_name = OUTPUT_DIRECTORY+'.html'
-            CRISPRessoReport.make_meta_report_from_folder(report_name, crispresso2_info, OUTPUT_DIRECTORY, _ROOT)
+            CRISPRessoReport.make_meta_report_from_folder(report_name, crispresso2_info, OUTPUT_DIRECTORY, _ROOT, logger)
             crispresso2_info['running_info']['report_location'] = report_name
             crispresso2_info['running_info']['report_filename'] = os.path.basename(report_name)
 
