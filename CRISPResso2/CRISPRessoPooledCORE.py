@@ -688,7 +688,7 @@ def main():
                 raise Exception('The amplicon sequences must be distinct! (Duplicated entries: ' + str(duplicated_entries.values) + ')')
 
             if not len(df_template.amplicon_name.unique())==df_template.shape[0]:
-                duplicated_entries = df_template.amplicon_name[df_template.Name.duplicated()]
+                duplicated_entries = df_template.amplicon_name[df_template.amplicon_name.duplicated()]
                 raise Exception('The amplicon names must be distinct! (Duplicated names: ' + str(duplicated_entries.values) + ')')
 
             df_template=df_template.set_index('amplicon_name')
