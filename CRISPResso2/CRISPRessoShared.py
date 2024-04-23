@@ -1856,9 +1856,11 @@ def check_custom_config(args):
                 custom_config['colors'] = config['colors']
 
             return custom_config
-        except Exception as e:
-            logger.warn("Cannot read json file '%s', defaulting config parameters." % args.config_file)
-            print(e)
+        except Exception:
+            if args.config_file:
+                logger.warn("Cannot read config file '%s', defaulting config parameters." % args.config_file)
+            else:
+                logger.warn("No config file provided, defaulting config parameters.")
     return config
 
 
