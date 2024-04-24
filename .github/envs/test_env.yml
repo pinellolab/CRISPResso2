@@ -5,8 +5,7 @@ channels:
   - defaults
 dependencies:
   - pip
-  - trimmomatic
-  - flash
+  - fastp
   - numpy
   - cython
   - jinja2
@@ -15,4 +14,3 @@ dependencies:
   - scipy
   - matplotlib
   - pandas
-  - plotly=5.18.0
