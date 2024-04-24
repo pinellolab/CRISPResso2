@@ -398,7 +398,10 @@ def main():
         large_plot_cutoff = 300
 
         percent_complete_start, percent_complete_end = 90, 99
-        percent_complete_step = (percent_complete_end - percent_complete_start) / len(all_amplicons)
+        if all_amplicons:
+            percent_complete_step = (percent_complete_end - percent_complete_start) / len(all_amplicons)
+        else:
+            percent_complete_step = 0
         # report for amplicons
         for amplicon_index, amplicon_seq in enumerate(all_amplicons):
             # only perform comparison if amplicon seen in more than one sample
