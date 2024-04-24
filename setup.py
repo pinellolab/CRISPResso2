@@ -89,10 +89,8 @@ def main():
               'matplotlib',  # '>=1.3.1,<=2.2.3',
               'seaborn', # '>0.7.1,<0.10',
               'jinja2',
-              'jinja_partials',
               'scipy',
               'numpy',
-              'plotly',
               ],
           cmdclass = command_classes,
           ext_modules = ext_modules

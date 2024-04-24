@@ -6,7 +6,7 @@ Software pipeline for the analysis of genome editing outcomes from deep sequenci
 
 import os
 from jinja2 import Environment, FileSystemLoader, ChoiceLoader, make_logging_undefined
-from jinja_partials import generate_render_partial, render_partial
+from CRISPResso2.CRISPRessoReports.jinja_partials import generate_render_partial, render_partial
 from CRISPResso2 import CRISPRessoShared
 
 if CRISPRessoShared.is_C2Pro_installed():
