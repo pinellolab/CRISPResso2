@@ -516,6 +516,10 @@ def main():
 
                 if fastp_status:
                     raise CRISPRessoShared.FastpException('FASTP failed to run, please check the log file.')
+
+                if not args.keep_intermediate:
+                    files_to_remove += [output_forward_filename]
+
                 info('Done!', {'percent_complete': 7})
 
             processed_output_filename = output_forward_filename
@@ -550,6 +554,9 @@ def main():
             if args.debug:
                 info('Fastp command: {0}'.format(fastp_cmd))
 
+            if not args.keep_intermediate:
+                files_to_remove += [processed_output_filename, not_combined_1_filename, not_combined_2_filename]
+
             if fastp_status:
                 raise CRISPRessoShared.FastpException('Fastp failed to run, please check the log file.')
             crispresso2_info['running_info']['fastp_command'] = fastp_cmd
@@ -565,6 +572,9 @@ def main():
                 else:
                     info(f'Forced {num_reads_force_merged} read pairs together.')
                 processed_output_filename = new_output_filename
+
+                if not args.keep_intermediate:
+                    files_to_remove += [new_merged_filename, new_output_filename]
 
             info('Done!', {'percent_complete': 7})
 
@@ -1553,20 +1563,6 @@ def main():
         #cleaning up
         if not args.keep_intermediate:
              info('Removing Intermediate files...')
-
-             if not args.aligned_pooled_bam:
-                if args.fastq_r2!='':
-                    files_to_remove+=[processed_output_filename, flash_hist_filename, flash_histogram_filename,\
-                                flash_not_combined_1_filename, flash_not_combined_2_filename]
-                    if args.force_merge_pairs:
-                        files_to_remove.append(new_merged_filename)
-                        files_to_remove.append(old_flashed_filename)
-                else:
-                    files_to_remove+=[processed_output_filename]
-
-             if args.trim_sequences and args.fastq_r2!='':
-                 files_to_remove+=[output_forward_paired_filename, output_reverse_paired_filename,\
-                                                   output_forward_unpaired_filename, output_reverse_unpaired_filename]
 
              if RUNNING_MODE=='ONLY_GENOME' or RUNNING_MODE=='AMPLICONS_AND_GENOME':
                  if args.aligned_pooled_bam is None:

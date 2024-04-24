@@ -46,7 +46,7 @@ jobs:
       with:
         repository: edilytics/CRISPResso2_tests
         token: ${{ secrets.ACCESS_CRISPRESSO2_TESTS }}
-        # ref: '<BRANCH_NAME>' // Use this to specify a branch other than master
+        # ref: '<BRANCH-NAME>' # Use this to specify a branch other than master
 
     - name: Run Basic
       run: |
@@ -71,6 +71,11 @@ jobs:
       if: success() || failure()
       run: |
         make pooled test
+
+    - name: Run Pooled Paired Sim
+      if: success() || failure()
+      run: |
+        make pooled-paired-sim test
 
     - name: Run WGS
       if: success() || failure()
