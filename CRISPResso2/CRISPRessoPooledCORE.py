@@ -378,14 +378,14 @@ def main():
 
         if args.amplicons_file and not args.bowtie2_index:
             RUNNING_MODE='ONLY_AMPLICONS'
-            info('Only the Amplicon description file was provided. The analysis will be perfomed using only the provided amplicons sequences.')
+            info('Only the Amplicon description file was provided. The analysis will be performed using only the provided amplicons sequences.')
 
         elif args.bowtie2_index and not args.amplicons_file:
             RUNNING_MODE='ONLY_GENOME'
-            info('Only the bowtie2 reference genome index file was provided. The analysis will be perfomed using only genomic regions where enough reads align.')
+            info('Only the bowtie2 reference genome index file was provided. The analysis will be performed using only genomic regions where enough reads align.')
         elif args.bowtie2_index and args.amplicons_file:
             RUNNING_MODE='AMPLICONS_AND_GENOME'
-            info('Amplicon description file and bowtie2 reference genome index files provided. The analysis will be perfomed using the reads that are aligned only to the amplicons provided and not to other genomic regions.')
+            info('Amplicon description file and bowtie2 reference genome index files provided. The analysis will be performed using the reads that are aligned only to the amplicons provided and not to other genomic regions.')
         else:
             error('Please provide the amplicons description file (-f or --amplicons_file option) or the bowtie2 reference genome index file (-x or --bowtie2_index option) or both.')
             sys.exit(1)
