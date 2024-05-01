@@ -18,7 +18,7 @@ from CRISPResso2 import CRISPRessoMultiProcessing
 from CRISPResso2.CRISPRessoReports import CRISPRessoReport
 
 if CRISPRessoShared.is_C2Pro_installed():
-    from CRISPRessoPro import __version__ as CRISPRessoProVersion
+    import CRISPRessoPro
     C2PRO_INSTALLED = True
 else:
     C2PRO_INSTALLED = False
@@ -127,7 +127,7 @@ def main():
 
         log_filename = _jp('CRISPRessoBatch_RUNNING_LOG.txt')
         logger.addHandler(logging.FileHandler(log_filename))
-        status_handler = CRISPRessoShared.StatusHandler(_jp('CRISPRessoBatch_status.json'))
+        status_handler = CRISPRessoShared.StatusHandler(os.path.join(OUTPUT_DIRECTORY, 'CRISPRessoBatch_status.json'))
         logger.addHandler(status_handler)
 
         with open(log_filename, 'w+') as outfile:
@@ -178,7 +178,7 @@ def main():
                        'plot_window_size', 'max_rows_alleles_around_cut_to_plot']
         for int_col in int_columns:
             if int_col in batch_params.columns:
-                batch_params[int_col].fillna(getattr(args, int_col), inplace=True)
+                batch_params.fillna(value={int_col: getattr(args, int_col)}, inplace=True)
                 batch_params[int_col] = batch_params[int_col].astype(int)
 
         # rename column "a" to "amplicon_seq", etc
@@ -398,7 +398,10 @@ def main():
         large_plot_cutoff = 300
 
         percent_complete_start, percent_complete_end = 90, 99
-        percent_complete_step = (percent_complete_end - percent_complete_start) / len(all_amplicons)
+        if all_amplicons:
+            percent_complete_step = (percent_complete_end - percent_complete_start) / len(all_amplicons)
+        else:
+            percent_complete_step = 0
         # report for amplicons
         for amplicon_index, amplicon_seq in enumerate(all_amplicons):
             # only perform comparison if amplicon seen in more than one sample
@@ -604,7 +607,7 @@ def main():
                                 # and add it to the list
                                 sub_sgRNA_intervals.append((newstart, newend))
 
-                            this_window_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt_around_sgRNA_'+sgRNA)
+                            this_window_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name.replace('.', '') + 'Nucleotide_percentage_quilt_around_sgRNA_'+sgRNA)
                             nucleotide_quilt_input = {
                                 'nuc_pct_df': sub_nucleotide_percentage_summary_df,
                                 'mod_pct_df': sub_modification_percentage_summary_df,
@@ -622,8 +625,6 @@ def main():
                             plot_name = os.path.basename(this_window_nuc_pct_quilt_plot_name)
                             window_nuc_pct_quilt_plot_names.append(plot_name)
                             crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'sgRNA: ' + sgRNA + ' Amplicon: ' + amplicon_name
-                            if len(consensus_guides) == 1:
-                                crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = ''
                             crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Composition of each base around the guide ' + sgRNA + ' for the amplicon ' + amplicon_name
                             crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), ('Modification frequencies', os.path.basename(modification_frequency_summary_filename))]
 
@@ -656,7 +657,7 @@ def main():
                         # done with per-sgRNA plots
 
                     if not args.suppress_plots and not args.suppress_batch_summary_plots:  # plot the whole region
-                        this_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt')
+                        this_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name.replace('.', '') + 'Nucleotide_percentage_quilt')
                         nucleotide_quilt_input = {
                             'nuc_pct_df': nucleotide_percentage_summary_df,
                             'mod_pct_df': modification_percentage_summary_df,
@@ -706,7 +707,7 @@ def main():
 
                 else:  # guides are not the same
                     if not args.suppress_plots and not args.suppress_batch_summary_plots:
-                        this_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt')
+                        this_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name.replace('.', '') + 'Nucleotide_percentage_quilt')
                         nucleotide_quilt_input = {
                             'nuc_pct_df': nucleotide_percentage_summary_df,
                             'mod_pct_df': modification_percentage_summary_df,
@@ -775,6 +776,7 @@ def main():
                             'sample_sgRNA_intervals': sgRNA_intervals,
                             'plot_path': plot_path,
                             'title': modification_type,
+                            'amplicon_name': amplicon_name,
                         }
                         debug('Plotting allele modification heatmap for {0}'.format(amplicon_name))
                         plot(
@@ -806,6 +808,7 @@ def main():
                             'sample_sgRNA_intervals': sgRNA_intervals,
                             'plot_path': plot_path,
                             'title': modification_type,
+                            'amplicon_name': amplicon_name,
                         }
                         debug('Plotting allele modification line plot for {0}'.format(amplicon_name))
                         plot(

@@ -8,7 +8,6 @@ import os
 from copy import deepcopy
 import sys
 import traceback
-import argparse
 from CRISPResso2 import CRISPRessoShared
 from CRISPResso2.CRISPRessoReports import CRISPRessoReport
 
@@ -31,13 +30,6 @@ def check_library(library_name):
                 error('You need to install %s module to use CRISPRessoCompare!' % library_name)
                 sys.exit(1)
 
-
-def get_amplicon_output(amplicon_name, output_folder):
-    profile_file=os.path.join(output_folder, amplicon_name+'.effect_vector_combined.txt')
-    if os.path.exists(quantification_file) and profile_file:
-        return quantification_file, profile_file
-    else:
-        raise CRISPRessoShared.OutputFolderIncompleteException('The folder %s is not a valid CRISPResso2 output folder. Cannot find profile file %s for amplicon %s.' % (output_folder, profile_file, amplicon_name))
 
 def parse_profile(profile_file):
     return np.loadtxt(profile_file, skiprows=1)
@@ -69,6 +61,35 @@ def normalize_name(name, output_folder_1, output_folder_2):
         )
     else:
         return name
+
+
+def get_matching_allele_files(run_info_1, run_info_2):
+    def get_amplicon_info(run_info):
+        return {
+            amplicon['sequence']: {
+                'name': amplicon_name,
+                'guides': amplicon['sgRNA_orig_sequences'],
+                'cut_points': amplicon['sgRNA_cut_points'],
+                'allele_files': amplicon['allele_frequency_files'],
+            }
+            for amplicon_name, amplicon in run_info['results']['refs'].items()
+        }
+    amplicons_1 = get_amplicon_info(run_info_1)
+    amplicons_2 = get_amplicon_info(run_info_2)
+    matching_allele_files = []
+    for sequence_1 in amplicons_1:
+        if sequence_1 in amplicons_2:
+            if amplicons_1[sequence_1]['cut_points'] != amplicons_2[sequence_1]['cut_points']:
+                warn(f'Report 1 has different cut points than report 2 for amplicon {amplicons_1[sequence_1]["name"]}, skipping comparison')
+                continue
+            guides_1 = set(amplicons_1[sequence_1]['guides'])
+            guides_2 = set(amplicons_2[sequence_1]['guides'])
+            if not guides_1 & guides_2:
+                warn(f'Report 1 has no shared guides with report 2 for amplicon {amplicons_1[sequence_1]["name"]}, skipping comparison')
+                continue
+            matching_allele_files.extend((f_1, f_2) for f_1, f_2 in zip(amplicons_1[sequence_1]['allele_files'], amplicons_2[sequence_1]['allele_files']))
+
+    return matching_allele_files
 
 
 def main():
@@ -142,7 +163,7 @@ def main():
 
         log_filename = _jp('CRISPRessoCompare_RUNNING_LOG.txt')
         logger.addHandler(logging.FileHandler(log_filename))
-        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('CRISPRessoCompare_status.json')))
+        logger.addHandler(CRISPRessoShared.StatusHandler(os.path.join(OUTPUT_DIRECTORY, 'CRISPRessoCompare_status.json')))
 
         with open(log_filename, 'w+') as outfile:
             outfile.write('[Command used]:\nCRISPRessoCompare %s\n\n[Execution log]:\n' % ' '.join(sys.argv))
@@ -238,7 +259,7 @@ def main():
             crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'Editing efficiency comparison'
             crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Figure 1: Comparison for amplicon ' + amplicon_name + '; Left: Percentage of modified and unmodified reads in each sample; Right: relative percentage of modified and unmodified reads'
             output_1 = os.path.join(args.crispresso_output_folder_1, run_info_1['running_info']['report_filename'])
-            output_2 = os.path.join(args.crispresso_output_folder_1, run_info_2['running_info']['report_filename'])
+            output_2 = os.path.join(args.crispresso_output_folder_2, run_info_2['running_info']['report_filename'])
             crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = []
             if os.path.isfile(output_1):
                 crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name].append((sample_1_name +' output', os.path.relpath(output_1, OUTPUT_DIRECTORY)))
@@ -350,62 +371,56 @@ def main():
 
 
             #create merged heatmaps for each cut site
-            allele_files_1 = amplicon_info_1[amplicon_name]['allele_files']
-            allele_files_2 = amplicon_info_2[amplicon_name]['allele_files']
-            for allele_file_1 in allele_files_1:
-                allele_file_1_name = os.path.split(allele_file_1)[1] #get file part of path
-                for allele_file_2 in allele_files_2:
-                    allele_file_2_name = os.path.split(allele_file_2)[1] #get file part of path
-                    #if files are the same (same amplicon, cut site, guide), run comparison
-                    if allele_file_1_name == allele_file_2_name:
-                        df1 = pd.read_csv(allele_file_1, sep="\t")
-                        df2 = pd.read_csv(allele_file_2, sep="\t")
+            matching_allele_files = get_matching_allele_files(run_info_1, run_info_2)
+            for allele_file_1, allele_file_2 in matching_allele_files:
+                df1 = pd.read_csv(os.path.join(args.crispresso_output_folder_1, allele_file_1), sep="\t")
+                df2 = pd.read_csv(os.path.join(args.crispresso_output_folder_2, allele_file_2), sep="\t")
 
-                        #find unmodified reference for comparison (if it exists)
-                        ref_seq_around_cut = ""
-                        if len(df1.loc[df1['Reference_Sequence'].str.contains('-')==False]) > 0:
-                            ref_seq_around_cut = df1.loc[df1['Reference_Sequence'].str.contains('-')==False]['Reference_Sequence'].iloc[0]
-                        #otherwise figure out which sgRNA was used for this comparison
-                        elif len(df2.loc[df2['Reference_Sequence'].str.contains('-')==False]) > 0:
-                            ref_seq_around_cut = df2.loc[df2['Reference_Sequence'].str.contains('-')==False]['Reference_Sequence'].iloc[0]
-                        else:
-                            seq_len = df2[df2['Unedited']==True]['Reference_Sequence'].iloc[0]
-                            for sgRNA_interval, cut_point in zip(sgRNA_intervals, cut_points):
-                                sgRNA_seq = consensus_sequence[sgRNA_interval[0]:sgRNA_interval[1]]
-                                if sgRNA_seq in allele_file_1_name:
-                                    this_sgRNA_seq = sgRNA_seq
-                                    this_cut_point = cut_point
-                                    ref_seq_around_cut=consensus_sequence[max(0, this_cut_point-args.offset_around_cut_to_plot+1):min(seq_len, cut_point+args.offset_around_cut_to_plot+1)]
-                                    break
+                #find unmodified reference for comparison (if it exists)
+                ref_seq_around_cut = ""
+                if len(df1.loc[df1['Reference_Sequence'].str.contains('-')==False]) > 0:
+                    ref_seq_around_cut = df1.loc[df1['Reference_Sequence'].str.contains('-')==False]['Reference_Sequence'].iloc[0]
+                #otherwise figure out which sgRNA was used for this comparison
+                elif len(df2.loc[df2['Reference_Sequence'].str.contains('-')==False]) > 0:
+                    ref_seq_around_cut = df2.loc[df2['Reference_Sequence'].str.contains('-')==False]['Reference_Sequence'].iloc[0]
+                else:
+                    seq_len = df2[df2['Unedited']==True]['Reference_Sequence'].iloc[0]
+                    for sgRNA_interval, cut_point in zip(sgRNA_intervals, cut_points):
+                        sgRNA_seq = consensus_sequence[sgRNA_interval[0]:sgRNA_interval[1]]
+                        if sgRNA_seq in allele_file_1:
+                            this_sgRNA_seq = sgRNA_seq
+                            this_cut_point = cut_point
+                            ref_seq_around_cut=consensus_sequence[max(0, this_cut_point-args.offset_around_cut_to_plot+1):min(seq_len, cut_point+args.offset_around_cut_to_plot+1)]
+                            break
 
-                        merged = pd.merge(df1, df2, on = ['Aligned_Sequence', 'Reference_Sequence', 'Unedited', 'n_deleted', 'n_inserted', 'n_mutated'], suffixes=('_' + sample_1_name, '_'+sample_2_name), how='outer')
-                        quant_cols = ['#Reads_'+sample_1_name, '%Reads_'+sample_1_name, '#Reads_'+sample_2_name, '%Reads_'+sample_2_name]
-                        merged[quant_cols] = merged[quant_cols].fillna(0)
-                        lfc_error =0.1
-                        merged['each_LFC'] = np.log2(((merged['%Reads_'+sample_1_name]+lfc_error)/(merged['%Reads_'+sample_2_name]+lfc_error)).astype(float)).replace([np.inf, np.NaN], 0)
-                        merged = merged.sort_values(['%Reads_'+sample_1_name, 'Reference_Sequence', 'n_deleted', 'n_inserted', 'n_mutated'], ascending=False)
-                        merged = merged.reset_index(drop=True).set_index('Aligned_Sequence')
-                        output_root = allele_file_1_name.replace(".txt", "")
-                        allele_comparison_file = _jp(output_root+'.txt')
-                        merged.to_csv(allele_comparison_file, sep="\t", index=None)
+                merged = pd.merge(df1, df2, on = ['Aligned_Sequence', 'Reference_Sequence', 'Unedited', 'n_deleted', 'n_inserted', 'n_mutated'], suffixes=('_' + sample_1_name, '_'+sample_2_name), how='outer')
+                quant_cols = ['#Reads_'+sample_1_name, '%Reads_'+sample_1_name, '#Reads_'+sample_2_name, '%Reads_'+sample_2_name]
+                merged[quant_cols] = merged[quant_cols].fillna(0)
+                lfc_error =0.1
+                merged['each_LFC'] = np.log2(((merged['%Reads_'+sample_1_name]+lfc_error)/(merged['%Reads_'+sample_2_name]+lfc_error)).astype(float)).replace([np.inf, np.NaN], 0)
+                merged = merged.sort_values(['%Reads_'+sample_1_name, 'Reference_Sequence', 'n_deleted', 'n_inserted', 'n_mutated'], ascending=False)
+                merged = merged.reset_index(drop=True).set_index('Aligned_Sequence')
+                args.crispresso_output_folder_root = os.path.split(allele_file_1)[1].replace(".txt", "")
+                allele_comparison_file = _jp(args.crispresso_output_folder_root+'.txt')
+                merged.to_csv(allele_comparison_file, sep="\t", index=None)
 
-                        plot_name = '3.'+output_root+'_top'
-                        CRISPRessoPlot.plot_alleles_table_compare(ref_seq_around_cut, merged.sort_values(['each_LFC'], ascending=True), sample_1_name, sample_2_name, _jp(plot_name),
-                                    MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot, MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot, SAVE_ALSO_PNG=save_png)
-                        crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
-                        crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'Alleles enriched in ' + sample_1_name
-                        crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Distribution comparison of alleles. Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site. '+ \
-                        'The proportion and number of reads is shown for each sample on the right, with the values for ' + sample_1_name + ' followed by the values for ' + sample_2_name +'. Alleles are sorted for enrichment in ' + sample_1_name+'.'
-                        crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Allele comparison table', os.path.basename(allele_comparison_file))]
+                plot_name = '3.'+args.crispresso_output_folder_root+'_top'
+                CRISPRessoPlot.plot_alleles_table_compare(ref_seq_around_cut, merged.sort_values(['each_LFC'], ascending=True), sample_1_name, sample_2_name, _jp(plot_name),
+                            MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot, MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot, SAVE_ALSO_PNG=save_png)
+                crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
+                crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'Alleles enriched in ' + sample_1_name
+                crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Distribution comparison of alleles. Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site. '+ \
+                'The proportion and number of reads is shown for each sample on the right, with the values for ' + sample_1_name + ' followed by the values for ' + sample_2_name +'. Alleles are sorted for enrichment in ' + sample_1_name+'.'
+                crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Allele comparison table', os.path.basename(allele_comparison_file))]
 
-                        plot_name = '3.'+output_root+'_bottom'
-                        CRISPRessoPlot.plot_alleles_table_compare(ref_seq_around_cut, merged.sort_values(['each_LFC'], ascending=False), sample_1_name, sample_2_name, _jp(plot_name),
-                                    MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot, MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot, SAVE_ALSO_PNG=save_png)
-                        crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
-                        crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'Alleles enriched in ' + sample_2_name
-                        crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Distribution comparison of alleles. Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site. '+ \
-                        'The proportion and number of reads is shown for each sample on the right, with the values for ' + sample_1_name + ' followed by the values for ' + sample_2_name +'. Alleles are sorted for enrichment in ' + sample_2_name+'.'
-                        crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Allele comparison table', os.path.basename(allele_comparison_file))]
+                plot_name = '3.'+args.crispresso_output_folder_root+'_bottom'
+                CRISPRessoPlot.plot_alleles_table_compare(ref_seq_around_cut, merged.sort_values(['each_LFC'], ascending=False), sample_1_name, sample_2_name, _jp(plot_name),
+                            MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot, MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot, SAVE_ALSO_PNG=save_png)
+                crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
+                crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'Alleles enriched in ' + sample_2_name
+                crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Distribution comparison of alleles. Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site. '+ \
+                'The proportion and number of reads is shown for each sample on the right, with the values for ' + sample_1_name + ' followed by the values for ' + sample_2_name +'. Alleles are sorted for enrichment in ' + sample_2_name+'.'
+                crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Allele comparison table', os.path.basename(allele_comparison_file))]
 
         debug('Calculating significant base counts...', {'percent_complete': 95})
         sig_counts_filename = _jp('CRISPRessoCompare_significant_base_counts.txt')
