@@ -71,7 +71,7 @@ ___________________________________
 
         parser.add_argument('--debug', help='Show debug messages', action='store_true')
         parser.add_argument('-v', '--verbosity', type=int, help='Verbosity level of output to the console (1-4), 4 is the most verbose', default=3)
-        
+
         # CRISPRessoPro params
         parser.add_argument('--use_matplotlib', action='store_true',
                         help='Use matplotlib for plotting instead of plotly/d3 when CRISPRessoPro is installed')
@@ -98,7 +98,7 @@ ___________________________________
 
         log_filename=_jp('CRISPRessoAggregate_RUNNING_LOG.txt')
         logger.addHandler(logging.FileHandler(log_filename))
-        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('CRISPRessoAggregate_status.json')))
+        logger.addHandler(CRISPRessoShared.StatusHandler(os.path.join(OUTPUT_DIRECTORY, 'CRISPRessoAggregate_status.json')))
 
         with open(log_filename, 'w+') as outfile:
               outfile.write('[Command used]:\n%s\n\n[Execution log]:\n' % ' '.join(sys.argv))
