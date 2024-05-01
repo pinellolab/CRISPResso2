@@ -196,7 +196,7 @@ def main():
                 batch_params[arg] = getattr(args, arg)
             else:
                 if (getattr(args, arg) is not None):
-                    batch_params[arg].fillna(value=getattr(args, arg), inplace=True)
+                    batch_params.fillna(value={arg: getattr(args, arg)}, inplace=True)
 
         # assert that all names are unique
         # and clean names

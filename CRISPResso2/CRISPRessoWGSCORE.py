@@ -582,7 +582,7 @@ def main():
             cols_to_print = ["chr_id", "bpstart", "bpend", "sgRNA", "Expected_HDR", "Coding_sequence", "sequence", "n_reads", "bam_file_with_reads_in_region", "fastq_file_trimmed_reads_in_region"]
             if args.gene_annotations:
                 cols_to_print.append('gene_overlapping')
-            df_regions.fillna('NA').to_csv(report_reads_aligned_filename, sep='\t', columns = cols_to_print, index_label="Name")
+            df_regions.infer_objects(copy=False).fillna('NA').to_csv(report_reads_aligned_filename, sep='\t', columns = cols_to_print, index_label="Name")
 
             #save progress
             crispresso2_info['running_info']['finished_steps']['generation_of_fastq_files_for_each_amplicon'] = True
