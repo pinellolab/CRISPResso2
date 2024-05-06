@@ -14,6 +14,7 @@ from functools import partial
 from inspect import getmodule, stack
 import numpy as np
 import pandas as pd
+import traceback
 
 def get_max_processes():
     return mp.cpu_count()
@@ -271,7 +272,13 @@ def run_plot(plot_func, plot_args, num_processes, process_futures, process_pool)
     -------
     None
     """
-    if num_processes > 1:
-        process_futures[process_pool.submit(plot_func, **plot_args)] = (plot_func, plot_args)
-    else:
-        plot_func(**plot_args)
+    logger = logging.getLogger(getmodule(stack()[1][0]).__name__)
+    try:
+        if num_processes > 1:
+            process_futures[process_pool.submit(plot_func, **plot_args)] = (plot_func, plot_args)
+        else:
+            plot_func(**plot_args)
+    except Exception as e:
+        logger.warn(f"Plot error {e}, skipping plot \n")
+        logger.debug(traceback.format_exc())
+

@@ -588,7 +588,6 @@ def make_multi_report(
             'datas': [],
             'htmls': [],
         }
-
     for html in sub_html_files:
         sub_html_files[html] = crispresso_data_path + sub_html_files[html]
     with open(crispresso_multi_report_file, 'w', encoding="utf-8") as outfile:
