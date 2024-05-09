@@ -3785,6 +3785,7 @@ def main():
                         'sgRNA_intervals': sgRNA_intervals,
                         'sgRNA_names': sgRNA_names,
                         'sgRNA_mismatches': sgRNA_mismatches,
+                        'sgRNA_sequences': sgRNA_sequences,
                         'quantification_window_idxs': include_idxs_list,
                         'custom_colors': custom_config["colors"],
                     }
@@ -3833,6 +3834,7 @@ def main():
                             'sgRNA_intervals': new_sgRNA_intervals,
                             'sgRNA_names': sgRNA_names,
                             'sgRNA_mismatches': sgRNA_mismatches,
+                            'sgRNA_sequences': [sgRNA],
                             'quantification_window_idxs': new_include_idx,
                             'custom_colors': custom_config["colors"],
                         }
@@ -4184,6 +4186,7 @@ def main():
                     sgRNA_intervals = refs[ref_names_for_hdr[0]]['sgRNA_intervals']
                     sgRNA_names = refs[ref_names_for_hdr[0]]['sgRNA_names']
                     sgRNA_mismatches = refs[ref_names_for_hdr[0]]['sgRNA_mismatches']
+                    sgRNA_sequences = refs[ref_names_for_hdr[0]]['sgRNA_sequences']
 #                    include_idxs_list = refs[ref_names_for_hdr[0]]['include_idxs']
                     include_idxs_list = [] # the quantification windows may be different between different amplicons
 
@@ -4204,6 +4207,7 @@ def main():
                         'quantification_window_idxs': include_idxs_list,
                         'sgRNA_names': sgRNA_names,
                         'sgRNA_mismatches': sgRNA_mismatches,
+                        'sgRNA_sequences': sgRNA_sequences,
                         'custom_colors': custom_config["colors"],
                     }
                     debug('Plotting HDR nucleotide quilt')
@@ -4789,6 +4793,7 @@ def main():
                 sgRNA_intervals = refs[ref_names[0]]['sgRNA_intervals']
                 sgRNA_names = refs[ref_names[0]]['sgRNA_names']
                 sgRNA_mismatches = refs[ref_names[0]]['sgRNA_mismatches']
+                sgRNA_sequences = refs[ref_names[0]]['sgRNA_sequences']
                 include_idxs_list = refs[ref_names[0]]['include_idxs']
 
                 plot_root = _jp('11a.Prime_editing_nucleotide_percentage_quilt')
@@ -4801,6 +4806,7 @@ def main():
                     'sgRNA_intervals': sgRNA_intervals,
                     'sgRNA_names': sgRNA_names,
                     'sgRNA_mismatches': sgRNA_mismatches,
+                    'sgRNA_sequences': sgRNA_sequences,
                     'quantification_window_idxs': include_idxs_list,
                     'custom_colors': custom_config['colors']
                 }
@@ -4861,6 +4867,7 @@ def main():
                         'sgRNA_intervals': new_sgRNA_intervals,
                         'sgRNA_names': sgRNA_names,
                         'sgRNA_mismatches': sgRNA_mismatches,
+                        'sgRNA_sequences': [sgRNA],
                         'quantification_window_idxs': new_include_idx,
                         'custom_colors': custom_config['colors']
                     }

@@ -58,7 +58,7 @@
                 <h5 id="CRISPResso2_Batch_Output">{{report_name}}</h5>
               </div>
               <div class='card-body p-0'>
-                <div class="list-group list-group-flush">
+                <div class="list-group list-group-flush" style="max-height: 25vh; overflow-y: scroll;">
               {% for run_name in run_names %}
 	      <a href="{{sub_html_files[run_name]}}" class="list-group-item list-group-item-action" id="{{run_name}}">{{run_name}}</a>
                 {% endfor %}

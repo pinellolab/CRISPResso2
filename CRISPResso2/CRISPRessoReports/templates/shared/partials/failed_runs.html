@@ -9,7 +9,7 @@
     </div>
 
     <div class='card-body p-0'>
-      <div class="list-group list-group-flush">
+      <div class="list-group list-group-flush" style="max-height: 25vh; overflow-y: scroll;">
         {% for failed_run in failed_runs %}
         {# Toggle the description visibility on click #}
         <a href="javascript:void(0)" class="list-group-item list-group-item-action failed-run-name bg-light text-dark"
