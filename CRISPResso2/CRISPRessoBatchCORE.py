@@ -904,7 +904,12 @@ def main():
                 debug('CRISPResso batch results:')
                 for future in process_futures:
                     debug('future: ' + str(future))
-            future_results = [f.result() for f in process_futures] #required to raise exceptions thrown from within future
+            for future in process_futures:
+                try:
+                    future.result()
+                except Exception as e:
+                    logger.warning('Error in plot pool: %s' % e)
+                    logger.debug(traceback.format_exc())
             process_pool.shutdown()
 
         if not args.suppress_report:
