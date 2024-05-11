@@ -3834,7 +3834,7 @@ def main():
                             'sgRNA_intervals': new_sgRNA_intervals,
                             'sgRNA_names': sgRNA_names,
                             'sgRNA_mismatches': sgRNA_mismatches,
-                            'sgRNA_sequences': [sgRNA],
+                            'sgRNA_sequences': sgRNA_sequences,
                             'quantification_window_idxs': new_include_idx,
                             'custom_colors': custom_config["colors"],
                         }
@@ -4867,7 +4867,7 @@ def main():
                         'sgRNA_intervals': new_sgRNA_intervals,
                         'sgRNA_names': sgRNA_names,
                         'sgRNA_mismatches': sgRNA_mismatches,
-                        'sgRNA_sequences': [sgRNA],
+                        'sgRNA_sequences': sgRNA_sequences,
                         'quantification_window_idxs': new_include_idx,
                         'custom_colors': custom_config['colors']
                     }
