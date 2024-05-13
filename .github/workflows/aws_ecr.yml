@@ -38,7 +38,7 @@ jobs:
         AWS_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
         ECR_REPOSITORY: 'crispresso2'
         AWS_REGION: 'us-east-1'
-        IMAGE_TAG: ${{ steps.get_version.outputs.version }}
+        IMAGE_TAG: v${{ steps.get_version.outputs.version }}
       run: |
         # Build a docker container and push it to ECR 
         docker build -t $AWS_ACCOUNT.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG .
