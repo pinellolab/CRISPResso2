@@ -261,6 +261,10 @@ def make_batch_report_from_folder(crispressoBatch_report_file, crispresso2_info,
         allele_modification_heatmap_plot['datas'] = crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_datas']
     else:
         allele_modification_heatmap_plot['datas'] = {}
+    if 'allele_modification_heatmap_plot_divs' in crispresso2_info['results']['general_plots']:
+        allele_modification_heatmap_plot['divs'] = crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_divs']
+    else:
+        allele_modification_heatmap_plot['divs'] = {}
 
     allele_modification_line_plot = {}
     if 'allele_modification_line_plot_names' in crispresso2_info['results']['general_plots']:
@@ -283,6 +287,10 @@ def make_batch_report_from_folder(crispressoBatch_report_file, crispresso2_info,
         allele_modification_line_plot['datas'] = crispresso2_info['results']['general_plots']['allele_modification_line_plot_datas']
     else:
         allele_modification_line_plot['datas'] = {}
+    if 'allele_modification_line_plot_divs' in crispresso2_info['results']['general_plots']:
+        allele_modification_line_plot['divs'] = crispresso2_info['results']['general_plots']['allele_modification_line_plot_divs']
+    else:
+        allele_modification_line_plot['divs'] = {}
 
     allele_modification_heatmap_plot['htmls'] = {}
     for heatmap_plot_name, heatmap_plot_path in allele_modification_heatmap_plot['paths'].items():
@@ -572,6 +580,7 @@ def make_multi_report(
         ('titles', list),
         ('labels', dict),
         ('datas', dict),
+        ('divs', dict)
     ]
     for dictionary in dictionaries:
         for key, default_type in keys_and_default_types:
@@ -618,11 +627,13 @@ def make_multi_report(
             allele_modification_heatmap_plot_titles=allele_modification_heatmap_plot['titles'],
             allele_modification_heatmap_plot_labels=allele_modification_heatmap_plot['labels'],
             allele_modification_heatmap_plot_datas=allele_modification_heatmap_plot['datas'],
+            allele_modification_heatmap_plot_divs=allele_modification_heatmap_plot['divs'],
             allele_modification_line_plot_names=allele_modification_line_plot['names'],
             allele_modification_line_plot_htmls=allele_modification_line_plot['htmls'],
             allele_modification_line_plot_titles=allele_modification_line_plot['titles'],
             allele_modification_line_plot_labels=allele_modification_line_plot['labels'],
             allele_modification_line_plot_datas=allele_modification_line_plot['datas'],
+            allele_modification_line_plot_divs=allele_modification_line_plot['divs'],
             C2PRO_INSTALLED=C2PRO_INSTALLED,
         ))
 

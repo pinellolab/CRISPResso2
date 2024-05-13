@@ -58,7 +58,7 @@
                 <h5 id="CRISPResso2_Batch_Output">{{report_name}}</h5>
               </div>
               <div class='card-body p-0'>
-                <div class="list-group list-group-flush">
+                <div class="list-group list-group-flush" style="max-height: 25vh; overflow-y: scroll;">
               {% for run_name in run_names %}
 	      <a href="{{sub_html_files[run_name]}}" class="list-group-item list-group-item-action" id="{{run_name}}">{{run_name}}</a>
                 {% endfor %}
@@ -147,10 +147,10 @@
                     <h5>{{allele_modification_heatmap_plot_titles[heatmap_plot_name]}}</h5>
                     <ul class="nav nav-tabs justify-content-center card-header-tabs" id="aln-tab" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <a class="nav-link active" data-bs-toggle="tab" id="{{modification_type}}-heatmap-tab" data-bs-target="#{{heatmap_plot_name}}" role="tab" aria-controls="{{heatmap_plot_name}}" aria-selected="true">Heatmap</a>
+                            <a class="nav-link active" data-bs-toggle="tab" id="{{heatmap_plot_name}}-heatmap-tab" data-bs-target="#{{heatmap_plot_name}}" role="tab" aria-controls="{{heatmap_plot_name}}" aria-selected="true">Heatmap</a>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <a class="nav-link" data-bs-toggle="tab" id="{{modification_type}}-line-tab" data-bs-target="#{{line_plot_name}}" role="tab" aria-controls="{{line_plot_name}}" aria-selected="false">Line</a>
+                            <a class="nav-link" data-bs-toggle="tab" id="{{line_plot_name}}-line-tab" data-bs-target="#{{line_plot_name}}" role="tab" aria-controls="{{line_plot_name}}" aria-selected="false">Line</a>
                         </li>
                     </ul>
                 </div>
@@ -175,13 +175,13 @@
               </div>
               <script type="application/javascript">
                document.addEventListener("DOMContentLoaded", () => {
-                   $("#{{modification_type}}-heatmap-tab").on("shown.bs.tab", (e) => {
-                       let plot = document.getElementById("allele-modification-heatmap-{{modification_type}}");
+                   $("#{{heatmap_plot_name}}-heatmap-tab").on("shown.bs.tab", (e) => {
+                       let plot = document.getElementById("{{ allele_modification_heatmap_plot_divs[heatmap_plot_name] }}" );
                        Plotly.Plots.resize(plot);
                        window.dispatchEvent(new Event("resize"));
                    });
-                   $("#{{modification_type}}-line-tab").on("shown.bs.tab", (e) => {
-                       let plot = document.getElementById("allele-modification-line-{{modification_type}}");
+                   $("#{{line_plot_name}}-line-tab").on("shown.bs.tab", (e) => {
+                       let plot = document.getElementById("{{ allele_modification_line_plot_divs[line_plot_name] }}");
                        Plotly.Plots.resize(plot);
                        window.dispatchEvent(new Event("resize"));
                    });
