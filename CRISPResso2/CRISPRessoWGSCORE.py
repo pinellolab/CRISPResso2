@@ -217,7 +217,7 @@ def extract_reads(row):
 
         info('Extracting reads in:%s and creating .bam file: %s' % (region, row.bam_file_with_reads_in_region))
 
-        cmd=r'''samtools view -b -F 4 --reference %s %s %s > %s ''' % (row.reference_file, row.original_bam, region, row.bam_file_with_reads_in_region)
+        cmd=r'''samtools view -b -F 3844 --reference %s %s %s > %s ''' % (row.reference_file, row.original_bam, region, row.bam_file_with_reads_in_region)
         sb.call(cmd, shell=True)
 
         cmd=r'''samtools index %s ''' % (row.bam_file_with_reads_in_region)
