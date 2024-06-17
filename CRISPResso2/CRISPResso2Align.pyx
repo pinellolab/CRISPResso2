@@ -17,7 +17,7 @@ cdef extern from "stdlib.h":
 cdef extern from "Python.h":
     ctypedef void PyObject
 
-ctypedef long DTYPE_INT
+ctypedef long DTYPE_LONG
 
 cdef size_t UP = 1, LEFT = 2, DIAG = 3, NONE = 4
 cdef size_t MARRAY = 1, IARRAY = 2, JARRAY = 3
@@ -36,7 +36,7 @@ def read_matrix(path):
     The score for a 'C' changing to an 'A' is stored in the matrix as:
         mat[ord('C'), ord('A')] = score
     """
-    cdef np.ndarray[DTYPE_INT, ndim=2] a
+    cdef np.ndarray[DTYPE_LONG, ndim=2] a
     cdef size_t ai = 0, i
     cdef int v, mat_size
 
@@ -48,7 +48,7 @@ def read_matrix(path):
             headers = [ord(x) for x in line.split(' ') if x]
         mat_size = max(headers) + 1
 
-        a = np.zeros((mat_size, mat_size), dtype=int)
+        a = np.zeros((mat_size, mat_size), dtype=long)
 
         line = fh.readline()
         while line:
@@ -70,7 +70,7 @@ def make_matrix(match_score=5, mismatch_score=-4, n_mismatch_score=-2, n_match_s
     n_mismatch_score: score for matching a nucleotide with 'N'
     n_match_score: score for 'N' matching an 'N'
     """
-    cdef np.ndarray[DTYPE_INT, ndim=2] a
+    cdef np.ndarray[DTYPE_LONG, ndim=2] a
     cdef size_t ai = 0, i
     cdef int v, mat_size
 
@@ -80,7 +80,7 @@ def make_matrix(match_score=5, mismatch_score=-4, n_mismatch_score=-2, n_match_s
 
     nuc_ords = [ord(x) for x in ['A','T','C','G']]
 
-    a = np.zeros((mat_size, mat_size), dtype=int)
+    a = np.zeros((mat_size, mat_size), dtype=long)
 
     for nuc in nuc_ords:
       for nuc2 in nuc_ords:
@@ -100,8 +100,8 @@ def make_matrix(match_score=5, mismatch_score=-4, n_mismatch_score=-2, n_match_s
 
 @cython.boundscheck(False)
 @cython.nonecheck(False)
-def global_align(str pystr_seqj, str pystr_seqi, np.ndarray[DTYPE_INT, ndim=2] matrix,
-          np.ndarray[DTYPE_INT,ndim=1] gap_incentive, int gap_open=-1,
+def global_align(str pystr_seqj, str pystr_seqi, np.ndarray[DTYPE_LONG, ndim=2] matrix,
+          np.ndarray[DTYPE_LONG,ndim=1] gap_incentive, int gap_open=-1,
           int gap_extend=-1):
     """
     Global sequence alignment (needleman-wunsch) on seq i and j.
