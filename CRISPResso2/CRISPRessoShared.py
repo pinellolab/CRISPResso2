@@ -1449,8 +1449,8 @@ def get_amplicon_info_for_guides(ref_seq, guides, guide_mismatches, guide_names,
     else:
         this_sgRNA_plot_idxs.append(range(ref_seq_length))
 
-    this_include_idxs = np.sort(list(this_include_idxs))
-    this_exclude_idxs = np.sort(list(this_exclude_idxs))
+    this_include_idxs = np.sort(list(this_include_idxs)).tolist()
+    this_exclude_idxs = np.sort(list(this_exclude_idxs)).tolist()
 
     return this_sgRNA_sequences, this_sgRNA_intervals, this_sgRNA_cut_points, this_sgRNA_plot_cut_points, this_sgRNA_plot_idxs, this_sgRNA_mismatches, this_sgRNA_names, this_sgRNA_include_idxs, this_include_idxs, this_exclude_idxs
 
