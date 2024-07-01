@@ -1218,6 +1218,26 @@ def to_numeric_ignore_columns(df, ignore_columns):
             df[col] = df[col].apply(pd.to_numeric, errors='raise')
     return df
 
+def get_amino_acids_from_seq(seq):
+    """Get the amino acids from a sequence.
+
+    Parameters
+    ----------
+    seq : str
+        The sequence of nucleotide bases.
+
+    Returns
+    -------
+    str
+        The sequence of amino acids.
+    """
+    amino_acids = []
+    while len(seq) > 2:
+        codon, seq = seq[:3], seq[3:]
+        amino_acids.append(CRISPRessoShared.CODON_TO_AMINO_ACID[codon])
+    return amino_acids
+        
+
 
 def main():
 
@@ -4487,6 +4507,12 @@ def main():
                     crispresso2_info['results']['refs'][ref_name]['plot_9_roots'].append(os.path.basename(fig_filename_root))
                     crispresso2_info['results']['refs'][ref_name]['plot_9_captions'].append("Figure 9: Visualization of the distribution of identified alleles around the cleavage site for the " + sgRNA_legend + ". Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site.")
                     crispresso2_info['results']['refs'][ref_name]['plot_9_datas'].append([('Allele frequency table', os.path.basename(allele_filename))])
+
+                    # amino acid plot
+                    if args.coding_seq:
+                        breakpoint()
+
+                        
 
                 if not args.crispresso1_mode and args.base_editor_output:
                     ###guide-specific base editor plots
