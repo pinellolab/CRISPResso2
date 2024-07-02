@@ -46,7 +46,7 @@ jobs:
       with:
         repository: edilytics/CRISPResso2_tests
         ref: 'cole/fix-cython'
-        # ref: '<BRANCH-NAME>' # Use this to specify a branch other than master
+        ref: 'mckay/pooled_mixed_mode' # Use this to specify a branch other than master
 
     - name: Run Basic
       run: |
@@ -72,6 +72,16 @@ jobs:
       run: |
         make pooled test
 
+    - name: Run Pooled Mixed Mode
+      if: success() || failure()
+      run: |
+        make pooled-mixed-mode test
+
+    - name: Run Pooled Mixed Mode with Genome
+      if: success() || failure()
+      run: |
+        make compare test
+
     - name: Run Pooled Paired Sim
       if: success() || failure()
       run: |
@@ -86,3 +96,5 @@ jobs:
       if: success() || failure()
       run: |
         make compare test
+
+    
