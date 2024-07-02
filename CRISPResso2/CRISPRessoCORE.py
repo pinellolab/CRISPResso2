@@ -4429,6 +4429,11 @@ def main():
             crispresso2_info['results']['refs'][ref_name]['plot_9_roots'] = []
             crispresso2_info['results']['refs'][ref_name]['plot_9_captions'] = []
             crispresso2_info['results']['refs'][ref_name]['plot_9_datas'] = []
+
+            crispresso2_info['results']['refs'][ref_name]['plot_9a_roots'] = []
+            crispresso2_info['results']['refs'][ref_name]['plot_9a_captions'] = []
+            crispresso2_info['results']['refs'][ref_name]['plot_9a_datas'] = []
+            
             crispresso2_info['results']['refs'][ref_name]['allele_frequency_files'] = []
 
             crispresso2_info['results']['refs'][ref_name]['plot_10d_roots'] = []
@@ -4509,8 +4514,35 @@ def main():
                     crispresso2_info['results']['refs'][ref_name]['plot_9_datas'].append([('Allele frequency table', os.path.basename(allele_filename))])
 
                     # amino acid plot
-                    if args.coding_seq:
+                    if refs[ref_name]['contains_coding_seq']:
                         breakpoint()
+
+                        plot_9a_input = {
+                            'reference_seq': ref_seq_around_cut,
+                            'df_alleles': df_to_plot,
+                            'fig_filename_root': fig_filename_root,
+                            'custom_colors': custom_config["colors"],
+                            'MIN_FREQUENCY': args.min_frequency_alleles_around_cut_to_plot,
+                            'MAX_N_ROWS': args.max_rows_alleles_around_cut_to_plot,
+                            'SAVE_ALSO_PNG': save_png,
+                            'plot_cut_point': plot_cut_point,
+                            'sgRNA_intervals': new_sgRNA_intervals,
+                            'sgRNA_names': sgRNA_names,
+                            'sgRNA_mismatches': sgRNA_mismatches,
+                            'annotate_wildtype_allele': args.annotate_wildtype_allele,
+                        }
+
+                        df_to_plot.to_csv('df_to_plot.csv', sep='\t', header=True, index=True)
+                        
+
+                        debug('Plotting amino acids around cut for {0}'.format(ref_name))
+                        plot(CRISPRessoPlot.plot_amino_acid_table, plot_9a_input)
+                        crispresso2_info['results']['refs'][ref_name]['plot_9a_roots'].append(os.path.basename(fig_filename_root))
+                        crispresso2_info['results']['refs'][ref_name]['plot_9a_captions'].append("Figure 9a: This will be a visualization of amino acids coded for")
+                        crispresso2_info['results']['refs'][ref_name]['plot_9a_datas'].append([('Allele frequency table', os.path.basename(allele_filename))])
+
+
+                    
 
                         
 

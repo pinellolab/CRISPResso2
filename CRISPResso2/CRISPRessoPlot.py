@@ -2629,6 +2629,71 @@ def custom_heatmap(data, vmin=None, vmax=None, cmap=None, center=None, robust=Fa
     plotter.plot(ax, cbar_ax, kwargs)
     return ax
 
+def prep_amino_acid_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
+    """
+    Prepares a df of alleles for Plotting
+    input:
+    -df_alleles: pandas dataframe of alleles to plot
+    -reference_seq: sequence of unmodified reference
+    -MAX_N_ROWS: max number of rows to plot
+    -MIN_FREQUENCY: min frequency for a row to be plotted
+    returns:
+    -X: list of numbers representing nucleotides of the allele
+    -annot: list of nucleotides (letters) of the allele
+    -y_labels: list of labels for each row/allele
+    -insertion_dict: locations of insertions -- red squares will be drawn around these
+    -per_element_annot_kws: annotations for each cell (e.g. bold for substitutions, etc.)
+    -is_reference: list of booleans for whether the read is equal to the reference
+    """
+    # dna_to_numbers={'-':0,'A':1,'T':2,'C':3,'G':4,'N':5}
+    amino_acids_to_numbers = lambda x: 1
+    # seq_to_numbers= lambda seq: [dna_to_numbers[x] for x in seq]
+    seq_to_numbers = lambda seq: [amino_acids_to_numbers(x) for x in seq]
+    def seq_to_amino_acids(seq):
+        amino_acids = []
+        while len(seq) < 3:
+            codon, seq = seq[:3], seq[3:]
+            amino_acids.append(CRISPRessoShared.CODON_TO_AMINO_ACID[codon])
+
+            
+
+    X=[]
+    annot=[]
+    y_labels=[]
+    insertion_dict=defaultdict(list)
+    per_element_annot_kws=[]
+    is_reference=[]
+
+    re_find_indels=re.compile("(-*-)")
+    idx_row=0
+    for idx, row in df_alleles[df_alleles['%Reads']>=MIN_FREQUENCY][:MAX_N_ROWS].iterrows():
+        X.append(seq_to_numbers(idx.upper()))
+        annot.append(list(idx))
+
+        has_indels = False
+        for p in re_find_indels.finditer(row['Reference_Sequence']):
+            has_indels = True
+            insertion_dict[idx_row].append((p.start(), p.end()))
+
+        y_labels.append('%.2f%% (%d reads)' % (row['%Reads'], row['#Reads']))
+        if idx == reference_seq and not has_indels:
+            is_reference.append(True)
+        else:
+            is_reference.append(False)
+
+        idx_row+=1
+
+
+        idxs_sub= [i_sub for i_sub in range(len(idx)) if \
+                   (row['Reference_Sequence'][i_sub]!=idx[i_sub]) and \
+                   (row['Reference_Sequence'][i_sub]!='-') and\
+                   (idx[i_sub]!='-')]
+        to_append=np.array([{}]*len(idx), dtype=object)
+        to_append[ idxs_sub]={'weight':'bold', 'color':'black','size':16}
+        per_element_annot_kws.append(to_append)
+
+    return X, annot, y_labels, insertion_dict, per_element_annot_kws, is_reference
+
 def prep_alleles_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
     """
     Prepares a df of alleles for Plotting
@@ -3281,6 +3346,31 @@ def plot_nucleotide_quilt_from_folder(crispresso_output_folder,fig_filename_root
             plot_nucleotide_quilt(nuc_pct_df, mod_pct_df, fig_filename_root, save_also_png=False, sgRNA_intervals=new_sgRNA_intervals, min_text_pct=0.5, max_text_pct=0.95, quantification_window_idxs=None, sgRNA_names=None, sgRNA_mismatches=None, shade_unchanged=True)
             plot_count += 1
     print('Plotted ' + str(plot_count) + ' plots')
+
+def plot_amino_acid_table(reference_seq,df_alleles,fig_filename_root,custom_colors,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,plot_cut_point=True,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,annotate_wildtype_allele='****',**kwargs):
+    """
+    plots an allele table for a dataframe with allele frequencies
+    input:
+    reference_seq: the reference amplicon sequence to plot
+    df_alleles: merged dataframe (should include columns "#Reads','%Reads')
+    fig_filename: figure filename to plot (not including '.pdf' or '.png')
+    MIN_FREQUENCY: sum of alleles % must add to this to be plotted
+    MAX_N_ROWS: max rows to plot
+    SAVE_ALSO_PNG: whether to write png file as well
+    plot_cut_point: if false, won't draw 'predicted cleavage' line
+    sgRNA_intervals: locations where sgRNA is located
+    sgRNA_mismatches: array (for each sgRNA_interval) of locations in sgRNA where there are mismatches
+    sgRNA_names: array (for each sgRNA_interval) of names of sgRNAs (otherwise empty)
+    custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
+    annotate_wildtype_allele: string to add to the end of the wildtype allele (e.g. ** or '')
+    """
+    X, annot, y_labels, insertion_dict, per_element_annot_kws, is_reference = prep_alleles_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY)
+    if annotate_wildtype_allele != '':
+        for ix, is_ref in enumerate(is_reference):
+            if is_ref:
+                y_labels[ix] += annotate_wildtype_allele
+    plot_alleles_heatmap(reference_seq, fig_filename_root, X, annot, y_labels, insertion_dict, per_element_annot_kws, custom_colors, SAVE_ALSO_PNG, plot_cut_point, sgRNA_intervals, sgRNA_names, sgRNA_mismatches)
+
 
 def plot_unmod_mod_pcts(fig_filename_root,df_summary_quantification,save_png,cutoff=None,max_samples_to_include_unprocessed=20,**kwargs):
     """
