@@ -2645,15 +2645,20 @@ def prep_amino_acid_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
     -per_element_annot_kws: annotations for each cell (e.g. bold for substitutions, etc.)
     -is_reference: list of booleans for whether the read is equal to the reference
     """
+
     # dna_to_numbers={'-':0,'A':1,'T':2,'C':3,'G':4,'N':5}
     amino_acids_to_numbers = lambda x: 1
     # seq_to_numbers= lambda seq: [dna_to_numbers[x] for x in seq]
     seq_to_numbers = lambda seq: [amino_acids_to_numbers(x) for x in seq]
+    filter_blanks = lambda x: x if x != '-' else ''
+    remove_deletions = lambda seq: ''.join((list(map(filter_blanks, seq))))
+
     def seq_to_amino_acids(seq):
         amino_acids = []
-        while len(seq) < 3:
+        while len(seq) > 2:
             codon, seq = seq[:3], seq[3:]
             amino_acids.append(CRISPRessoShared.CODON_TO_AMINO_ACID[codon])
+        return amino_acids
 
             
 
@@ -2667,8 +2672,12 @@ def prep_amino_acid_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
     re_find_indels=re.compile("(-*-)")
     idx_row=0
     for idx, row in df_alleles[df_alleles['%Reads']>=MIN_FREQUENCY][:MAX_N_ROWS].iterrows():
-        X.append(seq_to_numbers(idx.upper()))
-        annot.append(list(idx))
+
+        idx_amino_acids = seq_to_amino_acids(remove_deletions(idx.upper()))
+
+
+        X.append(seq_to_numbers(idx_amino_acids))
+        annot.append(list(idx_amino_acids))
 
         has_indels = False
         for p in re_find_indels.finditer(row['Reference_Sequence']):
@@ -2677,7 +2686,8 @@ def prep_amino_acid_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
 
         y_labels.append('%.2f%% (%d reads)' % (row['%Reads'], row['#Reads']))
         if idx == reference_seq and not has_indels:
-            is_reference.append(True)
+            # is_reference.append(True)
+            is_reference.append(False)
         else:
             is_reference.append(False)
 
@@ -2689,7 +2699,7 @@ def prep_amino_acid_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
                    (row['Reference_Sequence'][i_sub]!='-') and\
                    (idx[i_sub]!='-')]
         to_append=np.array([{}]*len(idx), dtype=object)
-        to_append[ idxs_sub]={'weight':'bold', 'color':'black','size':16}
+        # to_append[ idxs_sub]={'weight':'bold', 'color':'black','size':16}
         per_element_annot_kws.append(to_append)
 
     return X, annot, y_labels, insertion_dict, per_element_annot_kws, is_reference
