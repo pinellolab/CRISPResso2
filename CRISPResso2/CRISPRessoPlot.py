@@ -2659,6 +2659,9 @@ def prep_amino_acid_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
             codon, seq = seq[:3], seq[3:]
             amino_acids.append(CRISPRessoShared.CODON_TO_AMINO_ACID[codon])
         return amino_acids
+    
+    def pad_amino_acids(amino_acids, amino_acid_seq_length):
+        return amino_acids + ['---'] * (amino_acid_seq_length - len(amino_acids))
 
             
 
@@ -2671,23 +2674,25 @@ def prep_amino_acid_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
 
     re_find_indels=re.compile("(-*-)")
     idx_row=0
+    ref_sequence_amino_acids = seq_to_amino_acids(reference_seq)
+    amino_acid_seq_length = len(ref_sequence_amino_acids)
     for idx, row in df_alleles[df_alleles['%Reads']>=MIN_FREQUENCY][:MAX_N_ROWS].iterrows():
 
-        idx_amino_acids = seq_to_amino_acids(remove_deletions(idx.upper()))
+        idx_amino_acids = pad_amino_acids(seq_to_amino_acids(remove_deletions(idx.upper())), amino_acid_seq_length)
 
 
         X.append(seq_to_numbers(idx_amino_acids))
         annot.append(list(idx_amino_acids))
 
         has_indels = False
-        for p in re_find_indels.finditer(row['Reference_Sequence']):
-            has_indels = True
-            insertion_dict[idx_row].append((p.start(), p.end()))
+        # for p in re_find_indels.finditer(row['Reference_Sequence']):
+        #     has_indels = True
+        #     insertion_dict[idx_row].append((p.start(), p.end()))
 
         y_labels.append('%.2f%% (%d reads)' % (row['%Reads'], row['#Reads']))
         if idx == reference_seq and not has_indels:
-            # is_reference.append(True)
-            is_reference.append(False)
+            is_reference.append(True)
+            # is_reference.append(False)
         else:
             is_reference.append(False)
 
@@ -2698,7 +2703,7 @@ def prep_amino_acid_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
                    (row['Reference_Sequence'][i_sub]!=idx[i_sub]) and \
                    (row['Reference_Sequence'][i_sub]!='-') and\
                    (idx[i_sub]!='-')]
-        to_append=np.array([{}]*len(idx), dtype=object)
+        to_append=np.array([{}]*len(idx_amino_acids), dtype=object)
         # to_append[ idxs_sub]={'weight':'bold', 'color':'black','size':16}
         per_element_annot_kws.append(to_append)
 
@@ -3374,7 +3379,7 @@ def plot_amino_acid_table(reference_seq,df_alleles,fig_filename_root,custom_colo
     custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     annotate_wildtype_allele: string to add to the end of the wildtype allele (e.g. ** or '')
     """
-    X, annot, y_labels, insertion_dict, per_element_annot_kws, is_reference = prep_alleles_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY)
+    X, annot, y_labels, insertion_dict, per_element_annot_kws, is_reference = prep_amino_acid_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY)
     if annotate_wildtype_allele != '':
         for ix, is_ref in enumerate(is_reference):
             if is_ref:
