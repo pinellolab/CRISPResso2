@@ -6,11 +6,11 @@ channels:
 dependencies:
   - pip
   - fastp
-  - numpy
+  - numpy<2
   - cython
   - jinja2
   - tbb=2020.2
   - pyparsing=2.3.1
   - scipy
-  - matplotlib
+  - matplotlib=3.8.4
   - pandas
