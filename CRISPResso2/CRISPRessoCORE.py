@@ -4515,7 +4515,9 @@ def main():
 
                     # amino acid plot
                     if refs[ref_name]['contains_coding_seq']:
-                        breakpoint()
+
+                        fig_filename_root = _jp('9a.'+ref_plot_name+'amino_acid_table_around_'+sgRNA_label)
+
 
                         plot_9a_input = {
                             'reference_seq': ref_seq_around_cut,
@@ -4532,14 +4534,17 @@ def main():
                             'annotate_wildtype_allele': args.annotate_wildtype_allele,
                         }
 
-                        df_to_plot.to_csv('df_to_plot.csv', sep='\t', header=True, index=True)
+                        # df_to_plot.to_csv('df_to_plot.csv', sep='\t', header=True, index=True)
+
+                        amino_acid_filename = _jp(ref_plot_name+'amino_acid_table_around_'+sgRNA_label+'.txt')
                         
 
                         debug('Plotting amino acids around cut for {0}'.format(ref_name))
-                        plot(CRISPRessoPlot.plot_amino_acid_table, plot_9a_input)
+                        # plot(CRISPRessoPlot.plot_amino_acid_table, plot_9a_input)
+                        CRISPRessoPlot.plot_amino_acid_table(**plot_9a_input)
                         crispresso2_info['results']['refs'][ref_name]['plot_9a_roots'].append(os.path.basename(fig_filename_root))
                         crispresso2_info['results']['refs'][ref_name]['plot_9a_captions'].append("Figure 9a: This will be a visualization of amino acids coded for")
-                        crispresso2_info['results']['refs'][ref_name]['plot_9a_datas'].append([('Allele frequency table', os.path.basename(allele_filename))])
+                        crispresso2_info['results']['refs'][ref_name]['plot_9a_datas'].append([('Amino Acid table', os.path.basename(amino_acid_filename))])
 
 
                     
