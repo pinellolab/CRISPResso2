@@ -94,7 +94,7 @@ def get_amino_acid_colors(mode=None):
     # this will preserve the order of the amino acids
     amino_acids = [
         '*', 'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
-        'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y', ''
+        'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y', '', '-'
     ]
 
     if mode == 'clustal':
@@ -106,47 +106,49 @@ def get_amino_acid_colors(mode=None):
             'E': '#000000',  # No specific color given, so default to black or choose an appropriate color.
             'F': '#0000FF',  # Blue
             'G': '#FFA500',  # Orange
-            'H': '#FF0000',  # Red
+            'H': '#FF5733',  # Red
             'I': '#008000',  # Green
-            'K': '#FF0000',  # Red
+            'K': '#FF5733',  # Red
             'L': '#008000',  # Green
             'M': '#008000',  # Green
             'N': '#000000',  # No specific color given, so default to black or choose an appropriate color.
             'P': '#FFA500',  # Orange
             'Q': '#000000',  # No specific color given, so default to black or choose an appropriate color.
-            'R': '#FF0000',  # Red
+            'R': '#FF5733',  # Red
             'S': '#FFA500',  # Orange
             'T': '#FFA500',  # Orange
             'V': '#008000',  # Green
             'W': '#0000FF',  # Blue
             'Y': '#0000FF',  # Blue
             '' : '#FFFFFF',  # White
+            '-': '#FFFFFF',  # White
         }
     else:
         color_dict = {
-        '*': '#FF0000',  # Assuming this is a stop codon or wildcard, you can choose an appropriate color.
-        'A': '#90EE90',  # Light green
-        'G': '#90EE90',  # Light green
-        'C': '#008000',  # Green
-        'D': '#006400',  # Dark green
-        'E': '#006400',  # Dark green
-        'N': '#006400',  # Dark green
-        'Q': '#006400',  # Dark green
-        'I': '#0000FF',  # Blue
-        'L': '#0000FF',  # Blue
-        'M': '#0000FF',  # Blue
-        'V': '#0000FF',  # Blue
-        'F': '#C8A2C8',  # Lilac
-        'W': '#C8A2C8',  # Lilac
-        'Y': '#C8A2C8',  # Lilac
-        'H': '#00008B',  # Dark blue
-        'K': '#FFA500',  # Orange
-        'R': '#FFA500',  # Orange
-        'P': '#FFC0CB',  # Pink
-        'S': '#FF0000',  # Red
-        'T': '#FF0000',  # Red
-        '': '#FFFFFF',  # White
-    }
+            '*': '#000000',  # Stop codon - Black
+            'A': '#90EE90',  # Light green
+            'G': '#90EE90',  # Light green
+            'C': '#008000',  # Green
+            'D': '#006400',  # Dark green
+            'E': '#006400',  # Dark green
+            'N': '#006400',  # Dark green
+            'Q': '#006400',  # Dark green
+            'I': '#0000FF',  # Blue
+            'L': '#0000FF',  # Blue
+            'M': '#0000FF',  # Blue
+            'V': '#0000FF',  # Blue
+            'F': '#C8A2C8',  # Lilac
+            'W': '#C8A2C8',  # Lilac
+            'Y': '#C8A2C8',  # Lilac
+            'H': '#00008B',  # Dark blue
+            'K': '#FFA500',  # Orange
+            'R': '#FFA500',  # Orange
+            'P': '#FFC0CB',  # Pink
+            'S': '#FF0000',  # Red
+            'T': '#FF0000',  # Red
+            '': '#FFFFFF',   # White
+            '-': '#FFFFFF',  # White
+        }
         
     hex_alpha = '66'
     return list(color_dict[aa] + hex_alpha for aa in amino_acids)
@@ -154,7 +156,7 @@ def get_amino_acid_colors(mode=None):
 def amino_acids_to_numbers(seq):
     amino_acids = [
         '*', 'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
-        'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y', ''
+        'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y', '', '-'
     ]
     d = {aa: i for i, aa in enumerate(amino_acids)}
     return [d[aa] for aa in seq]
@@ -2689,7 +2691,8 @@ def custom_heatmap(data, vmin=None, vmax=None, cmap=None, center=None, robust=Fa
                           annot_kws, per_element_annot_kws, cbar, cbar_kws, xticklabels,
                           yticklabels, mask)
 
-    # Add the pcolormesh kwargs here
+
+    # Add the pcolormesh kwargs herelin
     kwargs["linewidths"] = linewidths
     kwargs["edgecolor"] = linecolor
 
@@ -2700,6 +2703,27 @@ def custom_heatmap(data, vmin=None, vmax=None, cmap=None, center=None, robust=Fa
         ax.set_aspect("equal")
     plotter.plot(ax, cbar_ax, kwargs)
     return ax
+
+
+def remove_deletions_for_amino_acids(seq): # CCC---GGG -> CCC---GGG
+    new_seq = ''
+    i = 0
+    counter = 0
+    while i < len(seq):
+        if seq[i] == '-':
+            if len(new_seq) % 3 == 0:
+                counter += 1
+            i += 1
+            if counter >= 3:
+                new_seq += '---'
+                counter = 0
+        else:
+            new_seq += seq[i]
+            i += 1
+            counter = 0
+
+    return new_seq
+        
 
 def prep_amino_acid_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
     """
@@ -2718,17 +2742,14 @@ def prep_amino_acid_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
     -is_reference: list of booleans for whether the read is equal to the reference
     """
 
-    # dna_to_numbers={'-':0,'A':1,'T':2,'C':3,'G':4,'N':5}
-    # seq_to_numbers= lambda seq: [dna_to_numbers[x] for x in seq]
-    # seq_to_numbers = lambda seq: [amino_acids_to_numbers(x) for x in seq]
-    filter_blanks = lambda x: x if x != '-' else ''
-    remove_deletions = lambda seq: ''.join((list(map(filter_blanks, seq))))
-
     def seq_to_amino_acids(seq):
         amino_acids = []
         while len(seq) > 2:
             codon, seq = seq[:3], seq[3:]
-            amino_acids.append(CRISPRessoShared.CODON_TO_AMINO_ACID_SINGLE_CHAR[codon])
+            if codon == '---':
+                amino_acids.append('-')
+            else:
+                amino_acids.append(CRISPRessoShared.CODON_TO_AMINO_ACID_SINGLE_CHAR[codon])
         return amino_acids
     
     def pad_amino_acids(amino_acids, amino_acid_seq_length):
@@ -2749,7 +2770,7 @@ def prep_amino_acid_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
     amino_acid_seq_length = len(ref_sequence_amino_acids)
     for idx, row in df_alleles[df_alleles['%Reads']>=MIN_FREQUENCY][:MAX_N_ROWS].iterrows():
 
-        idx_amino_acids = pad_amino_acids(seq_to_amino_acids(remove_deletions(idx.upper())), amino_acid_seq_length)
+        idx_amino_acids = pad_amino_acids(seq_to_amino_acids(remove_deletions_for_amino_acids(idx.upper())), amino_acid_seq_length)
 
 
         X.append(amino_acids_to_numbers(idx_amino_acids))
@@ -2814,38 +2835,9 @@ def plot_amino_acid_heatmap(
     """
     plot_nuc_len=len(reference_seq_amino_acids)
 
-    # make a color map of fixed colors
-    alpha=0.4
-    A_color=get_nuc_color('A', alpha)
-    T_color=get_nuc_color('T', alpha)
-    C_color=get_nuc_color('C', alpha)
-    G_color=get_nuc_color('G', alpha)
-    INDEL_color = get_nuc_color('N', alpha)
-
-    amino_acid_colors = get_amino_acid_colors(mode='clustal')
-    print(amino_acid_colors)
-
-    if custom_colors is not None:
-        hex_alpha = '66'  # this is equivalent to 40% in hexadecimal
-        if 'A' in custom_colors:
-            A_color = custom_colors['A'] + hex_alpha
-        if 'T' in custom_colors:
-            T_color = custom_colors['T'] + hex_alpha
-        if 'C' in custom_colors:
-            C_color = custom_colors['C'] + hex_alpha
-        if 'G' in custom_colors:
-            G_color = custom_colors['G'] + hex_alpha
-        if 'N' in custom_colors:
-            INDEL_color = custom_colors['N'] + hex_alpha
-
-    # dna_to_numbers={'-':0,'A':1,'T':2,'C':3,'G':4,'N':5}
-    # seq_to_numbers= lambda seq: [amino_acids_to_numbers(x) for x in seq]
-
+    amino_acid_colors = get_amino_acid_colors()
     cmap = colors_mpl.ListedColormap(amino_acid_colors)
 
-    #ref_seq_around_cut=reference_seq[max(0,cut_point-plot_nuc_len/2+1):min(len(reference_seq),cut_point+plot_nuc_len/2+1)]
-
-#    print('per element anoot kws: ' + per_element_annot_kws)
     if len(per_element_annot_kws) > 1:
         per_element_annot_kws=np.vstack(per_element_annot_kws[::-1])
     else:
@@ -2891,8 +2883,9 @@ def plot_amino_acid_heatmap(
         ax_hm=plt.subplot(gs2[1:,:])
 
 
-    custom_heatmap(ref_seq_hm, annot=ref_seq_annot_hm, annot_kws={'size':16}, cmap=cmap, fmt='s', ax=ax_hm_ref, vmin=0, vmax=5, square=True)
-    custom_heatmap(X, annot=np.array(annot), annot_kws={'size':16}, cmap=cmap, fmt='s', ax=ax_hm, vmin=0, vmax=5, square=True, per_element_annot_kws=per_element_annot_kws)
+    #TODO: set vmax to length of cmap
+    custom_heatmap(ref_seq_hm, annot=ref_seq_annot_hm, annot_kws={'size':16}, cmap=cmap, fmt='s', ax=ax_hm_ref, vmin=0, vmax=len(cmap.colors), square=True)
+    custom_heatmap(X, annot=np.array(annot), annot_kws={'size':16}, cmap=cmap, fmt='s', ax=ax_hm, vmin=0, vmax=len(cmap.colors), square=True, per_element_annot_kws=per_element_annot_kws)
 
     ax_hm.yaxis.tick_right()
     ax_hm.yaxis.set_ticklabels(y_labels[::-1], rotation=True, va='center')
@@ -2945,25 +2938,30 @@ def plot_amino_acid_heatmap(
 
     sns.set_context(rc={'axes.facecolor':'white','lines.markeredgewidth': 1,'mathtext.fontset' : 'stix','text.usetex':True,'text.latex.unicode':True} )
 
-    proxies = [matplotlib.lines.Line2D([0], [0], linestyle='none', mfc='black',
-                    mec='none', marker=r'$\mathbf{{{}}}$'.format('bold'), ms=18),
-               matplotlib.lines.Line2D([0], [0], linestyle='none', mfc='none',
-                    mec='r', marker='s', ms=8, markeredgewidth=2.5),
-              matplotlib.lines.Line2D([0], [0], linestyle='none', mfc='none',
-                    mec='black', marker='_', ms=2,)]
-    descriptions=['Substitutions', 'Insertions', 'Deletions']
+    # proxies = [matplotlib.lines.Line2D([0], [0], linestyle='none', mfc='black',
+    #                 mec='none', marker=r'$\mathbf{{{}}}$'.format('bold'), ms=18),
+    #            matplotlib.lines.Line2D([0], [0], linestyle='none', mfc='none',
+    #                 mec='r', marker='s', ms=8, markeredgewidth=2.5),
+    #           matplotlib.lines.Line2D([0], [0], linestyle='none', mfc='none',
+    #                 mec='black', marker='_', ms=2,)]
+    # descriptions=['Substitutions', 'Insertions', 'Deletions']
 
-    if plot_cut_point:
-        proxies.append(
-              matplotlib.lines.Line2D([0], [1], linestyle='--', c='black', ms=6))
-        descriptions.append('Predicted cleavage position')
+    # if plot_cut_point:
+    #     proxies.append(
+    #           matplotlib.lines.Line2D([0], [1], linestyle='--', c='black', ms=6))
+        # descriptions.append('Predicted cleavage position')
 
     #ax_hm_ref.legend(proxies, descriptions, numpoints=1, markerscale=2, loc='center', bbox_to_anchor=(0.5, 4),ncol=1)
-    lgd = ax_hm.legend(proxies, descriptions, numpoints=1, markerscale=2, loc='upper center', bbox_to_anchor=(0.5, 0), ncol=1, fancybox=True, shadow=False)
+    # lgd = ax_hm.legend(proxies, descriptions, numpoints=1, markerscale=2, loc='upper center', bbox_to_anchor=(0.5, 0), ncol=1, fancybox=True, shadow=False)
 
-    fig.savefig(fig_filename_root+'.pdf', bbox_inches='tight', bbox_extra_artists=(lgd,))
+    # fig.savefig(fig_filename_root+'.pdf', bbox_inches='tight', bbox_extra_artists=(lgd,))
+    # if SAVE_ALSO_PNG:
+    #     fig.savefig(fig_filename_root+'.png', bbox_inches='tight', bbox_extra_artists=(lgd,))
+
+
+    fig.savefig(fig_filename_root+'.pdf', bbox_inches='tight')
     if SAVE_ALSO_PNG:
-        fig.savefig(fig_filename_root+'.png', bbox_inches='tight', bbox_extra_artists=(lgd,))
+        fig.savefig(fig_filename_root+'.png', bbox_inches='tight')
     plt.close(fig)
 
 def prep_alleles_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
@@ -3641,6 +3639,7 @@ def plot_amino_acid_table(reference_seq,df_alleles,fig_filename_root,custom_colo
         for ix, is_ref in enumerate(is_reference):
             if is_ref:
                 y_labels[ix] += annotate_wildtype_allele
+
     plot_amino_acid_heatmap(ref_sequence_amino_acids, fig_filename_root, X, annot, y_labels, insertion_dict, per_element_annot_kws, custom_colors, SAVE_ALSO_PNG, plot_cut_point, sgRNA_intervals, sgRNA_names, sgRNA_mismatches)
 
 
