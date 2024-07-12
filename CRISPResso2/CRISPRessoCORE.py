@@ -1217,27 +1217,7 @@ def to_numeric_ignore_columns(df, ignore_columns):
         if col not in ignore_columns:
             df[col] = df[col].apply(pd.to_numeric, errors='raise')
     return df
-
-def get_amino_acids_from_seq(seq):
-    """Get the amino acids from a sequence.
-
-    Parameters
-    ----------
-    seq : str
-        The sequence of nucleotide bases.
-
-    Returns
-    -------
-    str
-        The sequence of amino acids.
-    """
-    amino_acids = []
-    while len(seq) > 2:
-        codon, seq = seq[:3], seq[3:]
-        amino_acids.append(CRISPRessoShared.CODON_TO_AMINO_ACID[codon])
-    return amino_acids
         
-
 
 def main():
 

@@ -2741,16 +2741,6 @@ def prep_amino_acid_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
     -per_element_annot_kws: annotations for each cell (e.g. bold for substitutions, etc.)
     -is_reference: list of booleans for whether the read is equal to the reference
     """
-
-    def seq_to_amino_acids(seq):
-        amino_acids = []
-        while len(seq) > 2:
-            codon, seq = seq[:3], seq[3:]
-            if codon == '---':
-                amino_acids.append('-')
-            else:
-                amino_acids.append(CRISPRessoShared.CODON_TO_AMINO_ACID_SINGLE_CHAR[codon])
-        return amino_acids
     
     def pad_amino_acids(amino_acids, amino_acid_seq_length):
         return amino_acids + [''] * (amino_acid_seq_length - len(amino_acids))
@@ -2766,11 +2756,11 @@ def prep_amino_acid_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
 
     re_find_indels=re.compile("(-*-)")
     idx_row=0
-    ref_sequence_amino_acids = seq_to_amino_acids(reference_seq)
+    ref_sequence_amino_acids = CRISPRessoShared.get_amino_acids_from_nucs(reference_seq)
     amino_acid_seq_length = len(ref_sequence_amino_acids)
     for idx, row in df_alleles[df_alleles['%Reads']>=MIN_FREQUENCY][:MAX_N_ROWS].iterrows():
 
-        idx_amino_acids = pad_amino_acids(seq_to_amino_acids(remove_deletions_for_amino_acids(idx.upper())), amino_acid_seq_length)
+        idx_amino_acids = pad_amino_acids(CRISPRessoShared.get_amino_acids_from_nucs(remove_deletions_for_amino_acids(idx.upper())), amino_acid_seq_length)
 
 
         X.append(amino_acids_to_numbers(idx_amino_acids))

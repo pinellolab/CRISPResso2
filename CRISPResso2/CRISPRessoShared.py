@@ -328,6 +328,17 @@ CODON_TO_AMINO_ACID_SINGLE_CHAR = {
     'GGT': 'G', 'GGC': 'G', 'GGA': 'G', 'GGG': 'G'
 }
 
+def get_amino_acids_from_nucs(seq):
+    """ Given a nucleotide sequence, return the amino acid sequence."""
+    amino_acids = []
+    while len(seq) > 2:
+        codon, seq = seq[:3], seq[3:]
+        if codon == '---':
+            amino_acids.append('-')
+        else:
+            amino_acids.append(CODON_TO_AMINO_ACID_SINGLE_CHAR[codon])
+    return amino_acids
+
 
 def unexplode_cigar(exploded_cigar_string):
     """Make a CIGAR string from an exploded cigar string.
@@ -1282,6 +1293,27 @@ def get_dataframe_around_cut_debug(df_alleles, cut_point, offset):
 
     df_alleles_around_cut.sort_values(by=['#Reads', 'Aligned_Sequence', 'Reference_Sequence'], inplace=True, ascending=[False, True, True])
     df_alleles_around_cut['Unedited'] = df_alleles_around_cut['Unedited'] > 0
+    return df_alleles_around_cut
+
+def get_row_around_cut_assymetrical(row,cut_point,plot_left,plot_right):
+    cut_idx=row['ref_positions'].index(cut_point)
+    return row['Aligned_Sequence'][cut_idx-plot_left+1:cut_idx+plot_right+1],row['Reference_Sequence'][cut_idx-plot_left+1:cut_idx+plot_right+1],row['Read_Status']=='UNMODIFIED',row['n_deleted'],row['n_inserted'],row['n_mutated'],row['#Reads'], row['%Reads']
+
+def get_dataframe_around_cut_assymetrical(df_alleles, cut_point,plot_left,plot_right,collapse_by_sequence=True):
+    if df_alleles.shape[0] == 0:
+        return df_alleles
+    ref1 = df_alleles['Reference_Sequence'].iloc[0]
+    ref1 = ref1.replace('-','')
+    if (cut_point + plot_right + 1 > len(ref1)):
+        raise(BadParameterException('The plotting window cannot extend past the end of the amplicon. Amplicon length is ' + str(len(ref1)) + ' but plot extends to ' + str(cut_point+plot_right+1)))
+
+    df_alleles_around_cut=pd.DataFrame(list(df_alleles.apply(lambda row: get_row_around_cut_assymetrical(row,cut_point,plot_left,plot_right),axis=1).values),
+                    columns=['Aligned_Sequence','Reference_Sequence','Unedited','n_deleted','n_inserted','n_mutated','#Reads','%Reads'])
+
+    df_alleles_around_cut=df_alleles_around_cut.groupby(['Aligned_Sequence','Reference_Sequence','Unedited','n_deleted','n_inserted','n_mutated']).sum().reset_index().set_index('Aligned_Sequence')
+
+    df_alleles_around_cut.sort_values(by=['#Reads', 'Aligned_Sequence', 'Reference_Sequence'], inplace=True, ascending=[False, True, True])
+    df_alleles_around_cut['Unedited']=df_alleles_around_cut['Unedited']>0
     return df_alleles_around_cut
 
 
