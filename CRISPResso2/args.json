@@ -18,7 +18,7 @@
             "name": "Amplicon Sequence",
             "keys": ["-a", "--amplicon_seq"],
             "help": "Amplicon Sequence (can be comma-separated list of multiple sequences)",
-            "type": "str", 
+            "type": "str",
             "tools": ["Core", "Batch", "Pooled"]
         },
         "amplicon_name": {
@@ -757,7 +757,13 @@
         },
         "demultiplex_only_at_amplicons": {
             "keys": ["--demultiplex_only_at_amplicons"],
-            "help": "If set, and an amplicon file (--amplicons_file) and reference sequence (--bowtie2_index) are provided, reads overlapping alignment positions of amplicons will be demultiplexed and assigned to that amplicon. If this flag is not set, the entire genome will be demultiplexed and reads with the same start and stop coordinates as an amplicon will be assigned to that amplicon.",
+            "help": "DEPRECATED in v2.3.2, see `demultiplex_at_amplicons_and_genome`",
+            "action": "store_true",
+            "tools": ["Pooled"]
+        },
+        "demultiplex_genome_wide": {
+            "keys": ["--demultiplex_genome_wide"],
+            "help": "If set, and an amplicon file (--amplicons_file) and reference sequence (--bowtie2_index) are provided, the entire genome will be demultiplexed and reads with the exact same start and stop coordinates as an amplicon will be assigned to that amplicon. If this flag is not set, reads overlapping alignment positions of amplicons will be demultiplexed and assigned to that amplicon.",
             "action": "store_true",
             "tools": ["Pooled"]
         },
