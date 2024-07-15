@@ -1032,7 +1032,7 @@ def main():
                 os.mkdir(MAPPED_REGIONS)
 
                 # if we should only demultiplex where amplicons aligned... (as opposed to the whole genome)
-                if RUNNING_MODE=='AMPLICONS_AND_GENOME' and args.demultiplex_only_at_amplicons:
+                if RUNNING_MODE=='AMPLICONS_AND_GENOME' and not args.demultiplex_genome_wide:
                     s1 = r'''samtools view -F 0x0004 %s __REGIONCHR__:__REGIONSTART__-__REGIONEND__ 2>>%s |''' % (bam_filename_genome, log_filename)+\
                     r'''awk 'BEGIN{OFS="\t";num_records=0;fastq_filename="__OUTPUTPATH__REGION___REGIONCHR_____REGIONSTART_____REGIONEND__.fastq";} \
                         { \
