@@ -4504,7 +4504,7 @@ def main():
                             cut_point - refs[ref_name]['exon_positions'][0] + 1, 
                             refs[ref_name]['exon_positions'][-1] - cut_point )
                         
-                        coding_seq = refs[ref_name]['sequence'][refs[ref_name]['exon_positions'][0]:refs[ref_name]['exon_positions'][-1]+1]   
+                        coding_seq = ''.join([refs[ref_name]['sequence'][i] for i in refs[ref_name]['exon_positions']])  
                         plot_9a_input = {
                             'reference_seq': coding_seq,
                             'df_alleles': df_to_plot,
