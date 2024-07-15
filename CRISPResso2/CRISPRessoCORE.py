@@ -4493,14 +4493,20 @@ def main():
                     crispresso2_info['results']['refs'][ref_name]['plot_9_captions'].append("Figure 9: Visualization of the distribution of identified alleles around the cleavage site for the " + sgRNA_legend + ". Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site.")
                     crispresso2_info['results']['refs'][ref_name]['plot_9_datas'].append([('Allele frequency table', os.path.basename(allele_filename))])
 
-                    # amino acid plot
-                    if refs[ref_name]['contains_coding_seq']:
+                    # Plot 9a amino acid sequence around cut
+                    if refs[ref_name]['contains_coding_seq'] and cut_point in refs[ref_name]['exon_positions']:
 
                         fig_filename_root = _jp('9a.'+ref_plot_name+'amino_acid_table_around_'+sgRNA_label)
 
-
+                        df_to_plot = CRISPRessoShared.get_dataframe_around_cut_assymetrical(
+                            df_alleles.loc[df_alleles['Reference_Name'] == ref_name], 
+                            cut_point, 
+                            cut_point - refs[ref_name]['exon_positions'][0] + 1, 
+                            refs[ref_name]['exon_positions'][-1] - cut_point )
+                        
+                        coding_seq = refs[ref_name]['sequence'][refs[ref_name]['exon_positions'][0]:refs[ref_name]['exon_positions'][-1]+1]   
                         plot_9a_input = {
-                            'reference_seq': ref_seq_around_cut,
+                            'reference_seq': coding_seq,
                             'df_alleles': df_to_plot,
                             'fig_filename_root': fig_filename_root,
                             'custom_colors': custom_config["colors"],
@@ -4523,7 +4529,10 @@ def main():
                         # plot(CRISPRessoPlot.plot_amino_acid_table, plot_9a_input)
                         CRISPRessoPlot.plot_amino_acid_table(**plot_9a_input)
                         crispresso2_info['results']['refs'][ref_name]['plot_9a_roots'].append(os.path.basename(fig_filename_root))
-                        crispresso2_info['results']['refs'][ref_name]['plot_9a_captions'].append("Figure 9a: This will be a visualization of amino acids coded for")
+                        crispresso2_info['results']['refs'][ref_name]['plot_9a_captions'].append(
+                            "Figure 9a: Visualization of the distribution of identified amino acids around the cleavage site for the " + sgRNA_legend + ".\
+                                  Amino acids are indicated by unique colors. Substitutions are shown in bold font. Red rectangles highlight inserted sequences.\
+                                    Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site.")
                         crispresso2_info['results']['refs'][ref_name]['plot_9a_datas'].append([('Amino Acid table', os.path.basename(amino_acid_filename))])
 
 
