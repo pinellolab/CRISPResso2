@@ -2760,7 +2760,8 @@ def prep_amino_acid_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
     amino_acid_seq_length = len(ref_sequence_amino_acids)
     for idx, row in df_alleles[df_alleles['%Reads']>=MIN_FREQUENCY][:MAX_N_ROWS].iterrows():
 
-        idx_amino_acids = pad_amino_acids(CRISPRessoShared.get_amino_acids_from_nucs(remove_deletions_for_amino_acids(idx.upper())), amino_acid_seq_length)
+        # idx_amino_acids = pad_amino_acids(CRISPRessoShared.get_amino_acids_from_nucs(remove_deletions_for_amino_acids(idx.upper())), amino_acid_seq_length)
+        idx_amino_acids = pad_amino_acids(CRISPRessoShared.get_amino_acids_from_nucs(idx.upper().replace('-', '')), amino_acid_seq_length)
 
 
         X.append(amino_acids_to_numbers(idx_amino_acids))
