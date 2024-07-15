@@ -1296,10 +1296,10 @@ def get_dataframe_around_cut_debug(df_alleles, cut_point, offset):
     return df_alleles_around_cut
 
 def get_row_around_cut_assymetrical(row,cut_point,plot_left,plot_right):
-    cut_idx=row['ref_positions'].index(cut_point)
+    cut_idx = row['ref_positions'].index(cut_point)    
     return row['Aligned_Sequence'][cut_idx-plot_left+1:cut_idx+plot_right+1],row['Reference_Sequence'][cut_idx-plot_left+1:cut_idx+plot_right+1],row['Read_Status']=='UNMODIFIED',row['n_deleted'],row['n_inserted'],row['n_mutated'],row['#Reads'], row['%Reads']
 
-def get_dataframe_around_cut_assymetrical(df_alleles, cut_point,plot_left,plot_right,collapse_by_sequence=True):
+def get_dataframe_around_cut_assymetrical(df_alleles, cut_point, plot_left, plot_right, collapse_by_sequence=True):
     if df_alleles.shape[0] == 0:
         return df_alleles
     ref1 = df_alleles['Reference_Sequence'].iloc[0]
