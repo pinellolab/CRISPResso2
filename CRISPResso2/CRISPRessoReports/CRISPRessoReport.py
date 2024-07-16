@@ -153,7 +153,7 @@ def assemble_figs(run_data, crispresso_folder):
                                   global_fig_names, amplicon_figures, crispresso_folder, d3_nuc_quilt_names)
 
         this_sgRNA_based_fig_names = {}
-        for fig in ['2b', '9', '10d', '10e', '10f', '10g', '11b']:
+        for fig in ['2b', '9', '9a', '10d', '10e', '10f', '10g', '11b']:
             # fig 2b's
             this_fig_names = []
             if 'plot_' + fig + '_roots' in run_data['results']['refs'][amplicon_name]:
