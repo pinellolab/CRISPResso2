@@ -2888,9 +2888,8 @@ def plot_alleles_heatmap(
     #cut point vertical line
     if plot_cut_point:
         if cut_point_ind is None:
-            ax_hm.vlines([plot_nuc_len/2],*ax_hm.get_ylim(),linestyles='dashed')
-        else:
-            ax_hm.vlines(cut_point_ind,*ax_hm.get_ylim(),linestyles='dashed')
+            cut_point_ind = [plot_nuc_len / 2]
+        ax_hm.vlines(cut_point_ind,*ax_hm.get_ylim(),linestyles='dashed')
 
 
     ax_hm_ref.yaxis.tick_right()
@@ -3021,7 +3020,9 @@ def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,i
 
     #cut point vertical line
     if plot_cut_point:
-        ax_hm.vlines([plot_nuc_len/2], *ax_hm.get_ylim(), linestyles='dashed')
+        if cut_point_ind is None:
+            cut_point_ind = [plot_nuc_len / 2]
+        ax_hm.vlines(cut_point_ind, *ax_hm.get_ylim(), linestyles='dashed')
 
     #create boxes for ins
     for idx, lss in insertion_dict.items():
@@ -3085,19 +3086,19 @@ def plot_alleles_table(reference_seq,df_alleles,fig_filename_root,custom_colors,
             if is_ref:
                 y_labels[ix] += annotate_wildtype_allele
 
-    plot_alleles_heatmap(reference_seq=reference_seq, 
-                         fig_filename_root=fig_filename_root, 
-                         X=X, 
-                         annot=annot, 
-                         y_labels=y_labels, 
-                         insertion_dict=insertion_dict, 
-                         per_element_annot_kws=per_element_annot_kws, 
-                         custom_colors=custom_colors, 
-                         SAVE_ALSO_PNG=SAVE_ALSO_PNG, 
-                         plot_cut_point=plot_cut_point, 
+    plot_alleles_heatmap(reference_seq=reference_seq,
+                         fig_filename_root=fig_filename_root,
+                         X=X,
+                         annot=annot,
+                         y_labels=y_labels,
+                         insertion_dict=insertion_dict,
+                         per_element_annot_kws=per_element_annot_kws,
+                         custom_colors=custom_colors,
+                         SAVE_ALSO_PNG=SAVE_ALSO_PNG,
+                         plot_cut_point=plot_cut_point,
                          cut_point_ind=cut_point_ind,
-                         sgRNA_intervals=sgRNA_intervals, 
-                         sgRNA_names=sgRNA_names, 
+                         sgRNA_intervals=sgRNA_intervals,
+                         sgRNA_names=sgRNA_names,
                          sgRNA_mismatches=sgRNA_mismatches)
 
 def plot_alleles_table_from_file(alleles_file_name,fig_filename_root,custom_colors,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,plot_cut_point=True,cut_point_ind=None,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,annotate_wildtype_allele='',**kwargs):
@@ -3217,9 +3218,9 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,c
                 new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1, int_end - new_sel_cols_start - 1)]
 
             X, annot, y_labels, insertion_dict, per_element_annot_kws, is_reference = prep_alleles_table(df_alleles, ref_seq_around_cut, MAX_N_ROWS, MIN_FREQUENCY)
-            plot_alleles_heatmap(reference_seq=ref_seq_around_cut, 
-                                 fig_filename_root=fig_filename_root+"_"+ref_name+"_"+sgRNA_label, 
-                                 X=X, 
+            plot_alleles_heatmap(reference_seq=ref_seq_around_cut,
+                                 fig_filename_root=fig_filename_root+"_"+ref_name+"_"+sgRNA_label,
+                                 X=X,
                                  annot=annot,
                                  y_labels=y_labels,
                                  insertion_dict=insertion_dict,
