@@ -4520,11 +4520,8 @@ def main():
                             'annotate_wildtype_allele': args.annotate_wildtype_allele,
                         }
 
-                        # df_to_plot.to_csv('df_to_plot.csv', sep='\t', header=True, index=True)
-
                         amino_acid_filename = _jp(ref_plot_name+'amino_acid_table_around_'+sgRNA_label+'.txt')
                         
-
                         debug('Plotting amino acids around cut for {0}'.format(ref_name))
                         plot(CRISPRessoPlot.plot_amino_acid_table, plot_9a_input)
                         # CRISPRessoPlot.plot_amino_acid_table(**plot_9a_input)
@@ -4532,11 +4529,6 @@ def main():
                         crispresso2_info['results']['refs'][ref_name]['plot_9a_captions'].append(
                             "Figure 9a: Visualization of the distribution of identified amino acids around the cleavage site for the " + sgRNA_legend + ". Amino acids are indicated by unique colors. The vertical dashed line indicates the predicted cleavage site.")
                         crispresso2_info['results']['refs'][ref_name]['plot_9a_datas'].append([('Amino Acid table', os.path.basename(amino_acid_filename))])
-
-
-                    
-
-                        
 
                 if not args.crispresso1_mode and args.base_editor_output:
                     ###guide-specific base editor plots
