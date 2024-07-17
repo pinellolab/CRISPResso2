@@ -1217,7 +1217,7 @@ def to_numeric_ignore_columns(df, ignore_columns):
         if col not in ignore_columns:
             df[col] = df[col].apply(pd.to_numeric, errors='raise')
     return df
-        
+
 
 def main():
 
@@ -4497,8 +4497,9 @@ def main():
                     if refs[ref_name]['contains_coding_seq'] and cut_point in refs[ref_name]['exon_positions']:
 
                         fig_filename_root = _jp('9a.'+ref_plot_name+'amino_acid_table_around_'+sgRNA_label)
+                        # df_alleles.to_csv('df_alleles.txt', sep='\t')
 
-                        df_to_plot = CRISPRessoShared.get_dataframe_around_cut_assymetrical(
+                        df_to_plot = CRISPRessoShared.get_amino_acid_dataframe_around_cut_assymetrical(
                             df_alleles.loc[df_alleles['Reference_Name'] == ref_name], 
                             cut_point, 
                             cut_point - refs[ref_name]['exon_positions'][0] + 1, 
@@ -4523,8 +4524,8 @@ def main():
                         amino_acid_filename = _jp(ref_plot_name+'amino_acid_table_around_'+sgRNA_label+'.txt')
                         
                         debug('Plotting amino acids around cut for {0}'.format(ref_name))
-                        plot(CRISPRessoPlot.plot_amino_acid_table, plot_9a_input)
-                        # CRISPRessoPlot.plot_amino_acid_table(**plot_9a_input)
+                        # plot(CRISPRessoPlot.plot_amino_acid_table, plot_9a_input)
+                        CRISPRessoPlot.plot_amino_acid_table(**plot_9a_input)
                         crispresso2_info['results']['refs'][ref_name]['plot_9a_roots'].append(os.path.basename(fig_filename_root))
                         crispresso2_info['results']['refs'][ref_name]['plot_9a_captions'].append(
                             "Figure 9a: Visualization of the distribution of identified amino acids around the cleavage site for the " + sgRNA_legend + " based on the coding sequence (" + coding_seq+"). Amino acids are indicated by unique colors. The vertical dashed line indicates the predicted cleavage site.")

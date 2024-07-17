@@ -2824,7 +2824,7 @@ def plot_amino_acid_heatmap(
     -sgRNA_names: array (for each sgRNA_interval) of names of sgRNAs (otherwise empty)
     -custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     """
-    plot_nuc_len=len(reference_seq_amino_acids)
+    plot_aa_len=len(reference_seq_amino_acids)
 
     amino_acid_colors = get_amino_acid_colors()
     cmap = colors_mpl.ListedColormap(amino_acid_colors)
@@ -2840,7 +2840,7 @@ def plot_amino_acid_heatmap(
     X=X[::-1]
 
     N_ROWS=len(X)
-    N_COLUMNS=plot_nuc_len
+    N_COLUMNS=plot_aa_len
 
     if N_ROWS < 1:
         fig, ax = plt.subplots()
@@ -2857,16 +2857,16 @@ def plot_amino_acid_heatmap(
     num_sgRNA_rows = 0
 
     if sgRNA_intervals and len(sgRNA_intervals) > 0:
-        sgRNA_rows = get_rows_for_sgRNA_annotation(sgRNA_intervals, plot_nuc_len)
+        sgRNA_rows = get_rows_for_sgRNA_annotation(sgRNA_intervals, plot_aa_len)
         num_sgRNA_rows = max(sgRNA_rows) + 1
-        fig=plt.figure(figsize=(plot_nuc_len*0.3, (N_ROWS+1 + num_sgRNA_rows)*0.6))
+        fig=plt.figure(figsize=(plot_aa_len*0.3, (N_ROWS+1 + num_sgRNA_rows)*0.6))
         gs1 = gridspec.GridSpec(N_ROWS+2, N_COLUMNS)
         gs2 = gridspec.GridSpec(N_ROWS+2, N_COLUMNS)
         #ax_hm_ref heatmap for the reference
         ax_hm_ref=plt.subplot(gs1[0:1,:])
         ax_hm=plt.subplot(gs2[2:,:])
     else:
-        fig=plt.figure(figsize=(plot_nuc_len*0.3, (N_ROWS+1)*0.6))
+        fig=plt.figure(figsize=(plot_aa_len*0.3, (N_ROWS+1)*0.6))
         gs1 = gridspec.GridSpec(N_ROWS+1, N_COLUMNS)
         gs2 = gridspec.GridSpec(N_ROWS+1, N_COLUMNS)
         #ax_hm_ref heatmap for the reference
@@ -2885,28 +2885,7 @@ def plot_amino_acid_heatmap(
     if sgRNA_intervals and len(sgRNA_intervals) > 0:
         this_sgRNA_y_start = -1*num_sgRNA_rows
         this_sgRNA_y_height = num_sgRNA_rows - 0.3
-        add_sgRNA_to_ax(ax_hm_ref, sgRNA_intervals, sgRNA_y_start=this_sgRNA_y_start, sgRNA_y_height=this_sgRNA_y_height, amp_len=plot_nuc_len, font_size='small', clip_on=False, sgRNA_names=sgRNA_names, sgRNA_mismatches=sgRNA_mismatches, x_offset=0, label_at_zero=True, sgRNA_rows=sgRNA_rows)
-
-# todo -- add sgRNAs below reference plot
-#    if sgRNA_intervals:
-#        ax_hm_anno=plt.subplot(gs3[2, :])
-#        sgRNA_y_start = 0.3
-##        sgRNA_y_height = 0.1
-#        sgRNA_y_height = 10
-#        min_sgRNA_x = None
-#        for idx,sgRNA_int in enumerate(sgRNA_intervals):
-#            ax_hm_anno.add_patch(
-#                patches.Rectangle((2+sgRNA_int[0], sgRNA_y_start), 1+sgRNA_int[1]-sgRNA_int[0], sgRNA_y_height,facecolor=(0,0,0,0.15))
-#                )
-#            #set left-most sgrna start
-#            if not min_sgRNA_x:
-#                min_sgRNA_x = sgRNA_int[0]
-#            if sgRNA_int[0] < min_sgRNA_x:
-#                min_sgRNA_x = sgRNA_int[0]
-#        ax_hm_anno.text(2+min_sgRNA_x,sgRNA_y_start + sgRNA_y_height/2,'sgRNA ',horizontalalignment='right',verticalalignment='center')
-
-    #print lines
-
+        add_sgRNA_to_ax(ax_hm_ref, sgRNA_intervals, sgRNA_y_start=this_sgRNA_y_start, sgRNA_y_height=this_sgRNA_y_height, amp_len=plot_aa_len, font_size='small', clip_on=False, sgRNA_names=sgRNA_names, sgRNA_mismatches=sgRNA_mismatches, x_offset=0, label_at_zero=True, sgRNA_rows=sgRNA_rows)
 
     #create boxes for ins
     for idx, lss in insertion_dict.items():
@@ -2915,7 +2894,7 @@ def plot_amino_acid_heatmap(
 
     #cut point vertical line
     if plot_cut_point:
-        ax_hm.vlines([plot_nuc_len/2], *ax_hm.get_ylim(), linestyles='dashed')
+        ax_hm.vlines([plot_aa_len/2], *ax_hm.get_ylim(), linestyles='dashed')
 
 
     ax_hm_ref.yaxis.tick_right()
@@ -2928,27 +2907,6 @@ def plot_amino_acid_heatmap(
     gs1.update(left=0, right=1, hspace=0.05, wspace=0,)
 
     sns.set_context(rc={'axes.facecolor':'white','lines.markeredgewidth': 1,'mathtext.fontset' : 'stix','text.usetex':True,'text.latex.unicode':True} )
-
-    # proxies = [matplotlib.lines.Line2D([0], [0], linestyle='none', mfc='black',
-    #                 mec='none', marker=r'$\mathbf{{{}}}$'.format('bold'), ms=18),
-    #            matplotlib.lines.Line2D([0], [0], linestyle='none', mfc='none',
-    #                 mec='r', marker='s', ms=8, markeredgewidth=2.5),
-    #           matplotlib.lines.Line2D([0], [0], linestyle='none', mfc='none',
-    #                 mec='black', marker='_', ms=2,)]
-    # descriptions=['Substitutions', 'Insertions', 'Deletions']
-
-    # if plot_cut_point:
-    #     proxies.append(
-    #           matplotlib.lines.Line2D([0], [1], linestyle='--', c='black', ms=6))
-        # descriptions.append('Predicted cleavage position')
-
-    #ax_hm_ref.legend(proxies, descriptions, numpoints=1, markerscale=2, loc='center', bbox_to_anchor=(0.5, 4),ncol=1)
-    # lgd = ax_hm.legend(proxies, descriptions, numpoints=1, markerscale=2, loc='upper center', bbox_to_anchor=(0.5, 0), ncol=1, fancybox=True, shadow=False)
-
-    # fig.savefig(fig_filename_root+'.pdf', bbox_inches='tight', bbox_extra_artists=(lgd,))
-    # if SAVE_ALSO_PNG:
-    #     fig.savefig(fig_filename_root+'.png', bbox_inches='tight', bbox_extra_artists=(lgd,))
-
 
     fig.savefig(fig_filename_root+'.pdf', bbox_inches='tight')
     if SAVE_ALSO_PNG:
