@@ -4499,11 +4499,11 @@ def main():
                         fig_filename_root = _jp('9a.'+ref_plot_name+'amino_acid_table_around_'+sgRNA_label)
                         # df_alleles.to_csv('df_alleles.txt', sep='\t')
 
-                        df_to_plot = CRISPRessoShared.get_amino_acid_dataframe_around_cut_assymetrical(
+                        df_to_plot = CRISPRessoShared.get_amino_acid_dataframe(
                             df_alleles.loc[df_alleles['Reference_Name'] == ref_name], 
                             cut_point, 
                             cut_point - refs[ref_name]['exon_positions'][0] + 1, 
-                            refs[ref_name]['exon_positions'][-1] - cut_point )
+                            len(CRISPRessoShared.get_amino_acids_from_nucs(coding_seq)))
                         
                         coding_seq = ''.join([refs[ref_name]['sequence'][i] for i in refs[ref_name]['exon_positions']])  
                         plot_9a_input = {

@@ -2742,8 +2742,8 @@ def prep_amino_acid_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
     -is_reference: list of booleans for whether the read is equal to the reference
     """
     
-    def pad_amino_acids(amino_acids, amino_acid_seq_length):
-        return amino_acids + [''] * (amino_acid_seq_length - len(amino_acids))
+    # def pad_amino_acids(amino_acids, amino_acid_seq_length):
+    #     return list(amino_acids) + [''] * (amino_acid_seq_length - len(amino_acids))
 
             
 
@@ -2756,26 +2756,27 @@ def prep_amino_acid_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
 
     re_find_indels=re.compile("(-*-)")
     idx_row=0
-    ref_sequence_amino_acids = CRISPRessoShared.get_amino_acids_from_nucs(reference_seq)
-    amino_acid_seq_length = len(ref_sequence_amino_acids)
+    # ref_sequence_amino_acids = CRISPRessoShared.get_amino_acids_from_nucs(reference_seq)
+    # amino_acid_seq_length = len(ref_sequence_amino_acids)
     for idx, row in df_alleles[df_alleles['%Reads']>=MIN_FREQUENCY][:MAX_N_ROWS].iterrows():
 
         # idx_amino_acids = pad_amino_acids(CRISPRessoShared.get_amino_acids_from_nucs(remove_deletions_for_amino_acids(idx.upper())), amino_acid_seq_length)
-        idx_amino_acids = pad_amino_acids(CRISPRessoShared.get_amino_acids_from_nucs(idx.upper().replace('-', '')), amino_acid_seq_length)
+        # idx_amino_acids = pad_amino_acids(CRISPRessoShared.get_amino_acids_from_nucs(idx.upper().replace('-', '')), amino_acid_seq_length)
+
+        # idx_amino_acids = pad_amino_acids(idx, len(reference_seq))
 
 
-        X.append(amino_acids_to_numbers(idx_amino_acids))
-        annot.append(list(idx_amino_acids))
+        X.append(amino_acids_to_numbers(idx))
+        annot.append(list(idx))
 
         has_indels = False
-        # for p in re_find_indels.finditer(row['Reference_Sequence']):
-        #     has_indels = True
-        #     insertion_dict[idx_row].append((p.start(), p.end()))
+        for p in re_find_indels.finditer(row['Reference_Sequence']):
+            has_indels = True
+            insertion_dict[idx_row].append((p.start(), p.end()))
 
         y_labels.append('%.2f%% (%d reads)' % (row['%Reads'], row['#Reads']))
         if idx == reference_seq and not has_indels:
             is_reference.append(True)
-            # is_reference.append(False)
         else:
             is_reference.append(False)
 
@@ -2786,11 +2787,15 @@ def prep_amino_acid_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
                    (row['Reference_Sequence'][i_sub]!=idx[i_sub]) and \
                    (row['Reference_Sequence'][i_sub]!='-') and\
                    (idx[i_sub]!='-')]
-        to_append=np.array([{}]*len(idx_amino_acids), dtype=object)
-        # to_append[ idxs_sub]={'weight':'bold', 'color':'black','size':16}
+        to_append=np.array([{}]*len(idx), dtype=object)
+        to_append[ idxs_sub]={'weight':'bold', 'color':'black','size':16}
         per_element_annot_kws.append(to_append)
 
-    return X, annot, y_labels, insertion_dict, per_element_annot_kws, is_reference, ref_sequence_amino_acids
+    for i, (x, a) in enumerate(zip(X, annot)):
+        X[i] = x + amino_acids_to_numbers([''] * (len(reference_seq) - len(a)))
+        annot[i] = a + [''] * (len(reference_seq) - len(a))
+
+    return X, annot, y_labels, insertion_dict, per_element_annot_kws, is_reference, reference_seq
 
 def plot_amino_acid_heatmap(
         reference_seq_amino_acids,

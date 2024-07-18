@@ -337,7 +337,7 @@ def get_amino_acids_from_nucs(seq):
             amino_acids.append('-')
         else:
             amino_acids.append(CODON_TO_AMINO_ACID_SINGLE_CHAR[codon])
-    return amino_acids
+    return ''.join(amino_acids)
 
 
 def unexplode_cigar(exploded_cigar_string):
@@ -1295,18 +1295,18 @@ def get_dataframe_around_cut_debug(df_alleles, cut_point, offset):
     df_alleles_around_cut['Unedited'] = df_alleles_around_cut['Unedited'] > 0
     return df_alleles_around_cut
 
-def get_amino_acid_row_around_cut_assymetrical(row,cut_point,plot_left,plot_right, matrix_path):
+def get_amino_acid_row(row, cut_point, plot_left, sequence_length, matrix_path):
     cut_idx = row['ref_positions'].index(cut_point)    
-    aligned_seq = get_amino_acids_from_nucs(row['Aligned_Sequence'][cut_idx-plot_left+1:cut_idx+plot_right+1].replace('-', ''))
-    reference_seq = get_amino_acids_from_nucs(row['Reference_Sequence'][cut_idx-plot_left+1:cut_idx+plot_right+1].replace('-', ''))
+    aligned_seq = get_amino_acids_from_nucs(row['Aligned_Sequence'][cut_idx-plot_left+1::].replace('-', ''))
+    reference_seq = get_amino_acids_from_nucs(row['Reference_Sequence'][cut_idx-plot_left+1::].replace('-', ''))
     aligned_seq, reference_seq, score = CRISPResso2Align.global_align(
         aligned_seq, 
         reference_seq, 
         CRISPResso2Align.read_matrix(matrix_path),
         np.zeros(len(reference_seq)+1, dtype=int)
     )
-    return (aligned_seq,
-            reference_seq,
+    return (aligned_seq[:sequence_length],
+            reference_seq[:sequence_length],
             row['Read_Status']=='UNMODIFIED',
             row['n_deleted'],
             row['n_inserted'],
@@ -1314,15 +1314,15 @@ def get_amino_acid_row_around_cut_assymetrical(row,cut_point,plot_left,plot_righ
             row['#Reads'], 
             row['%Reads'])
 
-def get_amino_acid_dataframe_around_cut_assymetrical(df_alleles, cut_point, plot_left, plot_right, matrix_path, collapse_by_sequence=True):
+def get_amino_acid_dataframe(df_alleles, cut_point, plot_left, sequence_length, matrix_path, collapse_by_sequence=True):
     if df_alleles.shape[0] == 0:
         return df_alleles
     ref1 = df_alleles['Reference_Sequence'].iloc[0]
     ref1 = ref1.replace('-','')
-    if (cut_point + plot_right + 1 > len(ref1)):
-        raise(BadParameterException('The plotting window cannot extend past the end of the amplicon. Amplicon length is ' + str(len(ref1)) + ' but plot extends to ' + str(cut_point+plot_right+1)))
+    # if (cut_point + plot_right + 1 > len(ref1)):
+    #     raise(BadParameterException('The plotting window cannot extend past the end of the amplicon. Amplicon length is ' + str(len(ref1)) + ' but plot extends to ' + str(cut_point+plot_right+1)))
 
-    df_alleles_around_cut=pd.DataFrame(list(df_alleles.apply(lambda row: get_amino_acid_row_around_cut_assymetrical(row,cut_point,plot_left,plot_right),axis=1).values),
+    df_alleles_around_cut=pd.DataFrame(list(df_alleles.apply(lambda row: get_amino_acid_row(row,cut_point,plot_left,sequence_length,matrix_path),axis=1).values),
                     columns=['Aligned_Sequence','Reference_Sequence','Unedited','n_deleted','n_inserted','n_mutated','#Reads','%Reads'])
 
     df_alleles_around_cut=df_alleles_around_cut.groupby(['Aligned_Sequence','Reference_Sequence','Unedited','n_deleted','n_inserted','n_mutated']).sum().reset_index().set_index('Aligned_Sequence')
