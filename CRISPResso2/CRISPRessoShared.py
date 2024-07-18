@@ -10,6 +10,7 @@ import errno
 import gzip
 import json
 import sys
+import textwrap
 import importlib.util
 from pathlib import Path
 
@@ -134,8 +135,18 @@ def set_console_log_level(logger, level, debug=False):
             break
 
 
+class CustomHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
+    def _split_lines(self, text, width):
+        if text.startswith('R|'):
+            return list(map(
+                lambda x: textwrap.fill(x, width, subsequent_indent=' ' * 24),
+                text[2:].splitlines(),
+            ))
+        return argparse.HelpFormatter._split_lines(self, text, width)
+
+
 def getCRISPRessoArgParser(tool, parser_title="CRISPResso Parameters"):
-    parser = argparse.ArgumentParser(description=parser_title, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(description=parser_title, formatter_class=CustomHelpFormatter)
     parser.add_argument('--version', action='version', version='%(prog)s ' + __version__)
 
     # Getting the directory of the current script
