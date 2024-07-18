@@ -4,10 +4,17 @@ from CRISPResso2 import CRISPResso2Align
 import numpy as np
 
 ALN_MATRIX = CRISPResso2Align.read_matrix('./CRISPResso2/EDNAFULL')
-AA_MATRIX = None
+AA_MATRIX = CRISPResso2Align.read_matrix('./CRISPResso2/BLOSUM62')
 
 
 def test_global_align():
+    """General alignment tests."""
+    seq1, seq2, score = CRISPResso2Align.global_align('ATTA', 'ATTA', matrix=ALN_MATRIX, gap_incentive=np.array([0,0,0,0,0],dtype=int))
+    assert seq1 == 'ATTA'
+    assert seq2 == 'ATTA'
+    assert score == 100
+
+def test_global_align_BLOSUM62():
     """General alignment tests."""
     seq1, seq2, score = CRISPResso2Align.global_align('ATTA', 'ATTA', matrix=ALN_MATRIX, gap_incentive=np.array([0,0,0,0,0],dtype=int))
     assert seq1 == 'ATTA'
@@ -145,9 +152,6 @@ def test_global_align_gap_incentive_s2():
     assert seq2 == 'TTTTT'
     assert round(score,3) == round(100*4/5.0,3)
 
-def test_amino_acid_global_align():
-    # seq1, seq2, score = CRISPResso2Align.global_align('ATTA', 'ATTA', matrix=AA_MATRIX, gap_incentive=np.array([0,0,0,0,0],dtype=int)
-    pass
 
 if __name__ == "__main__":
     # execute only if run as a script
