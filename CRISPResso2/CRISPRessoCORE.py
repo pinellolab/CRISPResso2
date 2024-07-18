@@ -4498,16 +4498,20 @@ def main():
 
                         fig_filename_root = _jp('9a.'+ref_plot_name+'amino_acid_table_around_'+sgRNA_label)
                         # df_alleles.to_csv('df_alleles.txt', sep='\t')
-
+                        coding_seq = ''.join([refs[ref_name]['sequence'][i] for i in refs[ref_name]['exon_positions']])
+                        coding_seq_amino_acids = CRISPRessoShared.get_amino_acids_from_nucs(coding_seq)  
                         df_to_plot = CRISPRessoShared.get_amino_acid_dataframe(
                             df_alleles.loc[df_alleles['Reference_Name'] == ref_name], 
                             cut_point, 
                             cut_point - refs[ref_name]['exon_positions'][0] + 1, 
-                            len(CRISPRessoShared.get_amino_acids_from_nucs(coding_seq)))
+                            len(coding_seq_amino_acids),
+                            os.path.join(_ROOT, "BLOSUM62"))
+
+                        amino_acid_cut_point = cut_point - refs[ref_name]['exon_positions'][0] + 1 // 3
+                                                
                         
-                        coding_seq = ''.join([refs[ref_name]['sequence'][i] for i in refs[ref_name]['exon_positions']])  
                         plot_9a_input = {
-                            'reference_seq': coding_seq,
+                            'reference_seq': coding_seq_amino_acids,
                             'df_alleles': df_to_plot,
                             'fig_filename_root': fig_filename_root,
                             'custom_colors': custom_config["colors"],
@@ -4519,6 +4523,7 @@ def main():
                             'sgRNA_names': sgRNA_names,
                             'sgRNA_mismatches': sgRNA_mismatches,
                             'annotate_wildtype_allele': args.annotate_wildtype_allele,
+                            'cut_point': amino_acid_cut_point,
                         }
 
                         amino_acid_filename = _jp(ref_plot_name+'amino_acid_table_around_'+sgRNA_label+'.txt')

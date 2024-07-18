@@ -2703,26 +2703,6 @@ def custom_heatmap(data, vmin=None, vmax=None, cmap=None, center=None, robust=Fa
         ax.set_aspect("equal")
     plotter.plot(ax, cbar_ax, kwargs)
     return ax
-
-
-def remove_deletions_for_amino_acids(seq): # CCC---GGG -> CCC---GGG
-    new_seq = ''
-    i = 0
-    counter = 0
-    while i < len(seq):
-        if seq[i] == '-':
-            if len(new_seq) % 3 == 0:
-                counter += 1
-            i += 1
-            if counter >= 3:
-                new_seq += '---'
-                counter = 0
-        else:
-            new_seq += seq[i]
-            i += 1
-            counter = 0
-
-    return new_seq
         
 
 def prep_amino_acid_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
@@ -2741,11 +2721,6 @@ def prep_amino_acid_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
     -per_element_annot_kws: annotations for each cell (e.g. bold for substitutions, etc.)
     -is_reference: list of booleans for whether the read is equal to the reference
     """
-    
-    # def pad_amino_acids(amino_acids, amino_acid_seq_length):
-    #     return list(amino_acids) + [''] * (amino_acid_seq_length - len(amino_acids))
-
-            
 
     X=[]
     annot=[]
@@ -2756,14 +2731,8 @@ def prep_amino_acid_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
 
     re_find_indels=re.compile("(-*-)")
     idx_row=0
-    # ref_sequence_amino_acids = CRISPRessoShared.get_amino_acids_from_nucs(reference_seq)
-    # amino_acid_seq_length = len(ref_sequence_amino_acids)
+
     for idx, row in df_alleles[df_alleles['%Reads']>=MIN_FREQUENCY][:MAX_N_ROWS].iterrows():
-
-        # idx_amino_acids = pad_amino_acids(CRISPRessoShared.get_amino_acids_from_nucs(remove_deletions_for_amino_acids(idx.upper())), amino_acid_seq_length)
-        # idx_amino_acids = pad_amino_acids(CRISPRessoShared.get_amino_acids_from_nucs(idx.upper().replace('-', '')), amino_acid_seq_length)
-
-        # idx_amino_acids = pad_amino_acids(idx, len(reference_seq))
 
 
         X.append(amino_acids_to_numbers(idx))
@@ -2811,6 +2780,7 @@ def plot_amino_acid_heatmap(
         sgRNA_intervals=None,
         sgRNA_names=None,
         sgRNA_mismatches=None,
+        amino_acid_cut_point=None,
         **kwargs):
     """
     Plots alleles in a heatmap (nucleotides color-coded for easy visualization)
@@ -2899,7 +2869,7 @@ def plot_amino_acid_heatmap(
 
     #cut point vertical line
     if plot_cut_point:
-        ax_hm.vlines([plot_aa_len/2], *ax_hm.get_ylim(), linestyles='dashed')
+        ax_hm.vlines(amino_acid_cut_point, *ax_hm.get_ylim(), linestyles='dashed')
 
 
     ax_hm_ref.yaxis.tick_right()
@@ -3571,7 +3541,7 @@ def plot_nucleotide_quilt_from_folder(crispresso_output_folder,fig_filename_root
             plot_count += 1
     print('Plotted ' + str(plot_count) + ' plots')
 
-def plot_amino_acid_table(reference_seq,df_alleles,fig_filename_root,custom_colors,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,plot_cut_point=True,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,annotate_wildtype_allele='****',**kwargs):
+def plot_amino_acid_table(reference_seq,df_alleles,fig_filename_root,custom_colors,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,plot_cut_point=True,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,annotate_wildtype_allele='****',amino_acid_cut_point=None,**kwargs):
     """
     plots an allele table for a dataframe with allele frequencies
     input:
@@ -3594,7 +3564,7 @@ def plot_amino_acid_table(reference_seq,df_alleles,fig_filename_root,custom_colo
             if is_ref:
                 y_labels[ix] += annotate_wildtype_allele
 
-    plot_amino_acid_heatmap(ref_sequence_amino_acids, fig_filename_root, X, annot, y_labels, insertion_dict, per_element_annot_kws, custom_colors, SAVE_ALSO_PNG, plot_cut_point, sgRNA_intervals, sgRNA_names, sgRNA_mismatches)
+    plot_amino_acid_heatmap(ref_sequence_amino_acids, fig_filename_root, X, annot, y_labels, insertion_dict, per_element_annot_kws, custom_colors, SAVE_ALSO_PNG, plot_cut_point, sgRNA_intervals, sgRNA_names, sgRNA_mismatches, amino_acid_cut_point)
 
 
 def plot_unmod_mod_pcts(fig_filename_root,df_summary_quantification,save_png,cutoff=None,max_samples_to_include_unprocessed=20,**kwargs):
