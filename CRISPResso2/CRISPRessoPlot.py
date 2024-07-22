@@ -88,17 +88,11 @@ def get_color_lookup(nucs, alpha, custom_colors=None):
                 rgb = hex_to_rgb(custom_colors[nuc])
             colors[nuc] = get_color(rgb[0], rgb[1], rgb[2])
         return colors
-    
-def get_amino_acid_colors(mode=None):
 
-    # this will preserve the order of the amino acids
-    amino_acids = [
-        '*', 'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
-        'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y', '', '-'
-    ]
 
-    if mode == 'clustal':
-        color_dict = {
+def get_amino_acid_color_dict(scheme='clustal'):
+    if scheme == 'clustal':
+        return {
             '*': '#FF0000',  # Assuming this is a stop codon or wildcard, you can choose an appropriate color.
             'A': '#000000',  # No specific color given, so default to black or choose an appropriate color.
             'C': '#000000',  # No specific color given, so default to black or choose an appropriate color.
@@ -123,8 +117,8 @@ def get_amino_acid_colors(mode=None):
             '' : '#FFFFFF',  # White
             '-': '#FFFFFF',  # White
         }
-    else:
-        color_dict = {
+    if scheme == 'something':
+        return {
             '*': '#000000',  # Stop codon - Black
             'A': '#90EE90',  # Light green
             'G': '#90EE90',  # Light green
@@ -149,7 +143,49 @@ def get_amino_acid_colors(mode=None):
             '': '#FFFFFF',   # White
             '-': '#FFFFFF',  # White
         }
-        
+    
+    if scheme == 'unique':
+        return {
+                '*': '#FF0000',  # Red (stop codon or wildcard)
+                'A': '#000000',  # Black
+                'C': '#1E90FF',  # DodgerBlue
+                'D': '#FF4500',  # OrangeRed
+                'E': '#32CD32',  # LimeGreen
+                'F': '#FFD700',  # Gold
+                'G': '#8A2BE2',  # BlueViolet
+                'H': '#FF69B4',  # HotPink
+                'I': '#00FF7F',  # SpringGreen
+                'K': '#00BFFF',  # DeepSkyBlue
+                'L': '#FF6347',  # Tomato
+                'M': '#ADFF2F',  # GreenYellow
+                'N': '#FF8C00',  # DarkOrange
+                'P': '#A52A2A',  # Brown
+                'Q': '#00CED1',  # DarkTurquoise
+                'R': '#8A2BE2',  # BlueViolet
+                'S': '#48D1CC',  # MediumTurquoise
+                'T': '#C71585',  # MediumVioletRed
+                'V': '#4682B4',  # SteelBlue
+                'W': '#D2691E',  # Chocolate
+                'Y': '#9ACD32',  # YellowGreen
+                '': '#FFFFFF',   # White (Empty)
+                '-': '#FFFFFF',  # White (Gap)
+            }
+    
+def get_amino_acid_colors(scheme):
+
+    # this will preserve the order of the amino acids
+    amino_acids = [
+        '*', 'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
+        'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y', '', '-'
+    ]
+
+    if isinstance(scheme, dict):
+        color_dict = scheme
+    elif isinstance(scheme, str):
+        color_dict = get_amino_acid_color_dict(scheme)
+    else:
+        raise TypeError(f'Amino acid color scheme must be a dictionary or a string. Got {type(scheme)}')
+
     hex_alpha = '66'
     return list(color_dict[aa] + hex_alpha for aa in amino_acids)
 
@@ -2801,7 +2837,11 @@ def plot_amino_acid_heatmap(
     """
     plot_aa_len=len(reference_seq_amino_acids)
 
-    amino_acid_colors = get_amino_acid_colors()
+    if isinstance(custom_colors['amino_acid_scheme'], str):
+        amino_acid_colors = get_amino_acid_colors(custom_colors['amino_acid_scheme'])
+    elif isinstance(custom_colors['amino_acid_scheme'], dict):
+        amino_acid_colors = custom_colors['amino_acid_scheme']
+
     cmap = colors_mpl.ListedColormap(amino_acid_colors)
 
     if len(per_element_annot_kws) > 1:
@@ -2849,7 +2889,6 @@ def plot_amino_acid_heatmap(
         ax_hm=plt.subplot(gs2[1:,:])
 
 
-    #TODO: set vmax to length of cmap
     custom_heatmap(ref_seq_hm, annot=ref_seq_annot_hm, annot_kws={'size':16}, cmap=cmap, fmt='s', ax=ax_hm_ref, vmin=0, vmax=len(cmap.colors), square=True)
     custom_heatmap(X, annot=np.array(annot), annot_kws={'size':16}, cmap=cmap, fmt='s', ax=ax_hm, vmin=0, vmax=len(cmap.colors), square=True, per_element_annot_kws=per_element_annot_kws)
 
@@ -2883,9 +2922,24 @@ def plot_amino_acid_heatmap(
 
     sns.set_context(rc={'axes.facecolor':'white','lines.markeredgewidth': 1,'mathtext.fontset' : 'stix','text.usetex':True,'text.latex.unicode':True} )
 
-    fig.savefig(fig_filename_root+'.pdf', bbox_inches='tight')
+    proxies = [matplotlib.lines.Line2D([0], [0], linestyle='none', mfc='black',
+                    mec='none', marker=r'$\mathbf{{{}}}$'.format('bold'), ms=18),
+               matplotlib.lines.Line2D([0], [0], linestyle='none', mfc='none',
+                    mec='r', marker='s', ms=8, markeredgewidth=2.5),
+              matplotlib.lines.Line2D([0], [0], linestyle='none', mfc='none',
+                    mec='black', marker='_', ms=2,)]
+    descriptions=['Substitutions', 'Insertions', 'Deletions']
+
+    if plot_cut_point:
+        proxies.append(
+              matplotlib.lines.Line2D([0], [1], linestyle='--', c='black', ms=6))
+        descriptions.append('Predicted cleavage position')
+
+    lgd = ax_hm.legend(proxies, descriptions, numpoints=1, markerscale=2, loc='upper center', bbox_to_anchor=(0.5, 0), ncol=1, fancybox=True, shadow=False)
+    
+    fig.savefig(fig_filename_root+'.pdf', bbox_inches='tight', bbox_extra_artists=(lgd,))
     if SAVE_ALSO_PNG:
-        fig.savefig(fig_filename_root+'.png', bbox_inches='tight')
+        fig.savefig(fig_filename_root+'.png', bbox_inches='tight', bbox_extra_artists=(lgd,))
     plt.close(fig)
 
 def prep_alleles_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
