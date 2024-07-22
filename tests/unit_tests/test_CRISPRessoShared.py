@@ -20,7 +20,7 @@ def test_get_mismatches():
         -5,
         -3,
     )
-    assert len(mismatch_cords) == 6 
+    assert len(mismatch_cords) == 6
 
 def test_get_relative_coordinates():
     s1inds_gap_left, s1inds_gap_right = CRISPRessoShared.get_relative_coordinates('ATCGT', 'TTCGT')
@@ -74,3 +74,27 @@ def test_get_relative_coordinates_ind_and_dels():
     assert s1inds_gap_left == [0, 2, 2, 2, 3]
     assert s1inds_gap_right == [0, 2, 3, 3, 3]
 
+
+def test_get_quant_window_ranges_from_include_idxs():
+    include_idxs = [0, 1, 2, 10, 11, 12]
+    assert CRISPRessoShared.get_quant_window_ranges_from_include_idxs(include_idxs) == [(0, 2), (10, 12)]
+
+
+def test_get_quant_window_ranges_from_include_idxs_empty():
+    include_idxs = []
+    assert CRISPRessoShared.get_quant_window_ranges_from_include_idxs(include_idxs) == []
+
+
+def test_get_quant_window_ranges_from_include_idxs_single():
+    include_idxs = [50, 51, 52, 53]
+    assert CRISPRessoShared.get_quant_window_ranges_from_include_idxs(include_idxs) == [(50, 53)]
+
+
+def test_get_quant_window_ranges_from_include_idxs_single_gap():
+    include_idxs = [50, 51, 52, 53, 55]
+    assert CRISPRessoShared.get_quant_window_ranges_from_include_idxs(include_idxs) == [(50, 53), (55, 55)]
+
+
+def test_get_quant_window_ranges_from_include_idxs_multiple_gaps():
+    include_idxs = [50, 51, 52, 53, 55, 56, 57, 58, 60]
+    assert CRISPRessoShared.get_quant_window_ranges_from_include_idxs(include_idxs) == [(50, 53), (55, 58), (60, 60)]

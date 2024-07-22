@@ -1741,6 +1741,38 @@ def get_sgRNA_mismatch_vals(seq1, seq2, start_loc, end_loc, coords_l, coords_r, 
     return list(set(this_mismatches))
 
 
+def get_quant_window_ranges_from_include_idxs(include_idxs):
+    """Given a list of indexes, return the ranges that those indexes include.
+
+    Parameters
+    ----------
+    include_idxs: list
+       A list of indexes included in the quantification window, for example
+       `[20, 21, 22, 35, 36, 37]`.
+
+    Returns
+    -------
+    list
+       A list of tuples representing the ranges included in the quantification
+       window, for example `[(20, 22), (35, 37)]`. If there is a single index, it
+       will be reported as `[(20, 20)]`.
+    """
+    quant_ranges = []
+    if include_idxs is None or len(include_idxs) == 0:
+        return quant_ranges
+    start_idx = include_idxs[0]
+    last_idx = include_idxs[0]
+    for idx in include_idxs[1:]:
+        if idx == last_idx + 1:
+            last_idx = idx
+        else:
+            quant_ranges.append((start_idx, last_idx))
+            start_idx = idx
+            last_idx = idx
+    quant_ranges.append((start_idx, last_idx))
+    return quant_ranges
+
+
 ######
 # terminal functions
 ######

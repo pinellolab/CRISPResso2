@@ -610,8 +610,8 @@ def main():
                         if not args.suppress_plots and not args.suppress_batch_summary_plots and should_plot_large_plots(sub_nucleotide_percentage_summary_df.shape[0], C2PRO_INSTALLED, args.use_matplotlib):
                             # plot for each guide
                             # show all sgRNA's on the plot
-                            sub_sgRNA_intervals = []
-                            for sgRNA_interval in consensus_sgRNA_intervals:
+                            sub_sgRNA_intervals, sub_consensus_guides = [], []
+                            for sgRNA_index, sgRNA_interval in enumerate(consensus_sgRNA_intervals):
                                 newstart = None
                                 newend = None
                                 for idx, i in enumerate(sgRNA_plot_idxs):
@@ -633,6 +633,10 @@ def main():
                                     newend = len(include_idxs) - 1
                                 # and add it to the list
                                 sub_sgRNA_intervals.append((newstart, newend))
+                                sub_consensus_guides.append(consensus_guides[sgRNA_index])
+
+                            # scale the include_idxs to be in terms of the plot centered around the sgRNA
+                            sub_include_idxs = include_idxs - sgRNA_plot_idxs[0]
 
                             this_window_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name.replace('.', '') + 'Nucleotide_percentage_quilt_around_sgRNA_'+sgRNA)
                             nucleotide_quilt_input = {
@@ -641,8 +645,8 @@ def main():
                                 'fig_filename_root': f'{this_window_nuc_pct_quilt_plot_name}.json' if not args.use_matplotlib and C2PRO_INSTALLED else this_window_nuc_pct_quilt_plot_name,
                                 'save_also_png': save_png,
                                 'sgRNA_intervals': sub_sgRNA_intervals,
-                                'sgRNA_sequences': consensus_guides,
-                                'quantification_window_idxs': include_idxs,
+                                'sgRNA_sequences': sub_consensus_guides,
+                                'quantification_window_idxs': sub_include_idxs,
                                 'custom_colors': custom_config['colors'],
                             }
                             debug('Plotting nucleotide percentage quilt for amplicon {0}, sgRNA {1}'.format(amplicon_name, sgRNA))
@@ -665,7 +669,7 @@ def main():
                                     'conversion_nuc_to': args.conversion_nuc_to,
                                     'save_also_png': save_png,
                                     'sgRNA_intervals': sub_sgRNA_intervals,
-                                    'quantification_window_idxs': include_idxs,
+                                    'quantification_window_idxs': sub_include_idxs,
                                     'custom_colors': custom_config['colors']
                                 }
                                 debug('Plotting nucleotide conversion map for amplicon {0}, sgRNA {1}'.format(amplicon_name, sgRNA))
@@ -754,7 +758,7 @@ def main():
                         crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Composition of each base for the amplicon ' + amplicon_name
                         crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), ('Modification frequencies', os.path.basename(modification_frequency_summary_filename))]
                         if args.base_editor_output and should_plot_large_plots(nucleotide_percentage_summary_df.shape[0], False, args.use_matplotlib):
-                            this_nuc_conv_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt')
+                            this_nuc_conv_plot_name = _jp(amplicon_plot_name + 'Nucleotide_conversion_map')
                             conversion_map_input = {
                                 'nuc_pct_df': nucleotide_percentage_summary_df,
                                 'fig_filename_root': this_nuc_conv_plot_name,
@@ -807,6 +811,7 @@ def main():
                             'plot_path': plot_path,
                             'title': modification_type,
                             'div_id': heatmap_div_id,
+                            'amplicon_name': amplicon_name,
                         }
                         debug('Plotting allele modification heatmap for {0}'.format(amplicon_name))
                         plot(
@@ -841,6 +846,7 @@ def main():
                             'plot_path': plot_path,
                             'title': modification_type,
                             'div_id': line_div_id,
+                            'amplicon_name': amplicon_name,
                         }
                         debug('Plotting allele modification line plot for {0}'.format(amplicon_name))
                         plot(
