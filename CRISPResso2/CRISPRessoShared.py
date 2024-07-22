@@ -1896,6 +1896,7 @@ def check_custom_config(args):
             'G': '#FFFF99',
             'N': '#C8C8C8',
             '-': '#1E1E1E',
+            'amino_acid_scheme': 'unique'
         },
         "guardrails": {
             'min_total_reads': 10000,
