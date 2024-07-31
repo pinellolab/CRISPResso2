@@ -3223,7 +3223,7 @@ def main():
                     str(refs[ref_name]['sequence']) + "\t" +
                     str(refs[ref_name]['sequence_length']) + "\t" +
                     str(refs[ref_name]['min_aln_score']) + "\t" +
-                    str(refs[ref_name]['gap_incentive']) + "\t" +
+                    str(refs[ref_name]['gap_incentive'].tolist()) + "\t" +
                     str(refs[ref_name]['sgRNA_cut_points']) + "\t" +
                     str(refs[ref_name]['sgRNA_plot_cut_points']) + "\t" +
                     str(refs[ref_name]['sgRNA_intervals']) + "\t" +
