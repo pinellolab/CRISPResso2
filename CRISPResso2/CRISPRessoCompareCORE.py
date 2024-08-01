@@ -195,7 +195,8 @@ def main():
         sig_counts = {}  # number of bp significantly modified (bonferonni corrected fisher pvalue)
         sig_counts_quant_window = {}
         percent_complete_start, percent_complete_end = 10, 90
-        percent_complete_step = (percent_complete_end - percent_complete_start) / len(amplicon_names_in_both)
+        if amplicon_names_in_both:
+            percent_complete_step = (percent_complete_end - percent_complete_start) / len(amplicon_names_in_both)
         for amplicon_name in amplicon_names_in_both:
             percent_complete = percent_complete_start + percent_complete_step * amplicon_names_in_both.index(amplicon_name)
             info('Loading data for amplicon %s' % amplicon_name, {'percent_complete': percent_complete})
