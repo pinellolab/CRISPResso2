@@ -13,4 +13,6 @@ dependencies:
   - pyparsing=2.3.1
   - scipy
   - matplotlib=3.8.4
-  - pandas
+  - pandas>2
+  - pip:
+    - ydiff
