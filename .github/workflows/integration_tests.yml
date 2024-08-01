@@ -19,79 +19,98 @@ jobs:
       fail-fast: false
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up Conda
-      uses: conda-incubator/setup-miniconda@v2
-      with:
-          mamba-version: "*"
+      - name: Setup Conda Env
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: test_env
           channels: conda-forge,bioconda,defaults
           auto-activate-base: false
-          activate-environment: test_env
-          environment-file: .github/envs/test_env.yml
+          use-mamba: true
 
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y gcc g++ bowtie2 samtools libsys-hostname-long-perl
-        pip install ydiff
+      - name: Get Date
+        run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
+        shell: bash
 
-    - name: Create directory for files
-      run: |
-        mkdir ../CRISPResso2_copy
-        cp -r * ../CRISPResso2_copy
+      - name: Cache Conda Env
+        id: cache-env
+        uses: actions/cache@v3
+        env:
+          # Increase this number to reset the cache if envs/test_env.yml hasn't changed
+          CACHE_NUMBER: 0
+        with:
+          path: /usr/share/miniconda/envs/test_env
+          key:
+            conda-${{ runner.os }}--${{ runner.arch }}--${{ steps.get-date.outputs.today }}-${{ env.CACHE_NUMBER }}-${{ hashFiles('.github/envs/test_env.yml') }}
 
-    - name: Copy C2_tests repo
-      uses: actions/checkout@v3
-      with:
-        repository: edilytics/CRISPResso2_tests
-        # ref: '<BRANCH-NAME>' # Use this to specify a branch other than master
+      - name: Update Conda Env
+        run: |
+          conda env update -n test_env -f .github/envs/test_env.yml
+        if: steps.cache-env.outputs.cache-hit != 'true'
 
-    - name: Run Basic
-      run: |
-        make basic test print
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc g++ bowtie2 samtools libsys-hostname-long-perl
+          conda list
 
-    - name: Run Params
-      if: success() || failure()
-      run: |
-        make params test print
+      - name: Create directory for files
+        run: |
+          mkdir ../CRISPResso2_copy
+          cp -r * ../CRISPResso2_copy
 
-    - name: Run Prime Editor
-      if: success() || failure()
-      run: |
-        make prime-editor test print
+      - name: Copy C2_tests repo
+        uses: actions/checkout@v3
+        with:
+          repository: edilytics/CRISPResso2_tests
+          # ref: '<BRANCH-NAME>' # update to specific branch
 
-    - name: Run Batch
-      if: success() || failure()
-      run: |
-        make batch test print
+      - name: Run Basic
+        run: |
+          make basic test print
 
-    - name: Run Pooled
-      if: success() || failure()
-      run: |
-        make pooled test print
+      - name: Run Params
+        if: success() || failure()
+        run: |
+          make params test print
 
-    - name: Run Pooled Mixed Mode
-      if: success() || failure()
-      run: |
-        make pooled-mixed-mode test print
+      - name: Run Prime Editor
+        if: success() || failure()
+        run: |
+          make prime-editor test print
 
-    - name: Run Pooled Mixed Mode Demux
-      if: success() || failure()
-      run: |
-        make pooled-mixed-mode-genome-demux test print
+      - name: Run Batch
+        if: success() || failure()
+        run: |
+          make batch test print
 
-    - name: Run Pooled Paired Sim
-      if: success() || failure()
-      run: |
-        make pooled-paired-sim test print
+      - name: Run Pooled
+        if: success() || failure()
+        run: |
+          make pooled test print
 
-    - name: Run WGS
-      if: success() || failure()
-      run: |
-        make wgs test print
+      - name: Run Pooled Mixed Mode
+        if: success() || failure()
+        run: |
+          make pooled-mixed-mode test print
 
-    - name: Run Compare
-      if: success() || failure()
-      run: |
-        make compare test print
+      - name: Run Pooled Mixed Mode Demux
+        if: success() || failure()
+        run: |
+          make pooled-mixed-mode-genome-demux test print
+
+      - name: Run Pooled Paired Sim
+        if: success() || failure()
+        run: |
+          make pooled-paired-sim test print
+
+      - name: Run WGS
+        if: success() || failure()
+        run: |
+          make wgs test print
+
+      - name: Run Compare
+        if: success() || failure()
+        run: |
+          make compare test print
