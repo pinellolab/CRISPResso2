@@ -364,8 +364,13 @@ def plot_indel_size_distribution(
         fancybox=True,
         shadow=True,
     )
-    lgd.legendHandles[0].set_height(3)
-    lgd.legendHandles[1].set_height(3)
+    # Try catch block to account for updated naming conventions in matplotlib v3.9.0
+    try:
+        lgd.legendHandles[0].set_height(3)
+        lgd.legendHandles[1].set_height(3)
+    except AttributeError as e:
+        lgd.legend_handles[0].set_height(3)
+        lgd.legend_handles[1].set_height(3)
 
     ax.tick_params(left=True, bottom=True)
     fig.savefig(plot_root + '.pdf', pad_inches=1, bbox_inches='tight')
@@ -413,8 +418,13 @@ def plot_frequency_deletions_insertions(
         fancybox=True,
         shadow=True,
     )
-    lgd.legendHandles[0].set_height(6)
-    lgd.legendHandles[1].set_height(6)
+    # Try catch block to account for updated naming conventions in matplotlib v3.9.0
+    try:
+        lgd.legendHandles[0].set_height(6)
+        lgd.legendHandles[1].set_height(6)
+    except AttributeError as e:
+        lgd.legend_handles[0].set_height(6)
+        lgd.legend_handles[1].set_height(6)
 
     ax.set_xlim([-1, xmax_ins])
     y_label_values= np.round(
@@ -447,8 +457,13 @@ def plot_frequency_deletions_insertions(
         fancybox=True,
         shadow=True,
     )
-    lgd.legendHandles[0].set_height(6)
-    lgd.legendHandles[1].set_height(6)
+    # Try catch block to account for updated naming conventions in matplotlib v3.9.0
+    try:
+        lgd.legendHandles[0].set_height(6)
+        lgd.legendHandles[1].set_height(6)
+    except AttributeError as e:
+        lgd.legend_handles[0].set_height(6)
+        lgd.legend_handles[1].set_height(6)
 
     ax.set_xlim([-1 * xmax_del, 1])
     y_label_values = np.round(
@@ -481,8 +496,13 @@ def plot_frequency_deletions_insertions(
         fancybox=True,
         shadow=True,
     )
-    lgd.legendHandles[0].set_height(6)
-    lgd.legendHandles[1].set_height(6)
+    # Try catch block to account for updated naming conventions in matplotlib v3.9.0
+    try:
+        lgd.legendHandles[0].set_height(6)
+        lgd.legendHandles[1].set_height(6)
+    except AttributeError as e:
+        lgd.legend_handles[0].set_height(6)
+        lgd.legend_handles[1].set_height(6)
 
     ax.set_xlim([-1, xmax_mut])
     y_label_values= np.round(
