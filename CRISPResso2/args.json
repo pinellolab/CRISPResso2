@@ -659,7 +659,7 @@
         "skip_failed": {
             "keys": ["--skip_failed"],
             "help": "Continue with batch analysis even if one sample fails",
-            "action":"store_true",
+            "action": "store_true",
             "tools": ["Batch", "Pooled", "WGS"]
         },
         "min_reads_for_inclusion": {
