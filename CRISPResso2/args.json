@@ -98,7 +98,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "expected_hdr_amplicon_seq": {
-            "name": "Expected HDR Amplicon Sequence:",
+            "name": "Expected HDR Amplicon Sequence",
             "keys": ["-e", "--expected_hdr_amplicon_seq"],
             "help": "Amplicon sequence expected after HDR",
             "type": "str",
@@ -106,7 +106,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "coding_seq": {
-            "name": "Exon Specification Coding Sequence/s:",
+            "name": "Exon Specification Coding Sequence/s",
             "keys": ["-c", "--coding_seq"],
             "help": "Subsequence/s of the amplicon sequence covering one or more coding sequences for frameshift analysis. If more than one (for example, split by intron/s), please separate by commas.",
             "type": "str",
@@ -121,7 +121,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "min_average_read_quality": {
-            "name": "Minimum Average Read Quality(phred33 Scale)",
+            "name": "Minimum Average Read Quality (phred33 Scale)",
             "keys": ["-q", "--min_average_read_quality"],
             "help": "Minimum average quality score (phred33) to keep a read",
             "type": "int",
@@ -129,7 +129,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "min_single_bp_quality": {
-            "name": "Minimum Single bp Quality(phred33 Scale)",
+            "name": "Minimum Single bp Quality (phred33 Scale)",
             "keys": ["-s", "--min_single_bp_quality"],
             "help": "Minimum single bp score (phred33) to keep a read",
             "type": "int",
@@ -137,7 +137,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "min_bp_quality_or_N": {
-            "name": "Minimum bp Quality or N(phred33 Scale)",
+            "name": "Minimum bp Quality or N (phred33 Scale)",
             "keys": ["--min_bp_quality_or_N"],
             "help": "Bases with a quality score (phred33) less than this value will be set to 'N'",
             "type": "int",
@@ -340,6 +340,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "needleman_wunsch_aln_matrix_loc": {
+            "name": "Needleman Wunsch Alignment Matrix Location",
             "keys": ["--needleman_wunsch_aln_matrix_loc"],
             "help": "Location of the matrix specifying substitution scores in the NCBI format (see ftp://ftp.ncbi.nih.gov/blast/matrices/)",
             "type": "str",
@@ -395,6 +396,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "allele_plot_pcts_only_for_assigned_reference": {
+            "name": "Allele Plot Percentages Only for Assigned Reference",
             "keys": ["--allele_plot_pcts_only_for_assigned_reference"],
             "help": "If set, in the allele plots, the percentages will show the percentage as a percent of reads aligned to the assigned reference. Default behavior is to show percentage as a percent of all reads.",
             "action": "store_true",
@@ -586,12 +588,14 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "crispresso1_mode": {
+            "name": "CRISPResso 1 Mode",
             "keys": ["--crispresso1_mode"],
             "help": "Parameter usage as in CRISPResso 1",
             "action": "store_true",
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "dsODN": {
+            "name": "dsODN",
             "keys": ["--dsODN"],
             "type": "str",
             "help": "Label reads with the dsODN sequence provided",
@@ -617,6 +621,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
         "n_processes": {
+            "name": "Number of Processes",
             "keys": ["-p", "--n_processes"],
             "type": "str",
             "help": "Specify the number of processes to use for analysis. Please use with caution since increasing this parameter will significantly increase the memory required to run CRISPResso. Can be set to 'max'.",
@@ -631,6 +636,7 @@
             "tools": ["Core", "Batch", "Pooled"]
         },
         "bam_chr_loc": {
+            "name": "BAM Chromosome Location",
             "keys": ["--bam_chr_loc"],
             "type": "str",
             "help": "Chromosome location in bam for reads to process. For example: 'chr1:50-100' or 'chrX'.",
@@ -653,7 +659,7 @@
         "skip_failed": {
             "keys": ["--skip_failed"],
             "help": "Continue with batch analysis even if one sample fails",
-            "action":"store_true",
+            "action": "store_true",
             "tools": ["Batch", "Pooled", "WGS"]
         },
         "min_reads_for_inclusion": {
@@ -677,6 +683,7 @@
             "tools": ["Batch"]
         },
         "crispresso_command": {
+            "name": "CRISPResso Command",
             "keys": ["--crispresso_command"],
             "help": "CRISPResso command to call",
             "type": "str",
@@ -685,7 +692,7 @@
         },
         "amplicons_file": {
             "keys": ["-f", "--amplicons_file"],
-            "help": "Amplicons description file. This file is a tab-delimited text file with up to 14 columns (2 required): amplicon_name:  an identifier for the amplicon (must be unique). amplicon_seq:  amplicon sequence used in the experiment. guide_seq (OPTIONAL):  sgRNA sequence used for this amplicon without the PAM sequence. Multiple guides can be given separated by commas and not spaces. expected_hdr_amplicon_seq (OPTIONAL): expected amplicon sequence in case of HDR. coding_seq (OPTIONAL): Subsequence(s) of the amplicon corresponding to coding sequences. If more than one separate them by commas and not spaces. prime_editing_pegRNA_spacer_seq (OPTIONAL): pegRNA spacer sgRNA sequence used in prime editing. The spacer should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the given sequence. prime_editing_nicking_guide_seq (OPTIONAL): Nicking sgRNA sequence used in prime editing. The sgRNA should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the sequence. prime_editing_pegRNA_extension_seq (OPTIONAL): Extension sequence used in prime editing. The sequence should be given in the RNA 5'->3' order, such that the sequence starts with the RT template including the edit, followed by the Primer-binding site (PBS). prime_editing_pegRNA_scaffold_seq (OPTIONAL): If given, reads containing any of this scaffold sequence before extension sequence (provided by --prime_editing_extension_seq) will be classified as 'Scaffold-incorporated'. The sequence should be given in the 5'->3' order such that the RT template directly follows this sequence. A common value ends with 'GGCACCGAGUCGGUGC'. prime_editing_pegRNA_scaffold_min_match_length (OPTIONAL): Minimum number of bases matching scaffold sequence for the read to be counted as 'Scaffold-incorporated'. If the scaffold sequence matches the reference sequence at the incorporation site, the minimum number of bases to match will be minimally increased (beyond this parameter) to disambiguate between prime-edited and scaffold-incorporated sequences. prime_editing_override_prime_edited_ref_seq (OPTIONAL): If given, this sequence will be used as the prime-edited reference sequence. This may be useful if the prime-edited reference sequence has large indels or the algorithm cannot otherwise infer the correct reference sequence. quantification_window_coordinates (OPTIONAL): Bp positions in the amplicon sequence specifying the quantification window. This parameter overrides values of the '--quantification_window_center', '-- cleavage_offset', '--window_around_sgrna' or '-- window_around_sgrna' values. Any indels/substitutions outside this window are excluded. Indexes are 0-based, meaning that the first nucleotide is position 0. Ranges are separated by the dash sign like 'start-stop', and multiple ranges can be separated by the underscore (_). A value of 0 disables this filter. (can be comma-separated list of values, corresponding to amplicon sequences given in --amplicon_seq e.g. 5-10,5-10_20-30 would specify the 5th-10th bp in the first reference and the 5th-10th and 20th-30th bp in the second reference) (default: None) quantification_window_size (OPTIONAL): Defines the size (in bp) of the quantification window extending from the position specified by the '--cleavage_offset' or '--quantification_window_center' parameter in relation to the provided guide RNA sequence(s) (--sgRNA). Mutations within this number of bp from the quantification window center are used in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 1, 1bp on each side of the cleavage position for a total length of 2bp. quantification_window_center (OPTIONAL): Center of quantification window to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17.",
+            "help": "R|Amplicons description file. This file is a tab-delimited text file with up to 14 columns (2 required):\n  - amplicon_name:  an identifier for the amplicon (must be unique).\n  - amplicon_seq:  amplicon sequence used in the experiment.\n  - guide_seq (OPTIONAL):  sgRNA sequence used for this amplicon without the PAM sequence. Multiple guides can be given separated by commas and not spaces.\n  - expected_hdr_amplicon_seq (OPTIONAL): expected amplicon sequence in case of HDR.\n  - coding_seq (OPTIONAL): Subsequence(s) of the amplicon corresponding to coding sequences. If more than one separate them by commas and not spaces.\n  - prime_editing_pegRNA_spacer_seq (OPTIONAL): pegRNA spacer sgRNA sequence used in prime editing. The spacer should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the given sequence.\n  - prime_editing_nicking_guide_seq (OPTIONAL): Nicking sgRNA sequence used in prime editing. The sgRNA should not include the PAM sequence. The sequence should be given in the RNA 5'->3' order, so for Cas9, the PAM would be on the right side of the sequence.\n  - prime_editing_pegRNA_extension_seq (OPTIONAL): Extension sequence used in prime editing. The sequence should be given in the RNA 5'->3' order, such that the sequence starts with the RT template including the edit, followed by the Primer-binding site (PBS).\n  - prime_editing_pegRNA_scaffold_seq (OPTIONAL): If given, reads containing any of this scaffold sequence before extension sequence (provided by --prime_editing_extension_seq) will be classified as 'Scaffold-incorporated'. The sequence should be given in the 5'->3' order such that the RT template directly follows this sequence. A common value ends with 'GGCACCGAGUCGGUGC'.\n  - prime_editing_pegRNA_scaffold_min_match_length (OPTIONAL): Minimum number of bases matching scaffold sequence for the read to be counted as 'Scaffold-incorporated'. If the scaffold sequence matches the reference sequence at the incorporation site, the minimum number of bases to match will be minimally increased (beyond this parameter) to disambiguate between prime-edited and scaffold-incorporated sequences.\n  - prime_editing_override_prime_edited_ref_seq (OPTIONAL): If given, this sequence will be used as the prime-edited reference sequence. This may be useful if the prime-edited reference sequence has large indels or the algorithm cannot otherwise infer the correct reference sequence.\n  - quantification_window_coordinates (OPTIONAL): Bp positions in the amplicon sequence specifying the quantification window. This parameter overrides values of the '--quantification_window_center', '-- cleavage_offset', '--window_around_sgrna' or '-- window_around_sgrna' values. Any indels/substitutions outside this window are excluded. Indexes are 0-based, meaning that the first nucleotide is position 0. Ranges are separated by the dash sign like 'start-stop', and multiple ranges can be separated by the underscore (_). A value of 0 disables this filter. (can be comma-separated list of values, corresponding to amplicon sequences given in --amplicon_seq e.g. 5-10,5-10_20-30 would specify the 5th-10th bp in the first reference and the 5th-10th and 20th-30th bp in the second reference) (default: None)\n  - quantification_window_size (OPTIONAL): Defines the size (in bp) of the quantification window extending from the position specified by the '--cleavage_offset' or '--quantification_window_center' parameter in relation to the provided guide RNA sequence(s) (--sgRNA). Mutations within this number of bp from the quantification window center are used in classifying reads as modified or unmodified. A value of 0 disables this window and indels in the entire amplicon are considered. Default is 1, 1bp on each side of the cleavage position for a total length of 2bp.\n  - quantification_window_center (OPTIONAL): Center of quantification window to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. For cleaving nucleases, this is the predicted cleavage position. The default is -3 and is suitable for the Cas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1. For base editors, this could be set to -17.",
             "type": "str",
             "default": "",
             "tools": ["Pooled"]
@@ -711,6 +718,7 @@
             "tools": ["Pooled"]
         },
         "min_reads_to_use_region_pooled": {
+            "name": "Minimum Reads to Use Region",
             "keys": ["--min_reads_to_use_region"],
             "help": "Minimum number of reads that align to a region to perform the CRISPResso analysis",
             "type": "float",
@@ -777,7 +785,7 @@
         },
         "region_file": {
             "keys": ["-f", "--region_file"],
-            "help": "Regions description file. A BED format file containing the regions to analyze, one per line. The REQUIRED columns are: chr_id(chromosome name), bpstart(start position), bpend(end position), the optional columns are:name (an unique indentifier for the region), guide_seq, expected_hdr_amplicon_seq, coding_seq, see CRISPResso help for more details on these last 3 parameters)",
+            "help": "R|Regions description file. A BED format file containing the regions to analyze, one per line. The REQUIRED columns are:\n  - chr_id (chromosome name)\n  - bpstart (start position)\n  - bpend (end position)\n\nThe optional columns are:\n  - name (an unique indentifier for the region)\n  - guide_seq\n  - expected_hdr_amplicon_seq\n  - coding_seq\nSee CRISPResso --help for more details on these last 3 parameters",
             "type": "str",
             "required": true,
             "tools": ["WGS"]
@@ -791,6 +799,7 @@
             "tools": ["WGS"]
         },
         "min_reads_to_use_region_wgs": {
+            "name": "Minimum Reads to Use Region",
             "keys": ["--min_reads_to_use_region"],
             "help": "Minimum number of reads that align to a region to perform the CRISPResso analysis for WGS",
             "type": "float",
@@ -834,7 +843,7 @@
         },
         "use_matplotlib": {
             "keys": ["--use_matplotlib"],
-            "help": "Use matplotlib for plotting instead of plotl/d3 when CRISPRessoPro is installed",
+            "help": "Use matplotlib for plotting instead of plotly/d3 when CRISPRessoPro is installed",
             "action": "store_true",
             "tools": ["Core", "Batch", "Pooled", "WGS", "Compare"]
         }

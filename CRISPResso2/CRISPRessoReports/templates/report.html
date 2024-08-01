@@ -317,7 +317,7 @@
 								{% for (data_label,data_path) in report_data['figures']['datas'][amplicon_name]['plot_2a'] %}
 									<p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
 								{% endfor %}
-								
+
 								{% if 'plot_2b' in report_data['figures']['htmls'][amplicon_name] %}
 								  	{{ report_data['figures']['htmls'][amplicon_name]['plot_2b']|safe }}
 								{% elif report_data['figures']['sgRNA_based_names'][amplicon_name] and  report_data['figures']['sgRNA_based_names'][amplicon_name]['2b']%}
@@ -623,9 +623,11 @@
 
 {% block foot %}
 <script>
+{% if not C2PRO_INSTALLED %}
 function updateZoom(e) {
   /*prevent any other actions that may occur when moving over the image:*/
 //  e.preventDefault();
+
   var img = e.target.imgObj
   var view = e.target.viewObj
   var lens = e.target.lensObj
@@ -718,8 +720,8 @@ try {
 
 		{% endif %}
 	{% endfor %}
-	</script>
-
+{% endif %}
+</script>
 
 {% if C2PRO_INSTALLED %}
   <script src="https://unpkg.com/d3@5"></script>
