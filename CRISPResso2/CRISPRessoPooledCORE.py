@@ -501,24 +501,35 @@ def main():
                 CRISPRessoShared.force_symlink(os.path.abspath(args.fastq_r1), symlink_filename)
                 output_forward_filename = symlink_filename
             else:
-                info('Trimming sequences with fastp...')
                 output_forward_filename = _jp('reads.trimmed.fq.gz')
-                cmd = '{command} -i {r1} -o {out} {options} --json {json_report} --html {html_report} >> {log} 2>&1'.format(
-                    command=args.fastp_command,
-                    r1=args.fastq_r1,
-                    out=output_forward_filename,
-                    options=args.fastp_options_string,
-                    json_report=_jp('fastp_report.json'),
-                    html_report=_jp('fastp_report.html'),
-                    log=log_filename,
-                )
-                fastp_status = sb.call(cmd, shell=True)
+                if can_finish_incomplete_run and 'trim_input' in crispresso2_info['running_info']['finished_steps']:
+                    info('Using previously-trimmed input sequences...')
+                    trim_cmd = crispresso2_info['running_info']['finished_steps']['trim_input']
+                else:
+                    info('Trimming sequences with fastp...')
+                    trim_cmd = '{command} -i {r1} -o {out} {options} --json {json_report} --html {html_report} >> {log} 2>&1'.format(
+                        command=args.fastp_command,
+                        r1=args.fastq_r1,
+                        out=output_forward_filename,
+                        options=args.fastp_options_string,
+                        json_report=_jp('fastp_report.json'),
+                        html_report=_jp('fastp_report.html'),
+                        log=log_filename,
+                    )
+                    fastp_status = sb.call(trim_cmd, shell=True)
 
-                if fastp_status:
-                    raise CRISPRessoShared.FastpException('FASTP failed to run, please check the log file.')
+                    if fastp_status:
+                        raise CRISPRessoShared.FastpException('FASTP failed to run, please check the log file.')
+
+                    crispresso2_info['running_info']['finished_steps']['trim_input'] = trim_cmd
 
                 if not args.keep_intermediate:
                     files_to_remove += [output_forward_filename]
+
+                crispresso2_info['running_info']['fastp_trim_command'] = trim_cmd
+                CRISPRessoShared.write_crispresso_info(
+                    crispresso2_info_file, crispresso2_info
+                )
 
                 info('Done!', {'percent_complete': 7})
 
@@ -534,32 +545,45 @@ def main():
             not_combined_1_filename = _jp('out.notCombined_1.fastq.gz')
             not_combined_2_filename = _jp('out.notCombined_2.fastq.gz')
 
-            info('Merging paired sequences with fastp...')
-            fastp_cmd = '{command} -i {r1} -I {r2} --merge --merged_out {out_merged} --unpaired1 {unpaired1} --unpaired2 {unpaired2} --overlap_len_require {min_overlap} --thread {num_threads} --json {json_report} --html {html_report} {options} >> {log} 2>&1'.format(
-                command=args.fastp_command,
-                r1=args.fastq_r1,
-                r2=args.fastq_r2,
-                out_merged=processed_output_filename,
-                unpaired1=not_combined_1_filename,
-                unpaired2=not_combined_2_filename,
-                min_overlap=args.min_paired_end_reads_overlap,
-                num_threads=n_processes_for_pooled,
-                json_report=_jp('fastp_report.json'),
-                html_report=_jp('fastp_report.html'),
-                options=args.fastp_options_string,
-                log=log_filename,
-            )
-            fastp_status = sb.call(fastp_cmd, shell=True)
 
-            if args.debug:
-                info('Fastp command: {0}'.format(fastp_cmd))
+            if can_finish_incomplete_run and 'merge_paired_fastq' in crispresso2_info['running_info']['finished_steps']:
+                info('Using previously-merged paired sequences...')
+                fastp_cmd = crispresso2_info['running_info']['finished_steps']['merge_paired_fastq']
+            else:
+                info('Merging paired sequences with fastp...')
+                fastp_cmd = '{command} -i {r1} -I {r2} --merge --merged_out {out_merged} --unpaired1 {unpaired1} --unpaired2 {unpaired2} --overlap_len_require {min_overlap} --thread {num_threads} --json {json_report} --html {html_report} {options} >> {log} 2>&1'.format(
+                    command=args.fastp_command,
+                    r1=args.fastq_r1,
+                    r2=args.fastq_r2,
+                    out_merged=processed_output_filename,
+                    unpaired1=not_combined_1_filename,
+                    unpaired2=not_combined_2_filename,
+                    min_overlap=args.min_paired_end_reads_overlap,
+                    num_threads=n_processes_for_pooled,
+                    json_report=_jp('fastp_report.json'),
+                    html_report=_jp('fastp_report.html'),
+                    options=args.fastp_options_string,
+                    log=log_filename,
+                )
+
+                if args.debug:
+                    info('Fastp command: {0}'.format(fastp_cmd))
+
+                fastp_status = sb.call(fastp_cmd, shell=True)
+
+                if fastp_status:
+                    raise CRISPRessoShared.FastpException('Fastp failed to run, please check the log file.')
+
+                crispresso2_info['running_info']['finished_steps']['merge_paired_fastq'] = fastp_cmd
+
+            crispresso2_info['running_info']['fastp_command'] = fastp_cmd
+            CRISPRessoShared.write_crispresso_info(
+                crispresso2_info_file, crispresso2_info
+            )
 
             if not args.keep_intermediate:
                 files_to_remove += [processed_output_filename, not_combined_1_filename, not_combined_2_filename]
 
-            if fastp_status:
-                raise CRISPRessoShared.FastpException('Fastp failed to run, please check the log file.')
-            crispresso2_info['running_info']['fastp_command'] = fastp_cmd
 
             if args.force_merge_pairs:
                 new_merged_filename = _jp('out.forcemerged_uncombined.fastq.gz')
@@ -582,6 +606,7 @@ def main():
             (N_READS_INPUT, N_READS_AFTER_PREPROCESSING) = crispresso2_info['running_info']['finished_steps']['count_input_reads']
         # count reads
         else:
+            info('Counting input reads...')
             if args.aligned_pooled_bam is not None:
                 N_READS_INPUT = get_n_reads_bam(args.aligned_pooled_bam)
                 N_READS_AFTER_PREPROCESSING = N_READS_INPUT
@@ -595,6 +620,7 @@ def main():
             CRISPRessoShared.write_crispresso_info(
                 crispresso2_info_file, crispresso2_info
             )
+            info('Done!', {'percent_complete': 8})
 
         # load gene annotation
         if args.gene_annotations:
