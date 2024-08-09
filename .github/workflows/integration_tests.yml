@@ -114,3 +114,8 @@ jobs:
         if: success() || failure()
         run: |
           make compare test print
+
+      - name: Run Aggregate
+        if: success() || failure()
+        run: |
+          make aggregate test print
