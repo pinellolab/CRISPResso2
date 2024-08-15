@@ -646,6 +646,7 @@ def make_aggregate_report(
     _ROOT,
     folder_arr,
     crispresso_html_reports,
+    logger,
     compact_plots_to_show=None,
     display_names=None,
 ):
@@ -660,6 +661,7 @@ def make_aggregate_report(
     _ROOT (string): location of crispresso assets (images, templates, etc)
     folder_arr (arr of strings): paths to the aggregated crispresso folders
     crispresso_html_reports (dict): folder->html_path; Paths to the aggregated crispresso run html reports
+    logger (logging.Logger): logger to log messages
     compact_plots_to_show (dict): name=>{'href': path to target(report) when user clicks on image, 'img': path to png image to show}
     display_names (dict): folder->display_name; Titles to be shown for crispresso runs
         (if different from names_arr, e.g. if display_names have spaces or bad chars, they won't be the same as names_arr)
@@ -778,6 +780,8 @@ def make_aggregate_report(
         crispresso_report_folder,
         _ROOT,
         report_name,
+        'aggregate',
+        logger,
         window_nuc_pct_quilts=window_nuc_pct_quilts,
         nuc_pct_quilts=nuc_pct_quilts,
         summary_plots=summary_plots,

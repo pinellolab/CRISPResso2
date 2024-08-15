@@ -109,6 +109,7 @@ ___________________________________
         crispresso2_info = {'running_info': {}, 'results': {'alignment_stats': {}, 'general_plots': {}}} #keep track of all information for this run to be pickled and saved at the end of the run
         crispresso2_info['running_info']['version'] = CRISPRessoShared.__version__
         crispresso2_info['running_info']['args'] = deepcopy(args)
+        crispresso2_info['running_info']['command_used'] = ' '.join(sys.argv)
 
         crispresso2_info['running_info']['log_filename'] = os.path.basename(log_filename)
 
@@ -227,7 +228,7 @@ ___________________________________
 
         if successfully_imported_count > 0:
 
-            crispresso2_folders = crispresso2_folder_infos.keys()
+            crispresso2_folders = list(sorted(crispresso2_folder_infos.keys()))
             crispresso2_folder_names = {}
             crispresso2_folder_htmls = {}#file_loc->html folder loc
             quilt_plots_to_show = {}  # name->{'href':path to report, 'img': png}
@@ -515,8 +516,10 @@ ___________________________________
                                     'fig_filename_root': this_window_nuc_pct_quilt_plot_name,
                                     'save_also_png': save_png,
                                     'sgRNA_intervals': sub_sgRNA_intervals,
+                                    'sgRNA_sequences': consensus_guides,
                                     'quantification_window_idxs': include_idxs,
                                     'group_column': 'Folder',
+                                    'custom_colors': None,
                                 }
                                 plot(
                                     CRISPRessoPlot.plot_nucleotide_quilt,
@@ -550,8 +553,10 @@ ___________________________________
                                     'fig_filename_root': this_nuc_pct_quilt_plot_name,
                                     'save_also_png': save_png,
                                     'sgRNA_intervals': consensus_sgRNA_intervals,
+                                    'sgRNA_sequences': consensus_guides,
                                     'quantification_window_idxs': include_idxs,
                                     'group_column': 'Folder',
+                                    'custom_colors': None,
                                 }
                                 plot(
                                     CRISPRessoPlot.plot_nucleotide_quilt,
@@ -589,8 +594,10 @@ ___________________________________
                                     'fig_filename_root': this_nuc_pct_quilt_plot_name,
                                     'save_also_png': save_png,
                                     'sgRNA_intervals': consensus_sgRNA_intervals,
+                                    'sgRNA_sequences': consensus_guides,
                                     'quantification_window_idxs': consensus_include_idxs,
                                     'group_column': 'Folder',
+                                    'custom_colors': None,
                                 }
                                 plot(
                                     CRISPRessoPlot.plot_nucleotide_quilt,
@@ -654,6 +661,7 @@ ___________________________________
                                 'plot_path': plot_path,
                                 'title': modification_type,
                                 'div_id': heatmap_div_id,
+                                'amplicon_name': amplicon_name,
                             }
                             plot(
                                 CRISPRessoPlot.plot_allele_modification_heatmap,
@@ -687,6 +695,7 @@ ___________________________________
                                 'plot_path': plot_path,
                                 'title': modification_type,
                                 'div_id': line_div_id,
+                                'amplicon_name': amplicon_name,
                             }
                             plot(
                                 CRISPRessoPlot.plot_allele_modification_line,
@@ -779,7 +788,7 @@ ___________________________________
 
             header = 'Name\tUnmodified%\tModified%\tReads_total\tReads_aligned\tUnmodified\tModified\tDiscarded\tInsertions\tDeletions\tSubstitutions\tOnly Insertions\tOnly Deletions\tOnly Substitutions\tInsertions and Deletions\tInsertions and Substitutions\tDeletions and Substitutions\tInsertions Deletions and Substitutions'
             header_els = header.split("\t")
-            df_summary_quantification=pd.DataFrame(quantification_summary, columns=header_els)
+            df_summary_quantification=pd.DataFrame(quantification_summary, columns=header_els).sort_values(by=['Name'])
             samples_quantification_summary_filename = _jp('CRISPRessoAggregate_quantification_of_editing_frequency.txt') #this file has one line for each run (sum of all amplicons)
             df_summary_quantification.fillna('NA').to_csv(samples_quantification_summary_filename, sep='\t', index=None)
             crispresso2_info['results']['alignment_stats']['samples_quantification_summary_filename'] = os.path.basename(samples_quantification_summary_filename)
@@ -841,11 +850,17 @@ ___________________________________
                 report_filename = OUTPUT_DIRECTORY+'.html'
                 if (args.place_report_in_output_folder):
                     report_filename = _jp("CRISPResso2Aggregate_report.html")
-                CRISPRessoReport.make_aggregate_report(crispresso2_info, args.name,
-                                                       report_filename, OUTPUT_DIRECTORY,
-                                                       _ROOT, crispresso2_folders,
-                                                       crispresso2_folder_htmls,
-                                                       quilt_plots_to_show)
+                CRISPRessoReport.make_aggregate_report(
+                    crispresso2_info,
+                    args.name,
+                    report_filename,
+                    OUTPUT_DIRECTORY,
+                    _ROOT,
+                    crispresso2_folders,
+                    crispresso2_folder_htmls,
+                    logger,
+                    compact_plots_to_show=quilt_plots_to_show,
+                )
                 crispresso2_info['running_info']['report_location'] = report_filename
                 crispresso2_info['running_info']['report_filename'] = os.path.basename(report_filename)
         else: #no files successfully imported
