@@ -114,8 +114,8 @@ class StatusHandler(logging.FileHandler):
 class LogStreamHandler(logging.StreamHandler):
     def __init__(self, stream=None):
         super().__init__(stream)
-        self.setFormatter(logging.Formatter(
-            '%(levelname)-5s @ %(asctime)s:\n\t %(message)s \n',
+        self.setFormatter(StatusFormatter(
+            '%(levelname)-5s @ %(asctime)s (%(percent_complete)s%% done):\n\t %(message)s \n',
             datefmt='%a, %d %b %Y %H:%M:%S',
         ))
         self.setLevel(logging.INFO)
