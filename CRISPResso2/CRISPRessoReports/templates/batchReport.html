@@ -157,14 +157,14 @@
                 <div class="card-body">
                     <div class="tab-content" id="allele-modification-{{modification_type}}-tabs">
                         <div class="tab-pane fade show active" id="{{heatmap_plot_name}}" role="tabpanel" aria-labelledby="{{modification_type}}-heatmap-tab">
-                            {{allele_modification_heatmap_plot_htmls[heatmap_plot_name]}}
+                            {{allele_modification_heatmap_plot_htmls[heatmap_plot_name] | safe}}
                             <label class="labelpadding">{{allele_modification_heatmap_plot_labels[heatmap_plot_name]}}</label>
                             {% for (data_label, data_path) in allele_modification_heatmap_plot_datas[heatmap_plot_name] %}
                                 <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
                             {% endfor %}
                         </div>
                         <div class="tab-pane fade" id="{{line_plot_name}}" role="tabpanel" aria-labelledby="{{modification_type}}-line-tab">
-                            {{allele_modification_line_plot_htmls[line_plot_name]}}
+                            {{allele_modification_line_plot_htmls[line_plot_name] | safe}}
                             <label class="labelpadding">{{allele_modification_line_plot_labels[line_plot_name]}}</label>
                             {% for (data_label, data_path) in allele_modification_line_plot_datas[line_plot_name] %}
                                 <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
@@ -174,13 +174,14 @@
                 </div>
               </div>
               <script type="application/javascript">
+                //TODO: Cole should look at this, make sure it's right.
                document.addEventListener("DOMContentLoaded", () => {
-                   $("#{{heatmap_plot_name}}-heatmap-tab").on("shown.bs.tab", (e) => {
-                       let plot = document.getElementById("{{ allele_modification_heatmap_plot_divs[heatmap_plot_name] }}" );
+                   $("#{{modification_type}}-heatmap-tab").on("shown.bs.tab", (e) => {
+                       let plot = document.getElementById("{{ allele_modification_heatmap_plot_divs[heatmap_plot_name] }}");
                        Plotly.Plots.resize(plot);
                        window.dispatchEvent(new Event("resize"));
                    });
-                   $("#{{line_plot_name}}-line-tab").on("shown.bs.tab", (e) => {
+                   $("#{{modification_type}}-line-tab").on("shown.bs.tab", (e) => {
                        let plot = document.getElementById("{{ allele_modification_line_plot_divs[line_plot_name] }}");
                        Plotly.Plots.resize(plot);
                        window.dispatchEvent(new Event("resize"));
@@ -188,55 +189,6 @@
                });
               </script>
             {% endfor %}
-              {#
-              <!-- The below code is another failed attempt to make the heatmaps go fullscreen.
-                   To implement this behavior, wrap the `allele_modification_heatmap_plot_htmls[plot_name]` in a `div`
-                   of class `plotly-full-screen`. -->
-              <!-- <style>
-                   .plot-zoom {
-                   position: absolute;
-                   border: none;
-                   background-color: transparent;
-                   bottom: 0;
-                   right: 0;
-                   }
-                   .full-screen {
-                   position: fixed;
-                   height: 98vh !important;
-                   width: 98vw !important;
-                   left: 0;
-                   top: 0;
-                   z-index: 9999;
-                   overflow: hidden;
-                   }
-                   </style> -->
-              <!-- <script type="application/javascript">
-                   const plotZoom = (el) => {
-                   el = $(el);
-                   let parent = el.parent().parent();
-                   if (el.attr("data-full_screen") === "false") {
-                   parent.addClass("full-screen").trigger("resize").fadeOut().fadeIn();
-                   el.attr("data-full_screen", "true");
-                   Plotly.Plots.resize(parent.find(".plotly-graph-div")[0]);
-                   } else {
-                   parent.removeClass("full-screen").trigger("resize").fadeOut().fadeIn();
-                   el.attr("data-full_screen", "false");
-                   Plotly.Plots.resize(parent.find(".plotly-graph-div")[0]);
-                   }
-                   }
-                   document.addEventListener("DOMContentLoaded", () => {
-                   $(function() {
-                   $(".plotly-full-screen").append(`
-                   <div style="position: relative;">
-                   <button onclick=plotZoom(this) class="plot-zoom" data-full_screen="false" title="Full Screen">
-                   <i class="fa fa-expand-arrows-alt"></i>
-                   </button>
-                   </div>
-                   `);
-                   });
-                   });
-                   </script> -->
-              #}
           {% endif %}
 
           </div>
