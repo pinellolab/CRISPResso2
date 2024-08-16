@@ -64,6 +64,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: edilytics/CRISPResso2_tests
+          ref: 'mckay/c2pro-tests'
           # ref: '<BRANCH-NAME>' # update to specific branch
 
       - name: Run Basic
