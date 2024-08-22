@@ -2649,6 +2649,7 @@ def custom_heatmap(data, vmin=None, vmax=None, cmap=None, center=None, robust=Fa
     plotter.plot(ax, cbar_ax, kwargs)
     return ax
 
+
 def prep_alleles_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
     """
     Prepares a df of alleles for Plotting
@@ -3081,6 +3082,93 @@ def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,i
     if SAVE_ALSO_PNG:
         plt.savefig(fig_filename_root+'.png', bbox_inches='tight', bbox_extra_artists=(lgd,), pad_inches=0.1)
     plt.close()
+
+
+def plot_alleles_table_prepped(
+    reference_seq,
+    prepped_df_alleles,
+    annotations,
+    y_labels,
+    insertion_dict,
+    per_element_annot_kws,
+    is_reference,
+    fig_filename_root,
+    custom_colors,
+    SAVE_ALSO_PNG=False,
+    plot_cut_point=True,
+    cut_point_ind=None,
+    sgRNA_intervals=None,
+    sgRNA_names=None,
+    sgRNA_mismatches=None,
+    annotate_wildtype_allele='****',
+    **kwargs,
+):
+    """Plot an allele table for a pre-filtered dataframe with allele frequencies.
+
+    Parameters
+    ----------
+    reference_seq : str
+        The reference amplicon sequence to plot.
+    prepped_df_alleles : pd.DataFrame
+        Merged dataframe (should include columns "#Reads','%Reads"), from `CRISPRessoPlot.prep_alleles_table`.
+    annotations : list
+        List of annotations for each allele, from `CRISPRessoPlot.prep_alleles_table`.
+    y_labels : list
+        List of labels for each row/allele, from `CRISPRessoPlot.prep_alleles_table`.
+    insertion_dict : dict
+        Locations of insertions -- red squares will be drawn around these, from `CRISPRessoPlot.prep_alleles_table`.
+    per_element_annot_kws : list
+        Annotations for each cell (e.g. bold for substitutions, etc.), from `CRISPRessoPlot.prep_alleles_table`.
+    is_reference : list
+        List of booleans for whether the read is equal to the reference, from `CRISPRessoPlot.prep_alleles_table`.
+    fig_filename_root : str
+        Figure filename to plot (not including '.pdf' or '.png').
+    custom_colors : dict
+        Dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha ).
+    SAVE_ALSO_PNG : bool
+        Whether to write png file as well.
+    plot_cut_point : bool
+        If False, won't draw 'predicted cleavage' line.
+    cut_point_ind : int
+        Index of cut point (if None, will be plot in the middle calculated as len(reference_seq)/2).
+    sgRNA_intervals : list
+        Locations where sgRNAs are located.
+    sgRNA_names : list
+        Names of sgRNAs (otherwise empty).
+    sgRNA_mismatches : list
+        Array (for each sgRNA_interval) of locations in sgRNA where there are mismatches.
+    annotate_wildtype_allele : str
+        String to add to the end of the wildtype allele (e.g. '****' or '').
+    kwargs : dict
+        Additional keyword arguments.
+
+    Returns
+    -------
+    None
+    """
+    if annotate_wildtype_allele != '':
+        for ix, is_ref in enumerate(is_reference):
+            if is_ref:
+                y_labels[ix] += annotate_wildtype_allele
+
+    plot_alleles_heatmap(
+        reference_seq=reference_seq,
+        fig_filename_root=fig_filename_root,
+        X=prepped_df_alleles,
+        annot=annotations,
+        y_labels=y_labels,
+        insertion_dict=insertion_dict,
+        per_element_annot_kws=per_element_annot_kws,
+        custom_colors=custom_colors,
+        SAVE_ALSO_PNG=SAVE_ALSO_PNG,
+        plot_cut_point=plot_cut_point,
+        cut_point_ind=cut_point_ind,
+        sgRNA_intervals=sgRNA_intervals,
+        sgRNA_names=sgRNA_names,
+        sgRNA_mismatches=sgRNA_mismatches,
+    )
+
+
 
 def plot_alleles_table(reference_seq,df_alleles,fig_filename_root,custom_colors,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,plot_cut_point=True,cut_point_ind=None,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,annotate_wildtype_allele='****',**kwargs):
     """
