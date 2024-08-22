@@ -93,6 +93,8 @@ class StatusFormatter(logging.Formatter):
             self.last_percent_complete = record.percent_complete
         elif hasattr(self, 'last_percent_complete'): # if we don't have a percent complete, use the last one
             record.percent_complete = self.last_percent_complete
+        else:
+            record.percent_complete = 0.0
         return super().format(record)
 
 
@@ -115,7 +117,7 @@ class LogStreamHandler(logging.StreamHandler):
     def __init__(self, stream=None):
         super().__init__(stream)
         self.setFormatter(StatusFormatter(
-            '%(levelname)-5s @ %(asctime)s (%(percent_complete)s%% done):\n\t %(message)s \n',
+            '%(levelname)-5s @ %(asctime)s (%(percent_complete).1f%% done):\n\t %(message)s \n',
             datefmt='%a, %d %b %Y %H:%M:%S',
         ))
         self.setLevel(logging.INFO)
