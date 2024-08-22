@@ -10,6 +10,7 @@ from CRISPResso2.CRISPRessoReports.jinja_partials import generate_render_partial
 from CRISPResso2 import CRISPRessoShared
 
 if CRISPRessoShared.is_C2Pro_installed():
+    from CRISPRessoPro import __version__ as CRISPRessoProVersion
     import CRISPRessoPro
     C2PRO_INSTALLED = True
 else:
@@ -17,20 +18,22 @@ else:
 
 
 def get_jinja_loader(root, logger):
-    UndefinedLogger = make_logging_undefined(logger=logger)
+    """
+    Get the Jinja2 environment for rendering templates.
+    """
+    undefined_logger = make_logging_undefined(logger=logger)
     if C2PRO_INSTALLED:
         return Environment(
             loader=ChoiceLoader([
                 FileSystemLoader(os.path.join(root, 'CRISPRessoReports', 'templates')),
                 FileSystemLoader(os.path.join(os.path.dirname(CRISPRessoPro.__file__), 'templates')),
             ]),
-            undefined=UndefinedLogger,
+            undefined=undefined_logger,
         )
-    else:
-        return Environment(
-            loader=FileSystemLoader(os.path.join(root, 'CRISPRessoReports', 'templates')),
-            undefined=UndefinedLogger,
-        )
+    return Environment(
+        loader=FileSystemLoader(os.path.join(root, 'CRISPRessoReports', 'templates')),
+        undefined=undefined_logger,
+    )
 
 
 def render_template(template_name, jinja2_env, **data):
@@ -67,20 +70,20 @@ def render_template(template_name, jinja2_env, **data):
     )
 
 
-def make_report_from_folder(crispresso_report_file, crispresso_folder, _ROOT):
+def make_report_from_folder(crispresso_report_file, crispresso_folder, _root):
     """
     Makes an html report for a crispresso run
 
     Parameters:
     crispresso_report_file (string): name of the html file to create
     crispresso_folder (string): path to the crispresso output
-    _ROOT (string): path to crispresso executables (for templates)
+    _root (string): path to crispresso executables (for templates)
 
     Returns:
     Nothin
     """
     run_data = CRISPRessoShared.load_crispresso_info(crispresso_folder)
-    make_report(run_data, crispresso_report_file, crispresso_folder, _ROOT)
+    make_report(run_data, crispresso_report_file, crispresso_folder, _root)
 
 
 def add_fig_if_exists(fig, fig_name, fig_root, fig_title, fig_caption, fig_data,
@@ -106,7 +109,7 @@ def add_fig_if_exists(fig, fig_name, fig_root, fig_title, fig_caption, fig_data,
             if os.path.exists(os.path.join(crispresso_folder, data_file)):
                 amplicon_figures['datas'][fig_name].append((data_caption, data_file))
         if os.path.exists(htmlfullpath):
-            with open(htmlfullpath, encoding="utf-8") as html:
+            with open(htmlfullpath, encoding='utf-8') as html:
                 html_string = "<div align='center'>"
                 html_string += html.read()
                 html_string += "</div>"
@@ -114,7 +117,7 @@ def add_fig_if_exists(fig, fig_name, fig_root, fig_title, fig_caption, fig_data,
         elif os.path.exists(jsonfullpath) and C2PRO_INSTALLED:
             root_name = fig_root.replace('.', '_').replace('-', '_')
             d3_nuc_quilt_names.append(f"nuc_quilt_{root_name}")
-            with open(jsonfullpath) as fig_json_fh:
+            with open(jsonfullpath, encoding='utf-8') as fig_json_fh:
                 amplicon_figures['htmls'][fig_name] = f"""
                 <div class="d-flex justify-content-between" style="max-height: 80vh; overflow-y: auto;" id="{f"nuc_quilt_{root_name}"}"></div>
                 <script type="text/javascript">const {f"nuc_quilt_{root_name}"} = {fig_json_fh.read().strip()}</script>
@@ -177,10 +180,10 @@ def assemble_figs(run_data, crispresso_folder):
     return data
 
 
-def make_report(run_data, crispresso_report_file, crispresso_folder, _ROOT, logger):
-    # dicts for each amplicon fig_names[amp_name] = [list of fig names]
-    #                        fig_locs[amp_name][fig_name] = figure location
-    #    print('crispresso_report file: ' + crispresso_report_file + ' crispresso_folder : ' + crispresso_folder + ' root: ' + _ROOT)
+def make_report(run_data, crispresso_report_file, crispresso_folder, _root, logger):
+    """
+    Writes an HMTL report for a CRISPResso run
+    """
     data = assemble_figs(run_data, crispresso_folder)
 
     report_display_name = ""
@@ -203,11 +206,7 @@ def make_report(run_data, crispresso_report_file, crispresso_folder, _ROOT, logg
         'nuc_quilt_names': data['nuc_quilt_names'],
     }
 
-    j2_env = get_jinja_loader(_ROOT, logger)
-
-    #    dest_dir = os.path.dirname(crispresso_report_file)
-    #    shutil.copy2(os.path.join(_ROOT,'templates','CRISPResso_justcup.png'),dest_dir)
-    #    shutil.copy2(os.path.join(_ROOT,'templates','favicon.ico'),dest_dir)
+    j2_env = get_jinja_loader(_root, logger)
 
     with open(crispresso_report_file, 'w', encoding="utf-8") as outfile:
         outfile.write(render_template(
@@ -215,7 +214,10 @@ def make_report(run_data, crispresso_report_file, crispresso_folder, _ROOT, logg
         ))
 
 
-def make_batch_report_from_folder(crispressoBatch_report_file, crispresso2_info, batch_folder, _ROOT, logger):
+def make_batch_report_from_folder(crispressoBatch_report_file, crispresso2_info, batch_folder, _root, logger):
+    """
+    Makes a report for a CRIPSRessoBatch run
+    """
     batch_names = crispresso2_info['results']['completed_batch_arr']
     failed_runs = crispresso2_info['results']['failed_batch_arr']
     failed_runs_desc = crispresso2_info['results']['failed_batch_arr_desc']
@@ -305,7 +307,7 @@ def make_batch_report_from_folder(crispressoBatch_report_file, crispresso2_info,
     summary_plot_htmls = {}
     for plot_name in window_nuc_pct_quilts + nuc_pct_quilts:
         if os.path.exists(os.path.join(batch_folder, f'{plot_name}.json')):
-            with open(os.path.join(batch_folder, f'{plot_name}.json')) as window_nuc_pct_json_fh:
+            with open(os.path.join(batch_folder, f'{plot_name}.json'), encoding='utf-8') as window_nuc_pct_json_fh:
                 summary_plot_htmls[plot_name] = f"""
             <div class="d-flex justify-content-between" style="max-height: 80vh; overflow-y: auto;" id="{plot_name}"></div>
             <script type="text/javascript">const {plot_name} = {window_nuc_pct_json_fh.read().strip()}</script>
@@ -346,7 +348,7 @@ def make_batch_report_from_folder(crispressoBatch_report_file, crispresso2_info,
         sub_html_files,
         crispressoBatch_report_file,
         batch_folder,
-        _ROOT,
+        _root,
         output_title,
         'batch',
         logger,
@@ -366,41 +368,50 @@ def make_batch_report_from_folder(crispressoBatch_report_file, crispresso2_info,
     )
 
 
-def make_pooled_report_from_folder(crispresso_report_file, crispresso2_info, folder, _ROOT, logger):
+def make_pooled_report_from_folder(crispresso_report_file, crispresso2_info, folder, _root, logger):
+    """
+    Makes a report for a CRISPRessoPooled run
+    """
     names_arr = crispresso2_info['results']['good_region_names']
     output_title = 'CRISPResso Pooled Output'
     if crispresso2_info['running_info']['args'].name != '':
         output_title += f"<br/>{crispresso2_info['running_info']['args'].name}"
-    make_multi_report_from_folder(crispresso2_info, names_arr, output_title, crispresso_report_file, folder, _ROOT, 'pooled', logger)
+    make_multi_report_from_folder(crispresso2_info, names_arr, output_title, crispresso_report_file, folder, _root, 'pooled', logger)
 
 
-def make_compare_report_from_folder(crispresso_report_file, crispresso2_info, folder, _ROOT, logger):
+def make_compare_report_from_folder(crispresso_report_file, crispresso2_info, folder, _root, logger):
+    """
+    Makes a report for a CRISPRessoCompare run
+    """
     names_arr = []
     output_title = 'CRISPResso Compare Output'
     if crispresso2_info['running_info']['args'].name != '':
         output_title += "<br/>{crispresso2_info['running_info']['args'].name}"
-    make_multi_report_from_folder(crispresso2_info, names_arr, output_title, crispresso_report_file, folder, _ROOT, 'compare', logger)
+    make_multi_report_from_folder(crispresso2_info, names_arr, output_title, crispresso_report_file, folder, _root, 'compare', logger)
 
 
-def make_meta_report_from_folder(crispresso_report_file, crispresso2_info, folder, _ROOT, logger):
+def make_meta_report_from_folder(crispresso_report_file, crispresso2_info, folder, _root, logger):
     names_arr = crispresso2_info['meta_names_arr']
     input_names = crispresso2_info['meta_input_names']
     output_title = 'CRISPresso Meta Output'
     if crispresso2_info['running_info']['args'].name != '':
         output_title += "<br/>{crispresso2_info['running_info']['args'].name}"
-    make_multi_report_from_folder(crispresso2_info, names_arr, output_title, crispresso_report_file, folder, _ROOT, 'meta', logger,
+    make_multi_report_from_folder(crispresso2_info, names_arr, output_title, crispresso_report_file, folder, _root, 'meta', logger,
                                   display_names=input_names)
 
 
-def make_wgs_report_from_folder(crispresso_report_file, crispresso2_info, folder, _ROOT, logger):
+def make_wgs_report_from_folder(crispresso_report_file, crispresso2_info, folder, _root, logger):
+    """
+    Makes a report for a CRISPRessoWGS run
+    """
     names_arr = crispresso2_info['results']['good_region_names']
     output_title = 'CRISPResso WGS Output'
     if crispresso2_info['running_info']['args'].name != '':
         output_title += "<br/>{crispresso2_info['running_info']['args'].name}"
-    make_multi_report_from_folder(crispresso2_info, names_arr, output_title, crispresso_report_file, folder, _ROOT, 'wgs', logger)
+    make_multi_report_from_folder(crispresso2_info, names_arr, output_title, crispresso_report_file, folder, _root, 'wgs', logger)
 
 
-def make_multi_report_from_folder(crispresso2_info, names_arr, report_name, crispresso_report_file, folder, _ROOT, crispresso_tool, logger,
+def make_multi_report_from_folder(crispresso2_info, names_arr, report_name, crispresso_report_file, folder, _root, crispresso_tool, logger,
                                   display_names=None):
     """
     Prepares information to make a report of multiple CRISPResso runs - like CRISPRessoWGS or CRISPRessoPooled
@@ -411,7 +422,7 @@ def make_multi_report_from_folder(crispresso2_info, names_arr, report_name, cris
     report_name (string): text to be shown at top of report
     crispresso_report_file (string): path to write report to
     folder (string): folder containing crispresso runs
-    _ROOT (string): location of crispresso assets (images, templates, etc)
+    _root (string): location of crispresso assets (images, templates, etc)
     logger (logging.Logger): logger to log messages to, mainly for undefined variables in Jinja2 templates
     display_names (dict): report_name->display_name; Titles to be shown for crispresso runs
         (if different from names_arr, e.g. if display_names have spaces or bad chars, they won't be the same as names_arr)
@@ -483,7 +494,7 @@ def make_multi_report_from_folder(crispresso2_info, names_arr, report_name, cris
         sub_html_files,
         crispresso_report_file,
         folder,
-        _ROOT,
+        _root,
         report_name,
         crispresso_tool,
         logger,
@@ -503,7 +514,7 @@ def make_multi_report(
     sub_html_files,
     crispresso_multi_report_file,
     crispresso_folder,
-    _ROOT,
+    _root,
     report_name,
     crispresso_tool,
     logger,
@@ -525,7 +536,7 @@ def make_multi_report(
     crispresso_multi_report_file (string): path of file to write to
     report_name (string): description of report type to be shown at top of report
     crispresso_folder (string): absolute path to the crispresso output
-    _ROOT (string): absolute path to the crispresso executable
+    _root (string): absolute path to the crispresso executable
     summary_plots (dict): a dict with the following keys:
         names (list): list of plot names - keys for following dicts
         titles (dict): dict of plot_name->plot_title
@@ -547,7 +558,7 @@ def make_multi_report(
         if key not in dictionary:
             dictionary[key] = default_type()
 
-    j2_env = get_jinja_loader(_ROOT, logger)
+    j2_env = get_jinja_loader(_root, logger)
 
     j2_env.filters['dirname'] = dirname
     if crispresso_tool == 'batch':
@@ -643,7 +654,7 @@ def make_aggregate_report(
     report_name,
     crispresso_report_file,
     crispresso_report_folder,
-    _ROOT,
+    _root,
     folder_arr,
     crispresso_html_reports,
     logger,
@@ -658,7 +669,7 @@ def make_aggregate_report(
     report_name (string): text to be shown at top of report
     crispresso_report_file (string): path to write report to
     crispresso_report_folder (string): path containing aggregated plots, etc.
-    _ROOT (string): location of crispresso assets (images, templates, etc)
+    _root (string): location of crispresso assets (images, templates, etc)
     folder_arr (arr of strings): paths to the aggregated crispresso folders
     crispresso_html_reports (dict): folder->html_path; Paths to the aggregated crispresso run html reports
     logger (logging.Logger): logger to log messages
@@ -778,7 +789,7 @@ def make_aggregate_report(
         sub_html_files,
         crispresso_report_file,
         crispresso_report_folder,
-        _ROOT,
+        _root,
         report_name,
         'aggregate',
         logger,

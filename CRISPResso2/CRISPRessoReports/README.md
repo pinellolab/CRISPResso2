@@ -6,7 +6,7 @@ Take care when committing into these files as not to mix unrelated git histories
 
 ## How do I work with this repo?
 
-Step 1 only needs to be done once per cloned repo, the other steps will need to be dne more frequently.
+Step 1 only needs to be done once per cloned repo, the other steps will need to be done more frequently.
 
 1. Add the remote to this repo to the "parent" repo (i.e. `CRISPResso2` or `C2Web`). **You should only have to do this once.**
 
@@ -131,7 +131,7 @@ If a feature that you are working on requires changes to CRISPRessoReports, you 
 1. Create a feature branch in the parent repo, based on the parent repo master.
 
 ``` shell
-git checkout -b <feature-branch>
+git checkout -b <feature-branch> origin/master
 ```
 
 2. Create a feature branch on `CRISPRessoReports`.
