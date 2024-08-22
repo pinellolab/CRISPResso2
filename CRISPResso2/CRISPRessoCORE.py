@@ -4468,13 +4468,24 @@ def main():
                     new_sel_cols_start = cut_point - plot_half_window
                     for (int_start, int_end) in refs[ref_name]['sgRNA_intervals']:
                         new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1, int_end - new_sel_cols_start - 1)]
+
+
+                    prepped_df_alleles, annotations, y_labels, insertion_dict, per_element_annot_kws, is_reference = CRISPRessoPlot.prep_alleles_table(
+                        df_to_plot,
+                        ref_seq_around_cut,
+                        args.max_rows_alleles_around_cut_to_plot,
+                        args.min_frequency_alleles_around_cut_to_plot,
+                    )
                     plot_9_input = {
                         'reference_seq': ref_seq_around_cut,
-                        'df_alleles': df_to_plot,
+                        'prepped_df_alleles': prepped_df_alleles,
+                        'annotations': annotations,
+                        'y_labels': y_labels,
+                        'insertion_dict': insertion_dict,
+                        'per_element_annot_kws': per_element_annot_kws,
+                        'is_reference': is_reference,
                         'fig_filename_root': fig_filename_root,
                         'custom_colors': custom_config["colors"],
-                        'MIN_FREQUENCY': args.min_frequency_alleles_around_cut_to_plot,
-                        'MAX_N_ROWS': args.max_rows_alleles_around_cut_to_plot,
                         'SAVE_ALSO_PNG': save_png,
                         'plot_cut_point': plot_cut_point,
                         'sgRNA_intervals': new_sgRNA_intervals,
@@ -4483,7 +4494,7 @@ def main():
                         'annotate_wildtype_allele': args.annotate_wildtype_allele,
                     }
                     debug('Plotting allele distribution around cut for {0}'.format(ref_name))
-                    plot(CRISPRessoPlot.plot_alleles_table, plot_9_input)
+                    plot(CRISPRessoPlot.plot_alleles_table_prepped, plot_9_input)
                     crispresso2_info['results']['refs'][ref_name]['plot_9_roots'].append(os.path.basename(fig_filename_root))
                     crispresso2_info['results']['refs'][ref_name]['plot_9_captions'].append("Figure 9: Visualization of the distribution of identified alleles around the cleavage site for the " + sgRNA_legend + ". Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site.")
                     crispresso2_info['results']['refs'][ref_name]['plot_9_datas'].append([('Allele frequency table', os.path.basename(allele_filename))])
