@@ -54,7 +54,7 @@
 
             <div class="card text-center mb-2">
                 <div class="card-header">
-                    <h5>{{report_name}}</h5>
+                    <h5 id="{{report_name}}">{{report_name}}</h5>
                 </div>
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
@@ -81,10 +81,6 @@
           {% endif %}
 
           {{render_partial('shared/partials/report_footer_buttons.html', report_zip_filename=report_zip_filename, report_path=report_path)}}
-    {# data bit for web version: #}
-    {#
-        			  <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a> <a href="{{report_data['crispresso_data_path']}}{{data_path}}" title="{{data_label}}" download> <span class="fas fa-download" data-toggle='tooltip' title='Download {{data_label}}'><span></a></small></p>
-    #}
 	</div> {# jumbotron_content #} <!-- end jumbotron_content -->
 </div> {# jumbrotron #} <!-- end jumbotron -->
 

@@ -1,5 +1,5 @@
 {% if 'guardrails_htmls' in report_data['run_data']['results'] and report_data['run_data']['results']['guardrails_htmls']|length > 0 %}
 	{% for message in report_data['run_data']['results']['guardrails_htmls'] %}
-		{{message}}
+		{{message | safe}}
 	{% endfor %}
 {% endif %}
