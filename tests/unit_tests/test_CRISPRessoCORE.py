@@ -192,6 +192,80 @@ def test_get_cloned_include_idxs_from_quant_window_coordinates_include_zero():
     quant_window_coordinates = '0-5'
     s1inds = [0, 1, 2, 3, 4, 5]
     assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == [0, 1, 2, 3, 4, 5]
+
+
+# Testing parallelization functions
+def test_regular_input():
+    # Test with typical input
+    assert CRISPRessoCORE.get_variant_cache_equal_boundaries(100, 4) == [0, 25, 50, 75, 100]
+
+def test_remainder_input():
+#     # Test with typical input
+    assert CRISPRessoCORE.get_variant_cache_equal_boundaries(101, 4) == [0, 25, 50, 75, 101]
+
+def test_similar_num_reads_input():
+#     # Test with typical input
+    assert CRISPRessoCORE.get_variant_cache_equal_boundaries(11, 10) == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11]
+
+def test_large_similar_num_reads_input():
+#     # Test with typical input
+    assert CRISPRessoCORE.get_variant_cache_equal_boundaries(101, 100) == list(range(0, 100)) + [101]
+
+def test_more_processes_than_reads():
+#     # Test with typical input
+    # assert CRISPRessoCORE.get_variant_cache_equal_boundaries(3, 5) 
+    # assert that an exception is raised
+    with pytest.raises(Exception):
+        CRISPRessoCORE.get_variant_cache_equal_boundaries(3, 5)
+
+def test_single_process():
+    # Test with a single process
+    assert CRISPRessoCORE.get_variant_cache_equal_boundaries(50, 1) == [0, 50]
+
+def test_zero_sequences():
+    # Test with zero unique sequences
+    with pytest.raises(Exception):
+        CRISPRessoCORE.get_variant_cache_equal_boundaries(0, 3)
+
+def test_large_numbers():
+    # Test with large number of processes and sequences
+    boundaries = CRISPRessoCORE.get_variant_cache_equal_boundaries(10000, 10)
+    assert len(boundaries) == 11  # Check that there are 11 boundaries
+
+def test_sublist_generation():
+    n_processes = 4
+    unique_reads = 100
+    mock_variant_cache = [i for i in range(unique_reads)]
+    assert len(mock_variant_cache) == 100
+    boundaries = CRISPRessoCORE.get_variant_cache_equal_boundaries(unique_reads, n_processes) 
+    assert boundaries == [0, 25, 50, 75, 100]
+    sublists = []
+    for i in range(n_processes):
+        left_sublist_index = boundaries[i]
+        right_sublist_index = boundaries[i+1]
+        sublist = mock_variant_cache[left_sublist_index:right_sublist_index]
+        sublists.append(sublist)
+    assert [len(sublist) for sublist in sublists] == [25, 25, 25, 25]
+    assert [s for sublist in sublists for s in sublist] == mock_variant_cache
+
+def test_irregular_sublist_generation():
+    n_processes = 4
+    unique_reads = 113
+    mock_variant_cache = [i for i in range(unique_reads)]
+    assert len(mock_variant_cache) == 113
+    boundaries = CRISPRessoCORE.get_variant_cache_equal_boundaries(unique_reads, n_processes) 
+    # assert boundaries == [0, 25, 50, 75, 100]
+    sublists = []
+    for i in range(n_processes):
+        left_sublist_index = boundaries[i]
+        right_sublist_index = boundaries[i+1]
+        sublist = mock_variant_cache[left_sublist_index:right_sublist_index]
+        sublists.append(sublist)
+    assert [len(sublist) for sublist in sublists] == [28,28,28,29]
+    assert [s for sublist in sublists for s in sublist] == mock_variant_cache
+
+
+
     
 if __name__ == "__main__":
 # execute only if run as a script
