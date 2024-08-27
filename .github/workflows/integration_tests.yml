@@ -41,8 +41,7 @@ jobs:
           CACHE_NUMBER: 0
         with:
           path: /usr/share/miniconda/envs/test_env
-          key:
-            conda-${{ runner.os }}--${{ runner.arch }}--${{ steps.get-date.outputs.today }}-${{ env.CACHE_NUMBER }}-${{ hashFiles('.github/envs/test_env.yml') }}
+          key: conda-${{ runner.os }}--${{ runner.arch }}--${{ steps.get-date.outputs.today }}-${{ env.CACHE_NUMBER }}-${{ hashFiles('.github/envs/test_env.yml') }}
 
       - name: Update Conda Env
         run: |
@@ -79,6 +78,21 @@ jobs:
         if: success() || failure()
         run: |
           make prime-editor test print
+
+      - name: Run BAM Input
+        if: success() || failure()
+        run: |
+          make bam test print
+
+      - name: Run BAM Output
+        if: success() || failure()
+        run: |
+          make bam-out test print
+
+      - name: Run BAM Genome Output
+        if: success() || failure()
+        run: |
+          make bam-out-genome test print
 
       - name: Run Batch
         if: success() || failure()
