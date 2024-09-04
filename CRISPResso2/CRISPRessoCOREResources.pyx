@@ -190,6 +190,7 @@ def find_indels_substitutions_legacy(read_seq_al, ref_seq_al, _include_indx):
     all_deletion_positions=[]
     deletion_positions=[]
     deletion_coordinates=[]
+    all_deletion_coordinates=[]
     deletion_sizes=[]
 
     all_insertion_positions=[]
@@ -208,6 +209,7 @@ def find_indels_substitutions_legacy(read_seq_al, ref_seq_al, _include_indx):
         if en < len(ref_positions):
           ref_en = ref_positions[en]
         all_deletion_positions.extend(range(ref_st,ref_en))
+        all_deletion_coordinates.append((ref_st,ref_en))
         inc_del_pos = include_indx_set.intersection(range(ref_st,ref_en))
         if(len(inc_del_pos)>0):
           deletion_positions.extend(range(ref_st,ref_en))
@@ -248,6 +250,7 @@ def find_indels_substitutions_legacy(read_seq_al, ref_seq_al, _include_indx):
 
         'deletion_positions':deletion_positions,
         'deletion_coordinates':deletion_coordinates,
+        'all_deletion_coordinates':all_deletion_coordinates,
         'deletion_sizes':deletion_sizes,
         'deletion_n':deletion_n,
 
