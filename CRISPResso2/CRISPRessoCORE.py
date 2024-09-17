@@ -1434,6 +1434,11 @@ def main():
 
         logger.addHandler(CRISPRessoShared.StatusHandler(os.path.join(OUTPUT_DIRECTORY, 'CRISPResso_status.json')))
 
+        if C2PRO_INSTALLED:
+            debug(f'CRISPRessoPro v{CRISPRessoProVersion} installed', {'percent_complete': 0.5})
+        else:
+            debug(f'CRISPRessoPro not installed', {'percent_complete': 0.5})
+
         aln_matrix_loc = os.path.join(_ROOT, "EDNAFULL")
         CRISPRessoShared.check_file(aln_matrix_loc)
         aln_matrix = CRISPResso2Align.read_matrix(aln_matrix_loc)
@@ -1978,10 +1983,6 @@ def main():
 
         #now that we're done with adding possible guides and amplicons, go through each amplicon and compute quantification windows
         info('Computing quantification windows', {'percent_complete': 2})
-        if C2PRO_INSTALLED:
-            info(f'CRISPRessoPro v{CRISPRessoProVersion} installed', {'percent_complete': 3})
-        else:
-            info(f'CRISPRessoPro not installed', {'percent_complete': 3})
 
         found_guide_seq = [False]*len(guides)
         found_coding_seq = [False]*len(coding_seqs)
