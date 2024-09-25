@@ -645,6 +645,8 @@ def main():
             with open(args.amplicons_file, 'r') as amplicons_fin:
 
                 head_line = amplicons_fin.readline().strip()
+                if head_line == "":
+                    raise CRISPRessoShared.BadParameterException('Cannot parse header from amplicon file ' + args.amplicons_file)
                 while head_line[0] == "#":  # read past comments
                     head_line = amplicons_fin.readline()
                 header_els = head_line.split('\t')
