@@ -91,6 +91,20 @@
             "default": "",
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
+        "flexiguide_gap_open_penalty": {
+            "keys": ["--flexiguide_gap_open_penalty"],
+            "help": "",
+            "type": "int",
+            "default": -20,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "flexiguide_gap_extend_penalty": {
+            "keys": ["--flexiguide_gap_extend_penalty"],
+            "help": "",
+            "type": "int",
+            "default": -2,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
         "discard_guide_positions_overhanging_amplicon_edge": {
             "keys": ["--discard_guide_positions_overhanging_amplicon_edge"],
             "help": "If set, for guides that align to multiple positions, guide positions will be discarded if plotting around those regions would included bp that extend beyond the end of the amplicon.",
