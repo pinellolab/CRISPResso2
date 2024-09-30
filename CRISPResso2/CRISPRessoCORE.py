@@ -2022,14 +2022,14 @@ def main():
                     #for all amps in forward and reverse complement amps:
                     for amp_seq in [this_seq, CRISPRessoShared.reverse_complement(this_seq)]:
                         ref_incentive = np.zeros(len(amp_seq)+1, dtype=int)
-                        s1, s2, score=CRISPResso2Align.global_align(guide, amp_seq, matrix=aln_matrix, gap_incentive=ref_incentive, gap_open=args.needleman_wunsch_gap_open, gap_extend=args.needleman_wunsch_gap_extend,)
+                        s1, s2, score=CRISPResso2Align.global_align(guide, amp_seq, matrix=aln_matrix, gap_incentive=ref_incentive, gap_open=args.flexiguide_gap_open_penalty, gap_extend=args.flexiguide_gap_extend_penalty)
                         potential_guide = s1.strip("-")
                         if abs(len(potential_guide) - len(guide)) < 2: #if length of putative guide is off by less than 2, keep it (allows 1 gap)
                             loc = s1.find(potential_guide)
                             potential_ref = amp_seq[loc:loc+len(potential_guide)]
                             #realign to test for number of mismatches
                             ref_incentive = np.zeros(len(potential_ref)+1, dtype=int)
-                            sub_s1, sub_s2, sub_score=CRISPResso2Align.global_align(guide, potential_ref, matrix=aln_matrix, gap_incentive=ref_incentive, gap_open=args.needleman_wunsch_gap_open, gap_extend=args.needleman_wunsch_gap_extend,)
+                            sub_s1, sub_s2, sub_score=CRISPResso2Align.global_align(guide, potential_ref, matrix=aln_matrix, gap_incentive=ref_incentive, gap_open=args.flexiguide_gap_open_penalty, gap_extend=args.flexiguide_gap_extend_penalty)
                             mismatches = []
                             for i in range(len(sub_s1)):
                                 if sub_s1[i] != sub_s2[i]:
