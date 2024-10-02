@@ -400,6 +400,7 @@ def main():
             num_processes=n_processes_for_batch,
             process_futures=process_futures,
             process_pool=process_pool,
+            halt_on_plot_fail=args.halt_on_plot_fail,
         )
 
         window_nuc_pct_quilt_plot_names = []

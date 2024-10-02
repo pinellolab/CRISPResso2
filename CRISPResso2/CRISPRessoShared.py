@@ -80,8 +80,14 @@ class OutputFolderIncompleteException(Exception):
 class InstallationException(Exception):
     pass
 
+
 class InputFileFormatException(Exception):
     pass
+
+
+class PlotException(Exception):
+    pass
+
 
 #########################################
 

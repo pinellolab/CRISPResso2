@@ -2668,7 +2668,6 @@ def prep_alleles_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
     """
     dna_to_numbers={'-':0,'A':1,'T':2,'C':3,'G':4,'N':5}
     seq_to_numbers= lambda seq: [dna_to_numbers[x] for x in seq]
-
     X=[]
     annot=[]
     y_labels=[]
