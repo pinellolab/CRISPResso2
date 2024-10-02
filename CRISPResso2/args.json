@@ -860,6 +860,12 @@
             "help": "Use matplotlib for plotting instead of plotly/d3 when CRISPRessoPro is installed",
             "action": "store_true",
             "tools": ["Core", "Batch", "Pooled", "WGS", "Compare"]
+        },
+        "halt_on_plot_fail": {
+            "keys": ["--halt_on_plot_fail"],
+            "help": "Halt execution if a plot fails to generate",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS", "Compare"]
         }
     },
     "Sections": {
