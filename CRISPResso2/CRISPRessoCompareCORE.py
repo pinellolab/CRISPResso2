@@ -293,7 +293,7 @@ def main():
                 tot_counts_2 = np.array(mod_freqs_2['Total'], dtype=float)
                 unmod_counts_2 = tot_counts_2 - mod_counts_2
 
-                fisher_results = [stats.fisher_exact([[z[0], z[1]], [z[2], z[3]]]) if max(z) > 0 else [np.NaN, 1.0] for z in zip(mod_counts_1, unmod_counts_1, mod_counts_2, unmod_counts_2)]
+                fisher_results = [stats.fisher_exact([[z[0], z[1]], [z[2], z[3]]]) if max(z) > 0 else [np.nan, 1.0] for z in zip(mod_counts_1, unmod_counts_1, mod_counts_2, unmod_counts_2)]
                 oddsratios, pvalues = [a for a, b in fisher_results], [b for a, b in fisher_results]
 
                 mod_df = []
@@ -398,7 +398,7 @@ def main():
                 quant_cols = ['#Reads_'+sample_1_name, '%Reads_'+sample_1_name, '#Reads_'+sample_2_name, '%Reads_'+sample_2_name]
                 merged[quant_cols] = merged[quant_cols].fillna(0)
                 lfc_error =0.1
-                merged['each_LFC'] = np.log2(((merged['%Reads_'+sample_1_name]+lfc_error)/(merged['%Reads_'+sample_2_name]+lfc_error)).astype(float)).replace([np.inf, np.NaN], 0)
+                merged['each_LFC'] = np.log2(((merged['%Reads_'+sample_1_name]+lfc_error)/(merged['%Reads_'+sample_2_name]+lfc_error)).astype(float)).replace([np.inf, np.nan], 0)
                 merged = merged.sort_values(['%Reads_'+sample_1_name, 'Reference_Sequence', 'n_deleted', 'n_inserted', 'n_mutated'], ascending=False)
                 merged = merged.reset_index(drop=True).set_index('Aligned_Sequence')
                 args.crispresso_output_folder_root = os.path.split(allele_file_1)[1].replace(".txt", "")
