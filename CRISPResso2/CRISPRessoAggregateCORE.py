@@ -71,6 +71,7 @@ ___________________________________
 
         parser.add_argument('--debug', help='Show debug messages', action='store_true')
         parser.add_argument('-v', '--verbosity', type=int, help='Verbosity level of output to the console (1-4), 4 is the most verbose', default=3)
+        parser.add_argument('--halt_on_plot_fail', action="store_true", help="Halt execution if a plot fails to generate")
 
         # CRISPRessoPro params
         parser.add_argument('--use_matplotlib', action='store_true',
@@ -131,6 +132,7 @@ ___________________________________
             num_processes=n_processes,
             process_pool=process_pool,
             process_futures=process_futures,
+            halt_on_plot_fail=args.halt_on_plot_fail,
         )
 
         #glob returns paths including the original prefix
