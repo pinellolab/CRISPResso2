@@ -386,7 +386,7 @@ def make_compare_report_from_folder(crispresso_report_file, crispresso2_info, fo
     names_arr = []
     output_title = 'CRISPResso Compare Output'
     if crispresso2_info['running_info']['args'].name != '':
-        output_title += "<br/>{crispresso2_info['running_info']['args'].name}"
+        output_title += f"<br/>{crispresso2_info['running_info']['args'].name}"
     make_multi_report_from_folder(crispresso2_info, names_arr, output_title, crispresso_report_file, folder, _root, 'compare', logger)
 
 
@@ -395,7 +395,7 @@ def make_meta_report_from_folder(crispresso_report_file, crispresso2_info, folde
     input_names = crispresso2_info['meta_input_names']
     output_title = 'CRISPresso Meta Output'
     if crispresso2_info['running_info']['args'].name != '':
-        output_title += "<br/>{crispresso2_info['running_info']['args'].name}"
+        output_title += f"<br/>{crispresso2_info['running_info']['args'].name}"
     make_multi_report_from_folder(crispresso2_info, names_arr, output_title, crispresso_report_file, folder, _root, 'meta', logger,
                                   display_names=input_names)
 
@@ -407,7 +407,7 @@ def make_wgs_report_from_folder(crispresso_report_file, crispresso2_info, folder
     names_arr = crispresso2_info['results']['good_region_names']
     output_title = 'CRISPResso WGS Output'
     if crispresso2_info['running_info']['args'].name != '':
-        output_title += "<br/>{crispresso2_info['running_info']['args'].name}"
+        output_title += f"<br/>{crispresso2_info['running_info']['args'].name}"
     make_multi_report_from_folder(crispresso2_info, names_arr, output_title, crispresso_report_file, folder, _root, 'wgs', logger)
 
 
