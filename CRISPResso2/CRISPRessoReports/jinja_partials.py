@@ -28,6 +28,11 @@ from functools import partial
 
 from markupsafe import Markup
 
+try:
+    import flask
+except ImportError:
+    flask = None
+
 
 def render_partial(template_name, renderer=None, markup=True, **data):
     """
@@ -36,8 +41,7 @@ def render_partial(template_name, renderer=None, markup=True, **data):
     if renderer is None:
         if flask is None:
             raise PartialsException('No renderer specified')
-        else:
-            renderer = flask.render_template
+        renderer = flask.render_template
 
     if markup:
         return Markup(renderer(template_name, **data))
