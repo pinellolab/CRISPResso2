@@ -2,8 +2,9 @@ name: Pylint
 
 on:
   push:
-    branches:
-      - '*'
+
+  pull_request:
+    types: [opened, reopened]
 
 jobs:
   build:
