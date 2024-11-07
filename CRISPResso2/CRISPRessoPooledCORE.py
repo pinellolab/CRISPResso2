@@ -645,10 +645,10 @@ def main():
             with open(args.amplicons_file, 'r') as amplicons_fin:
 
                 head_line = amplicons_fin.readline().strip()
-                if head_line == "":
-                    raise CRISPRessoShared.BadParameterException('Cannot parse header from amplicon file ' + args.amplicons_file)
-                while head_line[0] == "#":  # read past comments
+                while head_line and head_line[0] == "#":  # read past comments
                     head_line = amplicons_fin.readline()
+                if not head_line:
+                    raise CRISPRessoShared.BadParameterException('Cannot parse header from amplicon file ' + args.amplicons_file)
                 header_els = head_line.split('\t')
 
             head_lookup = CRISPRessoShared.get_crispresso_options_lookup("Core")  # dict of qwc -> quantification_window_coordinates
