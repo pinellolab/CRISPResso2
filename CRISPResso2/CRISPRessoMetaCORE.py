@@ -84,7 +84,7 @@ def main():
 |  |_| |_| |_| |_|____   |_|   |_|  |_|  |
 |________________________________________|
         '''
-        print(CRISPRessoShared.get_crispresso_header(description, meta_string))
+        info(CRISPRessoShared.get_crispresso_header(description, meta_string))
 
         parser = CRISPRessoShared.getCRISPRessoArgParser("Meta", parser_title = 'CRISPRessoMeta Parameters')
 
@@ -366,7 +366,7 @@ def main():
             crispresso2Meta_info_file, crispresso2_info,
         )
         info('Analysis Complete!', {'percent_complete': 100})
-        print(CRISPRessoShared.get_crispresso_footer())
+        info(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)
 
     except Exception as e:

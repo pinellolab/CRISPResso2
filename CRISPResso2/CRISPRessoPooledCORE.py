@@ -67,16 +67,20 @@ def which(program):
 
 
 def check_samtools():
+    """
+    Assert that samtools is installed
+    """
 
     cmd_path=which('samtools')
     if cmd_path:
         return True
     else:
-        sys.stdout.write('\nCRISPRessoPooled requires samtools')
-        sys.stdout.write('\n\nPlease install samtools and add it to your path following the instructions at: http://www.htslib.org/download/')
-        return False
+        raise CRISPRessoShared.InstallationException('CRISPRessoPooled requires samtools\nPlease install samtools and add it to your path following the instructions at: http://www.htslib.org/download/')
 
 def check_bowtie2():
+    """
+    Assert that bowtie2 is installed
+    """
 
     cmd_path1=which('bowtie2')
     cmd_path2=which('bowtie2-inspect')
@@ -84,11 +88,15 @@ def check_bowtie2():
     if cmd_path1 and cmd_path2:
         return True
     else:
-        sys.stdout.write('\nCRISPRessoPooled requires Bowtie2!')
-        sys.stdout.write('\n\nPlease install Bowtie2 and add it to your path following the instructions at: http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#obtaining-bowtie-2')
-        return False
+        raise CRISPRessoShared.InstallationException('\nCRISPRessoPooled requires Bowtie2!\nPlease install Bowtie2 and add it to your path following the instructions at: http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#obtaining-bowtie-2')
 
-def print_full(x):
+def print_full_pandas_df(x):
+    """
+    Print the full pandas dataframe (no clipping of rows or columns)
+
+    Args:
+        x (pd.DataFrame): The dataframe to print
+    """
     pd.set_option('display.max_rows', len(x))
     pd.set_option('display.max_columns', None)
     pd.set_option('display.width', 2000)
@@ -230,41 +238,6 @@ def normalize_name(name, fastq_r1, fastq_r2, aligned_pooled_bam):
 pd=check_library('pandas')
 np=check_library('numpy')
 
-###EXCEPTIONS############################
-class FlashException(Exception):
-    pass
-
-class TrimmomaticException(Exception):
-    pass
-
-class Bowtie2Exception(Exception):
-    pass
-
-class AmpliconsNotUniqueException(Exception):
-    pass
-
-class AmpliconsNamesNotUniqueException(Exception):
-    pass
-
-class NoReadsAlignedException(Exception):
-    pass
-
-class DonorSequenceException(Exception):
-    pass
-
-class AmpliconEqualDonorException(Exception):
-    pass
-
-class SgRNASequenceException(Exception):
-    pass
-
-class NTException(Exception):
-    pass
-
-class ExonSequenceException(Exception):
-    pass
-
-
 def main():
     try:
         start_time =  datetime.now()
@@ -278,11 +251,11 @@ def main():
 ||   \__/\__/|__|__|__/ |
 |_______________________|
         '''
-        print(CRISPRessoShared.get_crispresso_header(description, pooled_string))
+        info(CRISPRessoShared.get_crispresso_header(description, pooled_string))
 
         # if no args are given, print a simplified help message
         if len(sys.argv) == 1:
-            print(CRISPRessoShared.format_cl_text('usage: CRISPRessoPooled [-r1 FASTQ_R1] [-r2 FASTQ_R2] [-f AMPLICONS_FILE] [-x GENOME_ROOT] [-n NAME]\n' + \
+            raise CRISPRessoShared.BadParameterException(CRISPRessoShared.format_cl_text('usage: CRISPRessoPooled [-r1 FASTQ_R1] [-r2 FASTQ_R2] [-f AMPLICONS_FILE] [-x GENOME_ROOT] [-n NAME]\n' + \
                 'commonly-used arguments:\n' + \
                 '-h, --help            show the full list of arguments\n' + \
                 '-v, --version         show program\'s version number and exit\n' + \
@@ -292,7 +265,6 @@ def main():
                 '-x GENOME_ROOT        Folder that contains the bowtie2-indexed genome for optional unbiased alignment of reads (default: None, reads are only aligned to provided amplicon sequences)\n' + \
                 '-n NAME, --name NAME  Name for the analysis (default: name based on input file name)\n'
             ))
-            sys.exit()
 
         parser = CRISPRessoShared.getCRISPRessoArgParser("Pooled", parser_title = 'CRISPRessoPooled Parameters')
 
@@ -723,11 +695,11 @@ def main():
 
             if not len(df_template.amplicon_seq.unique())==df_template.shape[0]:
                 duplicated_entries = df_template.amplicon_seq[df_template.amplicon_seq.duplicated()]
-                raise Exception('The amplicon sequences must be distinct! (Duplicated entries: ' + str(duplicated_entries.values) + ')')
+                raise CRISPRessoShared.BadParameterException('The amplicon sequences must be distinct! (Duplicated entries: ' + str(duplicated_entries.values) + ')')
 
             if not len(df_template.amplicon_name.unique())==df_template.shape[0]:
                 duplicated_entries = df_template.amplicon_name[df_template.amplicon_name.duplicated()]
-                raise Exception('The amplicon names must be distinct! (Duplicated names: ' + str(duplicated_entries.values) + ')')
+                raise CRISPRessoShared.BadParameterException('The amplicon names must be distinct! (Duplicated names: ' + str(duplicated_entries.values) + ')')
 
             df_template=df_template.set_index('amplicon_name')
             df_template.index=df_template.index.to_series().str.replace(' ', '_')
@@ -735,7 +707,7 @@ def main():
             for idx, row in df_template.iterrows():
                 wrong_nt=CRISPRessoShared.find_wrong_nt(row.amplicon_seq)
                 if wrong_nt:
-                    raise NTException('The amplicon sequence %s contains wrong characters:%s' % (idx, ' '.join(wrong_nt)))
+                    raise CRISPRessoShared.NTException('The amplicon sequence %s contains wrong characters:%s' % (idx, ' '.join(wrong_nt)))
 
                 if 'guide_seq' in df_template.columns and not pd.isnull(row.guide_seq):
                     cut_points = []
@@ -745,7 +717,7 @@ def main():
 
                         wrong_nt = CRISPRessoShared.find_wrong_nt(current_guide_seq)
                         if wrong_nt:
-                            raise NTException('The sgRNA sequence %s contains wrong characters:%s'  % (current_guide_seq, ' '.join(wrong_nt)))
+                            raise CRISPRessoShared.NTException('The sgRNA sequence %s contains wrong characters:%s'  % (current_guide_seq, ' '.join(wrong_nt)))
 
                         offset_fw=guide_qw_centers[idx]+len(current_guide_seq)-1
                         offset_rc=(-guide_qw_centers[idx])-1
@@ -929,7 +901,7 @@ def main():
                     filename_amplicon_seqs_fasta, filename_aligned_amplicons_sam_log, filename_aligned_amplicons_sam)
                 bowtie_status=sb.call(aligner_command, shell=True)
                 if bowtie_status:
-                        raise Bowtie2Exception('Bowtie2 failed to align amplicons to the genome, please check the output file.')
+                        raise CRISPRessoShared.AlignmentException('Bowtie2 failed to align amplicons to the genome, please check the output file.')
 
                 additional_columns = []
                 with open (filename_aligned_amplicons_sam) as aln:
@@ -1045,7 +1017,7 @@ def main():
             if can_finish_incomplete_run and 'genome_demultiplexing' in crispresso2_info['running_info']['finished_steps'] and os.path.isfile(REPORT_ALL_DEPTH):
                 info('Using previously-computed demultiplexing of genomic reads')
                 df_all_demux = pd.read_csv(REPORT_ALL_DEPTH, sep='\t')
-                df_all_demux['loc'] = df_all_demux['chr_id']+' ' + df_all_demux['start'].apply(str) + ' '+df_all_demux['end'].apply(str)
+                df_all_demux['loc'] = df_all_demux['chr_id'].apply(str) + ' ' + df_all_demux['start'].apply(str) + ' '+df_all_demux['end'].apply(str)
                 df_all_demux.set_index(['loc'], inplace=True)
             else:
                 #REDISCOVER LOCATIONS and DEMULTIPLEX READS
@@ -1218,7 +1190,7 @@ def main():
                 df_all_demux.set_index(['loc'], inplace=True)
 
                 if sum_aligned_reads == 0:
-                    raise NoReadsAlignedException("No reads aligned to the specified genome")
+                    raise CRISPRessoShared.NoReadsAlignedException("No reads aligned to the specified genome")
 
                 crispresso2_info['running_info']['finished_steps']['genome_demultiplexing'] = True
                 CRISPRessoShared.write_crispresso_info(
@@ -1389,11 +1361,10 @@ def main():
                 info('Running CRISPResso on the regions discovered...')
                 crispresso_cmds = []
                 for idx, row in df_regions.iterrows():
-
                     if row.n_reads > args.min_reads_to_use_region:
                         info('\nRunning CRISPResso on: %s-%d-%d...'%(row.chr_id, row.bpstart, row.bpend))
                         if pd.isna(row.sequence):
-                            raise Exception('Cannot extract sequence from input reference ' + uncompressed_reference)
+                            raise CRISPRessoShared.BadParameterException('Cannot extract sequence ' + str(row.sequence) + ' from input reference ' + uncompressed_reference)
                         crispresso_cmd = args.crispresso_command + ' -r1 %s -a %s -o %s' %(row.fastq_file, row.sequence, OUTPUT_DIRECTORY)
                         crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, args)
                         crispresso_cmds.append(crispresso_cmd)
@@ -1631,7 +1602,7 @@ def main():
                 try:
                     run_data = CRISPRessoShared.load_crispresso_info(sub_folder)
                 except Exception as e:
-                    raise Exception('CRISPResso run %s is not complete. Cannot read CRISPResso2_info.json file.'% sub_folder)
+                    raise CRISPRessoShared.OutputFolderIncompleteException('CRISPResso run %s is not complete. Cannot read CRISPResso2_info.json file.'% sub_folder)
                 ref_sequences = [run_data['results']['refs'][ref_name]['sequence'] for ref_name in run_data['results']['ref_names']]
                 allele_frequency_table_zip_filename = os.path.join(sub_folder, run_data['running_info']['allele_frequency_table_zip_filename'])
                 if not os.path.exists(allele_frequency_table_zip_filename):
@@ -1690,7 +1661,7 @@ def main():
             CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
 
         info('All Done!', {'percent_complete': 100})
-        print(CRISPRessoShared.get_crispresso_footer())
+        info(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)
 
     except Exception as e:

@@ -52,12 +52,6 @@ def find_wrong_nt(sequence):
 def capitalize_sequence(x):
     return str(x).upper() if not pd.isnull(x) else x
 
-def check_file(filename):
-    try:
-        with open(filename): pass
-    except IOError:
-        raise Exception('I cannot open the file: '+filename)
-
 #the dependencies are bowtie2 and samtools
 def which(program):
     def is_exe(fpath):
@@ -269,21 +263,6 @@ def normalize_name(name, bam_file):
             )
         return clean_name
 
-
-###EXCEPTIONS############################
-
-class AmpliconsNamesNotUniqueException(Exception):
-    pass
-
-class SgRNASequenceException(Exception):
-    pass
-
-class NTException(Exception):
-    pass
-
-class ExonSequenceException(Exception):
-    pass
-
 def main():
     def print_stacktrace_if_debug():
         debug_flag = False
@@ -305,11 +284,11 @@ def main():
 ||/\|\__)__) |
 |____________|
         '''
-        print(CRISPRessoShared.get_crispresso_header(description, wgs_string))
+        info(CRISPRessoShared.get_crispresso_header(description, wgs_string))
 
         # if no args are given, print a simplified help message
         if len(sys.argv) == 1:
-            print(CRISPRessoShared.format_cl_text('usage: CRISPRessoWGS [-b BAM_FILE] [-f REGION_FILE] [-r REFERENCE_FILE] [-n NAME]\n' + \
+            raise CRISPRessoShared.BadParameterException(CRISPRessoShared.format_cl_text('usage: CRISPRessoWGS [-b BAM_FILE] [-f REGION_FILE] [-r REFERENCE_FILE] [-n NAME]\n' + \
                 'commonly-used arguments:\n' + \
                 '-h, --help            show the full list of arguments\n' + \
                 '-v, --version         show program\'s version number and exit\n' + \
@@ -361,14 +340,14 @@ def main():
             sys.exit(1)
 
         #check files
-        check_file(args.bam_file)
+        CRISPRessoShared.check_file(args.bam_file)
 
-        check_file(args.reference_file)
+        CRISPRessoShared.check_file(args.reference_file)
 
-        check_file(args.region_file)
+        CRISPRessoShared.check_file(args.region_file)
 
         if args.gene_annotations:
-            check_file(args.gene_annotations)
+            CRISPRessoShared.check_file(args.gene_annotations)
 
         # for computation performed in CRISPRessoWGS (e.g. bowtie alignment, etc) use n_processes_for_wgs
         n_processes_for_wgs = 1
@@ -467,7 +446,7 @@ def main():
                 df_genes.txStart=df_genes.txStart.astype(int)
                 df_genes.head()
             except:
-                raise Exception('Failed to load the gene annotations file.')
+                raise CRISPRessoShared.BadParameterException('Failed to load the gene annotations file.')
 
 
         #Load and validate the REGION FILE
@@ -491,7 +470,7 @@ def main():
 
 
         if not len(df_regions.Name.unique())==df_regions.shape[0]:
-            raise Exception('The amplicon names should be all distinct!')
+            raise CRISPRessoShared.BadParameterException('The amplicon names should be all distinct!')
 
         df_regions.set_index('Name', inplace=True)
         #df_regions.index=df_regions.index.str.replace(' ','_')
@@ -520,7 +499,7 @@ def main():
 
                     wrong_nt=find_wrong_nt(current_guide_seq)
                     if wrong_nt:
-                        raise NTException('The sgRNA sequence %s contains wrong characters:%s'  % (current_guide_seq, ' '.join(wrong_nt)))
+                        raise CRISPRessoShared.NTException('The sgRNA sequence %s contains wrong characters:%s'  % (current_guide_seq, ' '.join(wrong_nt)))
 
                     offset_fw=guide_qw_centers[idx]+len(current_guide_seq)-1
                     offset_rc=(-guide_qw_centers[idx])-1
@@ -765,7 +744,7 @@ def main():
         info('Analysis Complete!', {'percent_complete': 100})
         if args.zip_output:
             CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
-        print(CRISPRessoShared.get_crispresso_footer())
+        info(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)
 
     except Exception as e:

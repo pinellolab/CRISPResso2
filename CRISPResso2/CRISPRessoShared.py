@@ -9,7 +9,6 @@ import datetime
 import errno
 import gzip
 import json
-import sys
 import textwrap
 import importlib.util
 from pathlib import Path
@@ -30,7 +29,6 @@ from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoCOREResources
 
 __version__ = "2.3.2"
-
 
 ###EXCEPTIONS############################
 class FastpException(Exception):

@@ -89,11 +89,11 @@ def main():
 ||__)/--\| \__|  ||
 |_________________|
         '''
-        print(CRISPRessoShared.get_crispresso_header(description, batch_string))
+        info(CRISPRessoShared.get_crispresso_header(description, batch_string))
 
         # if no args are given, print a simplified help message
         if len(sys.argv) == 1:
-            print(CRISPRessoShared.format_cl_text('usage: CRISPRessoBatch  [-bs BATCH_SETTINGS]  [-n NAME]\n' + \
+            raise CRISPRessoShared.BadParameterException(CRISPRessoShared.format_cl_text('usage: CRISPRessoBatch  [-bs BATCH_SETTINGS]  [-n NAME]\n' + \
                 'commonly-used arguments:\n' + \
                 '-h, --help            show the full list of arguments\n' + \
                 '-v, --version         show program\'s version number and exit\n' + \
@@ -984,7 +984,7 @@ def main():
                 CRISPRessoShared.zip_results(path_value[1])
             else:
                 CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
-        print(CRISPRessoShared.get_crispresso_footer())
+        info(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)
 
     except Exception as e:
