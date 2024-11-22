@@ -154,12 +154,22 @@ def get_n_reads_bam(bam_filename):
     p = sb.Popen("samtools view -c %s" % bam_filename, shell=True, stdout=sb.PIPE)
     return int(p.communicate()[0])
 
-def get_n_aligned_bam(bam_filename):
-    p = sb.Popen("samtools view -F 0x904 -c %s" % bam_filename, shell=True, stdout=sb.PIPE)
+def calculate_aligned_samtools_exclude_flags(samtools_exclude_flags):
+    """Calculate the samtools exclude flags for aligned reads.
+
+    This function calculates the samtools exclude flags for aligned reads
+    by filtering 0x900 (not primary alignment and supplementary alignment)
+    and also including any other user specified filters.
+    """
+    samtools_exclude_flags = int(samtools_exclude_flags, base=16)
+    return hex(0x900 | samtools_exclude_flags)
+
+def get_n_aligned_bam(bam_filename, samtools_exclude_flags):
+    p = sb.Popen(f"samtools view -F {calculate_aligned_samtools_exclude_flags(samtools_exclude_flags)} -c {bam_filename}", shell=True, stdout=sb.PIPE)
     return int(p.communicate()[0])
 
-def get_n_aligned_bam_region(bam_filename, chr_name, chr_start, chr_end):
-    p = sb.Popen("samtools view -F 0x904 -c %s %s:%d-%d" %(bam_filename, chr_name, chr_start, chr_end), shell=True, stdout=sb.PIPE)
+def get_n_aligned_bam_region(bam_filename, chr_name, chr_start, chr_end, samtools_exclude_flags):
+    p = sb.Popen(f"samtools view -F {calculate_aligned_samtools_exclude_flags(samtools_exclude_flags)} -c {bam_filename} {chr_name}:{chr_start}-{chr_end}", shell=True, stdout=sb.PIPE)
     return int(p.communicate()[0])
 
 def find_overlapping_genes(row, df_genes):
@@ -786,12 +796,13 @@ def main():
             info('Alignment command: ' + aligner_command, {'percent_complete': 15})
             sb.call(aligner_command, shell=True)
 
-            N_READS_ALIGNED = get_n_aligned_bam(bam_filename_amplicons)
+            N_READS_ALIGNED = get_n_aligned_bam(bam_filename_amplicons, args.samtools_exclude_flags)
 
             if args.limit_open_files_for_demux:
                 bam_iter = CRISPRessoShared.get_command_output(
-                    '(samtools sort {bam_file} | samtools view -F 4) 2>> {log_file}'.format(
+                    '(samtools sort {bam_file} | samtools view -F {samtools_exclude_flags}) 2>> {log_file}'.format(
                         bam_file=bam_filename_amplicons,
+                        samtools_exclude_flags=args.samtools_exclude_flags,
                         log_file=log_filename,
                     ),
                 )
@@ -824,7 +835,7 @@ def main():
                 if curr_file is not None:
                     curr_file.close()
             else:
-                s1 = r"samtools view -F 4 %s 2>>%s | grep -v ^'@'" % (bam_filename_amplicons,log_filename)
+                s1 = rf"samtools view -F {args.samtools_exclude_flags} {bam_filename_amplicons} 2>>{log_filename} | grep -v ^'@'"
                 s2 = r'''|awk '{ gzip_filename=sprintf("gzip >> OUTPUTPATH%s.fastq.gz",$3);\
                 print "@"$1"\n"$10"\n+\n"$11  | gzip_filename;}' '''
 
@@ -1014,7 +1025,7 @@ def main():
                     info('Index file for input .bam file does not exist. Generating bam index file.')
                     sb.call('samtools index %s' % bam_filename_genome, shell=True)
 
-                N_READS_ALIGNED = get_n_aligned_bam(bam_filename_genome)
+                N_READS_ALIGNED = get_n_aligned_bam(bam_filename_genome, args.samtools_exclude_flags)
                 # save progress up to this point
                 crispresso2_info['running_info']['finished_steps']['n_reads_aligned_genome'] = N_READS_ALIGNED
                 CRISPRessoShared.write_crispresso_info(
@@ -1031,7 +1042,7 @@ def main():
 
                 sb.call('samtools index %s' % bam_filename_genome, shell=True)
 
-                N_READS_ALIGNED = get_n_aligned_bam(bam_filename_genome)
+                N_READS_ALIGNED = get_n_aligned_bam(bam_filename_genome, args.samtools_exclude_flags)
 
                 # save progress up to this point
                 crispresso2_info['running_info']['finished_steps']['n_reads_aligned_genome'] = N_READS_ALIGNED
@@ -1061,7 +1072,7 @@ def main():
 
                 # if we should only demultiplex where amplicons aligned... (as opposed to the whole genome)
                 if RUNNING_MODE=='AMPLICONS_AND_GENOME' and not args.demultiplex_genome_wide:
-                    s1 = r'''samtools view -F 0x0004 %s __REGIONCHR__:__REGIONSTART__-__REGIONEND__ 2>>%s |''' % (bam_filename_genome, log_filename)+\
+                    s1 = rf'''samtools view -F {args.samtools_exclude_flags} {bam_filename_genome} __REGIONCHR__:__REGIONSTART__-__REGIONEND__ 2>>{log_filename} |''' +\
                     r'''awk 'BEGIN{OFS="\t";num_records=0;fastq_filename="__OUTPUTPATH__REGION___REGIONCHR_____REGIONSTART_____REGIONEND__.fastq";} \
                         { \
                             print "@"$1"\n"$10"\n+\n"$11 > fastq_filename; \
@@ -1093,7 +1104,7 @@ def main():
                 else:
                     # next, create the general demux command
                     # variables like __CHR__ will be subbed out below for each iteration
-                    s1 = r'''samtools view -F 0x0004 %s __CHR____REGION__ 2>>%s |''' % (bam_filename_genome, log_filename) + \
+                    s1 = rf'''samtools view -F {args.samtools_exclude_flags} {bam_filename_genome} __CHR____REGION__ 2>>{log_filename} |''' + \
                     r'''awk 'BEGIN {OFS="\t"} {bpstart=$4;  bpend=bpstart; split ($6,a,"[MIDNSHP]"); n=0;\
                     for (i=1; i in a; i++){\
                         n+=1+length(a[i]);\
@@ -1166,13 +1177,13 @@ def main():
                             curr_end = curr_pos + chr_step_size
                             while curr_end < chr_len:
                                 # make sure there aren't any reads at this breakpoint
-                                n_reads_at_end = get_n_aligned_bam_region(bam_filename_genome, chr_str, curr_end-5, curr_end+5)
+                                n_reads_at_end = get_n_aligned_bam_region(bam_filename_genome, chr_str, curr_end-5, curr_end+5, args.samtools_exclude_flags)
                                 while n_reads_at_end > 0:
                                     curr_end += 500  # look for another place with no reads
                                     if curr_end >= chr_len:
                                         curr_end = chr_len
                                         break
-                                    n_reads_at_end = get_n_aligned_bam_region(bam_filename_genome, chr_str, curr_end-5, curr_end+5)
+                                    n_reads_at_end = get_n_aligned_bam_region(bam_filename_genome, chr_str, curr_end-5, curr_end+5, args.samtools_exclude_flags)
 
                                 chr_output_filename = _jp('MAPPED_REGIONS/%s_%s_%s.info' % (chr_str, curr_pos, curr_end))
                                 sub_chr_command = chr_cmd.replace("__REGION__", ":%d-%d "%(curr_pos, curr_end)).replace("__DEMUX_CHR_LOGFILENAME__",chr_output_filename)
