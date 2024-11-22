@@ -819,9 +819,9 @@ def process_bam(bam_filename, bam_chr_loc, output_bam, variantCache, ref_names, 
         crispresso_cmd_to_write = ' '.join(sys.argv)
         sam_out.write('@PG\tID:crispresso2\tPN:crispresso2\tVN:'+CRISPRessoShared.__version__+'\tCL:"'+crispresso_cmd_to_write+'"\n')
         if bam_chr_loc != "":
-            proc = sb.Popen(['samtools', 'view', bam_filename, bam_chr_loc], stdout=sb.PIPE, encoding='utf-8')
+            proc = sb.Popen(['samtools', 'view', '-F', args.samtools_exclude_flags, bam_filename, bam_chr_loc], stdout=sb.PIPE, encoding='utf-8')
         else:
-            proc = sb.Popen(['samtools', 'view', bam_filename], stdout=sb.PIPE, encoding='utf-8')
+            proc = sb.Popen(['samtools', 'view', '-F', args.samtools_exclude_flags, bam_filename], stdout=sb.PIPE, encoding='utf-8')
         num_reads = 0
 
         # Reading through the bam file and enriching variantCache as a dictionary with the following:

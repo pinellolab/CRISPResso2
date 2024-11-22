@@ -208,7 +208,7 @@ def get_n_reads_fastq(fastq_filename):
      n_reads = int(float(p.communicate()[0])/4.0)
      return n_reads
 
-def extract_reads(row):
+def extract_reads(row, samtools_exclude_flags):
     if row.sequence:
         #create place-holder fastq files
         open(row.fastq_file_trimmed_reads_in_region, 'w+').close()
@@ -217,7 +217,7 @@ def extract_reads(row):
 
         info('Extracting reads in:%s and creating .bam file: %s' % (region, row.bam_file_with_reads_in_region))
 
-        cmd=r'''samtools view -b -F 4 --reference %s %s %s > %s ''' % (row.reference_file, row.original_bam, region, row.bam_file_with_reads_in_region)
+        cmd = rf'''samtools view -b -F {samtools_exclude_flags} --reference {row.reference_file} {row.original_bam} {region} > {row.bam_file_with_reads_in_region} '''
         sb.call(cmd, shell=True)
 
         cmd=r'''samtools index %s ''' % (row.bam_file_with_reads_in_region)
@@ -232,10 +232,10 @@ def extract_reads(row):
 
     return row
 
-def extract_reads_chunk(df):
+def extract_reads_chunk(df, samtools_exclude_flags):
     new_df = pd.DataFrame(columns=df.columns)
     for i in range(len(df)):
-        new_df.loc[i] = extract_reads(df.iloc[i].copy())
+        new_df.loc[i] = extract_reads(df.iloc[i].copy(), samtools_exclude_flags)
     new_df.set_index(df.index,inplace=True)
     return new_df
 
@@ -577,7 +577,8 @@ def main():
 
         else:
             #run region extraction here
-            df_regions = CRISPRessoMultiProcessing.run_pandas_apply_parallel(df_regions, extract_reads_chunk, n_processes_for_wgs)
+            extract_reads_chunk_partial = lambda x: extract_reads_chunk(x, args.samtools_exclude_flags)
+            df_regions = CRISPRessoMultiProcessing.run_pandas_apply_parallel(df_regions, extract_reads_chunk_partial, n_processes_for_wgs)
             df_regions.sort_values('region_number', inplace=True)
             cols_to_print = ["chr_id", "bpstart", "bpend", "sgRNA", "Expected_HDR", "Coding_sequence", "sequence", "n_reads", "bam_file_with_reads_in_region", "fastq_file_trimmed_reads_in_region"]
             if args.gene_annotations:
