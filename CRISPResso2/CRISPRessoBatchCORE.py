@@ -100,7 +100,6 @@ def main():
                 '-bs BATCH_SETTINGS    Tab-separated file where rows are samples and columns specify settings for each sample.\n' + \
                 '-n NAME, --name NAME  Name for the analysis (default: name based on input file name)'
             ))
-            sys.exit()
 
         parser = CRISPRessoShared.getCRISPRessoArgParser("Batch", parser_title = 'CRISPRessoBatch Parameters')
 
