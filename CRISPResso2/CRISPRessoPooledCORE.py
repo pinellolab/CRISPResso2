@@ -1056,7 +1056,7 @@ def main():
             if can_finish_incomplete_run and 'genome_demultiplexing' in crispresso2_info['running_info']['finished_steps'] and os.path.isfile(REPORT_ALL_DEPTH):
                 info('Using previously-computed demultiplexing of genomic reads')
                 df_all_demux = pd.read_csv(REPORT_ALL_DEPTH, sep='\t')
-                df_all_demux['loc'] = df_all_demux['chr_id'].apply(str) + ' ' + df_all_demux['start'].apply(str) + ' '+df_all_demux['end'].apply(str)
+                df_all_demux['loc'] = df_all_demux['chr_id'] + ' ' + df_all_demux['start'].apply(str) + ' '+df_all_demux['end'].apply(str)
                 df_all_demux.set_index(['loc'], inplace=True)
             else:
                 #REDISCOVER LOCATIONS and DEMULTIPLEX READS
@@ -1097,8 +1097,9 @@ def main():
                     for idx, row in df_template.iterrows():
                         chr_output_filename = _jp('MAPPED_REGIONS/chr%s_%s_%s.info' % (row.chr_id, row.bpstart, row.bpend))
                         sub_chr_command = cmd.replace('__REGIONCHR__', str(row.chr_id)).replace('__REGIONSTART__',str(row.bpstart)).replace('__REGIONEND__',str(row.bpend)).replace("__DEMUX_CHR_LOGFILENAME__", chr_output_filename)
-                        chr_commands.append(sub_chr_command)
-                        chr_output_filenames.append(chr_output_filename)
+                        if chr_output_filename not in chr_output_filenames: # sometimes multiple amplicons map to the same region so we don't want the region to be written to by multiple processes
+                            chr_commands.append(sub_chr_command)
+                            chr_output_filenames.append(chr_output_filename)
 
                 # if we should demultiplex everwhere (not just where amplicons aligned)
                 else:
@@ -1265,6 +1266,7 @@ def main():
                     demux_key = row['chr_id'] + ' ' + str(row['bpstart']) + ' ' + str(row['bpend'])
                     if demux_key in df_all_demux.index:
                         demux_row = df_all_demux.loc[demux_key]
+                        print('demux row: ' + str(demux_row))
                         N_READS = demux_row['number of reads']
                         n_reads_aligned_genome.append(N_READS)
                         fastq_filename_region = str(demux_row['output filename'])
@@ -1277,6 +1279,7 @@ def main():
                         #else:
                              #info('Warning: Fastq filename ' + fastq_filename_region + ' is not in ' + str(files_to_match))
                              #debug here??
+                        print('N_READS: "', str(N_READS) + '" fastq_file_name_region: ' + str(fastq_filename_region))
                         if N_READS >= args.min_reads_to_use_region and fastq_filename_region != "":
                             info('\nThe amplicon [%s] has enough reads (%d) mapped to it! Running CRISPResso!\n' % (idx, N_READS))
 
