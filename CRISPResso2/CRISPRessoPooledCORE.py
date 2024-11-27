@@ -1266,7 +1266,6 @@ def main():
                     demux_key = row['chr_id'] + ' ' + str(row['bpstart']) + ' ' + str(row['bpend'])
                     if demux_key in df_all_demux.index:
                         demux_row = df_all_demux.loc[demux_key]
-                        print('demux row: ' + str(demux_row))
                         N_READS = demux_row['number of reads']
                         n_reads_aligned_genome.append(N_READS)
                         fastq_filename_region = str(demux_row['output filename'])
@@ -1276,10 +1275,7 @@ def main():
                             if fastq_filename_region in files_to_match:
                                 files_to_match.remove(fastq_filename_region)
                         fastq_region_filenames.append(fastq_filename_region)
-                        #else:
-                             #info('Warning: Fastq filename ' + fastq_filename_region + ' is not in ' + str(files_to_match))
-                             #debug here??
-                        print('N_READS: "', str(N_READS) + '" fastq_file_name_region: ' + str(fastq_filename_region))
+
                         if N_READS >= args.min_reads_to_use_region and fastq_filename_region != "":
                             info('\nThe amplicon [%s] has enough reads (%d) mapped to it! Running CRISPResso!\n' % (idx, N_READS))
 
