@@ -138,10 +138,6 @@ def get_avg_read_length_fastq(fastq_filename):
      p = sb.Popen(cmd, shell=True, stdout=sb.PIPE)
      return int(p.communicate()[0].strip())
 
-def get_n_reads_fastq(fastq_filename):
-    p = sb.Popen(('z' if fastq_filename.endswith('.gz') else '' ) +"cat < \"%s\" | wc -l" % fastq_filename, shell=True, stdout=sb.PIPE)
-    return int(float(p.communicate()[0])/4.0)
-
 def get_n_reads_bam(bam_filename,bam_chr_loc=""):
     cmd = "samtools view -c " + bam_filename + " " + bam_chr_loc
     p = sb.Popen(cmd, shell=True, stdout=sb.PIPE)
@@ -2458,7 +2454,7 @@ def main():
 
         N_READS_INPUT = 0
         if args.fastq_r1:
-            N_READS_INPUT = get_n_reads_fastq(args.fastq_r1)
+            N_READS_INPUT = CRISPRessoShared.get_n_reads_fastq(args.fastq_r1)
         elif args.bam_input:
             N_READS_INPUT = get_n_reads_bam(args.bam_input, args.bam_chr_loc)
 
@@ -2620,7 +2616,7 @@ def main():
         if args.bam_input:
             N_READS_AFTER_PREPROCESSING = N_READS_INPUT
         else:
-            N_READS_AFTER_PREPROCESSING=get_n_reads_fastq(processed_output_filename)
+            N_READS_AFTER_PREPROCESSING=CRISPRessoShared.get_n_reads_fastq(processed_output_filename)
         if N_READS_AFTER_PREPROCESSING == 0:
             raise CRISPRessoShared.NoReadsAfterQualityFilteringException('No reads in input or no reads survived the average or single bp quality filtering.')
 
