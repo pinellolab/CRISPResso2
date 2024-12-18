@@ -1435,7 +1435,7 @@ def main():
         else:
             debug(f'CRISPRessoPro not installed', {'percent_complete': 0.5})
 
-        aln_matrix_loc = os.path.join(_ROOT, "EDNAFULL")
+        aln_matrix_loc = os.path.join(_ROOT, args.needleman_wunsch_aln_matrix_loc)
         CRISPRessoShared.check_file(aln_matrix_loc)
         aln_matrix = CRISPResso2Align.read_matrix(aln_matrix_loc)
 
