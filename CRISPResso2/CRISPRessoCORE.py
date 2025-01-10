@@ -486,10 +486,12 @@ def variant_file_generator_process(seq_list, get_new_variant_object, args, refs,
     Nothing
 
     """
-    def numpy_encoder(obj):
-        """ Custom encoding for numpy arrays and other non-serializable types """
+    def custom_encoder(obj):
+        """ Custom encoding for non-serializable types """
         if isinstance(obj, np.ndarray):
-            return obj.tolist()  # Convert numpy arrays to lists
+            return obj.tolist()
+        if isinstance(obj, CRISPRessoCOREResources.ResultsSlotsDict):
+            return {key: obj[key] for key in obj.__slots__}
         raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
 
     variant_file_path = os.path.join(variants_dir, f"variants_{process_id}.tsv")
@@ -500,7 +502,7 @@ def variant_file_generator_process(seq_list, get_new_variant_object, args, refs,
         for index, fastq_seq in enumerate(seq_list):
             new_variant = get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaffold_dna_info)
             # Convert the complex object to a JSON string
-            json_string = json.dumps(new_variant, default=numpy_encoder)
+            json_string = json.dumps(new_variant, default=custom_encoder)
             variant_lines += f"{fastq_seq}\t{json_string}\n"
             if index % 10000 == 0 and index != 0:
                 info(f"Process {process_id + 1} has processed {index} unique reads", {'percent_complete': 10})
