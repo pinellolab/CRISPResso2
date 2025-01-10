@@ -53,7 +53,7 @@ ___________________________________
 |/--\ \_| \_| | \ |_ \_| /--\ | |_ |
 |__________________________________|
         '''
-        print(CRISPRessoShared.get_crispresso_header(description, aggregate_string))
+        info(CRISPRessoShared.get_crispresso_header(description, aggregate_string))
 
         parser = argparse.ArgumentParser(description="Aggregate CRISPResso2 Runs")
         parser.add_argument("-p", "--prefix", action='append', help="Prefix for CRISPResso folders to aggregate (may be specified multiple times)", default=[])
@@ -903,7 +903,7 @@ ___________________________________
             process_pool.shutdown()
 
         info('Analysis Complete!', {'percent_complete': 100})
-        print(CRISPRessoShared.get_crispresso_footer())
+        info(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)
 
     except Exception as e:

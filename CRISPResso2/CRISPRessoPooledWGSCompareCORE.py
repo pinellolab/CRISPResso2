@@ -82,7 +82,7 @@ def main():
         compare_header = CRISPRessoShared.get_crispresso_header(
             description, compare_header,
         )
-        print(compare_header)
+        info(compare_header)
 
         parser = argparse.ArgumentParser(
             description='CRISPRessoPooledWGSCompare Parameters',
@@ -380,7 +380,7 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
             CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
 
         info('All Done!', {'percent_complete': 100})
-        print(CRISPRessoShared.get_crispresso_footer())
+        info(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)
 
     except Exception as e:

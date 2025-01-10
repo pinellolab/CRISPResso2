@@ -7,26 +7,24 @@ Software pipeline for the analysis of genome editing outcomes from deep sequenci
 (c) 2020 The General Hospital Corporation. All Rights Reserved.
 '''
 
-import sys
-running_python3 = False
-if sys.version_info > (3, 0):
-    running_python3 = True
-
 import argparse
-from collections import Counter
-from copy import deepcopy
-from concurrent.futures import ProcessPoolExecutor, wait
-from functools import partial
 import errno
 import gzip
 import json
-import zipfile
+import logging
 import os
 import re
+import sys
 import subprocess as sb
 import traceback
-from multiprocessing import Process
+import zipfile
 
+from collections import Counter
+from copy import deepcopy
+from concurrent.futures import ProcessPoolExecutor, wait
+from datetime import datetime
+from functools import partial
+from multiprocessing import Process
 
 from CRISPResso2 import CRISPRessoCOREResources
 from CRISPResso2.CRISPRessoReports import CRISPRessoReport
@@ -40,15 +38,6 @@ else:
 
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoMultiProcessing
-
-from datetime import datetime
-present = datetime.now()
-#d1 = datetime.strptime('21/07/2019','%d/%m/%Y')
-#if present > d1:
-#    print('\nYour version of CRISPResso2 is out of date. Please download a new version.\n')
-#    sys.exit(1)
-
-import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -429,7 +418,6 @@ def get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaf
     if args.prime_editing_pegRNA_scaffold_seq and 'Prime-edited' in best_match_names: #any scaffold extensions must be closer to the prime-edited sequence
         pe_read_possible_scaffold_loc = new_variant['variant_Prime-edited']['ref_positions'].index(pe_scaffold_dna_info[0]-1) + 1
         if new_variant['variant_Prime-edited']['aln_seq'][pe_read_possible_scaffold_loc:(pe_read_possible_scaffold_loc+len(pe_scaffold_dna_info[1]))] == pe_scaffold_dna_info[1]:
-#            print('comparingHERE ' + new_variant['variant_Prime-edited']['aln_seq'][pe_read_possible_scaffold_loc:(pe_read_possible_scaffold_loc+len(pe_scaffold_dna_info[1])+5)] + ' from ' + new_variant['variant_Prime-edited']['aln_seq'] + ' and ' + new_variant['variant_Prime-edited']['aln_ref'])
             new_variant['aln_ref_names'] = ["Scaffold-incorporated"]
             new_variant['class_name'] = "Scaffold-incorporated"
             old_payload = deepcopy(new_variant['variant_Prime-edited']) #keep prime-edited allele and alignment
@@ -1380,11 +1368,11 @@ def main():
         start_time_string =  start_time.strftime('%Y-%m-%d %H:%M:%S')
         description = ['~~~CRISPResso 2~~~', '-Analysis of genome editing outcomes from deep sequencing data-']
         header = CRISPRessoShared.get_crispresso_header(description=description, header_str=None)
-        print(header)
+        info(header)
 
         # if no args are given, print a simplified help message
         if len(sys.argv) == 1:
-            print(CRISPRessoShared.format_cl_text('usage: CRISPResso [-r1 FASTQ_R1] [-r2 FASTQ_R2] [-a AMPLICON_SEQ] [-g GUIDE_SEQ] [-n NAME]\n' + \
+            raise CRISPRessoShared.BadParameterException(CRISPRessoShared.format_cl_text('usage: CRISPResso [-r1 FASTQ_R1] [-r2 FASTQ_R2] [-a AMPLICON_SEQ] [-g GUIDE_SEQ] [-n NAME]\n' + \
                 'commonly-used arguments:\n' + \
                 '-h, --help            show the full list of arguments\n' + \
                 '-v, --version         show program\'s version number and exit\n' + \
@@ -1394,7 +1382,6 @@ def main():
                 '-g GUIDE_SEQ          Guide sequence (default: None)\n' + \
                 '-n NAME, --name NAME  Name for the analysis (default: name based on input file name)'
             ))
-            sys.exit()
 
 
         arg_parser = CRISPRessoShared.getCRISPRessoArgParser("Core")
@@ -5133,7 +5120,7 @@ def main():
             CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
 
         info('Analysis Complete!', {'percent_complete': 100})
-        print(CRISPRessoShared.get_crispresso_footer())
+        info(CRISPRessoShared.get_crispresso_footer())
 
         sys.exit(0)
 
