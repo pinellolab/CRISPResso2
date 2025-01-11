@@ -103,7 +103,7 @@ def main():
 |___________________________|
         '''
         compare_header = CRISPRessoShared.get_crispresso_header(description, compare_header)
-        print(compare_header)
+        info(compare_header)
 
         parser = CRISPRessoShared.getCRISPRessoArgParser("Compare", parser_title = 'CRISPRessoCompare Parameters')
 
@@ -455,7 +455,7 @@ def main():
             CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
 
         info('Analysis Complete!', {'percent_complete': 100})
-        print(CRISPRessoShared.get_crispresso_footer())
+        info(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)
 
     except Exception as e:

@@ -9,7 +9,6 @@ import datetime
 import errno
 import gzip
 import json
-import sys
 import textwrap
 import importlib.util
 from pathlib import Path
@@ -30,7 +29,6 @@ from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoCOREResources
 
 __version__ = "2.3.2"
-
 
 ###EXCEPTIONS############################
 class FastpException(Exception):
@@ -101,13 +99,14 @@ class StatusFormatter(logging.Formatter):
             record.percent_complete = self.last_percent_complete
         else:
             record.percent_complete = 0.0
+        record.json_message = record.getMessage().replace('\\', r'\\').replace('\n', r'\n').replace('"', r'\"')
         return super().format(record)
 
 
 class StatusHandler(logging.FileHandler):
     def __init__(self, filename):
         super().__init__(filename, 'w')
-        self.setFormatter(StatusFormatter('{\n  "message": "%(message)s",\n  "percent_complete": %(percent_complete)s\n}'))
+        self.setFormatter(StatusFormatter('{\n  "message": "%(json_message)s",\n  "percent_complete": %(percent_complete)s\n}'))
 
     def emit(self, record):
         """Overwrite the existing file and write the new log."""
@@ -495,7 +494,7 @@ def assert_fastq_format(file_path, max_lines_to_check=100):
 def get_n_reads_fastq(fastq_filename):
     if not os.path.exists(fastq_filename) or os.path.getsize(fastq_filename) == 0:
         return 0
-    
+
     p = sb.Popen(('z' if fastq_filename.endswith('.gz') else '' ) +"cat < %s | grep -c ." % fastq_filename, shell=True, stdout=sb.PIPE)
     n_reads = int(float(p.communicate()[0])/4.0)
     return n_reads
