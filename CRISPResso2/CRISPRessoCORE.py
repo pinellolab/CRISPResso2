@@ -3995,6 +3995,7 @@ def main():
                         sum_so_far += indel_count
                         if sum_so_far > sum_cutoff:
                             xmax = indel_len
+                            break
                     sum_so_far = 0
                     for indel_len, indel_count in zip(hlengths[::-1], hdensity[::-1]):
                         sum_so_far += indel_count
