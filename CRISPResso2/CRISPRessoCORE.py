@@ -3991,16 +3991,15 @@ def main():
                 if not args.plot_histogram_outliers:
                     sum_cutoff = .99 * hdensity.sum()
                     sum_so_far = 0
-                    for idx, val in enumerate(hlengths):
-                        sum_so_far += hdensity[idx]
+                    for indel_len, indel_count in zip(hlengths, hdensity):
+                        sum_so_far += indel_count
                         if sum_so_far > sum_cutoff:
-                            xmax = val
-                            break
+                            xmax = indel_len
                     sum_so_far = 0
-                    for idx, val in enumerate(hlengths[::-1]):
-                        sum_so_far += hdensity[idx]
+                    for indel_len, indel_count in zip(hlengths[::-1], hdensity[::-1]):
+                        sum_so_far += indel_count
                         if sum_so_far > sum_cutoff:
-                            xmin = val
+                            xmin = indel_len
                             break
                 xmin = min(xmin, -15)
                 xmax = max(xmax, 15)
