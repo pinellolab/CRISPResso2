@@ -4573,8 +4573,30 @@ def main():
                     sgRNA_legend = sgRNA_name + " (" + sgRNA +")"
                 sgRNA_label = CRISPRessoShared.slugify(sgRNA_label)
 
-                plot_half_window = max(1, args.plot_window_size)
-                df_alleles_around_cut=CRISPRessoShared.get_dataframe_around_cut(df_alleles.loc[df_alleles['Reference_Name'] == ref_name], cut_point, plot_half_window)
+                pass_cut_point = False
+
+                #Set left window size
+                if cut_point - args.plot_window_size + 1 >= 0:
+                    plot_half_window_left = args.plot_window_size
+                else:
+                    plot_half_window_left = cut_point + 1
+                    pass_cut_point = True
+                    warn(f'sgRNA {0} is too close to the start of the amplicon to plot the full window. Truncating the window.')
+                
+                #Set right window size
+                if cut_point + args.plot_window_size < ref_len:
+                    plot_half_window_right = args.plot_window_size
+                else:
+                    plot_half_window_right = ref_len - cut_point - 1
+                    pass_cut_point = True
+                    warn(f'sgRNA {0} is too close to the end of the amplicon to plot the full window. Truncating the window.')
+                    
+                df_alleles_around_cut = CRISPRessoShared.get_dataframe_around_cut_asymmetrical(
+                    df_alleles.loc[df_alleles['Reference_Name'] == ref_name],
+                    cut_point,
+                    plot_half_window_left,
+                    plot_half_window_right,
+                )
                 count_total = counts_total[ref_name]
                 if args.allele_plot_pcts_only_for_assigned_reference:
                     df_alleles_around_cut['%AllReads']=df_alleles_around_cut['%Reads']
@@ -4585,7 +4607,7 @@ def main():
                 df_alleles_around_cut.to_csv(allele_filename, sep='\t', header=True)
                 crispresso2_info['results']['refs'][ref_name]['allele_frequency_files'].append(os.path.basename(allele_filename))
 
-                ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_half_window+1:cut_point+plot_half_window+1]
+                ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_half_window_left+1:cut_point+plot_half_window_right+1]
                 fig_filename_root = _jp('9.'+ref_plot_name+'Alleles_frequency_table_around_'+sgRNA_label)
                 n_good = df_alleles_around_cut[df_alleles_around_cut['%Reads']>=args.min_frequency_alleles_around_cut_to_plot].shape[0]
                 if not args.suppress_plots and n_good > 0:
@@ -4597,11 +4619,12 @@ def main():
 
                     new_sgRNA_intervals = []
                     #adjust coordinates of sgRNAs
-                    new_sel_cols_start = cut_point - plot_half_window
+                    new_sel_cols_start = cut_point - plot_half_window_left
                     for (int_start, int_end) in refs[ref_name]['sgRNA_intervals']:
                         new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1, int_end - new_sel_cols_start - 1)]
-
-
+                        if int_start <= cut_point and cut_point <= int_end:
+                            new_cut_point = cut_point - new_sel_cols_start - 1
+         
                     prepped_df_alleles, annotations, y_labels, insertion_dict, per_element_annot_kws, is_reference = CRISPRessoPlot.prep_alleles_table(
                         df_to_plot,
                         ref_seq_around_cut,
@@ -4620,6 +4643,7 @@ def main():
                         'custom_colors': custom_config["colors"],
                         'SAVE_ALSO_PNG': save_png,
                         'plot_cut_point': plot_cut_point,
+                        'cut_point_ind': new_cut_point if pass_cut_point else None,
                         'sgRNA_intervals': new_sgRNA_intervals,
                         'sgRNA_names': sgRNA_names,
                         'sgRNA_mismatches': sgRNA_mismatches,
