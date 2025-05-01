@@ -174,7 +174,7 @@
             "tools": ["Core", "Batch", "Pooled", "WGS", "Compare"]
         },
         "display_name": {
-            "name": "Sample Name",
+            "name": "Display Name",
             "keys": ["--display_name"],
             "help": "Display name shown on the report (if unset, --name is used)",
             "type": "str",
