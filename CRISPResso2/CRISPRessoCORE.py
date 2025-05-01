@@ -3183,7 +3183,7 @@ def main():
         class_counts_order = [class_count_name for thisRefInd, thisIsMod, class_count_name in decorated_class_counts]
 
         if N_TOTAL == 0:
-            raise CRISPRessoShared.NoReadsAlignedException('Error: No alignments were found')
+            raise CRISPRessoShared.NoReadsAlignedException('No alignments were found')
 
         #create alleles table
         info('Calculating allele frequencies...')

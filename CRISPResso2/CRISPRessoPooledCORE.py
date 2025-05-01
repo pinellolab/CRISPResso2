@@ -687,11 +687,26 @@ def main():
                 info(f'Header variable names in order: {headers}')
 
             # load and validate template file
-            df_template = pd.read_csv(args.amplicons_file, names=headers, comment='#', sep='\t', dtype={'amplicon_name':str})
-
-            if has_header:
-                df_template.drop(0, axis=0, inplace=True)
-                info('Detected header in amplicon file.')
+            amplicon_rows = []
+            with open(args.amplicons_file, 'r') as amplicons_fin:
+                if has_header:
+                    _ = amplicons_fin.readline()  # skip header line
+                    info('Detected header in amplicon file.')
+                for line in amplicons_fin:
+                    if line[0] == "#": # pandas' comment option will strip after comment character in middle of lines. 
+                        continue
+                    line = line.strip()
+                    if not line:
+                        continue
+                    amplicon_rows.append(line.split('\t'))
+            try:
+                df_template = pd.DataFrame(amplicon_rows, columns=headers)
+            except Exception as e:
+                debug('Error in parsing amplicon file using old method: %s\nTrying native pandas read_csv...' % e)
+                df_template = pd.read_csv(args.amplicons_file, names=headers, comment='#', sep='\t', dtype={'amplicon_name':str})
+                if has_header:
+                    df_template.drop(0, axis=0, inplace=True)
+                    info('Detected header in amplicon file.')
 
 
             #remove empty amplicons/lines
@@ -1038,7 +1053,7 @@ def main():
             if can_finish_incomplete_run and 'genome_demultiplexing' in crispresso2_info['running_info']['finished_steps'] and os.path.isfile(REPORT_ALL_DEPTH):
                 info('Using previously-computed demultiplexing of genomic reads')
                 df_all_demux = pd.read_csv(REPORT_ALL_DEPTH, sep='\t')
-                df_all_demux['loc'] = df_all_demux['chr_id'].apply('str') + ' ' + df_all_demux['start'].apply(str) + ' '+df_all_demux['end'].apply(str)
+                df_all_demux['loc'] = df_all_demux['chr_id'].apply(str) + ' ' + df_all_demux['start'].apply(str) + ' '+df_all_demux['end'].apply(str)
                 df_all_demux.set_index(['loc'], inplace=True)
             else:
                 #REDISCOVER LOCATIONS and DEMULTIPLEX READS
@@ -1433,6 +1448,7 @@ def main():
                     run_data = CRISPRessoShared.load_crispresso_info(_jp(folder_name))
                 except:
                     warn('Skipping the folder %s: not enough reads, incomplete, or empty folder.'% folder_name)
+                    warn('DEBUG Skipping the folder %s: not enough reads, incomplete, or empty folder.'% _jp(folder_name))
                     this_els = empty_line_els[:]
                     this_els[n_reads_index] = row.n_reads
                     to_add = [run_name]
