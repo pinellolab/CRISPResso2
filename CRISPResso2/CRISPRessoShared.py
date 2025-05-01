@@ -19,6 +19,7 @@ import pandas as pd
 import re
 import string
 import shutil
+import shlex
 import signal
 import subprocess as sb
 import unicodedata
@@ -99,7 +100,7 @@ class StatusFormatter(logging.Formatter):
             record.percent_complete = self.last_percent_complete
         else:
             record.percent_complete = 0.0
-        record.json_message = record.getMessage().replace('\\', r'\\').replace('\n', r'\n').replace('"', r'\"')
+        record.json_message = record.getMessage().replace('\\', r'\\').replace('\n', r'\n').replace('"', r'\"').replace("_", r"\_")
         return super().format(record)
 
 
@@ -316,11 +317,29 @@ def overwrite_crispresso_options(cmd, option_names_to_overwrite, option_values, 
 
 
 def propagate_crispresso_options(cmd, options, params, paramInd=None):
-    ####
-    # cmd - the command to run
-    # options - list of options to propagate e.g. crispresso options
-    # params - arguments given to this program
-    # paramInd - index in dict - this is the run number in case of multiple runs.
+    """
+    Updates a given command (cmd) by setting parameter options with new values in params.
+    This is used to propagate options from the command line to the command that is run.
+
+    Parameters
+    ----------
+    cmd : str
+        The command to run including original parameters
+    options : list
+        List of options to propagate e.g. crispresso options
+    params : dict or Pandas DataFrame
+        Values for the options to propagate.
+    paramInd : int, optional
+        Index in dict - this is the run number in case of multiple runs.
+        If paramInd is specified, params should be a DataFrame and the function will look up the value in the row with index paramInd.
+        The default is None.
+    Returns
+    -------
+    str
+        The updated command with the new options set.
+    -------
+    """
+
     for option in options:
         if option:
             if option in params:
@@ -441,7 +460,7 @@ def get_ref_length_from_cigar(cigar_string):
 
 def clean_filename(filename):
     # get a clean name that we can use for a filename
-    validFilenameChars = "+-_.()%s%s" % (string.ascii_letters, string.digits)
+    validFilenameChars = "+-_.%s%s" % (string.ascii_letters, string.digits)
     filename = slugify(str(filename).replace(' ', '_'))
     cleanedFilename = unicodedata.normalize('NFKD', filename)
     return (''.join(c for c in cleanedFilename if c in validFilenameChars))
@@ -941,12 +960,13 @@ def check_if_failed_run(folder_name, info):
     """
     Check the output folder for a info.json file and a status.txt file to see if the run completed successfully or not
 
-    input:
+    Parameters
+    ----------
     folder_name: path to output folder
     info: logger
 
-
-    returns:
+    Returns
+    -------
     bool True if run completed successfully, False otherwise
     string describing why it failed
     """
@@ -954,7 +974,10 @@ def check_if_failed_run(folder_name, info):
     run_data_file = os.path.join(folder_name, 'CRISPResso2_info.json')
     status_info = os.path.join(folder_name, 'CRISPResso_status.json')
     if not os.path.isfile(run_data_file) or not os.path.isfile(status_info):
-        info("Skipping folder '%s'. Cannot find run data status file at '%s'."%(folder_name, run_data_file))
+        if not os.path.isfile(run_data_file):
+            info("Skipping folder '%s'. Cannot find run data file at '%s'."%(folder_name, run_data_file))
+        if not os.path.isfile(status_info):
+            info("Skipping folder '%s'. Cannot find status file at '%s'."%(folder_name, status_info))
         if "CRISPRessoPooled" in folder_name:
             unit = "amplicon"
         elif "CRISPRessoWGS" in folder_name:
@@ -2369,7 +2392,7 @@ class HighRateOfSubstitutionsGuardrail:
         if total_mods == 0:
             return
         if ((global_subs / total_mods) >= self.cutoff):
-            self.message = self.message + " Total modifications: {}, Substitutions: {}.".format(total_mods, global_subs)
+            self.message = self.message + " Total modifications: {}, Substitutions: {}.".format(int(total_mods), global_subs)
             self.messageHandler.display_warning('HighRateOfSubstitutionsGuardrail', self.message)
             self.messageHandler.report_warning(self.message)
 
