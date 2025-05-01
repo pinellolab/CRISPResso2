@@ -226,6 +226,94 @@ def get_crispresso_options_lookup(tool):
             crispresso_options_lookup[key_sub] = d2
     return crispresso_options_lookup
 
+def overwrite_crispresso_options(cmd, option_names_to_overwrite, option_values, paramInd=None, set_default_params=False, tool='Core'):
+    """
+    Updates a given command (cmd) by setting parameter options with new values in option_values.
+    
+    Parameters
+    ----------
+    cmd : str
+        The command to run including original parameters
+    option_names_to_overwrite : list
+        List of options to overwrite e.g. crispresso options
+    option_values : dict or Pandas DataFrame
+        Values for the options to overwrite.
+    paramInd : int, optional
+        Index in dict - this is the run number in case of multiple runs.
+        If paramInd is specified, option_values should be a DataFrame and the function will look up the value in the row with index paramInd.
+        The default is None.
+    set_default_params : bool, optional
+        If True, for add values in option_values that are the same as the default values
+        If False, default values will not be added to the command
+    tool : str
+        The CRISPResso tool to create the argparser - the params from this tool will be used
+    Returns
+    -------
+    str
+        The updated command with the new options set.
+    -------
+    """
+    parser = getCRISPRessoArgParser(tool)
+    this_program = cmd.split()[0]
+    cmd = ' '.join(cmd.split()[1:])  # remove the program name from the command
+    args = parser.parse_args(shlex.split(cmd)) # shlex split keeps quoted parameters together
+
+    for option in option_names_to_overwrite:
+        if option:
+            if option in option_values:
+                if paramInd is None:
+                    if type(option_values) == dict:
+                        val = option_values[option]
+                    else:
+                        val = getattr(option_values, option)
+                else:
+                    val = option_values.loc[paramInd, option]
+                if val is None or str(val) == 'None':
+                    pass
+                elif str(val) == "True":
+                    setattr(args, option, True)
+                elif str(val) == "False":
+                    setattr(args, option, False)
+                elif isinstance(val, str):
+                    if val != "":
+                        setattr(args, option, str(val))
+                elif isinstance(val, bool):
+                    setattr(args, option, val)
+                else:
+                    setattr(args, option, str(val))
+
+    # reconstruct the command
+    new_cmd = this_program
+    for action in parser._actions:
+        if action.dest in args:
+            val = getattr(args, action.dest)
+            if not set_default_params and (val == action.default) or (str(val) == str(action.default)):
+                continue
+            if val is None or str(val) == "None":
+                continue
+            # argparse conveniently doesn't set type for bools - those action types are None
+            if action.nargs == 0:
+                if val: # if value is true
+                    new_cmd += ' --%s' % action.dest
+            elif action.type == bool: # but just in case...
+                if val:
+                    new_cmd += ' --%s' % action.dest
+            elif action.type == str:
+                if val != "":
+                    if re.fullmatch(r"[a-zA-Z0-9\._]*", val): # if the value is alphanumeric, don't have to quote it
+                        new_cmd += ' --%s %s' % (action.dest, val)
+                    elif val.startswith('"') and val.endswith('"'):
+                        new_cmd += ' --%s %s' % (action.dest, val)
+                    else:
+                        new_cmd += ' --%s "%s"' % (action.dest, val)
+            elif action.type == int:
+                new_cmd += ' --%s %s' % (action.dest, val)
+
+    return new_cmd
+        
+
+
+
 
 def propagate_crispresso_options(cmd, options, params, paramInd=None):
     ####

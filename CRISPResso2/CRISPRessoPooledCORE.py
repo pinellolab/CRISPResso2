@@ -882,9 +882,9 @@ def main():
 
                     #first, set the general CRISPResso options for this sub-run (e.g. plotting options, etc)
                     #note that the crispresso_options_for_pooled doesn't include e.g. amplicon_seq so when someone calls CRISPRessoPooled with -a that won't get passed on here
-                    crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, args)
+                    crispresso_cmd = CRISPRessoShared.overwrite_crispresso_options(cmd=crispresso_cmd, tool='Core', option_names_to_overwrite=crispresso_options_for_pooled, option_values=args)
                     #next set the per-amplicon options we read from the Amplicons file (and are stored in this_run_args_from_amplicons_file)
-                    crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, default_input_amplicon_headers, this_run_args_from_amplicons_file)
+                    crispresso_cmd = CRISPRessoShared.overwrite_crispresso_options(cmd=crispresso_cmd, tool='Core', option_names_to_overwrite=default_input_amplicon_headers, option_values=this_run_args_from_amplicons_file)
 
                     crispresso_cmds.append(crispresso_cmd)
 
@@ -1285,10 +1285,13 @@ def main():
 
                             #first, set the general CRISPResso options for this sub-run (e.g. plotting options, etc)
                             #note that the crispresso_options_for_pooled doesn't include e.g. amplicon_seq so when someone calls CRISPRessoPooled with -a that won't get passed on here
-                            crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, args)
+                            crispresso_cmd = CRISPRessoShared.overwrite_crispresso_options(cmd=crispresso_cmd, option_names_to_overwrite=crispresso_options_for_pooled, option_values=args, tool='Core')
                             #next set the per-amplicon options we read from the Amplicons file (and are stored in this_run_args_from_amplicons_file)
-                            crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, default_input_amplicon_headers, this_run_args_from_amplicons_file)
-                            info('Running CRISPResso:%s' % crispresso_cmd)
+                            crispresso_cmd = CRISPRessoShared.overwrite_crispresso_options(cmd=crispresso_cmd, option_names_to_overwrite=default_input_amplicon_headers, option_values=this_run_args_from_amplicons_file, tool='Core')
+
+                            crispresso_cmd = args.crispresso_command + ' ' + ' '.join(crispresso_cmd.split()[1:]) # set the crispresso_command in case it had spaces and would be hard to parse
+
+                            debug('CRISPResso command for %s: %s' % (idx, crispresso_cmd))
                             crispresso_cmds.append(crispresso_cmd)
 
                         else:
@@ -1400,8 +1403,12 @@ def main():
                         info('\nRunning CRISPResso on: %s-%d-%d...'%(row.chr_id, row.bpstart, row.bpend))
                         if pd.isna(row.sequence):
                             raise CRISPRessoShared.BadParameterException('Cannot extract sequence ' + str(row.sequence) + ' from input reference ' + uncompressed_reference)
-                        crispresso_cmd = args.crispresso_command + ' -r1 %s -a %s -o %s' %(row.fastq_file, row.sequence, OUTPUT_DIRECTORY)
-                        crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, args)
+
+                        crispresso_cmd = 'CRISPResso -r1 %s -a %s -o %s -n "%s" --display_name "%s"' %(row.fastq_file, row.sequence, OUTPUT_DIRECTORY, this_run_name, this_run_display_name)
+                        crispresso_cmd = CRISPRessoShared.overwrite_crispresso_options(cmd=crispresso_cmd, option_names_to_overwrite=crispresso_options_for_pooled, option_values=args, tool='Core')
+                        crispresso_cmd = args.crispresso_command + " " + " ".join(crispresso_cmd.split()[1:]) # remove the CRISPResso command from the beginning and replace with args.crispresso_command (in case the args.crispresso_command contains spaces)
+                        debug('CRISPResso command for %s: %s' % (this_run_display_name, crispresso_cmd))
+
                         crispresso_cmds.append(crispresso_cmd)
                     else:
                         info('Skipping region: %s-%d-%d , not enough reads (%d)' %(row.chr_id, row.bpstart, row.bpend, row.n_reads))
