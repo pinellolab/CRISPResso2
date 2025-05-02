@@ -16,6 +16,9 @@ import subprocess as sb
 import sys
 import traceback
 import unicodedata
+
+from functools import partial
+
 from CRISPResso2 import CRISPRessoShared
 from CRISPResso2 import CRISPRessoMultiProcessing
 from CRISPResso2.CRISPRessoReports import CRISPRessoReport
@@ -556,8 +559,12 @@ def main():
 
         else:
             #run region extraction here
-            extract_reads_chunk_partial = lambda x: extract_reads_chunk(x, args.samtools_exclude_flags)
-            df_regions = CRISPRessoMultiProcessing.run_pandas_apply_parallel(df_regions, extract_reads_chunk_partial, n_processes_for_wgs)
+            extract_reads_chunk_partial = partial(extract_reads_chunk, samtools_exclude_flags=args.samtools_exclude_flags)
+            df_regions = CRISPRessoMultiProcessing.run_pandas_apply_parallel(
+                df_regions, 
+                extract_reads_chunk_partial, 
+                n_processes_for_wgs
+            )
             df_regions.sort_values('region_number', inplace=True)
             cols_to_print = ["chr_id", "bpstart", "bpend", "sgRNA", "Expected_HDR", "Coding_sequence", "sequence", "n_reads", "bam_file_with_reads_in_region", "fastq_file_trimmed_reads_in_region"]
             if args.gene_annotations:
