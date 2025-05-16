@@ -29,7 +29,10 @@ from inspect import getmodule, stack
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoCOREResources
 
-__version__ = "2.3.2"
+def read_version():
+    return importlib.metadata.version('CRISPResso2')
+
+__version__ = read_version()
 
 ###EXCEPTIONS############################
 class FastpException(Exception):
@@ -86,6 +89,7 @@ class InputFileFormatException(Exception):
 
 class PlotException(Exception):
     pass
+
 
 
 #########################################
@@ -995,24 +999,24 @@ def check_if_failed_run(folder_name, info):
                     return True, str(status_dict['message'])
                 else:
                     return False, ""
-            except:
+            except Exception as e:
                 pass
 
         with open(status_info) as fh:
-                try:
-                    file_contents = fh.read()
-                    search_result = re.search(r'(\d+\.\d+)% (.+)', file_contents)
-                    if search_result:
-                        percent_complete, status = search_result.groups()
-                        if percent_complete != '100.00':
-                            info("Skipping folder '%s'. Run is not complete (%s)." % (folder_name, status))
-                            return True, status
-                    else:
-                        return True, file_contents
-                except Exception as e:
-                    print(e)
-                    info("Skipping folder '%s'. Cannot parse status file '%s'." % (folder_name, status_info))
-                    return True, "Cannot parse status file '%s'." % (status_info)
+            try:
+                file_contents = fh.read()
+                search_result = re.search(r'(\d+\.\d+)% (.+)', file_contents)
+                if search_result:
+                    percent_complete, status = search_result.groups()
+                    if percent_complete != '100.00':
+                        info("Skipping folder '%s'. Run is not complete (%s)." % (folder_name, status))
+                        return True, status
+                else:
+                    return True, file_contents
+            except Exception as e:
+                print(e)
+                info("Skipping folder '%s'. Cannot parse status file '%s'." % (folder_name, status_info))
+                return True, "Cannot parse status file '%s'." % (status_info)
         return False, ""
 
 
