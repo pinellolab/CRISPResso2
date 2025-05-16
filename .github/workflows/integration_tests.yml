@@ -79,6 +79,11 @@ jobs:
         run: |
           make prime-editor test print
 
+      - name: Run Native Merging
+        if: success() || failure()
+        run: |
+          make nhej_native_merge test print
+
       - name: Run BAM Input
         if: success() || failure()
         run: |

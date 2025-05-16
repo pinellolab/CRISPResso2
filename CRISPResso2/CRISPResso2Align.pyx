@@ -48,7 +48,7 @@ def read_matrix(path):
             headers = [ord(x) for x in line.split(' ') if x]
         mat_size = max(headers) + 1
 
-        a = np.zeros((mat_size, mat_size), dtype=long)
+        a = np.zeros((mat_size, mat_size), dtype=np.int64)
 
         line = fh.readline()
         while line:
@@ -80,7 +80,7 @@ def make_matrix(match_score=5, mismatch_score=-4, n_mismatch_score=-2, n_match_s
 
     nuc_ords = [ord(x) for x in ['A','T','C','G']]
 
-    a = np.zeros((mat_size, mat_size), dtype=long)
+    a = np.zeros((mat_size, mat_size), dtype=np.int64)
 
     for nuc in nuc_ords:
       for nuc2 in nuc_ords:
