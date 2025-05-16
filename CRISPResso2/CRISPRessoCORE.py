@@ -2441,6 +2441,8 @@ def main():
                         refs[ref_name]['aln_end'] = seq_stop
                         refs[ref_name]['aln_strand'] = strand
 
+        info('Counting reads in input', {'percent_complete': 2})
+
         N_READS_INPUT = 0
         if args.fastq_r1:
             N_READS_INPUT = CRISPRessoShared.get_n_reads_fastq(args.fastq_r1)
@@ -2600,6 +2602,7 @@ def main():
 
             processed_output_filename = output_filename_r1
 
+        info('Counting reads after preprocessing...')
         #count reads
         N_READS_AFTER_PREPROCESSING = 0
         if args.bam_input:
@@ -5143,8 +5146,8 @@ def main():
         if args.zip_output:
             CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
 
-        info('Analysis Complete!', {'percent_complete': 100})
         info(CRISPRessoShared.get_crispresso_footer())
+        info('Analysis Complete!', {'percent_complete': 100})
 
         sys.exit(0)
 
