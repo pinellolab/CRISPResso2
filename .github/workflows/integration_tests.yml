@@ -133,3 +133,18 @@ jobs:
         if: success() || failure()
         run: |
           make aggregate test print
+
+      - name: Run Asym Allele Plot Left
+        if: success() || failure()
+        run: |
+          make asym-left test print
+
+      - name: Run Asym Allele Plot Right
+        if: success() || failure()
+        run: |
+          make asym-right test print
+
+      - name: Run Asym Allele Plot Both
+        if: success() || failure()
+        run: |
+          make asym-both test print

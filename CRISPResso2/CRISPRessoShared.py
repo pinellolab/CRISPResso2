@@ -1329,32 +1329,21 @@ def split_interleaved_fastq(fastq_filename, output_filename_r1, output_filename_
 # allele modification functions
 ######
 
-def get_row_around_cut(row, cut_point, offset):
-    cut_idx = row['ref_positions'].index(cut_point)
-    return row['Aligned_Sequence'][cut_idx - offset + 1:cut_idx + offset + 1], row['Reference_Sequence'][
-                                                                               cut_idx - offset + 1:cut_idx + offset + 1], \
-           row['Read_Status'] == 'UNMODIFIED', row['n_deleted'], row['n_inserted'], row['n_mutated'], row['#Reads'], \
-           row['%Reads']
+def get_row_around_cut_asymmetrical(row,cut_point,plot_left,plot_right):
+    cut_idx=row['ref_positions'].index(cut_point)
+    return row['Aligned_Sequence'][cut_idx-plot_left+1:cut_idx+plot_right+1],row['Reference_Sequence'][cut_idx-plot_left+1:cut_idx+plot_right+1],row['Read_Status']=='UNMODIFIED',row['n_deleted'],row['n_inserted'],row['n_mutated'],row['#Reads'], row['%Reads']
 
 
-def get_dataframe_around_cut(df_alleles, cut_point, offset, collapse_by_sequence=True):
+def get_dataframe_around_cut_asymmetrical(df_alleles, cut_point,plot_left,plot_right,collapse_by_sequence=True):
     if df_alleles.shape[0] == 0:
         return df_alleles
     ref1 = df_alleles['Reference_Sequence'].iloc[0]
-    ref1 = ref1.replace('-', '')
-    if (cut_point + offset + 1 > len(ref1)):
-        raise (BadParameterException(
-            'The plotting window cannot extend past the end of the amplicon. Amplicon length is ' + str(
-                len(ref1)) + ' but plot extends to ' + str(cut_point + offset + 1)))
+    ref1 = ref1.replace('-','')
+    
+    df_alleles_around_cut=pd.DataFrame(list(df_alleles.apply(lambda row: get_row_around_cut_asymmetrical(row,cut_point,plot_left,plot_right),axis=1).values),
+                    columns=['Aligned_Sequence','Reference_Sequence','Unedited','n_deleted','n_inserted','n_mutated','#Reads','%Reads'])
 
-    df_alleles_around_cut = pd.DataFrame(
-        list(df_alleles.apply(lambda row: get_row_around_cut(row, cut_point, offset), axis=1).values),
-        columns=['Aligned_Sequence', 'Reference_Sequence', 'Unedited', 'n_deleted', 'n_inserted', 'n_mutated', '#Reads',
-                 '%Reads'])
-
-    df_alleles_around_cut = df_alleles_around_cut.groupby(
-        ['Aligned_Sequence', 'Reference_Sequence', 'Unedited', 'n_deleted', 'n_inserted',
-         'n_mutated']).sum().reset_index().set_index('Aligned_Sequence')
+    df_alleles_around_cut=df_alleles_around_cut.groupby(['Aligned_Sequence','Reference_Sequence','Unedited','n_deleted','n_inserted','n_mutated']).sum().reset_index().set_index('Aligned_Sequence')
 
     df_alleles_around_cut.sort_values(by=['#Reads', 'Aligned_Sequence', 'Reference_Sequence'], inplace=True, ascending=[False, True, True])
     df_alleles_around_cut['Unedited'] = df_alleles_around_cut['Unedited'] > 0
@@ -1574,13 +1563,11 @@ def get_amplicon_info_for_guides(ref_seq, guides, guide_mismatches, guide_names,
     if this_sgRNA_cut_points and plot_window_size > 0:
         for cut_p in this_sgRNA_cut_points:
             if cut_p - window_around_cut + 1 < 0:
-                raise BadParameterException(
-                    'Offset around cut would extend to the left of the amplicon. Please decrease plot_window_size parameter. Cut point: ' + str(
-                        cut_p) + ' window: ' + str(window_around_cut) + ' reference: ' + str(ref_seq_length))
+                logging.warning('Offset around cut would extend to the left of the amplicon. Window will be truncated.')
+                window_around_cut = cut_p + 1
             if cut_p + window_around_cut > ref_seq_length - 1:
-                raise BadParameterException(
-                    'Offset around cut would be greater than reference sequence length. Please decrease plot_window_size parameter. Cut point: ' + str(
-                        cut_p) + ' window: ' + str(window_around_cut) + ' reference: ' + str(ref_seq_length))
+                logging.warning('Offset around cut would be greater than reference sequence length. Window will be truncated.')
+                window_around_cut = ref_seq_length - cut_p - 1
             st = max(0, cut_p - window_around_cut + 1)
             en = min(ref_seq_length - 1, cut_p + window_around_cut + 1)
             this_sgRNA_plot_idxs.append(sorted(list(range(st, en))))
