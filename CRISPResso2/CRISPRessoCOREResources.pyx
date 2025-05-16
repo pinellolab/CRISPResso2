@@ -60,6 +60,10 @@ class ResultsSlotsDict():
     def __setitem__(self, key, value):
         setattr(self, key, value)
 
+    @property
+    def __dict__(self):
+        return {key: getattr(self, key) for key in self.__slots__ if hasattr(self, key)}
+
 
 @cython.boundscheck(False)
 @cython.nonecheck(False)

@@ -14,5 +14,6 @@ dependencies:
   - scipy
   - matplotlib=3.8.4
   - pandas>2
+  - pytest-check
   - pip:
     - ydiff

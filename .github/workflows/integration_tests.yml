@@ -63,6 +63,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: edilytics/CRISPResso2_tests
+          ref: 'cole/plot_fixes'
           # ref: '<BRANCH-NAME>' # update to specific branch
 
       - name: Run Basic
@@ -78,6 +79,11 @@ jobs:
         if: success() || failure()
         run: |
           make prime-editor test print
+
+      - name: Run Native Merging
+        if: success() || failure()
+        run: |
+          make nhej_native_merge test print
 
       - name: Run BAM Input
         if: success() || failure()
@@ -133,3 +139,18 @@ jobs:
         if: success() || failure()
         run: |
           make aggregate test print
+
+      - name: Run Asym Allele Plot Left
+        if: success() || failure()
+        run: |
+          make asym-left test print
+
+      - name: Run Asym Allele Plot Right
+        if: success() || failure()
+        run: |
+          make asym-right test print
+
+      - name: Run Asym Allele Plot Both
+        if: success() || failure()
+        run: |
+          make asym-both test print

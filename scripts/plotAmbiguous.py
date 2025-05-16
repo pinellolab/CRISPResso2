@@ -104,7 +104,7 @@ def plot_ambiguous_alleles_tables_from_folder(crispresso_output_folder,fig_filen
             ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_half_window+1:cut_point+plot_half_window+1]
 
             ambiguous_ref_name = "AMBIGUOUS_"+ref_name
-            df_alleles_around_cut=CRISPRessoShared.get_dataframe_around_cut(df_alleles.loc[df_alleles['Reference_Name'] == ambiguous_ref_name],cut_point,plot_half_window)
+            df_alleles_around_cut=CRISPRessoShared.get_dataframe_around_cut_asymmetrical(df_alleles.loc[df_alleles['Reference_Name'] == ambiguous_ref_name],cut_point,plot_half_window, plot_half_window)
             this_ambig_allele_count = len(df_alleles_around_cut.index)
             if this_ambig_allele_count < 1:
                 print('No ambiguous reads found for ' + ref_name)
