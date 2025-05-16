@@ -230,7 +230,7 @@ def get_crispresso_options_lookup(tool):
 def overwrite_crispresso_options(cmd, option_names_to_overwrite, option_values, paramInd=None, set_default_params=False, tool='Core'):
     """
     Updates a given command (cmd) by setting parameter options with new values in option_values.
-    
+
     Parameters
     ----------
     cmd : str
@@ -311,7 +311,7 @@ def overwrite_crispresso_options(cmd, option_names_to_overwrite, option_values, 
                 new_cmd += ' --%s %s' % (action.dest, val)
 
     return new_cmd
-        
+
 
 
 
@@ -967,7 +967,7 @@ def check_if_failed_run(folder_name, info):
 
     Returns
     -------
-    bool True if run completed successfully, False otherwise
+    bool True if run failed, False otherwise
     string describing why it failed
     """
 
