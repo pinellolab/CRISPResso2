@@ -564,6 +564,11 @@ def check_output_folder(output_folder):
 # Thanks https://gist.github.com/simonw/7000493 for this idea
 class CRISPRessoJSONEncoder(json.JSONEncoder):
     def default(self, obj):
+        if isinstance(obj, CRISPRessoCOREResources.ResultsSlotsDict):
+            return {
+                '_type': 'ResultsSlotsDict',
+                'value': obj.__dict__,
+            }
         if isinstance(obj, np.ndarray):
             return {
                 '_type': 'np.ndarray',
@@ -621,6 +626,8 @@ class CRISPRessoJSONDecoder(json.JSONDecoder):
 
     def object_hook(self, obj):
         if '_type' in obj:
+            if obj['_type'] == 'ResultsSlotsDict':
+                return CRISPRessoCOREResources.ResultsSlotsDict(**obj['value'])
             if obj['_type'] == 'np.ndarray':
                 return np.array(obj['value'])
             if obj['_type'] == 'pd.DataFrame':

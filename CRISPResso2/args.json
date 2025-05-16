@@ -234,6 +234,13 @@
             "default": "fastp",
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
+        "crispresso_merge": {
+            "name": "CRISPResso Merge",
+            "keys": ["--crispresso_merge"],
+            "help": "If selected with paired end reads, the reads will be merged using the CRISPResso aligner.",
+            "action": "store_true",
+            "tools": ["Core"]
+        },
         "fastp_options_string": {
             "keys": ["--fastp_options_string"],
             "help": "Override options for fastp, e.g. `--length_required 70 --umi`",
