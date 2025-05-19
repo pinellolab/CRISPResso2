@@ -1127,7 +1127,7 @@ def main():
                     chr_commands = []
                     chr_output_filenames = []
                     for idx, row in df_template.iterrows():
-                        chr_output_filename = _jp('MAPPED_REGIONS/chr%s_%s_%s.info' % (row.chr_id, row.bpstart, row.bpend))
+                        chr_output_filename = _jp('MAPPED_REGIONS/REGION_%s_%s_%s.info' % (row.chr_id, row.bpstart, row.bpend))
                         sub_chr_command = cmd.replace('__REGIONCHR__', str(row.chr_id)).replace('__REGIONSTART__',str(row.bpstart)).replace('__REGIONEND__',str(row.bpend)).replace("__DEMUX_CHR_LOGFILENAME__", chr_output_filename)
                         if chr_output_filename not in chr_output_filenames: # sometimes multiple amplicons map to the same region so we don't want the region to be written to by multiple processes
                             chr_commands.append(sub_chr_command)
