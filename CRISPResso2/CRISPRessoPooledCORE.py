@@ -1112,8 +1112,12 @@ def main():
                         } \
                     END{ \
                       close(fastq_filename); \
-                      system("gzip -f "fastq_filename);  \
-                      record_log_str = "__REGIONCHR__\t__REGIONSTART__\t__REGIONEND__\t"num_records"\t"fastq_filename".gz\n"; \
+                        if (num_records < __MIN_READS__) { \
+                            record_log_str = "__REGIONCHR__\t__REGIONSTART__\t__REGIONEND__\t"num_records"\tNA\n"; \
+                        } else { \
+                            system("gzip -f "fastq_filename);  \
+                            record_log_str = "__REGIONCHR__\t__REGIONSTART__\t__REGIONEND__\t"num_records"\t"fastq_filename".gz\n"; \
+                        } \
                       print record_log_str > "__DEMUX_CHR_LOGFILENAME__"; \
                     } ' '''
                     cmd = (s1).replace('__OUTPUTPATH__', MAPPED_REGIONS)
