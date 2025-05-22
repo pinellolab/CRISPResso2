@@ -2035,7 +2035,7 @@ def check_custom_config(args):
             if args.config_file:
                 logger.warn("Cannot read config file '%s', defaulting config parameters." % args.config_file)
             else:
-                logger.warn("No config file provided, defaulting config parameters.")
+                logger.debug("No config file provided, defaulting config parameters.")
     return config
 
 
