@@ -4480,7 +4480,6 @@ def main():
                     fig_filename_root= _jp('10a.'+ref_plot_name+'Substitution_frequencies_at_each_bp')
                     plot_10a_input = {
                         'ref_len': ref_len,
-                        'ref_seq': ref_seq,
                         'ref_name': ref_name,
                         'ref_count': tot_aln_reads,
                         'all_substitution_base_vectors': all_substitution_base_vectors,

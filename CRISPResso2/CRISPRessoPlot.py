@@ -95,12 +95,13 @@ def hex_to_rgb(value):
     lv = len(value)
     return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
 
-def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root, custom_colors, save_also_png=False,sgRNA_intervals=None,min_text_pct=0.5,max_text_pct=0.95,quantification_window_idxs=None,sgRNA_names=None,sgRNA_mismatches=None,shade_unchanged=True,group_column='Batch', **kwargs):
+def plot_nucleotide_quilt(nuc_pct_df,mod_pct_df,fig_filename_root, custom_colors=None, save_also_png=False,sgRNA_intervals=None,min_text_pct=0.5,max_text_pct=0.95,quantification_window_idxs=None,sgRNA_names=None,sgRNA_mismatches=None,shade_unchanged=True,group_column='Batch', **kwargs):
     """
     Plots a nucleotide quilt with each square showing the percentage of each base at that position in the reference
     nuc_pct_df: dataframe with percents of each base (ACTGN-) at each position
     mod_pct_df: dataframe with percents of modifications at each position (this function uses 'Insertions_Left' to plot insertions)
     fig_filename_root: filename root (will add .pdf or .png)
+    custom_colors: dictionary with custom colors for each nucleotide (e.g. {'A': '#FF0000', 'T': '#00FF00', ...})
     save_also_png: whether png should also be saved
     sgRNA_intervals: ranges for sgRNA annotation on plot
     sgRNA_names: names to annotate sgRNAs with (if None, will just label left sgRNA with 'sgRNA')
@@ -387,7 +388,6 @@ def plot_frequency_deletions_insertions(
     xmax_del,
     xmax_ins,
     xmax_mut,
-    custom_colors,
     save_also_png=False,
     **kwargs,
 ):
@@ -538,10 +538,33 @@ def plot_amplicon_modifications(
     y_max,
     plot_titles,
     plot_root,
-    custom_colors,
+    custom_colors=None,
     save_also_png=False,
     **kwargs,
 ):
+    """
+    Plots the combined indel/substitution counts for all amplicons in a single plot. Modifications outside the quantification window are also shown.
+
+    :param all_indelsub_count_vectors: List of count vectors for each amplicon
+    :param include_idxs_list: List of indices included in the quantification window
+    :param cut_points: List of predicted cleavage positions
+    :param plot_cut_points: Boolean list indicating whether to plot each cut point
+    :param sgRNA_intervals: List of tuples indicating the start and end of each sgRNA interval
+    :param n_total: Total number of sequences
+    :param n_this_category: Number of sequences in the current category
+    :param ref_name: Name of the reference sequence
+    :param num_refs: Number of reference sequences
+    :param ref_len: Length of the reference sequence
+    :param y_max: Maximum y-axis value for the plot
+    :param plot_titles: Dictionary containing titles for the plot
+    :param plot_root: Root path for saving the plot
+    :param custom_colors: Dictionary of custom colors (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
+    :param save_also_png: Whether to save the plot as a PNG file in addition to PDF
+    """
+    if custom_colors is None:
+        custom_config = CRISPRessoShared.check_custom_config(None)
+        custom_colors = custom_config['colors']
+
     fig, ax = plt.subplots(figsize=(10, 10))
 
     #shade quantification window
@@ -691,11 +714,37 @@ def plot_modification_frequency(
     y_max,
     plot_title,
     plot_root,
-    custom_colors,
+    custom_colors=None,
     save_also_png=False,
     **kwargs,
 ):
+    """
+    Plots the frequency of insertions, deletions, and substitutions across the reference amplicon, including modifications outside the quantification window.
+    
+    :param include_idxs_list: List of indices included in the quantification window
+    :param all_insertion_count_vectors: List of insertion count vectors for each amplicon
+    :param all_deletion_count_vectors: List of deletion count vectors for each amplicon
+    :param all_substitution_count_vectors: List of substitution count vectors for each amplicon
+    :param sgRNA_intervals: List of tuples indicating the start and end of each sgRNA interval
+    :param ref_len: Length of the reference amplicon
+    :param ref_name: Name of the reference sequence
+    :param num_refs: Number of reference sequences
+    :param n_total: Total number of sequences
+    :param n_this_category: Number of sequences in the current category
+    :param cut_points: List of predicted cleavage positions
+    :param plot_cut_points: Boolean list indicating whether to plot each cut point
+    :param y_max: Maximum y-axis value for the plot
+    :param plot_title: Title for the plot
+    :param plot_root: Root path for saving the plot (without file extension)
+    :param custom_colors: Dictionary of custom colors (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
+    :param save_also_png: Whether to save the plot as a PNG file in addition to PDF
+
+    """
     fig, ax = plt.subplots(figsize=(10, 10))
+
+    if custom_colors is None:
+        custom_config = CRISPRessoShared.check_custom_config(None)
+        custom_colors = custom_config['colors']
 
     #shade quantification window
     if len(include_idxs_list) > 1:
@@ -861,10 +910,36 @@ def plot_quantification_window_locations(
     ref_name,
     plot_title,
     plot_root,
-    custom_colors,
-    save_also_png,
+    custom_colors=None,
+    save_also_png=False,
     **kwargs,
 ):
+    """
+    Plot the counts of insertions, deletions, and substitutions across a reference amplicon,
+    highlighting the quantification window and predicted cleavage positions.
+
+    :param insertion_count_vectors: List of insertion counts per position.
+    :param deletion_count_vectors: List of deletion counts per position.
+    :param substitution_count_vectors: List of substitution counts per position.
+    :param include_idxs_list: List of indices to include in the quantification window.
+    :param cut_points: List of predicted cleavage positions.
+    :param plot_cut_points: Boolean list indicating whether to plot each cut point.
+    :param sgRNA_intervals: List of tuples indicating the start and end positions of sgRNA intervals.
+    :param ref_len: Length of the reference amplicon.
+    :param num_refs: Number of reference sequences.
+    :param n_total: Total number of sequences.
+    :param n_this_category: Number of sequences in the current category.
+    :param ref_name: Name of the reference sequence.
+    :param plot_title: Title for the plot.
+    :param plot_root: Root path for saving the plot.
+    :param custom_colors: Dictionary of custom colors for insertions, deletions, and substitutions.
+    :param save_also_png: Boolean indicating whether to save the plot as a PNG file.
+    """
+
+    if custom_colors is None:
+        custom_config = CRISPRessoShared.check_custom_config(None)
+        custom_colors = custom_config['colors']
+
     fig, ax = plt.subplots(figsize=(10, 10))
 
     y_max = max(
@@ -1033,6 +1108,18 @@ def plot_position_dependent_indels(
     save_also_png,
     **kwargs,
 ):
+    """
+    Plots the position dependent insertion size (left) and deletion size (right) across the reference amplicon.
+
+    :param insertion_length_vectors: List of average insertion lengths per position. insertion_length_vector[amplicon_name][position] = average insertion length at position.
+    :param deletion_length_vectors: List of average deletion lengths per position.
+    :param cut_points: List of predicted cleavage positions.
+    :param plot_cut_points: Boolean list indicating whether to plot each cut point.
+    :param ref_len: Length of the reference amplicon.
+    :param plot_titles: Dictionary containing titles for the plot (one for 'ins' and one for 'del').
+    :param plot_root: Root path for saving the plot (without file extension).
+    :param save_also_png: Boolean indicating whether to save the plot as a PNG file (in addition to pdf).
+    """
     fig, ax = plt.subplots(1, 2, figsize=(24, 10))
     ax1 = ax[0]
     markerline, stemlines, baseline = ax1.stem(
@@ -1135,10 +1222,30 @@ def plot_global_modifications_reference(
     ref_name,
     plot_title,
     plot_root,
-    custom_colors,
+    custom_colors=None,
     save_also_png=False,
     **kwargs,
 ):
+    """
+    Plots the positions of modifications (insertions, deletions, substitutions) with respect to a reference amplicon.
+
+    :param ref1_all_insertion_count_vectors: List of insertion counts with respect to positions in the specified reference amplicon.
+    :param ref1_all_deletion_count_vectors: List of deletion counts with respect to positions in the specified reference amplicon.
+    :param ref1_all_substitution_count_vectors: List of substitution counts with respect to positoins in the specified reference amplicon.
+    :param ref1: ref dictionary containing reference information for the specified reference (e.g. 'sgRNA_cut_points', 'sgRNA_plot_cut_points', 'sgRNA_intervals', 'include_idxs').
+    :param include_idxs_list: List of indices included in the quantification window.
+    :param n_total: Total number of sequences.
+    :param ref_len: Length of the reference amplicon.
+    :param ref_name: Name of the specified reference sequence.
+    :param plot_title: Title for the plot.
+    :param plot_root: Root path for saving the plot (without file extension).
+    :param custom_colors: Dictionary of custom colors for insertions, deletions, and substitutions.
+    :param save_also_png: Boolean indicating whether to save the plot as a PNG file (in addition to pdf).
+    """
+    if custom_colors is None:
+        custom_config = CRISPRessoShared.check_custom_config(None)
+        custom_colors = custom_config['colors']
+
     fig, ax = plt.subplots(figsize=(10, 10))
     ref1_all_insertion_positions = ref1_all_insertion_count_vectors
     ref1_all_deletion_positions = ref1_all_deletion_count_vectors
@@ -1266,6 +1373,9 @@ def plot_global_modifications_reference(
     )
     ax.set_xlabel(ref_name + ' position (bp)')
 
+    if plot_title is not None and plot_title != '':
+        ax.set_title(plot_title)
+
     ax.set_ylim(0, max(1, y_max))
     ax.set_xlim(0, ref_len-1)
     ax.tick_params(left=True, bottom=True)
@@ -1298,7 +1408,8 @@ def plot_frameshift_analysis(
     save_also_png=False,
     **kwargs,
 ):
-    """Plot 5: Plot a pie chart to plot_root showing classification of reads with regard to coding region for a specific reference sequence, also including a diagram of where the coding region is within the amplicon.
+    """
+    Plot 5: Plot a pie chart to plot_root showing classification of reads with regard to coding region for a specific reference sequence, also including a diagram of where the coding region is within the amplicon.
 
     Parameters
     ----------
@@ -1326,8 +1437,8 @@ def plot_frameshift_analysis(
         Whether to plot the .png (in addition to the .pdf)
 
     Returns
-        Nothing
     -------
+        Nothing
 
     """
     fig = plt.figure(figsize=(12, 14))
@@ -1580,6 +1691,14 @@ def plot_global_frameshift_in_frame_mutations(
     save_also_png=False,
     **kwargs,
 ):
+    """
+    Plot piechart showing frameshift counts of coding sequence reads affected by modifications
+
+    :param global_hists_frameshift: Dictionary showing counts of frameshifts for this reference.
+    :param global_hists_inframe: Dictionary showing counts of inframe mutations for this reference.
+    :param plot_root: Root path for saving the plot (without file extension).
+    :param save_also_png: Boolean indicating whether to save the plot as a PNG file (in addition to pdf).
+    """
     fig, axs = plt.subplots(2, 1, figsize=(22, 10))
     ax1 = axs[0]
     x, y = map(np.array, zip(*[a for a in global_hists_frameshift.items()]))
@@ -1713,10 +1832,30 @@ def plot_non_coding_mutations(
     sgRNA_intervals,
     plot_title,
     plot_root,
-    custom_colors,
+    custom_colors=None,
     save_also_png=False,
     **kwargs,
 ):
+    """
+    Plots a line plot showing locations of non-coding mutations (insertions, deletions, substitutions) with respect to a reference amplicon.
+
+    :param insertion_count_vectors_noncoding: List of insertion counts by position
+    :param deletion_count_vectors_noncoding: List of deletion counts by position
+    :param substitution_count_vectors_noncoding: List of substitution counts by position
+    :param include_idxs_list: List of indices included in the quantification window.
+    :param cut_points: List of cut points for the reference amplicon.
+    :param plot_cut_points: Boolean indicating whether to plot cut points.
+    :param ref_len: Length of the reference amplicon.
+    :param sgRNA_intervals: List of (start, stop) coordinates for sgRNAs.
+    :param plot_title: Title for the plot.
+    :param plot_root: Root path for saving the plot (without file extension).
+    :param custom_colors: Dictionary of custom colors for insertions, deletions, and substitutions.
+    :param save_also_png: Boolean indicating whether to save the plot as a PNG file (in addition to pdf).
+    """
+    if custom_colors is None:
+        custom_config = CRISPRessoShared.check_custom_config(None)
+        custom_colors = custom_config['colors']
+
     fig, ax = plt.subplots(figsize=(10, 10))
     ax.plot(
         insertion_count_vectors_noncoding,
@@ -1858,6 +1997,14 @@ def plot_potential_splice_sites(
     save_also_png=False,
     **kwargs,
 ):
+    """
+    Plots a pie chart showing the number of reads that were modified at potential splice sites (modified vs unmodified)
+
+    :param splicing_sites_modified: Number of reads modified at potential splice sites.
+    :param count_total: Total number of reads considered.
+    :param plot_root: Root path for saving the plot (without file extension).
+    :param save_also_png: Boolean indicating whether to save the plot as a PNG file (in addition to pdf).
+    """
     fig, ax = plt.subplots(figsize=(12, 12))
     patches, texts, autotexts = ax.pie(
         [
@@ -1929,11 +2076,11 @@ def plot_scaffold_indel_lengths(
 def get_rows_for_sgRNA_annotation(sgRNA_intervals, amp_len):
     """
     Returns an array specifying the row number that an sgRNA should be plotted on in order to avoid overlap
-    params:
-    sgRNA_intervals: array of x coordinate tuples of start and stop
-    amp_len: length of amplicon
-    returns: sgRNA_plot_rows: list of index on which row to plot
+    
+    :param sgRNA_intervals: array of x coordinate tuples of start and stop
+    :param amp_len: length of amplicon
 
+    :returns sgRNA_plot_rows: list of index on which row to plot
     """
     #figure out how many rows are needed to show all sgRNAs
     sgRNA_plot_rows = [0]*len(sgRNA_intervals) # which row each sgRNA should be plotted on
@@ -2032,17 +2179,29 @@ def add_sgRNA_to_ax(ax,sgRNA_intervals,sgRNA_y_start,sgRNA_y_height,amp_len,x_of
         else:
             ax.text(x_offset+min_sgRNA_x, this_sgRNA_y_start + this_sgRNA_y_height/2, 'sgRNA ', horizontalalignment='right', verticalalignment='center', fontsize=font_size)
 
-def plot_conversion_map(nuc_pct_df,fig_filename_root,conversion_nuc_from,conversion_nuc_to,save_also_png,custom_colors,plotPct = 0.9,min_text_pct=0.3,max_text_pct=0.9,conversion_scale_max=None,sgRNA_intervals=None,quantification_window_idxs=None,sgRNA_names=None,sgRNA_mismatches=None,**kwargs):
+def plot_conversion_map(nuc_pct_df, fig_filename_root, conversion_nuc_from, conversion_nuc_to, custom_colors=None, save_also_png=False, plotPct = 0.9,
+                        min_text_pct=0.3, max_text_pct=0.9, conversion_scale_max=None, quantification_window_idxs=None, sgRNA_intervals=None, sgRNA_names=None, sgRNA_mismatches=None, **kwargs):
     """
     Plots a heatmap of conversion across several sequences
     :param nuc_pct_df combined df of multiple batches
+    :param fig_filename_root: root of the filename to save the figure to
+    :param conversion_nuc_from: nucleotide to convert from
+    :param conversion_nuc_to: nucleotide to convert to
+    :param custom_colors: dictionary of custom colors to use for nucleotides
+    :param save_also_png: whether to save the plot as a png as well as pdf
     :param plotPct: percent of vertical space to plot in (the rest will be white)
     :param min_text_pct: add text annotation if the percent is greater than this number
     :param max_text_pct: add text annotation if the percent is less than this number
+    :param conversion_scale_max: maximum value for the color bar (if None, will be set to the maximum conversion percentage)
     :param quantification_window_idxs: indices for quantification window annotation on plot
+    :param sgRNA_intervals: intervals for sgRNA annotation on plot (if None, no sgRNAs will be annotated)
     :param sgRNA_names: names to annotate sgRNAs with (if None, will just label left sgRNA with 'sgRNA')
     :param sgRNA_mismatches: locations in the sgRNA where there are mismatches from an original guide (flexiguides)
     """
+
+    if custom_colors is None:
+        custom_config = CRISPRessoShared.check_custom_config(None)
+        custom_colors = custom_config['colors']
 
     from_nuc = conversion_nuc_from
     to_nuc = conversion_nuc_to
@@ -2204,11 +2363,25 @@ def plot_conversion_map(nuc_pct_df,fig_filename_root,conversion_nuc_from,convers
     plt.close(fig)
 
 
-def plot_subs_across_ref(ref_len, ref_seq, ref_name, ref_count, all_substitution_base_vectors, plot_title, fig_filename_root, save_also_png, custom_colors, quantification_window_idxs=None,**kwargs):
+def plot_subs_across_ref(ref_len, ref_name, ref_count, all_substitution_base_vectors, plot_title, fig_filename_root, custom_colors=None, save_also_png=False, quantification_window_idxs=None,**kwargs):
     """
     Plots substitutions across the reference sequece - each position on the x axis reprsents a nucleotide in the reference
     bars at each x posion show the number of times the reference nucleotide was substituted for another reference
+
+    :param ref_len: length of the reference sequence
+    :param ref_name: name of the reference sequence
+    :param ref_count: total number of reads mapped to the reference sequence
+    :param all_substitution_base_vectors: dictionary with keys in the format ref_name + "_" + nucleotide (e.g. "ref1_A") and values as lists of counts of substitutions for that nucleotide at each position
+    :param plot_title: title of the plot
+    :param fig_filename_root: root of the filename to save the figure to
+    :param custom_colors: dictionary of custom colors to use for nucleotides
+    :param save_also_png: whether to save the plot as a png as well as pdf
+    :param quantification_window_idxs: indices for quantification window annotation on plot (if None, no quantification window will be annotated)
     """
+
+    if custom_colors is None:
+        custom_config = CRISPRessoShared.check_custom_config(None)
+        custom_colors = custom_config['colors']
 
     fig, ax = plt.subplots(figsize=(16, 8))
     ind = np.arange(ref_len)
@@ -2269,12 +2442,20 @@ def plot_subs_across_ref(ref_len, ref_seq, ref_name, ref_count, all_substitution
         fig.savefig(fig_filename_root + '.png', bbox_extra_artists=(lgd,), bbox_inches='tight')
     plt.close(fig)
 
-def plot_sub_freqs(alt_nuc_counts, plot_title, fig_filename_root, save_also_png, custom_colors,**kwargs):
+def plot_sub_freqs(alt_nuc_counts, plot_title, fig_filename_root, save_also_png=False, custom_colors=None, **kwargs):
     """
     Plots histogram of substitution frequencies for each nucleotide (from nuc X to nuc Y)
-    input:
-    alt_nuc_counts: dict of number of changes
+
+    :param alt_nuc_counts: dictionary of substitution counts in the format {'A': {'C': count, 'G': count, 'T': count}, ...}
+    :param plot_title: title of the plot
+    :param fig_filename_root: root of the filename to save the figure to
+    :param save_also_png: whether to save the plot as a png as well as pdf
+    :param custom_colors: dictionary of custom colors to use for nucleotides
     """
+
+    if custom_colors is None:
+        custom_config = CRISPRessoShared.check_custom_config(None)
+        custom_colors = custom_config['colors']
 
     #plot all substitution rates
     fig, ax = plt.subplots(figsize=(8.3, 8))
@@ -2353,12 +2534,26 @@ def plot_log_nuc_freqs(df_nuc_freq,tot_aln_reads,plot_title,fig_filename_root,sa
     plt.close(fig)
 
 
-def plot_conversion_at_sel_nucs(df_subs, ref_name, ref_sequence, plot_title, conversion_nuc_from, fig_filename_root, save_also_png, custom_colors,**kwargs):
+def plot_conversion_at_sel_nucs(df_subs, ref_name, ref_sequence, plot_title, conversion_nuc_from, fig_filename_root, save_also_png=False, custom_colors=None,**kwargs):
     '''
     Plots the conversion at selected nucleotides
     Looks for the 'conversion_nuc_from' in the ref_sequence and sets those as 'selected nucleotides'
     At selected nucleotides, the proportion of each base is shown as a barplot
+
+    :param df_subs: DataFrame with substitution frequencies indexed by nucleotide
+    :param ref_name: name of the reference sequence
+    :param ref_sequence: the reference sequence as a string
+    :param plot_title: title of the plot
+    :param conversion_nuc_from: nucleotide to convert from (e.g. 'A')
+    :param fig_filename_root: root of the filename to save the figure to
+    :param save_also_png: whether to save the plot as a png as well as pdf
+    :param custom_colors: dictionary of custom colors to use for nucleotides
+
     '''
+    if custom_colors is None:
+        custom_config = CRISPRessoShared.check_custom_config(None)
+        custom_colors = custom_config['colors']
+
     nucs = list(df_subs.index)
     color_lookup = get_color_lookup(['A', 'T', 'C', 'G', 'N', 'INS', '-'], alpha=1, custom_colors=custom_colors)
     amp_len = len(ref_sequence)
@@ -2406,8 +2601,10 @@ def plot_conversion_at_sel_nucs(df_subs, ref_name, ref_sequence, plot_title, con
     ax.set_xlim([0, amp_len])
 
     ax.set_yticks([0.5])
-    ax.set_yticklabels(['Reference'], va='center')
+    ax.set_yticklabels([ref_name], va='center')
 
+    if plot_title is not None and plot_title != '':
+        ax.set_title(plot_title)
 
     fig.tight_layout()
     fig.savefig(fig_filename_root+'.pdf', bbox_inches='tight')
@@ -2415,12 +2612,25 @@ def plot_conversion_at_sel_nucs(df_subs, ref_name, ref_sequence, plot_title, con
         fig.savefig(fig_filename_root+'.png', bbox_inches='tight', pad_inches=0.1)
     plt.close(fig)
 
-def plot_conversion_at_sel_nucs_not_include_ref(df_subs, ref_name, ref_sequence, plot_title, conversion_nuc_from, fig_filename_root, save_also_png, custom_colors, **kwargs):
+def plot_conversion_at_sel_nucs_not_include_ref(df_subs, ref_name, ref_sequence, plot_title, conversion_nuc_from, fig_filename_root, save_also_png=False, custom_colors=None, **kwargs):
     '''
     Plots the conversion at selected nucleotides but ignores non-substitutions (for example at nucs that are 'C' in the reference, bars show the proportion of A T G (not C))
     Looks for the 'conversion_nuc_from' in the ref_sequence and sets those as 'selected nucleotides'
     At selected nucleotides, the proportion of each substitution is shown as a barplot
+
+    :param df_subs: DataFrame with substitution frequencies indexed by nucleotide
+    :param ref_name: name of the reference sequence
+    :param ref_sequence: the reference sequence as a string
+    :param plot_title: title of the plot
+    :param conversion_nuc_from: nucleotide to convert from (e.g. 'A')
+    :param fig_filename_root: root of the filename to save the figure to
+    :param save_also_png: whether to save the plot as a png as well as pdf
+    :param custom_colors: dictionary of custom colors to use for nucleotides
     '''
+    if custom_colors is None:
+        custom_config = CRISPRessoShared.check_custom_config(None)
+        custom_colors = custom_config['colors']
+
     nucs = list(df_subs.index)
     color_lookup = get_color_lookup(['A', 'T', 'C', 'G', 'N', 'INS', '-'], alpha=1, custom_colors=custom_colors)
     amp_len = len(ref_sequence)
@@ -2478,8 +2688,10 @@ def plot_conversion_at_sel_nucs_not_include_ref(df_subs, ref_name, ref_sequence,
     ax.set_xlim([0, amp_len])
 
     ax.set_yticks([0.5])
-    ax.set_yticklabels(['Reference'], va='center')
+    ax.set_yticklabels([ref_name], va='center')
 
+    if plot_title is not None and plot_title != '':
+        ax.set_title(plot_title)
 
     fig.tight_layout()
     fig.savefig(fig_filename_root+'.pdf', bbox_inches='tight')
@@ -2487,12 +2699,25 @@ def plot_conversion_at_sel_nucs_not_include_ref(df_subs, ref_name, ref_sequence,
         fig.savefig(fig_filename_root+'.png', bbox_inches='tight', pad_inches=0.1)
     plt.close(fig)
 
-def plot_conversion_at_sel_nucs_not_include_ref_scaled(df_subs, ref_name, ref_sequence, plot_title, conversion_nuc_from, fig_filename_root, save_also_png, custom_colors, **kwargs):
+def plot_conversion_at_sel_nucs_not_include_ref_scaled(df_subs, ref_name, ref_sequence, plot_title, conversion_nuc_from, fig_filename_root, save_also_png=False, custom_colors=None, **kwargs):
     '''
     Plots the conversion at selected nucleotides not including reference base, scaled by number of events
     Looks for the 'conversion_nuc_from' in the ref_sequence and sets those as 'selected nucleotides'
     At selected nucleotides, the count of each base is shown as a barplot
+
+    :param df_subs: DataFrame with substitution frequencies indexed by nucleotide
+    :param ref_name: name of the reference sequence
+    :param ref_sequence: the reference sequence as a string
+    :param plot_title: title of the plot
+    :param conversion_nuc_from: nucleotide to convert from (e.g. 'A')
+    :param fig_filename_root: root of the filename to save the figure to
+    :param save_also_png: whether to save the plot as a png as well as pdf
+    :param custom_colors: dictionary of custom colors to use for nucleotides
     '''
+    if custom_colors is None:
+        custom_config = CRISPRessoShared.check_custom_config(None)
+        custom_colors = custom_config['colors']
+
     nucs = list(df_subs.index)
     color_lookup = get_color_lookup(['A', 'T', 'C', 'G', 'N', 'INS', '-'], alpha=1, custom_colors=custom_colors)
     nucs.remove(conversion_nuc_from)
@@ -2541,8 +2766,10 @@ def plot_conversion_at_sel_nucs_not_include_ref_scaled(df_subs, ref_name, ref_se
     ax.set_xlim([0, amp_len])
 
     ax.set_yticks([0.5])
-    ax.set_yticklabels(['Reference'], va='center')
+    ax.set_yticklabels([ref_name], va='center')
 
+    if plot_title is not None and plot_title != '':
+        ax.set_title(plot_title)
 
     fig.tight_layout()
     fig.savefig(fig_filename_root+'.pdf', bbox_inches='tight')
@@ -2765,7 +2992,7 @@ def plot_alleles_heatmap(
         y_labels,
         insertion_dict,
         per_element_annot_kws,
-        custom_colors,
+        custom_colors=None,
         SAVE_ALSO_PNG=False,
         plot_cut_point=True,
         cut_point_ind=None,
@@ -2783,6 +3010,7 @@ def plot_alleles_heatmap(
     -y_labels: list of labels for each row/allele
     -insertion_dict: locations of insertions -- red squares will be drawn around these
     -per_element_annot_kws: annotations for each cell (e.g. bold for substitutions, etc.)
+    -custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     -SAVE_ALSO_PNG: whether to write png file as well
     -plot_cut_point: if false, won't draw 'predicted cleavage' line
     -cut_point_ind: index of cut point (if None, will be plot in the middle calculated as len(reference_seq)/2)
@@ -2944,7 +3172,8 @@ def plot_alleles_heatmap(
         fig.savefig(fig_filename_root+'.png', bbox_inches='tight', bbox_extra_artists=(lgd,))
     plt.close(fig)
 
-def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,insertion_dict,per_element_annot_kws,count_values,custom_colors,SAVE_ALSO_PNG=False,plot_cut_point=True,cut_point_ind=None,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,**kwargs):
+def plot_alleles_heatmap_hist(reference_seq, fig_filename_root, X, annot, y_labels, insertion_dict, per_element_annot_kws, count_values,
+                              custom_colors=None, SAVE_ALSO_PNG=False, plot_cut_point=True, cut_point_ind=None, sgRNA_intervals=None, sgRNA_names=None, sgRNA_mismatches=None, **kwargs):
     """
     Plots alleles in a heatmap (nucleotides color-coded for easy visualization)
     input:
@@ -2955,6 +3184,8 @@ def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,i
     -y_labels: list of labels for each row/allele
     -insertion_dict: locations of insertions -- red squares will be drawn around these
     -per_element_annot_kws: annotations for each cell (e.g. bold for substitutions, etc.)
+    -count_values: list of counts for each allele (used to plot histogram)
+    -custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     -SAVE_ALSO_PNG: whether to write png file as well
     -plot_cut_point: if false, won't draw 'predicted cleavage' line
     -cut_point_ind: index of cut point (if None, will be plot in the middle calculated as len(reference_seq)/2)
@@ -3083,25 +3314,9 @@ def plot_alleles_heatmap_hist(reference_seq,fig_filename_root,X,annot,y_labels,i
     plt.close()
 
 
-def plot_alleles_table_prepped(
-    reference_seq,
-    prepped_df_alleles,
-    annotations,
-    y_labels,
-    insertion_dict,
-    per_element_annot_kws,
-    is_reference,
-    fig_filename_root,
-    custom_colors,
-    SAVE_ALSO_PNG=False,
-    plot_cut_point=True,
-    cut_point_ind=None,
-    sgRNA_intervals=None,
-    sgRNA_names=None,
-    sgRNA_mismatches=None,
-    annotate_wildtype_allele='****',
-    **kwargs,
-):
+def plot_alleles_table_prepped(reference_seq, prepped_df_alleles, annotations, y_labels, insertion_dict, per_element_annot_kws,
+        is_reference, fig_filename_root, custom_colors=None, SAVE_ALSO_PNG=False, plot_cut_point=True, cut_point_ind=None,
+        sgRNA_intervals=None, sgRNA_names=None, sgRNA_mismatches=None, annotate_wildtype_allele='****', **kwargs,):
     """Plot an allele table for a pre-filtered dataframe with allele frequencies.
 
     Parameters
@@ -3145,6 +3360,10 @@ def plot_alleles_table_prepped(
     -------
     None
     """
+    if custom_colors is None:
+        custom_config = CRISPRessoShared.check_custom_config(None)
+        custom_colors = custom_config['colors']
+
     if annotate_wildtype_allele != '':
         for ix, is_ref in enumerate(is_reference):
             if is_ref:
@@ -3169,13 +3388,15 @@ def plot_alleles_table_prepped(
 
 
 
-def plot_alleles_table(reference_seq,df_alleles,fig_filename_root,custom_colors,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,plot_cut_point=True,cut_point_ind=None,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,annotate_wildtype_allele='****',**kwargs):
+def plot_alleles_table(reference_seq, df_alleles, fig_filename_root, custom_colors=None, MIN_FREQUENCY=0.5, MAX_N_ROWS=100, SAVE_ALSO_PNG=False, 
+                       plot_cut_point=True, cut_point_ind=None, sgRNA_intervals=None, sgRNA_names=None, sgRNA_mismatches=None, annotate_wildtype_allele='****', **kwargs):
     """
     plots an allele table for a dataframe with allele frequencies
     input:
     reference_seq: the reference amplicon sequence to plot
     df_alleles: merged dataframe (should include columns "#Reads','%Reads')
     fig_filename: figure filename to plot (not including '.pdf' or '.png')
+    custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     MIN_FREQUENCY: sum of alleles % must add to this to be plotted
     MAX_N_ROWS: max rows to plot
     SAVE_ALSO_PNG: whether to write png file as well
@@ -3187,6 +3408,10 @@ def plot_alleles_table(reference_seq,df_alleles,fig_filename_root,custom_colors,
     custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     annotate_wildtype_allele: string to add to the end of the wildtype allele (e.g. ** or '')
     """
+    if custom_colors is None:
+        custom_config = CRISPRessoShared.check_custom_config(None)
+        custom_colors = custom_config['colors']
+
     X, annot, y_labels, insertion_dict, per_element_annot_kws, is_reference = prep_alleles_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY)
     if annotate_wildtype_allele != '':
         for ix, is_ref in enumerate(is_reference):
@@ -3208,7 +3433,8 @@ def plot_alleles_table(reference_seq,df_alleles,fig_filename_root,custom_colors,
                          sgRNA_names=sgRNA_names,
                          sgRNA_mismatches=sgRNA_mismatches)
 
-def plot_alleles_table_from_file(alleles_file_name,fig_filename_root,custom_colors,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,plot_cut_point=True,cut_point_ind=None,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,annotate_wildtype_allele='',**kwargs):
+def plot_alleles_table_from_file(alleles_file_name, fig_filename_root, custom_colors=None, MIN_FREQUENCY=0.5, MAX_N_ROWS=100, SAVE_ALSO_PNG=False, 
+                                 plot_cut_point=True, cut_point_ind=None, sgRNA_intervals=None, sgRNA_names=None, sgRNA_mismatches=None, annotate_wildtype_allele='', **kwargs):
     """
     plots an allele table for a dataframe with allele frequencies
     infers the reference sequence by finding reference sequences without gaps (-)
@@ -3217,6 +3443,7 @@ def plot_alleles_table_from_file(alleles_file_name,fig_filename_root,custom_colo
     input:
     alleles_file_name: file name with alleles (should include columns "#Reads','%Reads')
     fig_filename: figure filename to plot (not including '.pdf' or '.png')
+    custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     MIN_FREQUENCY: sum of alleles % must add to this to be plotted
     MAX_N_ROWS: max rows to plot
     SAVE_ALSO_PNG: whether to write png file as well
@@ -3225,9 +3452,11 @@ def plot_alleles_table_from_file(alleles_file_name,fig_filename_root,custom_colo
     sgRNA_intervals: locations where sgRNA is located
     sgRNA_mismatches: array (for each sgRNA_interval) of locations in sgRNA where there are mismatches
     sgRNA_names: array (for each sgRNA_interval) of names of sgRNAs (otherwise empty)
-    custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     annotate_wildtype_allele: string to add to the end of the wildtype allele (e.g. ** or ''(for no anno))
     """
+    if custom_colors is None:
+        custom_config = CRISPRessoShared.check_custom_config(None)
+        custom_colors = custom_config['colors']
 
     df_alleles = pd.read_table(alleles_file_name)
     df_alleles = df_alleles.reset_index().set_index('Aligned_Sequence')
@@ -3258,7 +3487,8 @@ def plot_alleles_table_from_file(alleles_file_name,fig_filename_root,custom_colo
                          sgRNA_names=sgRNA_names,
                          sgRNA_mismatches=sgRNA_mismatches)
 
-def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,custom_colors,MIN_FREQUENCY=None,MAX_N_ROWS=None,SAVE_ALSO_PNG=False,plot_cut_point=True,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,**kwargs):
+def plot_alleles_tables_from_folder(crispresso_output_folder, fig_filename_root, custom_colors, MIN_FREQUENCY=None, MAX_N_ROWS=None, SAVE_ALSO_PNG=False, 
+                                    plot_cut_point=True, sgRNA_intervals=None, sgRNA_names=None, sgRNA_mismatches=None, **kwargs):
     """
     plots an allele table for each sgRNA/amplicon in a CRISPresso run (useful for plotting after running using the plot harness)
     This function is only used for one-off plotting purposes and not for the general CRISPResso analysis
@@ -3266,6 +3496,7 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,c
     input:
     crispresso2 output folder
     fig_filename_root: figure filename to plot (not including '.pdf' or '.png')
+    custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     MIN_FREQUENCY: sum of alleles % must add to this to be plotted
     MAX_N_ROWS: max rows to plot
     SAVE_ALSO_PNG: whether to write png file as well
@@ -3273,7 +3504,6 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,c
     sgRNA_intervals: locations where sgRNA is located (if set overrides settings used in crispresso folder)
     sgRNA_mismatches: array (for each sgRNA_interval) of locations in sgRNA where there are mismatches (if set overrides settings used in crispresso folder)
     sgRNA_names: array (for each sgRNA_interval) of names of sgRNAs (otherwise empty) (if set overrides settings used in crispresso folder)
-    custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
 
     example:
     from CRISPResso2 import CRISPRessoPlot
@@ -3341,14 +3571,16 @@ def plot_alleles_tables_from_folder(crispresso_output_folder,fig_filename_root,c
             plot_count += 1
     print('Plotted ' + str(plot_count) + ' plots')
 
-def plot_alleles_table_compare(reference_seq,df_alleles,sample_name_1,sample_name_2,fig_filename_root,custom_colors=None,MIN_FREQUENCY=0.5,MAX_N_ROWS=100,SAVE_ALSO_PNG=False,plot_cut_point=True,sgRNA_intervals=None,sgRNA_names=None,sgRNA_mismatches=None,**kwargs):
+def plot_alleles_table_compare(reference_seq, df_alleles, sample_name_1, sample_name_2, fig_filename_root, custom_colors=None, 
+                               MIN_FREQUENCY=0.5, MAX_N_ROWS=100, SAVE_ALSO_PNG=False, plot_cut_point=True, sgRNA_intervals=None, sgRNA_names=None, sgRNA_mismatches=None, **kwargs):
     """
     plots an allele table for a dataframe with allele frequencies from two CRISPResso runs
     input:
     reference_seq: the reference amplicon sequence to plot
     df_alleles: merged dataframe (should include columns "#Reads_s1','%Reads_s1','#Reads_s2','%Reads_s2','each_LFC'" where s1 and s2 are the sample names)
     sample_name_1, sample_name_2: names of the samples
-    fig_filename: figure filename to plot (not including '.pdf' or '.png')
+    fig_filename_root: figure filename to plot (not including '.pdf' or '.png')
+    custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     MIN_FREQUENCY: sum of alleles % must add to this to be plotted
     MAX_N_ROWS: max rows to plot
     SAVE_ALSO_PNG: whether to write png file as well
@@ -3356,7 +3588,6 @@ def plot_alleles_table_compare(reference_seq,df_alleles,sample_name_1,sample_nam
     sgRNA_intervals: locations where sgRNA is located
     sgRNA_mismatches: array (for each sgRNA_interval) of locations in sgRNA where there are mismatches
     sgRNA_names: array (for each sgRNA_interval) of names of sgRNAs (otherwise empty)
-    custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     """
     X, annot, y_labels, insertion_dict, per_element_annot_kws = prep_alleles_table_compare(df_alleles, sample_name_1, sample_name_2, MAX_N_ROWS, MIN_FREQUENCY)
     plot_alleles_heatmap(reference_seq=reference_seq,
@@ -3373,18 +3604,16 @@ def plot_alleles_table_compare(reference_seq,df_alleles,sample_name_1,sample_nam
                          sgRNA_names=sgRNA_names,
                          sgRNA_mismatches=sgRNA_mismatches)
 
-def plot_nucleotide_quilt_from_folder(crispresso_output_folder,fig_filename_root,save_also_png=False,sgRNA_intervals=None,min_text_pct=0.5,max_text_pct=0.95,quantification_window_idxs=None,sgRNA_names=None,sgRNA_mismatches=None,shade_unchanged=True,**kwargs):
+def plot_nucleotide_quilt_from_folder(crispresso_output_folder, fig_filename_root, custom_colors=None, save_also_png=False, min_text_pct=0.5, max_text_pct=0.95, shade_unchanged=True, **kwargs):
     """
-    plots an allele table for each sgRNA/amplicon in a CRISPresso run (useful for plotting after running using the plot harness)
+    plots an allele table for each sgRNA/amplicon in a CRISPResso run (useful for plotting after running using the plot harness)
     This function is only used for one-off plotting purposes and not for the general CRISPResso analysis
 
     input:
     crispresso2 output folder
     fig_filename_root: figure filename to plot (not including '.pdf' or '.png')
-    sgRNA_intervals: ranges for sgRNA annotation on plot
-    sgRNA_names: names to annotate sgRNAs with (if None, will just label left sgRNA with 'sgRNA')
-    sgRNA_mismatches: locations in the sgRNA where there are mismatches from an original guide (flexiguides)
-    quantification_window_idxs: indices for quantification window annotation on plot
+    custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
+    save_also_png: boolean to save png as well as pdf
     min_text_pct: add text annotation if the percent is greater than this number
     max_text_pct: add text annotation if the percent is less than this number
     shade_unchanged: if true, unchanged/reference nucleotides will be shaded (only changes with regard to reference will be dark)
@@ -3393,6 +3622,10 @@ def plot_nucleotide_quilt_from_folder(crispresso_output_folder,fig_filename_root
     from CRISPResso2 import CRISPRessoPlot
     CRISPRessoPlot.plot_nucleotide_quilt_from_folder('CRISPResso_on_allele_specific','test_plots')
     """
+    if custom_colors is None:
+        custom_config = CRISPRessoShared.check_custom_config(None)
+        custom_colors = custom_config['colors']
+
     crispresso2_info = CRISPRessoShared.load_crispresso_info(crispresso_output_folder)
 
     plot_count = 0
@@ -3410,23 +3643,26 @@ def plot_nucleotide_quilt_from_folder(crispresso_output_folder,fig_filename_root
 
         reference_seq = refs[ref_name]['sequence']
 
-        nucleotide_pct_file = os.path.join(crispresso_output_folder, run_data['results']['refs'][ref_name]['nuc_pct_filename'])
-        ampSeq_np, nuc_pcts = CRISPRessoShared.parse_count_file(nucleotide_pct_file)
+        nucleotide_pct_file = os.path.join(crispresso_output_folder, crispresso2_info['results']['refs'][ref_name]['nuc_pct_filename'])
 
-        mod_count_file = os.path.join(crispresso_output_folder, run_data['results']['refs'][ref_name]['mod_count_filename'])
-        ampSeq_cf, mod_counts = CRISPRessoShared.parse_count_file(mod_count_file)
+        cols_in_file = list(pd.read_csv(nucleotide_pct_file, sep='\t', nrows=1,header=None ).values[0])
+        cols_in_file[0] = 'Nucleotide'
+        nuc_pct_df = pd.read_csv(nucleotide_pct_file,sep="\t",header=None,skiprows=[0])
+        nuc_pct_df.columns = cols_in_file
+        nuc_pct_df.insert(0,'Batch',ref_name)
 
-        mod_pcts = {}
-        for key in mod_counts:
-            mod_pcts[key] = np.array(mod_counts[key]).astype(float)/float(mod_counts['Total'][0])
-
-        modification_percentage_summary = []
-        for mod in ['Insertions', 'Insertions_Left', 'Deletions', 'Substitutions', 'All_modifications']:
-            pct_row = [batchName, mod]
-            pct_row.extend(mod_pcts[mod])
-            modification_percentage_summary.append(pct_row)
-
-        modification_frequency_summary_df = pd.DataFrame(modification_frequency_summary, columns=colnames)
+        mod_count_file = os.path.join(crispresso_output_folder, crispresso2_info['results']['refs'][ref_name]['mod_count_filename'])
+        cols_in_file = list(pd.read_csv(mod_count_file, sep='\t', nrows=1,header=None ).values[0])
+        cols_in_file[0] = 'Modification'
+        mod_count_df = pd.read_csv(mod_count_file,sep="\t",header=None,skiprows=[0])
+        mod_count_df.columns = cols_in_file
+        first_col = mod_count_df.iloc[:,0]
+        last_row = mod_count_df.iloc[-1,:].values
+        mod_pct_df = mod_count_df.iloc[0:-1,1:].div(mod_count_df.iloc[-1,1:]) #divide by last row
+        mod_pct_df.insert(0,'Modification',first_col)
+        mod_pct_df.loc[len(mod_pct_df.index)] = last_row
+        mod_pct_df = mod_pct_df.copy()
+        mod_pct_df.insert(0,'Batch',ref_name)
 
         for ind, sgRNA in enumerate(sgRNA_sequences):
             sgRNA_label = sgRNA # for file names
@@ -3445,8 +3681,15 @@ def plot_nucleotide_quilt_from_folder(crispresso_output_folder,fig_filename_root
             for (int_start, int_end) in refs[ref_name]['sgRNA_intervals']:
                 new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1, int_end - new_sel_cols_start - 1)]
 
-            plot_nucleotide_quilt(nuc_pct_df, mod_pct_df, fig_filename_root, save_also_png=False, sgRNA_intervals=new_sgRNA_intervals, min_text_pct=0.5, max_text_pct=0.95, quantification_window_idxs=None, sgRNA_names=None, sgRNA_mismatches=None, shade_unchanged=True)
+            new_quant_window_idxs = []
+            quantification_window_idxs = refs[ref_name]['include_idxs']
+            for idx in quantification_window_idxs:
+                new_quant_window_idxs.append(idx - new_sel_cols_start - 1)
+
+            plot_nucleotide_quilt(nuc_pct_df, mod_pct_df, fig_filename_root, custom_colors=custom_colors, save_also_png=save_also_png, sgRNA_intervals=new_sgRNA_intervals, min_text_pct=min_text_pct, max_text_pct=max_text_pct, 
+                                  quantification_window_idxs=new_quant_window_idxs, sgRNA_names=sgRNA_names, sgRNA_mismatches=sgRNA_mismatches, shade_unchanged=shade_unchanged)
             plot_count += 1
+
     print('Plotted ' + str(plot_count) + ' plots')
 
 def plot_unmod_mod_pcts(fig_filename_root,df_summary_quantification,save_png,cutoff=None,max_samples_to_include_unprocessed=20,**kwargs):
@@ -3596,7 +3839,7 @@ def plot_read_barplot(N_READS_INPUT, N_READS_AFTER_PREPROCESSING, N_TOTAL,
 
 def plot_class_piechart_and_barplot(class_counts_order, class_counts, ref_names,
                                     expected_hdr_amplicon_seq, N_TOTAL,
-                                    piechart_plot_root, barplot_plot_root, custom_colors, save_png,**kwargs):
+                                    piechart_plot_root, barplot_plot_root, custom_colors=None, save_png=False,**kwargs):
     """Plot a pie chart and barplot of class assignments for reads.
 
        Class assignments include: 'MODIFIED','UNMODIFIED','HDR',etc.
@@ -3617,10 +3860,16 @@ def plot_class_piechart_and_barplot(class_counts_order, class_counts, ref_names,
         Root to plot barplot output file (suffixes ".pdf" and ".png" will be added)
     barplot_plot_root : str
         Root to plot barplot output file (suffixes ".pdf" and ".png" will be added)
+    custom_colors : dict
+        Dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     save_png : bool
         if True, png will be saved as well as pdf
 
     """
+    if custom_colors is None:
+        custom_config = CRISPRessoShared.check_custom_config(None)
+        custom_colors = custom_config['colors']
+
     labels = []
     sizes = []
     for class_name in class_counts_order:

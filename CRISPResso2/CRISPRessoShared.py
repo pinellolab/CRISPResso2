@@ -2000,6 +2000,9 @@ def check_custom_config(args):
         }
     }
 
+    if args is None or not hasattr(args, 'config_file'):
+        return config
+
     logger = logging.getLogger(getmodule(stack()[1][0]).__name__)
     if not is_C2Pro_installed():
         return config
