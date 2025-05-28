@@ -721,7 +721,7 @@ def main():
 
         if not args.suppress_plots:
             plot_root = _jp("CRISPRessoWGS_reads_summary")
-            CRISPRessoPlot.plot_reads_total(plot_root, df_summary_quantification, save_png, args.min_reads_to_use_region)
+            CRISPRessoPlot.plot_reads_total(df_summary_quantification=df_summary_quantification, fig_filename_root=plot_root, save_png=save_png, cutoff=args.min_reads_to_use_region)
             plot_name = os.path.basename(plot_root)
             crispresso2_info['results']['general_plots']['reads_summary_plot'] = plot_name
             crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
@@ -730,7 +730,7 @@ def main():
             crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('CRISPRessoWGS summary', os.path.basename(samples_quantification_summary_filename))]
 
             plot_root = _jp("CRISPRessoWGS_modification_summary")
-            CRISPRessoPlot.plot_unmod_mod_pcts(plot_root, df_summary_quantification, save_png, args.min_reads_to_use_region)
+            CRISPRessoPlot.plot_unmod_mod_pcts(df_summary_quantification=df_summary_quantification, fig_filename_root=plot_root, save_png=save_png, cutoff=args.min_reads_to_use_region)
             plot_name = os.path.basename(plot_root)
             crispresso2_info['results']['general_plots']['modification_summary_plot'] = plot_name
             crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)

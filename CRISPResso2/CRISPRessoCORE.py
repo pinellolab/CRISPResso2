@@ -3749,7 +3749,7 @@ def main():
                 'N_READS_INPUT': N_READS_INPUT,
                 'N_READS_AFTER_PREPROCESSING': N_READS_AFTER_PREPROCESSING,
                 'N_TOTAL': N_TOTAL,
-                'plot_root': plot_1a_root,
+                'fig_filename_root': plot_1a_root,
                 'save_png': save_png
             }
             debug('Plotting read bar plot', {'percent_complete': 42})
@@ -4480,6 +4480,7 @@ def main():
                     fig_filename_root= _jp('10a.'+ref_plot_name+'Substitution_frequencies_at_each_bp')
                     plot_10a_input = {
                         'ref_len': ref_len,
+                        'ref_seq': ref_seq,
                         'ref_name': ref_name,
                         'ref_count': tot_aln_reads,
                         'all_substitution_base_vectors': all_substitution_base_vectors,

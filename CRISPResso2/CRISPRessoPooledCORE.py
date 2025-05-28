@@ -1627,7 +1627,7 @@ def main():
             plot_root = _jp("CRISPRessoPooled_reads_summary")
 
             debug('Plotting reads summary', {'percent_complete': 90})
-            CRISPRessoPlot.plot_reads_total(plot_root, df_summary_quantification, save_png, args.min_reads_to_use_region)
+            CRISPRessoPlot.plot_reads_total(df_summary_quantification=df_summary_quantification, fig_filename_root=plot_root, save_png=save_png, cutoff=args.min_reads_to_use_region)
             plot_name = os.path.basename(plot_root)
             crispresso2_info['results']['general_plots']['summary_plot_root'] = plot_name
             crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
@@ -1637,7 +1637,7 @@ def main():
 
             plot_root = _jp("CRISPRessoPooled_modification_summary")
             debug('Plotting modification summary', {'percent_complete': 95})
-            CRISPRessoPlot.plot_unmod_mod_pcts(plot_root, df_summary_quantification, save_png, args.min_reads_to_use_region)
+            CRISPRessoPlot.plot_unmod_mod_pcts(df_summary_quantification=df_summary_quantification, fig_filename_root=plot_root, save_png=save_png, cutoff=args.min_reads_to_use_region)
             plot_name = os.path.basename(plot_root)
             crispresso2_info['results']['general_plots']['summary_plot_root'] = plot_name
             crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
