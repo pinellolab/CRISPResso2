@@ -279,16 +279,6 @@ def main():
         start_time =  datetime.now()
         start_time_string =  start_time.strftime('%Y-%m-%d %H:%M:%S')
 
-        description = ['~~~CRISPRessoWGS~~~', '-Analysis of CRISPR/Cas9 outcomes from WGS data-']
-        wgs_string = r'''
- ____________
-|     __  __ |
-||  |/ _ (_  |
-||/\|\__)__) |
-|____________|
-        '''
-        info(CRISPRessoShared.get_crispresso_header(description, wgs_string))
-
         # if no args are given, print a simplified help message
         if len(sys.argv) == 1:
             raise CRISPRessoShared.BadParameterException(CRISPRessoShared.format_cl_text('usage: CRISPRessoWGS [-b BAM_FILE] [-f REGION_FILE] [-r REFERENCE_FILE] [-n NAME]\n' + \
@@ -306,12 +296,22 @@ def main():
 
         args = parser.parse_args()
 
+        CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
+
+        description = ['~~~CRISPRessoWGS~~~', '-Analysis of CRISPR/Cas9 outcomes from WGS data-']
+        wgs_string = r'''
+ ____________
+|     __  __ |
+||  |/ _ (_  |
+||/\|\__)__) |
+|____________|
+        '''
+        info(CRISPRessoShared.get_crispresso_header(description, wgs_string))
+
         if args.use_matplotlib or not CRISPRessoShared.is_C2Pro_installed():
             from CRISPResso2 import CRISPRessoPlot
         else:
             from CRISPRessoPro import plot as CRISPRessoPlot
-
-        CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
 
         crispresso_options = CRISPRessoShared.get_core_crispresso_options()
         options_to_ignore = {'fastq_r1', 'fastq_r2', 'amplicon_seq', 'amplicon_name', 'output_folder', 'name', 

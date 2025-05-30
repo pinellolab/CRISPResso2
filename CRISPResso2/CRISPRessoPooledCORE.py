@@ -256,16 +256,6 @@ def main():
         start_time =  datetime.now()
         start_time_string =  start_time.strftime('%Y-%m-%d %H:%M:%S')
 
-        description = ['~~~CRISPRessoPooled~~~', '-Analysis of CRISPR/Cas9 outcomes from POOLED deep sequencing data-']
-        pooled_string = r'''
- _______________________
-| __  __  __     __ __  |
-||__)/  \/  \|  |_ |  \ |
-||   \__/\__/|__|__|__/ |
-|_______________________|
-        '''
-        info(CRISPRessoShared.get_crispresso_header(description, pooled_string))
-
         # if no args are given, print a simplified help message
         if len(sys.argv) == 1:
             raise CRISPRessoShared.BadParameterException(CRISPRessoShared.format_cl_text('usage: CRISPRessoPooled [-r1 FASTQ_R1] [-r2 FASTQ_R2] [-f AMPLICONS_FILE] [-x GENOME_ROOT] [-n NAME]\n' + \
@@ -283,12 +273,22 @@ def main():
 
         args = parser.parse_args()
 
+        CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
+
+        description = ['~~~CRISPRessoPooled~~~', '-Analysis of CRISPR/Cas9 outcomes from POOLED deep sequencing data-']
+        pooled_string = r'''
+ _______________________
+| __  __  __     __ __  |
+||__)/  \/  \|  |_ |  \ |
+||   \__/\__/|__|__|__/ |
+|_______________________|
+        '''
+        info(CRISPRessoShared.get_crispresso_header(description, pooled_string))
+
         if args.use_matplotlib or not CRISPRessoShared.is_C2Pro_installed():
             from CRISPResso2 import CRISPRessoPlot
         else:
             from CRISPRessoPro import plot as CRISPRessoPlot
-
-        CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
 
         crispresso_options = CRISPRessoShared.get_core_crispresso_options()
         options_to_ignore = {'fastq_r1', 'fastq_r2', 'amplicon_seq', 'amplicon_name', 'output_folder', 'name', 
