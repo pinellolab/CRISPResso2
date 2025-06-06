@@ -400,7 +400,7 @@ def main():
                 if previous_run_data['running_info']['version'] == CRISPRessoShared.__version__:
                     args_are_same = True
                     for arg in vars(args):
-                        if arg == "no_rerun" or arg == "debug" or arg == "n_processes":
+                        if arg == "no_rerun" or arg == "debug" or arg == "n_processes" or arg == "verbosity":
                             continue
                         if arg not in vars(previous_run_data['running_info']['args']):
                             info('Comparing current run to previous run: old run had argument ' + str(arg) + ' \nRerunning.')
