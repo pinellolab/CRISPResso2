@@ -137,13 +137,13 @@ class LogStreamHandler(logging.StreamHandler):
 def set_console_log_level(logger, level, debug=False):
     for handler in logger.handlers:
         if isinstance(handler, LogStreamHandler):
-            if level == 4 or debug:
+            if level >= 4 or debug:
                 handler.setLevel(logging.DEBUG)
             elif level == 3:
                 handler.setLevel(logging.INFO)
             elif level == 2:
                 handler.setLevel(logging.WARNING)
-            elif level == 1:
+            elif level <= 1:
                 handler.setLevel(logging.ERROR)
             break
 
