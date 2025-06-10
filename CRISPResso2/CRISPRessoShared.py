@@ -8,12 +8,11 @@ import argparse
 import datetime
 import errno
 import gzip
-import json
-import textwrap
 import importlib.metadata
 import importlib.util
-from pathlib import Path
-
+import io
+import json
+import logging
 import numpy as np
 import os
 import pandas as pd
@@ -23,9 +22,11 @@ import shutil
 import shlex
 import signal
 import subprocess as sb
+import textwrap
 import unicodedata
-import logging
+
 from inspect import getmodule, stack
+from pathlib import Path
 
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoCOREResources
@@ -736,7 +737,7 @@ class CRISPRessoJSONDecoder(json.JSONDecoder):
             if obj['_type'] == 'np.ndarray':
                 return np.array(obj['value'])
             if obj['_type'] == 'pd.DataFrame':
-                return pd.read_json(obj['value'], orient='split')
+                return pd.read_json(io.StringIO(obj['value'].decode('utf-8')), orient='split')
             if obj['_type'] == 'datetime.datetime':
                 return datetime.datetime.fromisoformat(obj['value'])
             if obj['_type'] == 'datetime.timedelta':
