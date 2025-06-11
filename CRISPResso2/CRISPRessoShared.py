@@ -11,6 +11,7 @@ import gzip
 import json
 import textwrap
 import importlib.util
+import importlib.metadata
 from pathlib import Path
 
 import numpy as np
