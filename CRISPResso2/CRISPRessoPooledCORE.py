@@ -256,16 +256,6 @@ def main():
         start_time =  datetime.now()
         start_time_string =  start_time.strftime('%Y-%m-%d %H:%M:%S')
 
-        description = ['~~~CRISPRessoPooled~~~', '-Analysis of CRISPR/Cas9 outcomes from POOLED deep sequencing data-']
-        pooled_string = r'''
- _______________________
-| __  __  __     __ __  |
-||__)/  \/  \|  |_ |  \ |
-||   \__/\__/|__|__|__/ |
-|_______________________|
-        '''
-        info(CRISPRessoShared.get_crispresso_header(description, pooled_string))
-
         # if no args are given, print a simplified help message
         if len(sys.argv) == 1:
             raise CRISPRessoShared.BadParameterException(CRISPRessoShared.format_cl_text('usage: CRISPRessoPooled [-r1 FASTQ_R1] [-r2 FASTQ_R2] [-f AMPLICONS_FILE] [-x GENOME_ROOT] [-n NAME]\n' + \
@@ -283,12 +273,22 @@ def main():
 
         args = parser.parse_args()
 
+        CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
+
+        description = ['~~~CRISPRessoPooled~~~', '-Analysis of CRISPR/Cas9 outcomes from POOLED deep sequencing data-']
+        pooled_string = r'''
+ _______________________
+| __  __  __     __ __  |
+||__)/  \/  \|  |_ |  \ |
+||   \__/\__/|__|__|__/ |
+|_______________________|
+        '''
+        info(CRISPRessoShared.get_crispresso_header(description, pooled_string))
+
         if args.use_matplotlib or not CRISPRessoShared.is_C2Pro_installed():
             from CRISPResso2 import CRISPRessoPlot
         else:
             from CRISPRessoPro import plot as CRISPRessoPlot
-
-        CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
 
         crispresso_options = CRISPRessoShared.get_core_crispresso_options()
         options_to_ignore = {'fastq_r1', 'fastq_r2', 'amplicon_seq', 'amplicon_name', 'output_folder', 'name', 
@@ -417,7 +417,7 @@ def main():
                 if previous_run_data['running_info']['version'] == CRISPRessoShared.__version__:
                     args_are_same = True
                     for arg in vars(args):
-                        if arg == "no_rerun" or arg == "debug" or arg == "n_processes":
+                        if arg == "no_rerun" or arg == "debug" or arg == "n_processes" or arg == "verbosity":
                             continue
                         if arg not in vars(previous_run_data['running_info']['args']):
                             info('Comparing current run to previous run: old run had argument ' + str(arg) + ' \nRerunning.')
@@ -1112,8 +1112,12 @@ def main():
                         } \
                     END{ \
                       close(fastq_filename); \
-                      system("gzip -f "fastq_filename);  \
-                      record_log_str = "__REGIONCHR__\t__REGIONSTART__\t__REGIONEND__\t"num_records"\t"fastq_filename".gz\n"; \
+                        if (num_records < __MIN_READS__) { \
+                            record_log_str = "__REGIONCHR__\t__REGIONSTART__\t__REGIONEND__\t"num_records"\tNA\n"; \
+                        } else { \
+                            system("gzip -f "fastq_filename);  \
+                            record_log_str = "__REGIONCHR__\t__REGIONSTART__\t__REGIONEND__\t"num_records"\t"fastq_filename".gz\n"; \
+                        } \
                       print record_log_str > "__DEMUX_CHR_LOGFILENAME__"; \
                     } ' '''
                     cmd = (s1).replace('__OUTPUTPATH__', MAPPED_REGIONS)
@@ -1127,7 +1131,7 @@ def main():
                     chr_commands = []
                     chr_output_filenames = []
                     for idx, row in df_template.iterrows():
-                        chr_output_filename = _jp('MAPPED_REGIONS/chr%s_%s_%s.info' % (row.chr_id, row.bpstart, row.bpend))
+                        chr_output_filename = _jp('MAPPED_REGIONS/REGION_%s_%s_%s.info' % (row.chr_id, row.bpstart, row.bpend))
                         sub_chr_command = cmd.replace('__REGIONCHR__', str(row.chr_id)).replace('__REGIONSTART__',str(row.bpstart)).replace('__REGIONEND__',str(row.bpend)).replace("__DEMUX_CHR_LOGFILENAME__", chr_output_filename)
                         if chr_output_filename not in chr_output_filenames: # sometimes multiple amplicons map to the same region so we don't want the region to be written to by multiple processes
                             chr_commands.append(sub_chr_command)
@@ -1623,7 +1627,7 @@ def main():
             plot_root = _jp("CRISPRessoPooled_reads_summary")
 
             debug('Plotting reads summary', {'percent_complete': 90})
-            CRISPRessoPlot.plot_reads_total(plot_root, df_summary_quantification, save_png, args.min_reads_to_use_region)
+            CRISPRessoPlot.plot_reads_total(df_summary_quantification=df_summary_quantification, fig_filename_root=plot_root, save_png=save_png, cutoff=args.min_reads_to_use_region)
             plot_name = os.path.basename(plot_root)
             crispresso2_info['results']['general_plots']['summary_plot_root'] = plot_name
             crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
@@ -1633,7 +1637,7 @@ def main():
 
             plot_root = _jp("CRISPRessoPooled_modification_summary")
             debug('Plotting modification summary', {'percent_complete': 95})
-            CRISPRessoPlot.plot_unmod_mod_pcts(plot_root, df_summary_quantification, save_png, args.min_reads_to_use_region)
+            CRISPRessoPlot.plot_unmod_mod_pcts(df_summary_quantification=df_summary_quantification, fig_filename_root=plot_root, save_png=save_png, cutoff=args.min_reads_to_use_region)
             plot_name = os.path.basename(plot_root)
             crispresso2_info['results']['general_plots']['summary_plot_root'] = plot_name
             crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)

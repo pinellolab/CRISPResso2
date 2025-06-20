@@ -8,12 +8,14 @@ import argparse
 import datetime
 import errno
 import gzip
-import json
-import textwrap
+import importlib.metadata
 import importlib.util
 import importlib.metadata
 from pathlib import Path
 
+import io
+import json
+import logging
 import numpy as np
 import os
 import pandas as pd
@@ -23,9 +25,11 @@ import shutil
 import shlex
 import signal
 import subprocess as sb
+import textwrap
 import unicodedata
-import logging
+
 from inspect import getmodule, stack
+from pathlib import Path
 
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoCOREResources
@@ -137,13 +141,13 @@ class LogStreamHandler(logging.StreamHandler):
 def set_console_log_level(logger, level, debug=False):
     for handler in logger.handlers:
         if isinstance(handler, LogStreamHandler):
-            if level == 4 or debug:
+            if level >= 4 or debug:
                 handler.setLevel(logging.DEBUG)
             elif level == 3:
                 handler.setLevel(logging.INFO)
             elif level == 2:
                 handler.setLevel(logging.WARNING)
-            elif level == 1:
+            elif level <= 1:
                 handler.setLevel(logging.ERROR)
             break
 
@@ -743,7 +747,7 @@ class CRISPRessoJSONDecoder(json.JSONDecoder):
             if obj['_type'] == 'np.ndarray':
                 return np.array(obj['value'])
             if obj['_type'] == 'pd.DataFrame':
-                return pd.read_json(obj['value'], orient='split')
+                return pd.read_json(io.StringIO(obj['value'].decode('utf-8')), orient='split')
             if obj['_type'] == 'datetime.datetime':
                 return datetime.datetime.fromisoformat(obj['value'])
             if obj['_type'] == 'datetime.timedelta':
@@ -1351,7 +1355,7 @@ def get_dataframe_around_cut_asymmetrical(df_alleles, cut_point,plot_left,plot_r
         return df_alleles
     ref1 = df_alleles['Reference_Sequence'].iloc[0]
     ref1 = ref1.replace('-','')
-    
+
     df_alleles_around_cut=pd.DataFrame(list(df_alleles.apply(lambda row: get_row_around_cut_asymmetrical(row,cut_point,plot_left,plot_right),axis=1).values),
                     columns=['Aligned_Sequence','Reference_Sequence','Unedited','n_deleted','n_inserted','n_mutated','#Reads','%Reads'])
 
@@ -1994,6 +1998,9 @@ def check_custom_config(args):
         }
     }
 
+    if args is None or not hasattr(args, 'config_file'):
+        return config
+
     logger = logging.getLogger(getmodule(stack()[1][0]).__name__)
     if not is_C2Pro_installed():
         return config
@@ -2029,7 +2036,7 @@ def check_custom_config(args):
             if args.config_file:
                 logger.warn("Cannot read config file '%s', defaulting config parameters." % args.config_file)
             else:
-                logger.warn("No config file provided, defaulting config parameters.")
+                logger.debug("No config file provided, defaulting config parameters.")
     return config
 
 
