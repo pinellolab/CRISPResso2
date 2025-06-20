@@ -173,6 +173,14 @@
             "default": "",
             "tools": ["Core", "Batch", "Pooled", "WGS", "Compare"]
         },
+        "display_name": {
+            "name": "Display Name",
+            "keys": ["--display_name"],
+            "help": "Display name shown on the report (if unset, --name is used)",
+            "type": "str",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled", "WGS", "Compare"]
+        },
         "suppress_amplicon_name_truncation": {
             "keys": ["--suppress_amplicon_name_truncation"],
             "help": "If set, amplicon names will not be truncated when creating output filename prefixes. If not set, amplicon names longer than 21 characters will be truncated when creating filename prefixes.",
@@ -800,7 +808,7 @@
         },
         "demultiplex_only_at_amplicons": {
             "keys": ["--demultiplex_only_at_amplicons"],
-            "help": "DEPRECATED in v2.3.2, see `demultiplex_at_amplicons_and_genome`",
+            "help": "DEPRECATED in v2.3.2, see `demultiplex_genome_wide`",
             "action": "store_true",
             "tools": ["Pooled"]
         },

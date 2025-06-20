@@ -362,13 +362,13 @@ def get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaf
                 payload['irregular_ends'] = True
 
             #Insertions out of quantification window
-            payload['insertions_outside_window'] = (len(payload['all_insertion_positions'])/2) - (len(payload['insertion_positions'])/2)
+            payload['insertions_outside_window'] = int((len(payload['all_insertion_positions'])/2) - (len(payload['insertion_positions'])/2))
             #Deletions out of quantification window
             payload['deletions_outside_window'] = len(payload['all_deletion_coordinates']) - len(payload['deletion_coordinates'])
             #Substitutions out of quantification window
             payload['substitutions_outside_window'] = len(payload['all_substitution_positions']) - len(payload['substitution_positions'])
             #Sums
-            payload['total_mods'] = (len(payload['all_insertion_positions'])/2) + len(payload['all_deletion_positions']) + len(payload['all_substitution_positions'])
+            payload['total_mods'] = int((len(payload['all_insertion_positions'])/2) + len(payload['all_deletion_positions']) + len(payload['all_substitution_positions']))
             payload['mods_in_window'] = payload['substitution_n'] + payload['deletion_n'] + payload['insertion_n']
             payload['mods_outside_window'] = payload['total_mods'] - payload['mods_in_window']
 
@@ -3289,6 +3289,8 @@ def main():
                         refs[ref_name]['aln_end'] = seq_stop
                         refs[ref_name]['aln_strand'] = strand
 
+        info('Counting reads in input', {'percent_complete': 2})
+
         N_READS_INPUT = 0
         if args.fastq_r1:
             N_READS_INPUT = CRISPRessoShared.get_n_reads_fastq(args.fastq_r1)
@@ -3472,6 +3474,7 @@ def main():
 
             processed_output_filename = output_filename_r1
 
+        info('Counting reads after preprocessing...')
         #count reads
         N_READS_AFTER_PREPROCESSING = 0
         if args.bam_input or args.crispresso_merge:
@@ -4059,7 +4062,7 @@ def main():
         class_counts_order = [class_count_name for thisRefInd, thisIsMod, class_count_name in decorated_class_counts]
 
         if N_TOTAL == 0:
-            raise CRISPRessoShared.NoReadsAlignedException('Error: No alignments were found')
+            raise CRISPRessoShared.NoReadsAlignedException('No alignments were found')
 
         #create alleles table
         info('Calculating allele frequencies...')
@@ -4867,16 +4870,16 @@ def main():
                 if not args.plot_histogram_outliers:
                     sum_cutoff = .99 * hdensity.sum()
                     sum_so_far = 0
-                    for idx, val in enumerate(hlengths):
-                        sum_so_far += hdensity[idx]
+                    for indel_len, indel_count in zip(hlengths, hdensity):
+                        sum_so_far += indel_count
                         if sum_so_far > sum_cutoff:
-                            xmax = val
+                            xmax = indel_len
                             break
                     sum_so_far = 0
-                    for idx, val in enumerate(hlengths[::-1]):
-                        sum_so_far += hdensity[idx]
+                    for indel_len, indel_count in zip(hlengths[::-1], hdensity[::-1]):
+                        sum_so_far += indel_count
                         if sum_so_far > sum_cutoff:
-                            xmin = val
+                            xmin = indel_len
                             break
                 xmin = min(xmin, -15)
                 xmax = max(xmax, 15)
@@ -6019,8 +6022,8 @@ def main():
         if args.zip_output:
             CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
 
-        info('Analysis Complete!', {'percent_complete': 100})
         info(CRISPRessoShared.get_crispresso_footer())
+        info('Analysis Complete!', {'percent_complete': 100})
 
         sys.exit(0)
 

@@ -238,7 +238,7 @@ def normalize_name(name, fastq_r1, fastq_r2, aligned_pooled_bam):
         else:
             return '%s' % get_name_from_fastq(fastq_r1)
     else:
-        clean_name = CRISPRessoShared.slugify(name)
+        clean_name = CRISPRessoShared.clean_filename(name)
         if name != clean_name:
             warn(
                 'The specified name {0} contained invalid characters and was changed to: {1}'.format(
@@ -291,7 +291,9 @@ def main():
         CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
 
         crispresso_options = CRISPRessoShared.get_core_crispresso_options()
-        options_to_ignore = {'fastq_r1', 'fastq_r2', 'amplicon_seq', 'amplicon_name', 'output_folder', 'name', 'zip_output', 'split_interleaved_input'}
+        options_to_ignore = {'fastq_r1', 'fastq_r2', 'amplicon_seq', 'amplicon_name', 'output_folder', 'name', 
+                             'display_name', 'zip_output', 'split_interleaved_input', 'samtools_exclude_flags',
+                             'bowtie2_index'} # these options will be set for each sub-run or should be not be passed to sub-runs because they are pooled-specific
         crispresso_options_for_pooled = list(crispresso_options-options_to_ignore)
 
         files_to_remove = []
@@ -395,9 +397,6 @@ def main():
         else:
             n_processes_for_pooled = int(args.n_processes)
 
-        # here, we set args.n_processes as 1 because this value is propagated to sub-CRISPResso runs (not for usage in CRISPRessoWGS)
-        args.n_processes = 1
-
         ####TRIMMING AND MERGING
 
         crispresso2_info_file = os.path.join(
@@ -438,7 +437,7 @@ def main():
                                 for key in previous_run_data['running_info']['finished_steps'].keys():
                                     crispresso2_info['running_info']['finished_steps'][key] = previous_run_data['running_info']['finished_steps'][key]
                                     if args.debug:
-                                        info('finished: ' + key)
+                                        info('Skipping cached step: ' + key)
                 else:
                     info('The no_rerun flag is set, but this analysis will be rerun because the existing run was performed using an old version of CRISPResso (' + str(previous_run_data['running_info']['version']) + ').')
 
@@ -529,7 +528,6 @@ def main():
             processed_output_filename = _jp('out.extendedFrags.fastq.gz')
             not_combined_1_filename = _jp('out.notCombined_1.fastq.gz')
             not_combined_2_filename = _jp('out.notCombined_2.fastq.gz')
-
 
             if can_finish_incomplete_run and 'merge_paired_fastq' in crispresso2_info['running_info']['finished_steps']:
                 info('Using previously-merged paired sequences...')
@@ -683,16 +681,31 @@ def main():
                 for i in range(len(header_els)):
                     headers.append(default_input_amplicon_headers[i])
 
-            if args.debug:
-                info(f'Header variable names in order: {headers}')
+            debug(f'Header variable names in order: {headers}')
 
             # load and validate template file
-            df_template = pd.read_csv(args.amplicons_file, names=headers, comment='#', sep='\t', dtype={'amplicon_name':str})
+            amplicon_rows = []
+            with open(args.amplicons_file, 'r') as amplicons_fin:
+                if has_header:
+                    _ = amplicons_fin.readline()  # skip header line
+                    info('Detected header in amplicon file.')
+                for line in amplicons_fin:
+                    if line[0] == "#": # pandas' comment option will strip after comment character in middle of lines. 
+                        continue
+                    line = line.strip()
+                    if not line:
+                        continue
+                    amplicon_rows.append(line.split('\t'))
+            try:
+                df_template = pd.DataFrame(amplicon_rows, columns=headers)
+            except Exception as e:
+                debug('Error in parsing amplicon file using old method: %s\nTrying native pandas read_csv...' % e)
+                df_template = pd.read_csv(args.amplicons_file, names=headers, comment='#', sep='\t', dtype={'amplicon_name':str})
+                if has_header:
+                    df_template.drop(0, axis=0, inplace=True)
+                    info('Detected header in amplicon file.')
 
-            if has_header:
-                df_template.drop(0, axis=0, inplace=True)
-                info('Detected header in amplicon file.')
-
+            df_template['amplicon_name'] = df_template['amplicon_name'].astype(str)
 
             #remove empty amplicons/lines
             df_template.dropna(subset=['amplicon_seq'], inplace=True)
@@ -720,9 +733,21 @@ def main():
             if not len(df_template.amplicon_name.unique())==df_template.shape[0]:
                 duplicated_entries = df_template.amplicon_name[df_template.amplicon_name.duplicated()]
                 raise CRISPRessoShared.BadParameterException('The amplicon names must be distinct! (Duplicated names: ' + str(duplicated_entries.values) + ')')
-
+            
             df_template=df_template.set_index('amplicon_name')
-            df_template.index=df_template.index.to_series().str.replace(' ', '_')
+
+            #create clean, distinct run names - this will be used to create file names
+            seen_runnames = {}
+            run_names = []
+            for idx, row in df_template.iterrows():
+                this_run_name = CRISPRessoShared.clean_filename(idx)
+                this_index = 0
+                while this_run_name in seen_runnames:
+                    this_run_name = CRISPRessoShared.clean_filename(idx) + '_' + str(this_index)
+                    this_index += 1
+                seen_runnames[this_run_name] = 1
+                run_names.append(this_run_name)
+            df_template['run_name'] = run_names
 
             for idx, row in df_template.iterrows():
                 wrong_nt=CRISPRessoShared.find_wrong_nt(row.amplicon_seq)
@@ -843,13 +868,12 @@ def main():
                         line_els = line.rstrip().split("\t")
                         alternate_alleles[line_els[region_name_ind]] = (line_els[allele_seq_ind], line_els[allele_name_ind])
 
-            info('Demultiplex reads and run CRISPResso on each amplicon...')
+            info('Demultiplexing reads and running CRISPResso on each amplicon...')
             n_reads_aligned_amplicons=[]
             crispresso_cmds = []
             for idx, row in df_template.iterrows():
                 this_n_reads = CRISPRessoShared.get_n_reads_fastq(row['Demultiplexed_fastq.gz_filename'])
                 n_reads_aligned_amplicons.append(this_n_reads)
-                info('\n Processing:%s with %d reads'%(idx,this_n_reads))
                 this_amp_seq = row['amplicon_seq']
                 this_amp_name_string = ""
                 if idx in alternate_alleles:
@@ -857,52 +881,73 @@ def main():
                     this_amp_seq = new_refs
                     this_amp_name_string = "-an " + new_names
 
-                crispresso_cmd= args.crispresso_command + ' -r1 %s -a %s %s -o %s --name %s' % (row['Demultiplexed_fastq.gz_filename'], this_amp_seq, this_amp_name_string, OUTPUT_DIRECTORY, idx)
+            df_template['n_reads']=n_reads_aligned_amplicons
+            df_template['n_reads'] = df_template['n_reads'].astype(int)
+            df_template['n_reads_aligned_%']=df_template['n_reads']/float(N_READS_ALIGNED)*100
 
-                if n_reads_aligned_amplicons[-1] > args.min_reads_to_use_region:
+            df_template['crispresso_command'] = ''
+            df_template['crispresso_output_folder'] = ''
+
+            #get count of rows with > args.min_reads_to_use_region
+            count_good_runs = df_template[df_template['n_reads'] >= args.min_reads_to_use_region].shape[0]
+            args.n_processes = 1
+            if count_good_runs > 0 and int(n_processes_for_pooled/count_good_runs) > 1:
+                args.n_processes = int(n_processes_for_pooled/count_good_runs)
+            debug('Running sub-CRISPResso runs with %d processes each' % args.n_processes)
+
+            for idx, row in df_template.iterrows():
+                info('Processing: %s with %d reads'%(idx,row.n_reads))
+                if row['n_reads'] > args.min_reads_to_use_region:
+                    info('The amplicon [%s] has enough reads (%d) mapped to it! Running CRISPResso!\n' % (idx, row.n_reads))
+
                     this_run_args_from_amplicons_file = {}
                     for column_name in default_input_amplicon_headers:
-                        if column_name in df_template.columns and row[column_name] and not pd.isnull(row[column_name]):
+                        if (column_name in df_template.columns) and (row[column_name]) and \
+                            (not pd.isnull(row[column_name]) and (not str(row[column_name]) == 'NA')):
                             this_run_args_from_amplicons_file[column_name] = row[column_name]
 
-                    #first, set the general CRISPResso options for this sub-run (e.g. plotting options, etc)
+                    this_run_name = row['run_name']
+                    crispresso_cmd = 'CRISPResso -r1 %s -a %s %s -o %s --name "%s" --display_name "%s"' % (row['Demultiplexed_fastq.gz_filename'], this_amp_seq, this_amp_name_string, OUTPUT_DIRECTORY, this_run_name, idx)
+                    #first, set the general CRISPResso options from args for this sub-run (e.g. plotting options, etc)
                     #note that the crispresso_options_for_pooled doesn't include e.g. amplicon_seq so when someone calls CRISPRessoPooled with -a that won't get passed on here
-                    crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, args)
+                    crispresso_cmd = CRISPRessoShared.overwrite_crispresso_options(cmd=crispresso_cmd, tool='Core', option_names_to_overwrite=crispresso_options_for_pooled, option_values=args)
                     #next set the per-amplicon options we read from the Amplicons file (and are stored in this_run_args_from_amplicons_file)
-                    crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, default_input_amplicon_headers, this_run_args_from_amplicons_file)
+                    crispresso_cmd = CRISPRessoShared.overwrite_crispresso_options(cmd=crispresso_cmd, tool='Core', option_names_to_overwrite=default_input_amplicon_headers, option_values=this_run_args_from_amplicons_file)
 
+                    crispresso_cmd = args.crispresso_command + " " + " ".join(crispresso_cmd.split()[1:]) # remove the CRISPResso command from the beginning and replace with args.crispresso_command (in case the args.crispresso_command contains spaces)
+
+                    debug('CRISPResso command for %s: %s' % (idx, crispresso_cmd))
                     crispresso_cmds.append(crispresso_cmd)
+                    df_template.at[idx, 'crispresso_command'] = crispresso_cmd
+                    df_template.at[idx, 'crispresso_output_folder'] = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso_on_%s' % this_run_name)
 
                 else:
-                    warn('Skipping amplicon [%s] because no reads align to it\n'% idx)
+                    warn('Skipping amplicon [%s] because too few reads (%d) align to it\n'%(idx, row.n_reads))
+
             CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_pooled, 'amplicon', args.skip_failed, start_end_percent=(16, 80))
+
             # Initialize array to track failed runs
             failed_batch_arr = []
             failed_batch_arr_desc = []
-            for cmd in crispresso_cmds:
-
+            for idx, row in df_template.iterrows():
+                cmd = row['crispresso_command']
+                if cmd == '':
+                    continue
                 # Extract the folder name from the CRISPResso command
-                folder_name_regex = re.search(r'-o\s+\S+\s+--name\s+(\S+)', cmd)
-                if folder_name_regex:
-                    folder_name = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso_on_%s' % folder_name_regex.group(1))
-                    failed_run_bool, failed_status_string = CRISPRessoShared.check_if_failed_run(folder_name, info)
-                    if failed_run_bool:
-                        failed_batch_arr.append(folder_name_regex.group(1))
-                        failed_batch_arr_desc.append(failed_status_string)
+                folder_name = row['crispresso_output_folder']
+                failed_run_bool, failed_status_string = CRISPRessoShared.check_if_failed_run(folder_name, info)
+                if failed_run_bool:
+                    failed_batch_arr.append(idx)
+                    failed_batch_arr_desc.append(failed_status_string)
 
             # Store the failed runs in crispresso2_info for later use
             crispresso2_info['results']['failed_batch_arr'] = failed_batch_arr
             crispresso2_info['results']['failed_batch_arr_desc'] = failed_batch_arr_desc
 
-            df_template['n_reads']=n_reads_aligned_amplicons
-            df_template['n_reads_aligned_%']=df_template['n_reads']/float(N_READS_ALIGNED)*100
             df_template.fillna('NA').to_csv(_jp('REPORT_READS_ALIGNED_TO_AMPLICONS.txt'), sep='\t')
-
-
 
         if RUNNING_MODE=='AMPLICONS_AND_GENOME':
             info('Mapping amplicons to the reference genome...')
-
             filename_amplicon_aligned_locations = _jp('CRISPResso_amplicon_aligned_locations.txt')
             filename_aligned_amplicons_sam = _jp('CRISPResso_amplicons_aligned.sam')
             filename_aligned_amplicons_sam_log = _jp('CRISPResso_amplicons_aligned.sam.log')
@@ -916,7 +961,7 @@ def main():
                 #write amplicons as fastq for alignment
                 with open(filename_amplicon_seqs_fasta, 'w') as fastas:
                     for idx, row in df_template.iterrows():
-                        fastas.write('>%s\n%s\n'%(idx, row.amplicon_seq))
+                        fastas.write('>%s\n%s\n'%(row.run_name, row.amplicon_seq))
 
                 aligner_command= 'bowtie2 -x %s -p %s %s -f -U %s --no-hd --no-sq 2> %s > %s ' %(args.bowtie2_index, n_processes_for_pooled, bowtie2_options_string, \
                     filename_amplicon_seqs_fasta, filename_aligned_amplicons_sam_log, filename_aligned_amplicons_sam)
@@ -928,16 +973,21 @@ def main():
                 with open (filename_aligned_amplicons_sam) as aln:
                     for line in aln.readlines():
                         line_els = line.split("\t")
+                        this_run_name = line_els[0] # run name has no spaces
+                        if this_run_name not in df_template.run_name.values:
+                            info('The amplicon [%s] is not present in the amplicon file provided!' % this_run_name)
+                            continue
+                        this_amplicon_name = df_template.loc[df_template.run_name == this_run_name].index[0] # amplicon name may have spaces and other bad characters
                         if line_els[2] == "*":
-                            info('The amplicon [%s] is not mappable to the reference genome provided!' % line_els[0])
-                            additional_columns.append([line_els[0], 'NOT_ALIGNED', 0, -1, '+', ''])
+                            info('The amplicon [%s] is not mappable to the reference genome provided!' % this_amplicon_name)
+                            additional_columns.append([this_amplicon_name, 'NOT_ALIGNED', 0, -1, '+', ''])
                         else:
                             aln_len = CRISPRessoShared.get_ref_length_from_cigar(line_els[5])
                             seq_start = int(line_els[3])
                             seq_stop = seq_start + aln_len
                             strand = "-" if (int(line_els[1]) & 0x10) else "+"
-                            additional_columns.append([line_els[0], line_els[2], seq_start, seq_stop, strand, line_els[9]])
-                            info('The amplicon [%s] was mapped to: %s:%d-%d ' % (line_els[0], line_els[2], seq_start, seq_stop))
+                            additional_columns.append([this_amplicon_name, line_els[2], seq_start, seq_stop, strand, line_els[9]])
+                            info('The amplicon [%s] was mapped to: %s:%d-%d ' % (this_amplicon_name, line_els[2], seq_start, seq_stop))
                 additional_columns_df = pd.DataFrame(additional_columns, columns=['amplicon_name', 'chr_id', 'bpstart', 'bpend', 'strand', 'reference_seq']).set_index('amplicon_name')
                 additional_columns_df.to_csv(filename_amplicon_aligned_locations, sep="\t", index_label='amplicon_name')
 
@@ -1038,7 +1088,7 @@ def main():
             if can_finish_incomplete_run and 'genome_demultiplexing' in crispresso2_info['running_info']['finished_steps'] and os.path.isfile(REPORT_ALL_DEPTH):
                 info('Using previously-computed demultiplexing of genomic reads')
                 df_all_demux = pd.read_csv(REPORT_ALL_DEPTH, sep='\t')
-                df_all_demux['loc'] = df_all_demux['chr_id'].apply('str') + ' ' + df_all_demux['start'].apply(str) + ' '+df_all_demux['end'].apply(str)
+                df_all_demux['loc'] = df_all_demux['chr_id'].apply(str) + ' ' + df_all_demux['start'].apply(str) + ' '+df_all_demux['end'].apply(str)
                 df_all_demux.set_index(['loc'], inplace=True)
             else:
                 #REDISCOVER LOCATIONS and DEMULTIPLEX READS
@@ -1239,6 +1289,13 @@ def main():
                 info('Using previously-computed crispresso runs')
                 (n_reads_aligned_genome, fastq_region_filenames, files_to_match) = crispresso2_info['running_info']['finished_steps']['crispresso_amplicons_and_genome'];
             else:
+                #set number of processes for CRISPResso runs based on the number of regions with sufficient reads
+                count_good_runs = df_all_demux[df_all_demux['number of reads'] >= args.min_reads_to_use_region].shape[0]
+                args.n_processes = 1
+                if count_good_runs > 0 and int(n_processes_for_pooled/count_good_runs) > 1:
+                    args.n_processes = int(n_processes_for_pooled/count_good_runs)
+                debug('Running sub-CRISPResso runs with %d processes each' % args.n_processes)
+
                 crispresso_cmds = []
                 for idx, row in df_template.iterrows():
 
@@ -1261,20 +1318,26 @@ def main():
                         if N_READS >= args.min_reads_to_use_region and fastq_filename_region != "":
                             info('\nThe amplicon [%s] has enough reads (%d) mapped to it! Running CRISPResso!\n' % (idx, N_READS))
 
-                            crispresso_cmd = args.crispresso_command + ' -r1 %s -o %s --name %s' % (fastq_filename_region, OUTPUT_DIRECTORY, idx)
-
                             this_run_args_from_amplicons_file = {}
                             for column_name in default_input_amplicon_headers:
-                                if column_name in df_template.columns and row[column_name] and not pd.isnull(row[column_name]):
+                                if (column_name in df_template.columns) and (row[column_name]) and \
+                                    (not pd.isnull(row[column_name]) and (not str(row[column_name]) == 'NA')):
                                     this_run_args_from_amplicons_file[column_name] = row[column_name]
 
+                            this_run_name = row['run_name']
+                            crispresso_cmd = 'CRISPResso -r1 %s -o %s --name "%s" --display_name "%s"' % (fastq_filename_region, OUTPUT_DIRECTORY, this_run_name, idx)
                             #first, set the general CRISPResso options for this sub-run (e.g. plotting options, etc)
                             #note that the crispresso_options_for_pooled doesn't include e.g. amplicon_seq so when someone calls CRISPRessoPooled with -a that won't get passed on here
-                            crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, args)
+                            crispresso_cmd = CRISPRessoShared.overwrite_crispresso_options(cmd=crispresso_cmd, option_names_to_overwrite=crispresso_options_for_pooled, option_values=args, tool='Core')
                             #next set the per-amplicon options we read from the Amplicons file (and are stored in this_run_args_from_amplicons_file)
-                            crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, default_input_amplicon_headers, this_run_args_from_amplicons_file)
-                            info('Running CRISPResso:%s' % crispresso_cmd)
+                            crispresso_cmd = CRISPRessoShared.overwrite_crispresso_options(cmd=crispresso_cmd, option_names_to_overwrite=default_input_amplicon_headers, option_values=this_run_args_from_amplicons_file, tool='Core')
+
+                            crispresso_cmd = args.crispresso_command + ' ' + ' '.join(crispresso_cmd.split()[1:]) # set the crispresso_command in case it had spaces and would be hard to parse
+
+                            debug('CRISPResso command for %s: %s' % (idx, crispresso_cmd))
                             crispresso_cmds.append(crispresso_cmd)
+                            df_template.at[idx, 'crispresso_command'] = crispresso_cmd
+                            df_template.at[idx, 'crispresso_output_folder'] = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso_on_%s' % this_run_name)
 
                         else:
                             warn('The amplicon [%s] has too few reads (%d) mapped to it! Skipping the execution of CRISPResso!' % (idx, N_READS))
@@ -1367,6 +1430,23 @@ def main():
 
                 df_regions.sort_values(by='n_reads', ascending=False, inplace=True)
 
+                # Create unique run names for each region
+                seen_runnames = {}
+                run_names = []
+                run_display_names = [] # may be different than run_names if e.g. the chromosome name contains an emoji.... (don't doubt my premonitions)
+                for idx, row in df_regions.iterrows():
+                    this_unclean_name = 'REGION_%s_%d_%d' % (row.chr_id, row.bpstart, row.bpend)
+                    this_run_name = CRISPRessoShared.clean_filename(this_unclean_name)
+                    this_index = 0
+                    while this_run_name in seen_runnames:
+                        this_run_name = CRISPRessoShared.clean_filename(this_unclean_name) + '_' + str(this_index)
+                        this_index += 1
+                    seen_runnames[this_run_name] = 1
+                    run_names.append(this_run_name)
+                    run_display_names.append(this_unclean_name)
+                df_regions['run_name'] = run_names
+                df_regions['run_display_name'] = run_display_names
+
                 df_regions.fillna('NA').to_csv(filename_reads_aligned_to_genome_only, sep='\t', index=None)
 
                 crispresso2_info['running_info']['finished_steps']['demultiplexing_genome_only_regions'] = True
@@ -1376,20 +1456,35 @@ def main():
 
             # run CRISPResso (last step of genome-only mode)
             if can_finish_incomplete_run and 'crispresso_genome_only' in crispresso2_info['running_info']['finished_steps']:
-                info('Using previously-computed crispresso runs')
+                info('Using previously-computed CRISPResso runs')
             else:
-                info('Running CRISPResso on the regions discovered...')
+                # set number of processes for CRISPResso runs based on the number of regions with sufficient reads
+                count_good_runs = df_regions[df_regions['n_reads'] >= args.min_reads_to_use_region].shape[0]
+                args.n_processes = 1
+                if count_good_runs > 0 and int(n_processes_for_pooled/count_good_runs) > 1:
+                    args.n_processes = int(n_processes_for_pooled/count_good_runs)
+                debug('Running sub-CRISPResso runs with %d processes each' % args.n_processes)
+
+                info('Running CRISPResso on the discovered regions...')
                 crispresso_cmds = []
                 for idx, row in df_regions.iterrows():
                     if row.n_reads > args.min_reads_to_use_region:
                         info('\nRunning CRISPResso on: %s-%d-%d...'%(row.chr_id, row.bpstart, row.bpend))
+
+                        this_run_name = row.run_name
+                        this_run_display_name = row.run_display_name
+
                         if pd.isna(row.sequence):
                             raise CRISPRessoShared.BadParameterException('Cannot extract sequence ' + str(row.sequence) + ' from input reference ' + uncompressed_reference)
-                        crispresso_cmd = args.crispresso_command + ' -r1 %s -a %s -o %s' %(row.fastq_file, row.sequence, OUTPUT_DIRECTORY)
-                        crispresso_cmd = CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_pooled, args)
+
+                        crispresso_cmd = 'CRISPResso -r1 %s -a %s -o %s -n "%s" --display_name "%s"' %(row.fastq_file, row.sequence, OUTPUT_DIRECTORY, this_run_name, this_run_display_name)
+                        crispresso_cmd = CRISPRessoShared.overwrite_crispresso_options(cmd=crispresso_cmd, option_names_to_overwrite=crispresso_options_for_pooled, option_values=args, tool='Core')
+                        crispresso_cmd = args.crispresso_command + " " + " ".join(crispresso_cmd.split()[1:]) # remove the CRISPResso command from the beginning and replace with args.crispresso_command (in case the args.crispresso_command contains spaces)
+                        debug('CRISPResso command for %s: %s' % (this_run_display_name, crispresso_cmd))
+
                         crispresso_cmds.append(crispresso_cmd)
                     else:
-                        info('Skipping region: %s-%d-%d , not enough reads (%d)' %(row.chr_id, row.bpstart, row.bpend, row.n_reads))
+                        info('Skipping region: %s-%d-%d, not enough reads (%d)' %(row.chr_id, row.bpstart, row.bpend, row.n_reads))
                 CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_pooled, 'region', args.skip_failed, start_end_percent=(15, 85))
 
                 crispresso2_info['running_info']['finished_steps']['crispresso_genome_only'] = True
@@ -1409,6 +1504,7 @@ def main():
             df_final_data = df_regions
 
         all_region_names = []
+        all_region_display_names = {}
         all_region_read_counts = {}
         good_region_names = []
         good_region_folders = {}
@@ -1418,24 +1514,28 @@ def main():
         empty_line_els = [np.nan]*(header_el_count-1)
         n_reads_index = header_els.index('Reads_total') - 1
         for idx, row in df_final_data.iterrows():
-                run_name = idx
+                amplicon_name = idx
                 if RUNNING_MODE=='ONLY_AMPLICONS' or RUNNING_MODE=='AMPLICONS_AND_GENOME':
-                    run_name=idx
+                    amplicon_name=idx
                 else:
-                    run_name='REGION_%s_%d_%d' %(row.chr_id, row.bpstart, row.bpend )
-                folder_name = 'CRISPResso_on_%s'%run_name
+                    amplicon_name='REGION_%s_%d_%d' %(row.chr_id, row.bpstart, row.bpend )
 
-                all_region_names.append(run_name)
-                all_region_read_counts[run_name] = row.n_reads
+                folder_name = 'CRISPResso_on_%s'%row.run_name #row.run_name may be different than idx because it has been slugified
+
+                all_region_names.append(row.run_name)
+                all_region_display_names[row.run_name] = amplicon_name
+                all_region_read_counts[row.run_name] = row.n_reads
 
                 run_data = None
                 try:
                     run_data = CRISPRessoShared.load_crispresso_info(_jp(folder_name))
                 except:
                     warn('Skipping the folder %s: not enough reads, incomplete, or empty folder.'% folder_name)
+                    debug('Folder cannot be read at ' + _jp(folder_name) + ' with error: %s' % traceback.format_exc())
+
                     this_els = empty_line_els[:]
                     this_els[n_reads_index] = row.n_reads
-                    to_add = [run_name]
+                    to_add = [amplicon_name]
                     to_add.extend(this_els)
                     quantification_summary.append(to_add)
                 else:
@@ -1480,12 +1580,12 @@ def main():
                         mod_pct = 100*n_mod/float(n_aligned)
 
 
-                    vals = [run_name]
+                    vals = [amplicon_name]
                     vals.extend([round(unmod_pct, 8), round(mod_pct, 8), n_tot, n_aligned, n_unmod, n_mod, n_discarded, n_insertion, n_deletion, n_substitution, n_only_insertion, n_only_deletion, n_only_substitution, n_insertion_and_deletion, n_insertion_and_substitution, n_deletion_and_substitution, n_insertion_and_deletion_and_substitution])
                     quantification_summary.append(vals)
 
-                    good_region_names.append(run_name)
-                    good_region_folders[run_name] = folder_name
+                    good_region_names.append(row.run_name)
+                    good_region_folders[row.run_name] = folder_name
 
 
         samples_quantification_summary_filename = _jp('SAMPLES_QUANTIFICATION_SUMMARY.txt')
@@ -1501,6 +1601,7 @@ def main():
         crispresso2_info['results']['alignment_stats']['samples_quantification_summary_filename'] = os.path.basename(samples_quantification_summary_filename)
         crispresso2_info['results']['final_data'] = df_final_data
         crispresso2_info['results']['all_region_names'] = all_region_names
+        crispresso2_info['results']['all_region_display_names'] = all_region_display_names
         crispresso2_info['results']['all_region_read_counts'] = all_region_read_counts
         crispresso2_info['results']['good_region_names'] = good_region_names
         crispresso2_info['results']['good_region_folders'] = good_region_folders
