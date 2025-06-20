@@ -94,6 +94,12 @@ def get_matching_allele_files(run_info_1, run_info_2):
 
 def main():
     try:
+        parser = CRISPRessoShared.getCRISPRessoArgParser("Compare", parser_title = 'CRISPRessoCompare Parameters')
+
+        args = parser.parse_args()
+
+        CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
+        
         description = ['~~~CRISPRessoCompare~~~', '-Comparison of two CRISPResso analyses-']
         compare_header = r'''
  ___________________________
@@ -105,21 +111,13 @@ def main():
         compare_header = CRISPRessoShared.get_crispresso_header(description, compare_header)
         info(compare_header)
 
-        parser = CRISPRessoShared.getCRISPRessoArgParser("Compare", parser_title = 'CRISPRessoCompare Parameters')
-
-        args = parser.parse_args()
-
         if args.use_matplotlib or not CRISPRessoShared.is_C2Pro_installed():
             from CRISPResso2 import CRISPRessoPlot
         else:
             from CRISPRessoPro import plot as CRISPRessoPlot
 
-        CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
-
-        debug_flag = args.debug
-
         if args.zip_output and not args.place_report_in_output_folder:
-            logger.warn('Invalid arguement combination: If zip_output is True then place_report_in_output_folder must also be True. Setting place_report_in_output_folder to True.')
+            warn('Invalid argument combination: If zip_output is True then place_report_in_output_folder must also be True. Setting place_report_in_output_folder to True.')
             args.place_report_in_output_folder = True
         #check that the CRISPResso output is present and fill amplicon_info
         quantification_file_1, amplicon_names_1, amplicon_info_1=CRISPRessoShared.check_output_folder(args.crispresso_output_folder_1)

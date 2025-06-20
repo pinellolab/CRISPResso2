@@ -2214,9 +2214,6 @@ def main():
 
         start_time =  datetime.now()
         start_time_string =  start_time.strftime('%Y-%m-%d %H:%M:%S')
-        description = ['~~~CRISPResso 2~~~', '-Analysis of genome editing outcomes from deep sequencing data-']
-        header = CRISPRessoShared.get_crispresso_header(description=description, header_str=None)
-        info(header)
 
         # if no args are given, print a simplified help message
         if len(sys.argv) == 1:
@@ -2236,6 +2233,10 @@ def main():
         args = arg_parser.parse_args()
 
         CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
+
+        description = ['~~~CRISPResso 2~~~', '-Analysis of genome editing outcomes from deep sequencing data-']
+        header = CRISPRessoShared.get_crispresso_header(description=description, header_str=None)
+        info(header)
 
         OUTPUT_DIRECTORY = 'CRISPResso_on_{0}'.format(normalize_name(args.name, args.fastq_r1, args.fastq_r2, args.bam_input))
 
@@ -2347,7 +2348,7 @@ def main():
                 if previous_run_data['running_info']['version'] == CRISPRessoShared.__version__:
                     args_are_same = True
                     for arg in vars(args):
-                        if arg == "no_rerun":
+                        if arg == "no_rerun" or arg == "debug" or arg == "n_processes" or arg == "verbosity":
                             continue
                         if arg not in vars(previous_run_data['running_info']['args']):
                             info('Comparing current run to previous run: old run had argument ' + str(arg) + ' \nRerunning.')
@@ -4624,7 +4625,7 @@ def main():
                 'N_READS_INPUT': N_READS_INPUT,
                 'N_READS_AFTER_PREPROCESSING': N_READS_AFTER_PREPROCESSING,
                 'N_TOTAL': N_TOTAL,
-                'plot_root': plot_1a_root,
+                'fig_filename_root': plot_1a_root,
                 'save_png': save_png
             }
             debug('Plotting read bar plot', {'percent_complete': 42})

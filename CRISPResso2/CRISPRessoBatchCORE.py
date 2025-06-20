@@ -81,16 +81,6 @@ def main():
         start_time =  datetime.now()
         start_time_string =  start_time.strftime('%Y-%m-%d %H:%M:%S')
 
-        description = ['~~~CRISPRessoBatch~~~', '-Analysis of CRISPR/Cas9 outcomes from batch deep sequencing data-']
-        batch_string = r'''
- _________________
-| __    ___ __    |
-||__) /\ | /  |__||
-||__)/--\| \__|  ||
-|_________________|
-        '''
-        info(CRISPRessoShared.get_crispresso_header(description, batch_string))
-
         # if no args are given, print a simplified help message
         if len(sys.argv) == 1:
             raise CRISPRessoShared.BadParameterException(CRISPRessoShared.format_cl_text('usage: CRISPRessoBatch  [-bs BATCH_SETTINGS]  [-n NAME]\n' + \
@@ -107,7 +97,15 @@ def main():
 
         CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
 
-        debug_flag = args.debug
+        description = ['~~~CRISPRessoBatch~~~', '-Analysis of CRISPR/Cas9 outcomes from batch deep sequencing data-']
+        batch_string = r'''
+ _________________
+| __    ___ __    |
+||__) /\ | /  |__||
+||__)/--\| \__|  ||
+|_________________|
+        '''
+        info(CRISPRessoShared.get_crispresso_header(description, batch_string))
 
         crispresso_options = CRISPRessoShared.get_core_crispresso_options()
         options_to_ignore = {'name', 'output_folder', 'zip_output'}

@@ -279,16 +279,6 @@ def main():
         start_time =  datetime.now()
         start_time_string =  start_time.strftime('%Y-%m-%d %H:%M:%S')
 
-        description = ['~~~CRISPRessoWGS~~~', '-Analysis of CRISPR/Cas9 outcomes from WGS data-']
-        wgs_string = r'''
- ____________
-|     __  __ |
-||  |/ _ (_  |
-||/\|\__)__) |
-|____________|
-        '''
-        info(CRISPRessoShared.get_crispresso_header(description, wgs_string))
-
         # if no args are given, print a simplified help message
         if len(sys.argv) == 1:
             raise CRISPRessoShared.BadParameterException(CRISPRessoShared.format_cl_text('usage: CRISPRessoWGS [-b BAM_FILE] [-f REGION_FILE] [-r REFERENCE_FILE] [-n NAME]\n' + \
@@ -306,12 +296,22 @@ def main():
 
         args = parser.parse_args()
 
+        CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
+
+        description = ['~~~CRISPRessoWGS~~~', '-Analysis of CRISPR/Cas9 outcomes from WGS data-']
+        wgs_string = r'''
+ ____________
+|     __  __ |
+||  |/ _ (_  |
+||/\|\__)__) |
+|____________|
+        '''
+        info(CRISPRessoShared.get_crispresso_header(description, wgs_string))
+
         if args.use_matplotlib or not CRISPRessoShared.is_C2Pro_installed():
             from CRISPResso2 import CRISPRessoPlot
         else:
             from CRISPRessoPro import plot as CRISPRessoPlot
-
-        CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
 
         crispresso_options = CRISPRessoShared.get_core_crispresso_options()
         options_to_ignore = {'fastq_r1', 'fastq_r2', 'amplicon_seq', 'amplicon_name', 'output_folder', 'name', 
@@ -400,7 +400,7 @@ def main():
                 if previous_run_data['running_info']['version'] == CRISPRessoShared.__version__:
                     args_are_same = True
                     for arg in vars(args):
-                        if arg == "no_rerun" or arg == "debug" or arg == "n_processes":
+                        if arg == "no_rerun" or arg == "debug" or arg == "n_processes" or arg == "verbosity":
                             continue
                         if arg not in vars(previous_run_data['running_info']['args']):
                             info('Comparing current run to previous run: old run had argument ' + str(arg) + ' \nRerunning.')
@@ -721,7 +721,7 @@ def main():
 
         if not args.suppress_plots:
             plot_root = _jp("CRISPRessoWGS_reads_summary")
-            CRISPRessoPlot.plot_reads_total(plot_root, df_summary_quantification, save_png, args.min_reads_to_use_region)
+            CRISPRessoPlot.plot_reads_total(df_summary_quantification=df_summary_quantification, fig_filename_root=plot_root, save_png=save_png, cutoff=args.min_reads_to_use_region)
             plot_name = os.path.basename(plot_root)
             crispresso2_info['results']['general_plots']['reads_summary_plot'] = plot_name
             crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
@@ -730,7 +730,7 @@ def main():
             crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('CRISPRessoWGS summary', os.path.basename(samples_quantification_summary_filename))]
 
             plot_root = _jp("CRISPRessoWGS_modification_summary")
-            CRISPRessoPlot.plot_unmod_mod_pcts(plot_root, df_summary_quantification, save_png, args.min_reads_to_use_region)
+            CRISPRessoPlot.plot_unmod_mod_pcts(df_summary_quantification=df_summary_quantification, fig_filename_root=plot_root, save_png=save_png, cutoff=args.min_reads_to_use_region)
             plot_name = os.path.basename(plot_root)
             crispresso2_info['results']['general_plots']['modification_summary_plot'] = plot_name
             crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
