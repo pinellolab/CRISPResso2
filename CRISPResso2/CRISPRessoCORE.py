@@ -2214,9 +2214,6 @@ def main():
 
         start_time =  datetime.now()
         start_time_string =  start_time.strftime('%Y-%m-%d %H:%M:%S')
-        description = ['~~~CRISPResso 2~~~', '-Analysis of genome editing outcomes from deep sequencing data-']
-        header = CRISPRessoShared.get_crispresso_header(description=description, header_str=None)
-        info(header)
 
         # if no args are given, print a simplified help message
         if len(sys.argv) == 1:
@@ -2236,6 +2233,10 @@ def main():
         args = arg_parser.parse_args()
 
         CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
+
+        description = ['~~~CRISPResso 2~~~', '-Analysis of genome editing outcomes from deep sequencing data-']
+        header = CRISPRessoShared.get_crispresso_header(description=description, header_str=None)
+        info(header)
 
         OUTPUT_DIRECTORY = 'CRISPResso_on_{0}'.format(normalize_name(args.name, args.fastq_r1, args.fastq_r2, args.bam_input))
 
@@ -2347,7 +2348,7 @@ def main():
                 if previous_run_data['running_info']['version'] == CRISPRessoShared.__version__:
                     args_are_same = True
                     for arg in vars(args):
-                        if arg == "no_rerun":
+                        if arg == "no_rerun" or arg == "debug" or arg == "n_processes" or arg == "verbosity":
                             continue
                         if arg not in vars(previous_run_data['running_info']['args']):
                             info('Comparing current run to previous run: old run had argument ' + str(arg) + ' \nRerunning.')
@@ -3289,6 +3290,8 @@ def main():
                         refs[ref_name]['aln_end'] = seq_stop
                         refs[ref_name]['aln_strand'] = strand
 
+        info('Counting reads in input', {'percent_complete': 2})
+
         N_READS_INPUT = 0
         if args.fastq_r1:
             N_READS_INPUT = CRISPRessoShared.get_n_reads_fastq(args.fastq_r1)
@@ -3472,6 +3475,7 @@ def main():
 
             processed_output_filename = output_filename_r1
 
+        info('Counting reads after preprocessing...')
         #count reads
         N_READS_AFTER_PREPROCESSING = 0
         if args.bam_input or args.crispresso_merge:
@@ -4059,7 +4063,7 @@ def main():
         class_counts_order = [class_count_name for thisRefInd, thisIsMod, class_count_name in decorated_class_counts]
 
         if N_TOTAL == 0:
-            raise CRISPRessoShared.NoReadsAlignedException('Error: No alignments were found')
+            raise CRISPRessoShared.NoReadsAlignedException('No alignments were found')
 
         #create alleles table
         info('Calculating allele frequencies...')
@@ -4621,7 +4625,7 @@ def main():
                 'N_READS_INPUT': N_READS_INPUT,
                 'N_READS_AFTER_PREPROCESSING': N_READS_AFTER_PREPROCESSING,
                 'N_TOTAL': N_TOTAL,
-                'plot_root': plot_1a_root,
+                'fig_filename_root': plot_1a_root,
                 'save_png': save_png
             }
             debug('Plotting read bar plot', {'percent_complete': 42})
@@ -4867,16 +4871,16 @@ def main():
                 if not args.plot_histogram_outliers:
                     sum_cutoff = .99 * hdensity.sum()
                     sum_so_far = 0
-                    for idx, val in enumerate(hlengths):
-                        sum_so_far += hdensity[idx]
+                    for indel_len, indel_count in zip(hlengths, hdensity):
+                        sum_so_far += indel_count
                         if sum_so_far > sum_cutoff:
-                            xmax = val
+                            xmax = indel_len
                             break
                     sum_so_far = 0
-                    for idx, val in enumerate(hlengths[::-1]):
-                        sum_so_far += hdensity[idx]
+                    for indel_len, indel_count in zip(hlengths[::-1], hdensity[::-1]):
+                        sum_so_far += indel_count
                         if sum_so_far > sum_cutoff:
-                            xmin = val
+                            xmin = indel_len
                             break
                 xmin = min(xmin, -15)
                 xmax = max(xmax, 15)
@@ -6019,8 +6023,8 @@ def main():
         if args.zip_output:
             CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
 
-        info('Analysis Complete!', {'percent_complete': 100})
         info(CRISPRessoShared.get_crispresso_footer())
+        info('Analysis Complete!', {'percent_complete': 100})
 
         sys.exit(0)
 

@@ -45,16 +45,6 @@ def main():
         start_time =  datetime.now()
         start_time_string =  start_time.strftime('%Y-%m-%d %H:%M:%S')
 
-        description = ['~~~CRISPRessoAggregate~~~', '-Aggregation of CRISPResso Run Data-']
-        aggregate_string = r'''
-___________________________________
-|      __  __  _   _  __     ___ _ |
-| /\  /__ /__ |_) |_ /__  /\  | |_ |
-|/--\ \_| \_| | \ |_ \_| /--\ | |_ |
-|__________________________________|
-        '''
-        info(CRISPRessoShared.get_crispresso_header(description, aggregate_string))
-
         parser = argparse.ArgumentParser(description="Aggregate CRISPResso2 Runs")
         parser.add_argument("-p", "--prefix", action='append', help="Prefix for CRISPResso folders to aggregate (may be specified multiple times)", default=[])
         parser.add_argument("-s", "--suffix", type=str, help="Suffix for CRISPResso folders to aggregate", default="")
@@ -85,6 +75,17 @@ ___________________________________
             from CRISPRessoPro import plot as CRISPRessoPlot
 
         CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
+
+        description = ['~~~CRISPRessoAggregate~~~', '-Aggregation of CRISPResso Run Data-']
+        aggregate_string = r'''
+___________________________________
+|      __  __  _   _  __     ___ _ |
+| /\  /__ /__ |_) |_ /__  /\  | |_ |
+|/--\ \_| \_| | \ |_ \_| /--\ | |_ |
+|__________________________________|
+        '''
+        info(CRISPRessoShared.get_crispresso_header(description, aggregate_string))
+
 
         output_folder_name='CRISPRessoAggregate_on_%s' % args.name
         OUTPUT_DIRECTORY=os.path.abspath(output_folder_name)

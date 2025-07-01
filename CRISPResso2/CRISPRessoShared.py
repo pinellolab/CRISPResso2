@@ -8,27 +8,33 @@ import argparse
 import datetime
 import errno
 import gzip
-import json
-import textwrap
+import importlib.metadata
 import importlib.util
-from pathlib import Path
-
+import io
+import json
+import logging
 import numpy as np
 import os
 import pandas as pd
 import re
 import string
 import shutil
+import shlex
 import signal
 import subprocess as sb
+import textwrap
 import unicodedata
-import logging
+
 from inspect import getmodule, stack
+from pathlib import Path
 
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoCOREResources
 
-__version__ = "2.3.2"
+def read_version():
+    return importlib.metadata.version('CRISPResso2')
+
+__version__ = read_version()
 
 ###EXCEPTIONS############################
 class FastpException(Exception):
@@ -87,6 +93,7 @@ class PlotException(Exception):
     pass
 
 
+
 #########################################
 
 class StatusFormatter(logging.Formatter):
@@ -99,7 +106,7 @@ class StatusFormatter(logging.Formatter):
             record.percent_complete = self.last_percent_complete
         else:
             record.percent_complete = 0.0
-        record.json_message = record.getMessage().replace('\\', r'\\').replace('\n', r'\n').replace('"', r'\"')
+        record.json_message = record.getMessage().replace('\\', r'\\').replace('\n', r'\n').replace('"', r'\"').replace("_", r"\_")
         return super().format(record)
 
 
@@ -131,13 +138,13 @@ class LogStreamHandler(logging.StreamHandler):
 def set_console_log_level(logger, level, debug=False):
     for handler in logger.handlers:
         if isinstance(handler, LogStreamHandler):
-            if level == 4 or debug:
+            if level >= 4 or debug:
                 handler.setLevel(logging.DEBUG)
             elif level == 3:
                 handler.setLevel(logging.INFO)
             elif level == 2:
                 handler.setLevel(logging.WARNING)
-            elif level == 1:
+            elif level <= 1:
                 handler.setLevel(logging.ERROR)
             break
 
@@ -226,13 +233,119 @@ def get_crispresso_options_lookup(tool):
             crispresso_options_lookup[key_sub] = d2
     return crispresso_options_lookup
 
+def overwrite_crispresso_options(cmd, option_names_to_overwrite, option_values, paramInd=None, set_default_params=False, tool='Core'):
+    """
+    Updates a given command (cmd) by setting parameter options with new values in option_values.
+    
+    Parameters
+    ----------
+    cmd : str
+        The command to run including original parameters
+    option_names_to_overwrite : list
+        List of options to overwrite e.g. crispresso options
+    option_values : dict or Pandas DataFrame
+        Values for the options to overwrite.
+    paramInd : int, optional
+        Index in dict - this is the run number in case of multiple runs.
+        If paramInd is specified, option_values should be a DataFrame and the function will look up the value in the row with index paramInd.
+        The default is None.
+    set_default_params : bool, optional
+        If True, for add values in option_values that are the same as the default values
+        If False, default values will not be added to the command
+    tool : str
+        The CRISPResso tool to create the argparser - the params from this tool will be used
+    Returns
+    -------
+    str
+        The updated command with the new options set.
+    -------
+    """
+    parser = getCRISPRessoArgParser(tool)
+    this_program = cmd.split()[0]
+    cmd = ' '.join(cmd.split()[1:])  # remove the program name from the command
+    args = parser.parse_args(shlex.split(cmd)) # shlex split keeps quoted parameters together
+
+    for option in option_names_to_overwrite:
+        if option:
+            if option in option_values:
+                if paramInd is None:
+                    if type(option_values) == dict:
+                        val = option_values[option]
+                    else:
+                        val = getattr(option_values, option)
+                else:
+                    val = option_values.loc[paramInd, option]
+                if val is None or str(val) == 'None':
+                    pass
+                elif str(val) == "True":
+                    setattr(args, option, True)
+                elif str(val) == "False":
+                    setattr(args, option, False)
+                elif isinstance(val, str):
+                    if val != "":
+                        setattr(args, option, str(val))
+                elif isinstance(val, bool):
+                    setattr(args, option, val)
+                else:
+                    setattr(args, option, str(val))
+
+    # reconstruct the command
+    new_cmd = this_program
+    for action in parser._actions:
+        if action.dest in args:
+            val = getattr(args, action.dest)
+            if not set_default_params and (val == action.default) or (str(val) == str(action.default)):
+                continue
+            if val is None or str(val) == "None":
+                continue
+            # argparse conveniently doesn't set type for bools - those action types are None
+            if action.nargs == 0:
+                if val: # if value is true
+                    new_cmd += ' --%s' % action.dest
+            elif action.type == bool: # but just in case...
+                if val:
+                    new_cmd += ' --%s' % action.dest
+            elif action.type == str:
+                if val != "":
+                    if re.fullmatch(r"[a-zA-Z0-9\._]*", val): # if the value is alphanumeric, don't have to quote it
+                        new_cmd += ' --%s %s' % (action.dest, val)
+                    elif val.startswith('"') and val.endswith('"'):
+                        new_cmd += ' --%s %s' % (action.dest, val)
+                    else:
+                        new_cmd += ' --%s "%s"' % (action.dest, val)
+            elif action.type == int:
+                new_cmd += ' --%s %s' % (action.dest, val)
+
+    return new_cmd
+        
+
+
+
 
 def propagate_crispresso_options(cmd, options, params, paramInd=None):
-    ####
-    # cmd - the command to run
-    # options - list of options to propagate e.g. crispresso options
-    # params - arguments given to this program
-    # paramInd - index in dict - this is the run number in case of multiple runs.
+    """
+    Updates a given command (cmd) by setting parameter options with new values in params.
+    This is used to propagate options from the command line to the command that is run.
+
+    Parameters
+    ----------
+    cmd : str
+        The command to run including original parameters
+    options : list
+        List of options to propagate e.g. crispresso options
+    params : dict or Pandas DataFrame
+        Values for the options to propagate.
+    paramInd : int, optional
+        Index in dict - this is the run number in case of multiple runs.
+        If paramInd is specified, params should be a DataFrame and the function will look up the value in the row with index paramInd.
+        The default is None.
+    Returns
+    -------
+    str
+        The updated command with the new options set.
+    -------
+    """
+
     for option in options:
         if option:
             if option in params:
@@ -353,7 +466,7 @@ def get_ref_length_from_cigar(cigar_string):
 
 def clean_filename(filename):
     # get a clean name that we can use for a filename
-    validFilenameChars = "+-_.()%s%s" % (string.ascii_letters, string.digits)
+    validFilenameChars = "+-_.%s%s" % (string.ascii_letters, string.digits)
     filename = slugify(str(filename).replace(' ', '_'))
     cleanedFilename = unicodedata.normalize('NFKD', filename)
     return (''.join(c for c in cleanedFilename if c in validFilenameChars))
@@ -631,7 +744,7 @@ class CRISPRessoJSONDecoder(json.JSONDecoder):
             if obj['_type'] == 'np.ndarray':
                 return np.array(obj['value'])
             if obj['_type'] == 'pd.DataFrame':
-                return pd.read_json(obj['value'], orient='split')
+                return pd.read_json(io.StringIO(obj['value'].decode('utf-8')), orient='split')
             if obj['_type'] == 'datetime.datetime':
                 return datetime.datetime.fromisoformat(obj['value'])
             if obj['_type'] == 'datetime.timedelta':
@@ -860,12 +973,13 @@ def check_if_failed_run(folder_name, info):
     """
     Check the output folder for a info.json file and a status.txt file to see if the run completed successfully or not
 
-    input:
+    Parameters
+    ----------
     folder_name: path to output folder
     info: logger
 
-
-    returns:
+    Returns
+    -------
     bool True if run completed successfully, False otherwise
     string describing why it failed
     """
@@ -873,7 +987,10 @@ def check_if_failed_run(folder_name, info):
     run_data_file = os.path.join(folder_name, 'CRISPResso2_info.json')
     status_info = os.path.join(folder_name, 'CRISPResso_status.json')
     if not os.path.isfile(run_data_file) or not os.path.isfile(status_info):
-        info("Skipping folder '%s'. Cannot find run data status file at '%s'."%(folder_name, run_data_file))
+        if not os.path.isfile(run_data_file):
+            info("Skipping folder '%s'. Cannot find run data file at '%s'."%(folder_name, run_data_file))
+        if not os.path.isfile(status_info):
+            info("Skipping folder '%s'. Cannot find status file at '%s'."%(folder_name, status_info))
         if "CRISPRessoPooled" in folder_name:
             unit = "amplicon"
         elif "CRISPRessoWGS" in folder_name:
@@ -891,24 +1008,24 @@ def check_if_failed_run(folder_name, info):
                     return True, str(status_dict['message'])
                 else:
                     return False, ""
-            except:
+            except Exception as e:
                 pass
 
         with open(status_info) as fh:
-                try:
-                    file_contents = fh.read()
-                    search_result = re.search(r'(\d+\.\d+)% (.+)', file_contents)
-                    if search_result:
-                        percent_complete, status = search_result.groups()
-                        if percent_complete != '100.00':
-                            info("Skipping folder '%s'. Run is not complete (%s)." % (folder_name, status))
-                            return True, status
-                    else:
-                        return True, file_contents
-                except Exception as e:
-                    print(e)
-                    info("Skipping folder '%s'. Cannot parse status file '%s'." % (folder_name, status_info))
-                    return True, "Cannot parse status file '%s'." % (status_info)
+            try:
+                file_contents = fh.read()
+                search_result = re.search(r'(\d+\.\d+)% (.+)', file_contents)
+                if search_result:
+                    percent_complete, status = search_result.groups()
+                    if percent_complete != '100.00':
+                        info("Skipping folder '%s'. Run is not complete (%s)." % (folder_name, status))
+                        return True, status
+                else:
+                    return True, file_contents
+            except Exception as e:
+                print(e)
+                info("Skipping folder '%s'. Cannot parse status file '%s'." % (folder_name, status_info))
+                return True, "Cannot parse status file '%s'." % (status_info)
         return False, ""
 
 
@@ -1878,6 +1995,9 @@ def check_custom_config(args):
         }
     }
 
+    if args is None or not hasattr(args, 'config_file'):
+        return config
+
     logger = logging.getLogger(getmodule(stack()[1][0]).__name__)
     if not is_C2Pro_installed():
         return config
@@ -1913,7 +2033,7 @@ def check_custom_config(args):
             if args.config_file:
                 logger.warn("Cannot read config file '%s', defaulting config parameters." % args.config_file)
             else:
-                logger.warn("No config file provided, defaulting config parameters.")
+                logger.debug("No config file provided, defaulting config parameters.")
     return config
 
 
@@ -2275,7 +2395,7 @@ class HighRateOfSubstitutionsGuardrail:
         if total_mods == 0:
             return
         if ((global_subs / total_mods) >= self.cutoff):
-            self.message = self.message + " Total modifications: {}, Substitutions: {}.".format(total_mods, global_subs)
+            self.message = self.message + " Total modifications: {}, Substitutions: {}.".format(int(total_mods), global_subs)
             self.messageHandler.display_warning('HighRateOfSubstitutionsGuardrail', self.message)
             self.messageHandler.report_warning(self.message)
 
