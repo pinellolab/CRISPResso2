@@ -236,7 +236,7 @@ def get_crispresso_options_lookup(tool):
 def overwrite_crispresso_options(cmd, option_names_to_overwrite, option_values, paramInd=None, set_default_params=False, tool='Core'):
     """
     Updates a given command (cmd) by setting parameter options with new values in option_values.
-    
+
     Parameters
     ----------
     cmd : str
@@ -317,9 +317,6 @@ def overwrite_crispresso_options(cmd, option_names_to_overwrite, option_values, 
                 new_cmd += ' --%s %s' % (action.dest, val)
 
     return new_cmd
-        
-
-
 
 
 def propagate_crispresso_options(cmd, options, params, paramInd=None):
@@ -980,7 +977,7 @@ def check_if_failed_run(folder_name, info):
 
     Returns
     -------
-    bool True if run completed successfully, False otherwise
+    bool True if run failed, False otherwise
     string describing why it failed
     """
 
@@ -1352,7 +1349,7 @@ def get_dataframe_around_cut_asymmetrical(df_alleles, cut_point,plot_left,plot_r
         return df_alleles
     ref1 = df_alleles['Reference_Sequence'].iloc[0]
     ref1 = ref1.replace('-','')
-    
+
     df_alleles_around_cut=pd.DataFrame(list(df_alleles.apply(lambda row: get_row_around_cut_asymmetrical(row,cut_point,plot_left,plot_right),axis=1).values),
                     columns=['Aligned_Sequence','Reference_Sequence','Unedited','n_deleted','n_inserted','n_mutated','#Reads','%Reads'])
 
