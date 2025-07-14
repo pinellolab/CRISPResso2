@@ -4918,45 +4918,49 @@ def main():
                 ###############################################################################################################################################
 
                 ###############################################################################################################################################
-                #(3b) a graph of frequency of deletions and insertions of various sizes (deletions could be consider as negative numbers and insertions as positive);
+                #(3b) Modification plots with one plot each for insertion lengths, deletion lengths, and number of substitutions
+                # Note that the previous plot (3a) shows the effective lengths of reads, which could include multiple insertions or deletions. This plot separates these by insertion and deletion.
 
                 xmax_ins = max(x_bins_ins)
                 if not args.plot_histogram_outliers:
                     sum_cutoff = 0.99 * hdensity.sum()
                     sum_so_far = 0
-                    for idx, val in enumerate(y_values_ins):
-                        sum_so_far += x_bins_ins[idx]
+                    for indel_len, indel_count in zip(x_bins_ins, y_values_ins):
+                        sum_so_far += indel_count
                         if sum_so_far > sum_cutoff:
-                            xmax_ins = val
+                            xmax_ins = indel_len
                             break
                 xmax_ins = max(15, xmax_ins)
 
                 clipped_string = ""
                 if xmax_ins < max(x_bins_ins):
                     clipped_string += " (Insertion maximum " + str(int(max(x_bins_ins))) + " not shown)"
+
                 xmax_del = max(x_bins_del)
                 if not args.plot_histogram_outliers:
                     sum_cutoff = .99 * hdensity.sum()
                     sum_so_far = 0
-                    for idx, val in enumerate(y_values_del):
-                        sum_so_far += x_bins_del[idx]
+                    for indel_len, indel_count in zip(x_bins_del, y_values_del):
+                        sum_so_far += indel_count
                         if sum_so_far > sum_cutoff:
-                            xmax_del = val
+                            xmax_del = indel_len
                             break
                 xmax_del = max(15, xmax_del)
 
                 if xmax_del < max(x_bins_del):
                     clipped_string += " (Deletion minimum -" + str(int(max(x_bins_del))) + " not shown)"
+
                 xmax_mut = max(x_bins_mut)
                 if not args.plot_histogram_outliers:
                     sum_cutoff = .99 * hdensity.sum()
                     sum_so_far = 0
-                    for idx, val in enumerate(y_values_mut):
-                        sum_so_far += x_bins_mut[idx]
+                    for mut_num, mut_count in zip(x_bins_mut, y_values_mut):
+                        sum_so_far += mut_count
                         if sum_so_far > sum_cutoff:
-                            xmax_mut = val
+                            xmax_mut = mut_num
                             break
                 xmax_mut = max(15, xmax_mut)
+
                 if xmax_mut < max(x_bins_mut):
                     clipped_string += " (Mutation maximum " + str(int(max(x_bins_mut))) + " not shown)"
 
