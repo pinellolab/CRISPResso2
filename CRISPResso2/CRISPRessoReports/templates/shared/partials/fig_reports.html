@@ -2,6 +2,26 @@
     {# Set the width based on the plot #}
     {%- if fig_name in ['plot_1a', 'plot_1b', 'plot_1c', 'plot_1d', 'plot_3a', 'plot_4a', 'plot_4b', 'plot_4c', 'plot_4e', 'plot_4f', 'plot_5a', 'plot_7', 'plot_8', 'plot_8a', 'plot_11c'] -%}
         {% set width = '40%' %}
+    {% elif '9a' in fig_name %}
+        {% set coding_seq_length = report_data['run_data']['running_info']['coding_seqs'][seq_itr]|length|int %}
+        {% if 40 > (coding_seq_length // 3 ) %}
+            {% set length = ((coding_seq_length // 3)/40 * 100 + 10)|string %}
+            {% set width = length ~ '%' %}
+        {% else %}
+            {% set width = '100%' %}
+        {% endif %}
+    
+    {#- elif '9a' in fig_name -%}
+        {% set coding_seq_length = report_data['run_data']['running_info']['coding_seqs'][seq_itr]|length|int %}
+        {% if 30 > (coding_seq_length // 3) and (coding_seq_length //3) > 17%}
+            {% set length = ((coding_seq_length // 3)/32 * 100)|string %}
+            {% set width = length ~ '%' %}
+        {% elif 17 >= (coding_seq_length // 3) %}
+            {% set length = ((coding_seq_length // 3)/25 * 100)|string %}
+            {% set width = length ~ '%' %}
+        {% else %}
+            {% set width = '100%' %}
+        {% endif #}
     {%- elif fig_name in ['plot_10b', 'plot_10c'] -%}
         {% set width = '35%' %}
     {%- elif fig_name in ['plot_10a'] -%}

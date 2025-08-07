@@ -1,4 +1,4 @@
-"""Unit tests for CRISPResso2CORE."""
+"""Unit tests for CRISPRessoCORE."""
 import pytest
 from pytest_check import check
 
