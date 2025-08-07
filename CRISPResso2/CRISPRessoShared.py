@@ -417,6 +417,126 @@ CIGAR_LOOKUP = {
 
 cigarUnexplodePattern = re.compile(r'((\w)\2{0,})')
 
+CODON_TO_AMINO_ACID = {
+    'TTT': 'Phe', 'TTC': 'Phe', 'TTA': 'Leu', 'TTG': 'Leu',
+    'TCT': 'Ser', 'TCC': 'Ser', 'TCA': 'Ser', 'TCG': 'Ser',
+    'TAT': 'Tyr', 'TAC': 'Tyr', 'TAA': 'STOP', 'TAG': 'STOP',
+    'TGT': 'Cys', 'TGC': 'Cys', 'TGA': 'STOP', 'TGG': 'Trp',
+    'CTT': 'Leu', 'CTC': 'Leu', 'CTA': 'Leu', 'CTG': 'Leu',
+    'CCT': 'Pro', 'CCC': 'Pro', 'CCA': 'Pro', 'CCG': 'Pro',
+    'CAT': 'His', 'CAC': 'His', 'CAA': 'Gln', 'CAG': 'Gln',
+    'CGT': 'Arg', 'CGC': 'Arg', 'CGA': 'Arg', 'CGG': 'Arg',
+    'ATT': 'Ile', 'ATC': 'Ile', 'ATA': 'Ile', 'ATG': 'Met',
+    'ACT': 'Thr', 'ACC': 'Thr', 'ACA': 'Thr', 'ACG': 'Thr',
+    'AAT': 'Asn', 'AAC': 'Asn', 'AAA': 'Lys', 'AAG': 'Lys',
+    'AGT': 'Ser', 'AGC': 'Ser', 'AGA': 'Arg', 'AGG': 'Arg',
+    'GTT': 'Val', 'GTC': 'Val', 'GTA': 'Val', 'GTG': 'Val',
+    'GCT': 'Ala', 'GCC': 'Ala', 'GCA': 'Ala', 'GCG': 'Ala',
+    'GAT': 'Asp', 'GAC': 'Asp', 'GAA': 'Glu', 'GAG': 'Glu',
+    'GGT': 'Gly', 'GGC': 'Gly', 'GGA': 'Gly', 'GGG': 'Gly'
+}
+
+# change amino acids to single char
+CODON_TO_AMINO_ACID_SINGLE_CHAR = {
+    'TTT': 'F', 'TTC': 'F', 'TTA': 'L', 'TTG': 'L',
+    'TCT': 'S', 'TCC': 'S', 'TCA': 'S', 'TCG': 'S',
+    'TAT': 'Y', 'TAC': 'Y', 'TAA': '*', 'TAG': '*',
+    'TGT': 'C', 'TGC': 'C', 'TGA': '*', 'TGG': 'W',
+    'CTT': 'L', 'CTC': 'L', 'CTA': 'L', 'CTG': 'L',
+    'CCT': 'P', 'CCC': 'P', 'CCA': 'P', 'CCG': 'P',
+    'CAT': 'H', 'CAC': 'H', 'CAA': 'Q', 'CAG': 'Q',
+    'CGT': 'R', 'CGC': 'R', 'CGA': 'R', 'CGG': 'R',
+    'ATT': 'I', 'ATC': 'I', 'ATA': 'I', 'ATG': 'M',
+    'ACT': 'T', 'ACC': 'T', 'ACA': 'T', 'ACG': 'T',
+    'AAT': 'N', 'AAC': 'N', 'AAA': 'K', 'AAG': 'K',
+    'AGT': 'S', 'AGC': 'S', 'AGA': 'R', 'AGG': 'R',
+    'GTT': 'V', 'GTC': 'V', 'GTA': 'V', 'GTG': 'V',
+    'GCT': 'A', 'GCC': 'A', 'GCA': 'A', 'GCG': 'A',
+    'GAT': 'D', 'GAC': 'D', 'GAA': 'E', 'GAG': 'E',
+    'GGT': 'G', 'GGC': 'G', 'GGA': 'G', 'GGG': 'G'
+}
+
+
+def get_amino_acids_and_codons(seq):
+    """ Given a nucleotide sequence, return the amino acid sequence and the codons."""
+    amino_acids = []
+    while len(seq) > 2:
+        codon, seq = seq[:3], seq[3:]
+        amino_acids.append((CODON_TO_AMINO_ACID_SINGLE_CHAR[codon], codon))
+    return amino_acids
+
+
+def get_amino_acids_from_nucs(seq):
+    """ Given a nucleotide sequence, return the amino acid sequence."""
+    amino_acids = []
+    while len(seq) > 2:
+        codon, seq = seq[:3], seq[3:]
+        if codon == '---':
+            amino_acids.append('-')
+        else:
+            amino_acids.append(CODON_TO_AMINO_ACID_SINGLE_CHAR[codon])
+    return ''.join(amino_acids)
+
+
+
+def insert_indels(seq, seq_codons):
+    indel_inds = []
+    for i, c in enumerate(seq):
+        if c == '-':
+            indel_inds.append(i)
+
+    for i in indel_inds:
+        seq_codons.insert(i, ('-', '---'))
+
+    return seq_codons
+
+def get_silent_edits(ref_seq, ref_codons, seq, seq_codons):
+    """ Given a reference amino acid sequence, reference codons, amino acid read sequence, and read codons,
+    return the amino acid read sequence with silent edit amino acids as lower case chars.
+
+    for example:
+    
+    ref_seq = 'AG-S'
+    seq = 'AGTS'
+    ref_codons = [('A', 'GCT'), ('G', 'GGT'), ('S', 'AGT')]
+    seq_codons = [('A', 'GCT'), ('G', 'GGT'),  ('T', 'ACT'), ('S', 'AGC')]
+    returns:
+    'AGTs'
+
+    Parameters
+    ----------
+    ref_seq : str
+        Reference amino acid sequence, with insertions.
+    ref_codons : list of tuples
+        List of tuples containing the reference amino acid and its corresponding codon.
+    seq : str
+        Read amino acid sequence with deletions.
+    seq_codons : list of tuples
+        List of tuples containing the read amino acid and its corresponding codon.
+
+    Returns
+    -------
+    str
+        Read amino acid sequence with silent edits in lower case.
+     """
+    silent_edit_inds = []
+
+    ref_codons = insert_indels(ref_seq, ref_codons)
+    seq_codons = insert_indels(seq, seq_codons)
+
+    for i, ((r, r_codon), (s, s_codon)) in enumerate(zip(ref_codons, seq_codons)):
+        if r == '-' or s == '-':
+            continue
+        if r != s:
+            continue
+        if r == s and r_codon != s_codon:
+            silent_edit_inds.append((i, r.lower()))
+    seq_list = list(seq)
+    for i, char in silent_edit_inds:
+        seq_list[i] = char
+
+    return ''.join(seq_list)
+
 
 def unexplode_cigar(exploded_cigar_string):
     """Make a CIGAR string from an exploded cigar string.
@@ -604,7 +724,6 @@ def assert_fastq_format(file_path, max_lines_to_check=100):
 def get_n_reads_fastq(fastq_filename):
     if not os.path.exists(fastq_filename) or os.path.getsize(fastq_filename) == 0:
         return 0
-
     p = sb.Popen(('z' if fastq_filename.endswith('.gz') else '' ) +"cat < %s | grep -c ." % fastq_filename, shell=True, stdout=sb.PIPE)
     n_reads = int(float(p.communicate()[0])/4.0)
     return n_reads
@@ -1382,6 +1501,75 @@ def get_dataframe_around_cut_debug(df_alleles, cut_point, offset):
     df_alleles_around_cut['Unedited'] = df_alleles_around_cut['Unedited'] > 0
     return df_alleles_around_cut
 
+def get_amino_acid_row(row, plot_left_idx, sequence_length, matrix_path, amino_acid_cut_point):
+    cut_idx = row['ref_positions'].index(amino_acid_cut_point)
+    left_idx = row['ref_positions'].index(plot_left_idx)
+    seq_acids_and_codons = get_amino_acids_and_codons(row['Aligned_Sequence'][left_idx::].replace('-', ''))
+    ref_acids_and_codons = get_amino_acids_and_codons(row['Reference_Sequence'][left_idx::].replace('-', ''))
+    aligned_seq = ''.join(tup[0] for tup in seq_acids_and_codons)
+    reference_seq = ''.join(tup[0] for tup in ref_acids_and_codons)
+
+    gap_incentive = np.zeros(len(reference_seq)+1, dtype=int)
+    try:
+        gap_incentive[cut_idx] = 1
+    except:
+        pass
+    aligned_seq, reference_seq, score = CRISPResso2Align.global_align(
+        aligned_seq,
+        reference_seq,
+        matrix=CRISPResso2Align.read_matrix(matrix_path),
+        gap_incentive=gap_incentive,
+    )
+
+    aa_ref_positions = CRISPRessoCOREResources.find_indels_substitutions(
+        aligned_seq, reference_seq, range(len(reference_seq))
+    )
+
+    aligned_seq = get_silent_edits(
+        reference_seq,
+        ref_acids_and_codons,
+        aligned_seq,
+        seq_acids_and_codons,
+        )
+
+    return (aligned_seq[:sequence_length],
+            reference_seq[:sequence_length],
+            row['Read_Status']=='UNMODIFIED',
+            row['n_deleted'],
+            row['n_inserted'],
+            row['n_mutated'],
+            row['#Reads'],
+            row['%Reads'],)
+
+def get_amino_acid_dataframe(df_alleles, plot_left_idx, sequence_length, matrix_path, amino_acid_cut_point, collapse_by_sequence=True):
+    if df_alleles.shape[0] == 0:
+        return df_alleles
+
+    df_alleles_around_cut=pd.DataFrame(list(df_alleles.apply(lambda row: get_amino_acid_row(row,plot_left_idx,sequence_length,matrix_path, amino_acid_cut_point),axis=1).values),
+                    columns=['Aligned_Sequence','Reference_Sequence','Unedited','n_deleted','n_inserted','n_mutated','#Reads','%Reads'])
+
+    df_alleles_around_cut=df_alleles_around_cut.groupby(['Aligned_Sequence','Reference_Sequence','Unedited','n_deleted','n_inserted','n_mutated']).sum().reset_index().set_index('Aligned_Sequence')
+
+    df_alleles_around_cut.sort_values(by=['#Reads', 'Aligned_Sequence', 'Reference_Sequence'], inplace=True, ascending=[False, True, True])
+    df_alleles_around_cut['Unedited']=df_alleles_around_cut['Unedited']>0
+
+    edits_series = pd.Series(dtype='object')
+    row_ind = 0
+    for idx, row in df_alleles_around_cut.iterrows():
+        silent_edit_inds = []
+        for i, c in enumerate(idx):
+            if c.islower():
+                silent_edit_inds.append(i)
+        edits_series[row_ind] = silent_edit_inds
+        row_ind += 1
+
+    edits_series.index = df_alleles_around_cut.index
+    df_alleles_around_cut['silent_edit_inds'] = edits_series
+
+    df_alleles_around_cut.index = df_alleles_around_cut.index.str.upper()
+
+    return df_alleles_around_cut
+
 
 def get_amplicon_info_for_guides(ref_seq, guides, guide_mismatches, guide_names, quantification_window_centers,
                                  quantification_window_sizes, quantification_window_coordinates, exclude_bp_from_left,
@@ -1977,6 +2165,7 @@ def check_custom_config(args):
             'G': '#FFFF99',
             'N': '#C8C8C8',
             '-': '#1E1E1E',
+            'amino_acid_scheme': 'unique'
         },
         "guardrails": {
             'min_total_reads': 10000,

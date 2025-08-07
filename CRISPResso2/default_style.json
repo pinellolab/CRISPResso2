@@ -8,6 +8,7 @@
     "C": "#FDC086",
     "G": "#FFFF99",
     "N": "#C8C8C8",
-    "-": "#C1C1C1"
+    "-": "#C1C1C1",
+    "amino_acid_scheme": "unique"
   }
 }
