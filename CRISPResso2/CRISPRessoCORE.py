@@ -3196,8 +3196,8 @@ def main():
                     #subtract any indices in 'exclude_idxs' -- e.g. in case some of the cloned include_idxs were near the read ends (excluded)
                     this_exclude_idxs = sorted(map(int, set(refs[ref_name]['exclude_idxs'])))
                     this_include_idxs = sorted(map(int, set(np.setdiff1d(this_include_idxs, this_exclude_idxs))))
-                    refs[ref_name]['include_idxs'] = this_include_idxs
-                    refs[ref_name]['exclude_idxs'] = this_exclude_idxs
+                    refs[ref_name]['include_idxs'] = np.array(this_include_idxs)
+                    refs[ref_name]['exclude_idxs'] = np.array(this_exclude_idxs)
 
                 if needs_exon_positions and clone_has_exons:
                     this_exon_positions = set()
@@ -4226,10 +4226,6 @@ def main():
             ref_info_file.write(refString)
             np.set_printoptions(linewidth=1000**1000) #no line breaks
             for ref_name in ref_names:
-                if isinstance(refs[ref_name]['include_idxs'], np.ndarray):
-                    refs[ref_name]['include_idxs'] = refs[ref_name]['include_idxs'].tolist()
-                if isinstance(refs[ref_name]['exclude_idxs'], np.ndarray):
-                    refs[ref_name]['exclude_idxs'] = refs[ref_name]['exclude_idxs'].tolist()
                 refString = ( refs[ref_name]['name'] + "\t" +
                     str(refs[ref_name]['sequence']) + "\t" +
                     str(refs[ref_name]['sequence_length']) + "\t" +
@@ -4248,8 +4244,8 @@ def main():
                     str(refs[ref_name]['exon_intervals']) + "\t" +
                     str(refs[ref_name]['exon_len_mods']) + "\t" +
                     str(refs[ref_name]['splicing_positions']) + "\t" +
-                    str(refs[ref_name]['include_idxs']) + "\t" +
-                    str(refs[ref_name]['exclude_idxs']) + "\t" +
+                    str(refs[ref_name]['include_idxs'] if not isinstance(refs[ref_name]['include_idxs'], np.ndarray) else refs[ref_name]['include_idxs'].tolist()) + "\t" +
+                    str(refs[ref_name]['exclude_idxs'] if not isinstance(refs[ref_name]['exclude_idxs'], np.ndarray) else refs[ref_name]['exclude_idxs'].tolist()) + "\t" +
                     str(refs[ref_name]['idx_cloned_from']) + "\n")
                 ref_info_file.write(refString)
             ref_info_file.close()
