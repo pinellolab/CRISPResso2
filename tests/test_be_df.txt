@@ -1,0 +1,4 @@
+,#Reads,Aligned_Sequence,Reference_Sequence,n_inserted,n_deleted,n_mutated,Reference_Name,Read_Status,Aligned_Reference_Names,Aligned_Reference_Scores,ref_positions,%Reads,contains dsODN fw,contains dsODN rv,contains dsODN,contains dsODN fragment fw,contains dsODN fragment rv,contains dsODN fragment
+1,50,AAGA,AAAA,0,0,1,TEST,MODIFIED,TEST,100&100,"[0,1,2,3]",50.0,False,False,False,False,False,False
+2,40,AACAA,AA-AA,1,0,0,TEST,MODIFIED,TEST,100&100,"[0,1,1,2,3]",40.0,False,False,False,False,False,False
+,10,AAAA,AAAA,0,0,0,TEST,UNMODIFIED,TEST,100&100,"[0,1,2,3]",10.0,False,False,False,False,False,False
