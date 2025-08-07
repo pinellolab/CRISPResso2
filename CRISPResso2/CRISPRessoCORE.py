@@ -3180,7 +3180,8 @@ def main():
                     refs[ref_name]['sgRNA_mismatches'] = this_sgRNA_mismatches
                     refs[ref_name]['sgRNA_orig_sequences'] = refs[clone_ref_name]['sgRNA_orig_sequences']
                     refs[ref_name]['sgRNA_names'] = refs[clone_ref_name]['sgRNA_names']
-                    refs[ref_name]['include_idxs'] = this_include_idxs
+                    refs[ref_name]['include_idxs'] = np.array(this_include_idxs)
+                    refs[ref_name]['exclude_idxs'] = np.array(this_exclude_idxs)
                     refs[ref_name]['contains_guide'] = refs[clone_ref_name]['contains_guide']
 
                 #quantification window coordinates override other options

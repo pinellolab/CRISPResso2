@@ -468,7 +468,7 @@ def main():
 
                 if consensus_guides == []:
                     consensus_guides = run_data['results']['refs'][batch_amplicon_name]['sgRNA_sequences']
-                    consensus_include_idxs = np.array(run_data['results']['refs'][batch_amplicon_name]['include_idxs'])
+                    consensus_include_idxs = run_data['results']['refs'][batch_amplicon_name]['include_idxs']
                     consensus_sgRNA_intervals = run_data['results']['refs'][batch_amplicon_name]['sgRNA_intervals']
                     consensus_sgRNA_plot_idxs = run_data['results']['refs'][batch_amplicon_name]['sgRNA_plot_idxs']
 
