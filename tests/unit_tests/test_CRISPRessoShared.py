@@ -131,7 +131,7 @@ def test_get_n_reads_fastq_no_newline():
 
     # Clean up: delete the file after the test
     os.remove(f.name)
-    
+
 
 def test_get_n_reads_fastq_empty_file():
     with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.fastq') as f:
@@ -216,3 +216,71 @@ def test_get_quant_window_ranges_from_include_idxs_multiple_gaps():
     include_idxs = [50, 51, 52, 53, 55, 56, 57, 58, 60]
     assert CRISPRessoShared.get_quant_window_ranges_from_include_idxs(include_idxs) == [(50, 53), (55, 58), (60, 60)]
 
+
+def test_get_silent_edits():
+    ref_seq = 'AGS'
+    seq = 'AGS'
+    ref_codons = [('A', 'GCT'), ('G', 'GGT'), ('S', 'AGT')]
+    seq_codons = [('A', 'GCT'), ('G', 'GGT'), ('S', 'AGC')]
+
+    silent_edits = CRISPRessoShared.get_silent_edits(ref_seq, ref_codons, seq, seq_codons)
+    assert silent_edits == 'AGs'
+
+
+def test_get_silent_edits_multiple_silent():
+    ref_seq = 'PHATKIDS'
+    seq = 'PHATKIDS'
+    ref_codons = [('P', 'CCT'), ('H', 'CAT'), ('A', 'GCT'), ('T', 'ACT'), ('K', 'AAA'), ('I', 'ATT'), ('D', 'GAT'), ('S', 'AGC')]
+    seq_codons = [('P', 'CCC'), ('H', 'CAC'), ('A', 'GCT'), ('T', 'ACT'), ('K', 'AAA'), ('I', 'ATT'), ('D', 'GAC'), ('S', 'AGT')]
+
+    silent_edits = CRISPRessoShared.get_silent_edits(ref_seq, ref_codons, seq, seq_codons)
+    assert silent_edits == 'phATKIds'
+
+
+def test_get_silent_edits_no_silent():
+    ref_seq = 'AGS'
+    seq = 'AGT'
+    ref_codons = [('A', 'GCT'), ('G', 'GGT'), ('S', 'AGT')]
+    seq_codons = [('A', 'GCT'), ('G', 'GGT'), ('T', 'ACT')]
+
+    silent_edits = CRISPRessoShared.get_silent_edits(ref_seq, ref_codons, seq, seq_codons)
+    assert silent_edits == 'AGT'
+
+
+def test_get_silent_edits_deletion():
+    ref_seq = 'AGS'
+    seq = 'AG-'
+    ref_codons = [('A', 'GCT'), ('G', 'GGT'), ('S', 'AGT')]
+    seq_codons = [('A', 'GCT'), ('G', 'GGT')]
+
+    silent_edits = CRISPRessoShared.get_silent_edits(ref_seq, ref_codons, seq, seq_codons)
+    assert silent_edits == 'AG-'
+
+
+def test_get_silent_edits_multiple_deletions():
+    ref_seq = 'AGS'
+    seq = 'A--'
+    ref_codons = [('A', 'GCT'), ('G', 'GGT'), ('S', 'AGT')]
+    seq_codons = [('A', 'GCT')]
+
+    silent_edits = CRISPRessoShared.get_silent_edits(ref_seq, ref_codons, seq, seq_codons)
+    assert silent_edits == 'A--'
+
+
+def test_get_silent_edits_insertion():
+    ref_seq = 'AGS-'
+    seq = 'AGST'
+    ref_codons = [('A', 'GCT'), ('G', 'GGT'), ('S', 'AGT')]
+    seq_codons = [('A', 'GCT'), ('G', 'GGT'), ('S', 'AGT'), ('T', 'ACT')]
+
+    silent_edits = CRISPRessoShared.get_silent_edits(ref_seq, ref_codons, seq, seq_codons)
+    assert silent_edits == 'AGST'
+
+def test_get_silent_edits_middle_insertion():
+    ref_seq = 'AG-S'
+    seq = 'AGTS'
+    ref_codons = [('A', 'GCT'), ('G', 'GGT'), ('S', 'AGT')]
+    seq_codons = [('A', 'GCT'), ('G', 'GGT'),  ('T', 'ACT'), ('S', 'AGC')]
+
+    silent_edits = CRISPRessoShared.get_silent_edits(ref_seq, ref_codons, seq, seq_codons)
+    assert silent_edits == 'AGTs'
