@@ -927,9 +927,9 @@ def load_crispresso_info(
         raise Exception('Cannot parse CRISPResso info file at ' + crispresso_info_file + "\n" + str(e))
     except (AttributeError, EOFError, ImportError, IndexError) as e:
         # secondary errors
-        raise Exception('Cannot open CRISPResso info file at ' + crispresso_info_file + "\n" + str(e))
+        raise Exception('Cannot parse CRISPResso info file at ' + crispresso_info_file + "\n" + str(e))
     except Exception as e:
-        raise Exception('Cannot open CRISPResso info file at ' + crispresso_info_file + "\n" + str(e))
+        raise Exception('Cannot parse CRISPResso info file at ' + crispresso_info_file + "\n" + str(e))
 
 
 def write_crispresso_info(crispresso_output_file, crispresso2_info):
