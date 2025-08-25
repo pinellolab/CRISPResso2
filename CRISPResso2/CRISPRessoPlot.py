@@ -19,6 +19,7 @@ from copy import deepcopy
 import re
 from matplotlib import colors as colors_mpl
 import seaborn as sns
+import upsetplot
 
 from CRISPResso2 import CRISPRessoShared
 
@@ -4579,3 +4580,35 @@ def plot_quantification_positions(
         if save_also_png:
             fig.savefig(plot_path + '.png', bbox_inches='tight', bbox_extra_artists=(lgd,))
     plt.close(fig)
+
+
+def plot_combination_upset(fig_root, ref_name, bp_substitutions_arr, binary_allele_counts, save_also_png=False):
+    header_arr = []
+    for ind, (ref_ind, ref_base, mod_base) in enumerate(bp_substitutions_arr):
+        header_arr.append(str(ref_ind) + ':' + ref_base + '->' + mod_base)
+    header_arr.append('has_indel')
+    header_arr.append('cat_counts')
+
+    df_by_combination_items = []
+    for ref_comb in binary_allele_counts:
+        arr_for_upset = ref_comb.split("\t")
+        for i in range(len(arr_for_upset)-1): # don't check the last column (has indel)
+            arr_for_upset[i] = arr_for_upset[i] == 'T'
+        arr_for_upset[len(arr_for_upset)-1] = arr_for_upset[len(arr_for_upset)-1] == 'True'
+
+        arr_for_upset.append(binary_allele_counts[ref_comb])
+        df_by_combination_items.append(arr_for_upset)
+    for i, col in enumerate(header_arr):
+        if col in ['has_indel', 'cat_counts']:
+            continue
+        if len(col) > 8:
+            header_arr[i] = col[:8] + '...'
+    df_by_combination = pd.DataFrame(df_by_combination_items, columns=header_arr)
+    df_by_combination.set_index(header_arr[:-1], inplace=True)
+    ax_dict = upsetplot.UpSet(df_by_combination.cat_counts, element_size=40, show_counts=True, sort_categories_by='-input').plot()
+
+    if save_also_png:
+        plt.savefig(fig_root + '.png')
+
+    plt.savefig(fig_root + '.pdf')
+    plt.close()
