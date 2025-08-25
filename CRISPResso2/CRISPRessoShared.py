@@ -860,7 +860,7 @@ class CRISPRessoJSONDecoder(json.JSONDecoder):
             if obj['_type'] == 'np.ndarray':
                 return np.array(obj['value'])
             if obj['_type'] == 'pd.DataFrame':
-                return pd.read_json(io.StringIO(obj['value'].decode('utf-8')), orient='split')
+                return pd.read_json(io.StringIO(obj['value']), orient='split')
             if obj['_type'] == 'datetime.datetime':
                 return datetime.datetime.fromisoformat(obj['value'])
             if obj['_type'] == 'datetime.timedelta':
@@ -921,12 +921,12 @@ def load_crispresso_info(
             crispresso2_info = json.load(fh, cls=CRISPRessoJSONDecoder)
             return crispresso2_info
     except json.JSONDecodeError as e:
-        raise Exception('Cannot open CRISPResso info file at ' + crispresso_info_file + "\n" + str(e))
+        raise Exception('Cannot parse CRISPResso info file at ' + crispresso_info_file + "\n" + str(e))
     except (AttributeError, EOFError, ImportError, IndexError) as e:
         # secondary errors
-        raise Exception('Cannot open CRISPResso info file at ' + crispresso_info_file + "\n" + str(e))
+        raise Exception('Cannot parse CRISPResso info file at ' + crispresso_info_file + "\n" + str(e))
     except Exception as e:
-        raise Exception('Cannot open CRISPResso info file at ' + crispresso_info_file + "\n" + str(e))
+        raise Exception('Cannot parse CRISPResso info file at ' + crispresso_info_file + "\n" + str(e))
 
 
 def write_crispresso_info(crispresso_output_file, crispresso2_info):
