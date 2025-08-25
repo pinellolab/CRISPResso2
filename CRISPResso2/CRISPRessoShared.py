@@ -860,10 +860,7 @@ class CRISPRessoJSONDecoder(json.JSONDecoder):
             if obj['_type'] == 'np.ndarray':
                 return np.array(obj['value'])
             if obj['_type'] == 'pd.DataFrame':
-                val = obj['value']
-                if isinstance(val, bytes):
-                    val = val.decode('utf-8')
-                return pd.read_json(io.StringIO(val), orient='split')
+                return pd.read_json(io.StringIO(obj['value']), orient='split')
             if obj['_type'] == 'datetime.datetime':
                 return datetime.datetime.fromisoformat(obj['value'])
             if obj['_type'] == 'datetime.timedelta':
