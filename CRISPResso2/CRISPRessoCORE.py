@@ -3010,8 +3010,8 @@ def main():
                    'exon_len_mods': this_exon_len_mods,
                    'exon_intervals': this_exon_intervals,
                    'splicing_positions': this_splicing_positions,
-                   'include_idxs': this_include_idxs,
-                   'exclude_idxs': this_exclude_idxs,
+                   'include_idxs': np.array(this_include_idxs),
+                   'exclude_idxs': np.array(this_exclude_idxs),
                    'idx_cloned_from': None,
                    'fw_seeds': seeds,
                    'rc_seeds': rc_seeds,
@@ -3183,7 +3183,7 @@ def main():
                     refs[ref_name]['sgRNA_mismatches'] = this_sgRNA_mismatches
                     refs[ref_name]['sgRNA_orig_sequences'] = refs[clone_ref_name]['sgRNA_orig_sequences']
                     refs[ref_name]['sgRNA_names'] = refs[clone_ref_name]['sgRNA_names']
-                    refs[ref_name]['include_idxs'] = this_include_idxs
+                    refs[ref_name]['include_idxs'] = np.array(this_include_idxs)
                     refs[ref_name]['contains_guide'] = refs[clone_ref_name]['contains_guide']
 
                 #quantification window coordinates override other options
@@ -3199,8 +3199,8 @@ def main():
                     #subtract any indices in 'exclude_idxs' -- e.g. in case some of the cloned include_idxs were near the read ends (excluded)
                     this_exclude_idxs = sorted(map(int, set(refs[ref_name]['exclude_idxs'])))
                     this_include_idxs = sorted(map(int, set(np.setdiff1d(this_include_idxs, this_exclude_idxs))))
-                    refs[ref_name]['include_idxs'] = this_include_idxs
-                    refs[ref_name]['exclude_idxs'] = this_exclude_idxs
+                    refs[ref_name]['include_idxs'] = np.array(this_include_idxs)
+                    refs[ref_name]['exclude_idxs'] = np.array(this_exclude_idxs)
 
                 if needs_exon_positions and clone_has_exons:
                     this_exon_positions = set()
