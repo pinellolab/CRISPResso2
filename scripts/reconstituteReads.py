@@ -18,10 +18,12 @@ def reconstitute_reads(crispresso_output_folder, fastq_output_file):
 
     if df_alleles.shape[0] == 0:
         raise Exception('No alleles found in allele frequency table.')
-    if df_alleles.columns[0] != '#Reads':
-        raise Exception('Cannot parse allele frequency table, unexpected first column: ' + df_alleles.columns[0])
-    if df_alleles.columns[1] != 'Aligned_Sequence':
-        raise Exception('Cannot parse allele frequency table, unexpected second column: ' + df_alleles.columns[1])
+    if '#Reads' not in df_alleles.columns:
+        raise Exception('Cannot parse allele frequency table, missing #Reads column.')
+    if 'Aligned_Sequence' not in df_alleles.columns:
+        raise Exception('Cannot parse allele frequency table, missing Aligned_Sequence column.')
+    if 'Reference_Sequence' not in df_alleles.columns:
+        raise Exception('Cannot parse allele frequency table, missing Reference_Sequence column.')
 
     with open(fastq_output_file, "wt") as fout:
         allele_count = 0
