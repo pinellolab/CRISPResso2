@@ -19,7 +19,7 @@ import subprocess as sb
 import traceback
 import zipfile
 
-from collections import Counter
+from collections import Counter, defaultdict
 from copy import deepcopy
 from concurrent.futures import ProcessPoolExecutor, wait
 from datetime import datetime
@@ -149,6 +149,243 @@ sns.set(font_scale=2.2)
 sns.set_style('white')
 
 #########################################
+
+
+def get_refpos_values(ref_aln_seq, read_aln_seq):
+    """
+    Given a reference alignment this returns a dictionary such that refpos_dict[ind] is the value of the read at the position corresponding to the ind'th base in the reference
+    Any additional bases in the read (gaps in the ref) are assigned to the first position of the ref (i.e. refpos_dict[0])
+    For other additional bases in the ref (gaps in the read), the value is appended to the last position of the ref that had a non-gap base (to the left)
+
+    For example:
+    ref_seq =  '--A-TGC-'
+    read_seq = 'GGAGTCGA'
+    get_refpos_values(ref_seq, read_seq)
+    {0: 'GGAG', 1: 'T', 2: 'C', 3: 'GA'}
+
+    Args:
+    - ref_aln_seq: str, reference alignment sequence
+    - read_aln_seq: str, read alignment sequence
+
+    Returns:
+    - refpos_dict: dict, dictionary such that refpos_dict[ind] is the value of the read at the position corresponding to the ind'th base in the reference
+
+    """
+    refpos_dict = defaultdict(str)
+
+    # First, if there are insertions in read, add those to the first position in ref
+    if ref_aln_seq[0] == '-':
+        aln_index = 0
+        read_start_bases = ""
+        while aln_index < len(ref_aln_seq) and ref_aln_seq[aln_index] == '-':
+            read_start_bases += read_aln_seq[aln_index]
+            aln_index += 1
+        refpos_dict[0] = read_start_bases
+        ref_aln_seq = ref_aln_seq[aln_index:]
+        read_aln_seq = read_aln_seq[aln_index:]
+
+    ref_pos = 0
+    last_nongap_ref_pos = 0
+    for ind in range(len(ref_aln_seq)):
+        ref_base = ref_aln_seq[ind]
+        read_base = read_aln_seq[ind]
+        if ref_base == '-':
+            refpos_dict[last_nongap_ref_pos] += read_base
+        else:
+            refpos_dict[ref_pos] += read_base
+            last_nongap_ref_pos = ref_pos
+            ref_pos += 1
+    return refpos_dict
+
+
+def get_bp_substitutions(ref_changes_dict, ref_seq, ref_positions_to_include):
+    """Discover positions and bases that are different between reference and target, i.e. substitutions."""
+    bp_substitutions_arr = []
+    for idx in ref_positions_to_include:
+        ref_base = ref_seq[idx]
+        if ref_changes_dict[idx] != ref_base:
+            bp_substitutions_arr.append((idx, ref_base, ref_changes_dict[idx]))
+    return bp_substitutions_arr
+
+
+def get_upset_plot_counts(df_alleles, bp_substitutions_arr, wt_ref_name):
+    # set up counters
+    binary_allele_counts = defaultdict(int) # e.g. T,T,X,T > 100 where each item is a string of the base at each position in bp_substitutions_arr, and 'X' is nontarget
+    category_allele_counts = defaultdict(int) # e.g. T,T,R,T > 100 where each item is a string of the base at each position in bp_substitutions_arr, and 'T' is Target, 'R' is Reference, 'D' is Deletion, 'I' is insertion, and 'N' is anything else
+    precise_allele_counts = defaultdict(int) # e.g. A,A,C,AA > 100 where each item is a string of the base at each position in bp_substitutions_arr
+
+    total_alleles = 0
+    total_alleles_reads = 0
+    total_alleles_on_ref = 0
+    total_alleles_reads_on_ref = 0
+
+    total_target_noindel_reads = 0
+    total_target_indel_reads = 0
+    total_reference_noindel_reads = 0
+    total_reference_indel_reads = 0
+    total_other_noindel_reads = 0
+    total_other_indel_reads = 0
+
+    target_base_counts = [0] * len(bp_substitutions_arr)
+    reference_base_counts = [0] * len(bp_substitutions_arr)
+    deletion_base_counts = [0] * len(bp_substitutions_arr)
+    insertion_base_counts = [0] * len(bp_substitutions_arr)
+    other_base_counts = [0] * len(bp_substitutions_arr)
+
+    # iterate all alleles in input allele table
+    for idx, allele in df_alleles.iterrows():
+        total_alleles += 1
+        total_alleles_reads += allele['#Reads']
+
+        if allele.Reference_Name != wt_ref_name:
+            continue
+        total_alleles_on_ref += 1
+        total_alleles_reads_on_ref += allele['#Reads']
+
+
+        has_indel_guide = False
+        if allele.n_deleted > 0:
+            has_indel_guide = True
+        if allele.n_inserted > 0:
+            has_indel_guide = True
+
+        has_indel = has_indel_guide
+
+        ref_aln = allele.Reference_Sequence
+        read_aln = allele.Aligned_Sequence
+        ref_base_position_lookup = get_refpos_values(ref_aln, read_aln)
+
+        binary_arr = []
+        cat_arr = []
+        val_arr = []
+        for ind, (ref_ind, ref_base, mod_base) in enumerate(bp_substitutions_arr):
+            base_at_pos = ref_base_position_lookup[ref_ind]
+            this_binary = 'X'
+            this_category = 'N'
+            if base_at_pos == ref_base:
+                this_category = 'R'
+                reference_base_counts[ind] += allele['#Reads']
+            elif base_at_pos == mod_base:
+                this_category = 'T'
+                this_binary = 'T'
+                target_base_counts[ind] += allele['#Reads']
+            elif base_at_pos == '-':
+                this_category = 'D'
+                deletion_base_counts[ind] += allele['#Reads']
+            elif len(base_at_pos) != 1:
+                this_category = 'I'
+                insertion_base_counts[ind] += allele['#Reads']
+            else:
+                this_category = 'N'
+                other_base_counts[ind] += allele['#Reads']
+            binary_arr.append(this_binary)
+            cat_arr.append(this_category)
+            val_arr.append(base_at_pos)
+
+        if cat_arr.count('R') == len(cat_arr):
+            if not has_indel:
+                total_reference_noindel_reads += allele['#Reads']
+            else:
+                total_reference_indel_reads += allele['#Reads']
+        elif cat_arr.count('T') == len(cat_arr):
+            if not has_indel:
+                total_target_noindel_reads += allele['#Reads']
+            else:
+                total_target_indel_reads += allele['#Reads']
+        else:
+            if not has_indel:
+                total_other_noindel_reads += allele['#Reads']
+            else:
+                total_other_indel_reads += allele['#Reads']
+
+        binary_arr_str = "\t".join(binary_arr) + "\t" + str(has_indel)
+        cat_arr_str = "\t".join(cat_arr) + "\t" + str(has_indel)
+        val_arr_str = "\t".join(val_arr) + "\t" + str(has_indel)
+
+        binary_allele_counts[binary_arr_str] += allele['#Reads']
+        category_allele_counts[cat_arr_str] += allele['#Reads']
+        precise_allele_counts[val_arr_str] += allele['#Reads']
+
+
+    total_counts = [total_alleles_reads] * len(bp_substitutions_arr)
+
+    return {
+        "binary_allele_counts": binary_allele_counts,
+        "category_allele_counts": category_allele_counts,
+        "precise_allele_counts": precise_allele_counts,
+        "total_alleles": total_alleles,
+        "total_alleles_reads": total_alleles_reads,
+        "total_alleles_on_ref": total_alleles_on_ref,
+        "total_alleles_reads_on_ref": total_alleles_reads_on_ref,
+        "total_target_noindel_reads": total_target_noindel_reads,
+        "total_target_indel_reads": total_target_indel_reads,
+        "total_reference_noindel_reads": total_reference_noindel_reads,
+        "total_reference_indel_reads": total_reference_indel_reads,
+        "total_other_noindel_reads": total_other_noindel_reads,
+        "total_other_indel_reads": total_other_indel_reads,
+        "target_base_counts": target_base_counts,
+        "reference_base_counts": reference_base_counts,
+        "deletion_base_counts": deletion_base_counts,
+        "insertion_base_counts": insertion_base_counts,
+        "other_base_counts": other_base_counts,
+        "total_counts": total_counts,
+        }
+
+
+def get_base_edit_target_sequence(ref_seq, df_alleles, base_editor_target_ref_skip_allele_count):
+
+    target_seq = ""
+    seen_nonref_allele_count = 0
+    for idx, allele in df_alleles.iterrows():
+        if allele.Aligned_Sequence.replace("-","") != ref_seq and allele.Read_Status == 'MODIFIED':
+            if seen_nonref_allele_count >= base_editor_target_ref_skip_allele_count:
+                target_seq = allele.Aligned_Sequence.replace("-","")
+                break
+            else:
+                logger.debug('Skipping allele ' + str(idx) + ' with sequence ' + allele.Aligned_Sequence)
+            seen_nonref_allele_count += 1
+    if target_seq == "":
+        warn('Target reference sequence not found in allele table (all reads were equal to the reference sequence)')
+
+    return target_seq
+
+
+def write_base_edit_counts(ref_name, counts_dict, bp_substitutions_arr, _jp):
+
+    prefix = '10i.' + ref_name
+
+    with open(_jp(prefix + '.binary_allele_counts.txt'),'w') as fout:
+        sorted_binary_allele_counts = sorted(counts_dict['binary_allele_counts'].keys(), key=lambda x: counts_dict['binary_allele_counts'][x], reverse=True)
+        fout.write("\t".join([str(x) for x in bp_substitutions_arr]) + '\thas_indel\tcount\n')
+        for allele_str in sorted_binary_allele_counts:
+            fout.write(allele_str + '\t' + str(counts_dict['binary_allele_counts'][allele_str]) + '\n')
+
+
+    with open(_jp(prefix + '.category_allele_counts.txt'),'w') as fout:
+        sorted_category_allele_counts = sorted(counts_dict['category_allele_counts'].keys(), key=lambda x: counts_dict['category_allele_counts'][x], reverse=True)
+        fout.write("\t".join([str(x) for x in bp_substitutions_arr]) + '\thas_indel\tcount\n')
+        for allele_str in sorted_category_allele_counts:
+            fout.write(allele_str + '\t' + str(counts_dict['category_allele_counts'][allele_str]) + '\n')
+
+    with open(_jp(prefix + '.precise_allele_counts.txt'),'w') as fout:
+        sorted_precise_allele_counts = sorted(counts_dict['precise_allele_counts'].keys(), key=lambda x: counts_dict['precise_allele_counts'][x], reverse=True)
+        fout.write("\t".join([str(x) for x in bp_substitutions_arr]) + '\thas_indel\tcount\n')
+        for allele_str in sorted_precise_allele_counts:
+            fout.write(allele_str + '\t' + str(counts_dict['precise_allele_counts'][allele_str]) + '\n')
+
+    with open(_jp(prefix + '.arrays.txt'),'w') as fout:
+        fout.write('Class\t' + "\t".join([str(x) for x in bp_substitutions_arr]) + '\n')
+        fout.write('total_counts\t' + "\t".join([str(x) for x in counts_dict['total_counts']]) + '\n')
+        fout.write('reference_counts\t' + "\t".join([str(x) for x in counts_dict['reference_base_counts']]) + '\n')
+        fout.write('target_counts\t' + "\t".join([str(x) for x in counts_dict['target_base_counts']]) + '\n')
+        fout.write('deletion_counts\t' + "\t".join([str(x) for x in counts_dict['deletion_base_counts']]) + '\n')
+        fout.write('insertion_counts\t' + "\t".join([str(x) for x in counts_dict['insertion_base_counts']]) + '\n')
+        fout.write('other_counts\t' + "\t".join([str(x) for x in counts_dict['other_base_counts']]) + '\n')
+
+    with open(_jp(prefix + '.counts.txt'),'w') as fout:
+        target_name = 'Target'
+        fout.write("\t".join([ref_name,ref_name+"_indels",target_name,target_name+"_indels","other","other_indels"]) + '\n')
+        fout.write("\t".join([str(x) for x in [counts_dict['total_reference_noindel_reads'], counts_dict['total_reference_indel_reads'], counts_dict['total_target_noindel_reads'], counts_dict['total_target_indel_reads'], counts_dict['total_other_noindel_reads'], counts_dict['total_other_indel_reads']]]) + '\n')
 
 
 def split_quant_window_coordinates(quant_window_coordinates):
@@ -916,7 +1153,7 @@ def process_paired_fastq(fastq1_filename, fastq2_filename, variantCache, ref_nam
         # Reading through the fastq file and enriching variantCache as a dictionary with the following:
             # Key: the unique DNA sequence from the fastq file
             # Value: an integer that represents how many times we've seen this specific read
-        
+
         num_reads = 0
         fastq1_id = fastq1_file.readline()
         fastq2_id = fastq2_file.readline()
@@ -985,7 +1222,7 @@ def process_paired_fastq(fastq1_filename, fastq2_filename, variantCache, ref_nam
         for p in processes:
             p.join() # pauses the main thread until the processes are finished
         info("Merging and aligning non processable reads.", {'percent_complete': 12})
-        
+
         re_aln = {} #cache for reads that have discrepancies and need to be processed individually
         not_aln = {} #cache for reads that don't align
         if os.path.exists(variants_dir):
@@ -1110,7 +1347,7 @@ def process_paired_fastq(fastq1_filename, fastq2_filename, variantCache, ref_nam
                             N_TOT_READS += 1
                             N_COMPUTED_ALN += 1
                             variantCache[variant[match_name]['aln_seq']] = variant
-                            if len(variant['aln_ref_names']) == 1 or args.expand_ambiguous_alignments:                   
+                            if len(variant['aln_ref_names']) == 1 or args.expand_ambiguous_alignments:
                                 for name in variant['aln_ref_names']:
                                     match_name = "variant_" + name
                                     if READ_LENGTH == 0:
@@ -1252,7 +1489,7 @@ def process_paired_fastq(fastq1_filename, fastq2_filename, variantCache, ref_nam
 
                             sub_inds.append(payload['substitution_positions'])
                             edit_strings.append('D'+str(int(payload['deletion_n']))+';I'+str(int(payload['insertion_n']))+';S'+str(int(payload['substitution_n'])))
-                    
+
 
                         crispresso2_annotation = " ALN="+("&".join(new_variant['aln_ref_names'])) +\
                                 " ALN_SCORES=" + ('&'.join([str(x) for x in new_variant['aln_scores']])) +\
@@ -1270,7 +1507,7 @@ def process_paired_fastq(fastq1_filename, fastq2_filename, variantCache, ref_nam
                     if new_variant['caching_is_ok']:
                         variantCache[lookup_fastq_seq] = new_variant
                     else:
-                        if len(new_variant['aln_ref_names']) == 1 or args.expand_ambiguous_alignments:                   
+                        if len(new_variant['aln_ref_names']) == 1 or args.expand_ambiguous_alignments:
                             for name in new_variant['aln_ref_names']:
                                 match_name = "variant_" + name
                                 if READ_LENGTH == 0:
@@ -1311,7 +1548,7 @@ def process_paired_fastq(fastq1_filename, fastq2_filename, variantCache, ref_nam
             if '+' in key:
                 variant = variantCache[key]
                 alignment_key = variant["variant_" + variant['aln_ref_names'][0]]['aln_seq']
-                if len(variant['aln_ref_names']) == 1 or args.expand_ambiguous_alignments:                   
+                if len(variant['aln_ref_names']) == 1 or args.expand_ambiguous_alignments:
                     for name in variant['aln_ref_names']:
                         match_name = "variant_" + name
                         if READ_LENGTH == 0:
@@ -2228,7 +2465,6 @@ def main():
                 '-n NAME, --name NAME  Name for the analysis (default: name based on input file name)'
             ))
 
-
         arg_parser = CRISPRessoShared.getCRISPRessoArgParser("Core")
         args = arg_parser.parse_args()
 
@@ -2440,7 +2676,7 @@ def main():
                     raise CRISPRessoShared.NTException('The coding sequence contains bad characters:%s' % ' '.join(wrong_nt))
 
                 coding_seqs.append(exon_seq)
-        
+
         if len(coding_seqs) > 0:
             crispresso2_info['running_info']['coding_seqs'] = coding_seqs
 
@@ -3365,7 +3601,7 @@ def main():
 
             processed_output_filename = output_forward_filename
 
-        elif args.fastq_r1 != '' and args.fastq_r2 != '':#paired end reads     
+        elif args.fastq_r1 != '' and args.fastq_r2 != '':#paired end reads
             not_combined_1_filename = _jp('out.notCombined_1.fastq.gz')
             not_combined_2_filename = _jp('out.notCombined_2.fastq.gz')
             check_fastp()
@@ -4387,7 +4623,6 @@ def main():
         crispresso2_info['results']['alignment_stats']['substitution_pct_vectors'] = substitution_pct_vectors
         crispresso2_info['results']['alignment_stats']['indelsub_pct_vectors'] = indelsub_pct_vectors
 
-
         #set unique plot name to appear as prefix to files for each reference
         seen_ref_names = {} #dict to track unique ref names
         for ref_name in ref_names:
@@ -4422,6 +4657,8 @@ def main():
             #    continue
 
             if not args.suppress_plots:
+                crispresso2_info['results']['refs'][ref_name]['allele_frequency_files'] = []
+
                 ins_pct_vector_filename = _jp(ref_plot_name+'Effect_vector_insertion.txt')
                 save_vector_to_file(insertion_pct_vectors[ref_name], ins_pct_vector_filename)
                 crispresso2_info['results']['refs'][ref_name]['insertion_pct_vector_filename'] = os.path.basename(ins_pct_vector_filename)
@@ -5360,6 +5597,8 @@ def main():
             ######PLOT
             if not args.crispresso1_mode and args.base_editor_output:
                 if not args.suppress_plots:
+
+                    
                     fig_filename_root= _jp('10a.'+ref_plot_name+'Substitution_frequencies_at_each_bp')
                     plot_10a_input = {
                         'ref_len': ref_len,
@@ -5415,6 +5654,72 @@ def main():
                     crispresso2_info['results']['refs'][ref_name]['plot_10c_root'] = os.path.basename(fig_filename_root)
                     crispresso2_info['results']['refs'][ref_name]['plot_10c_caption'] = "Figure 10c: Substitution frequencies in the quantification window"
                     crispresso2_info['results']['refs'][ref_name]['plot_10c_data'] = [('Nucleotide frequencies in quantification window', os.path.basename(quant_window_sub_freq_filename))]
+                    
+                    plot_half_window = max(1, args.plot_window_size)
+                    df_alleles_around_cut = CRISPRessoShared.get_base_edit_dataframe_around_cut(df_alleles.loc[df_alleles['Reference_Name'] == ref_name], args.conversion_nuc_from)
+                    count_total = counts_total[ref_name]
+                    if args.allele_plot_pcts_only_for_assigned_reference:
+                        df_alleles_around_cut['%AllReads']=df_alleles_around_cut['%Reads']
+                        df_alleles_around_cut['%Reads']=df_alleles_around_cut['#Reads']/count_total*100
+
+                    #write alleles table to file
+                    base_edit_allele_filename = _jp(ref_plot_name + 'base_edit_' + args.conversion_nuc_from + 's_quilt.txt')
+                    df_alleles_around_cut.to_csv(base_edit_allele_filename, sep='\t', header=True)
+                    crispresso2_info['results']['refs'][ref_name]['allele_frequency_files'].append(os.path.basename(base_edit_allele_filename))
+
+
+                    ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_half_window+1:cut_point+plot_half_window+1]
+                    fig_filename_root = _jp('10h.'+ref_plot_name+'base_edit_'+args.conversion_nuc_from+'s_quilt')
+                    n_good = df_alleles_around_cut[df_alleles_around_cut['%Reads']>=args.min_frequency_alleles_around_cut_to_plot].shape[0]
+                    if n_good > 0:
+                        # Plot 10h: Edit Quilt around cut site
+                        df_to_plot = df_alleles_around_cut
+                        if not args.expand_allele_plots_by_quantification:
+                            df_to_plot = df_alleles_around_cut.groupby(['Aligned_Sequence', 'Reference_Sequence']).sum().reset_index().set_index('Aligned_Sequence')
+                            df_to_plot.sort_values(by=['#Reads', 'Aligned_Sequence', 'Reference_Sequence'], inplace=True, ascending=[False, True, True])
+
+                        new_sgRNA_intervals = []
+                        #adjust coordinates of sgRNAs
+                        new_sel_cols_start = cut_point - plot_half_window
+                        for (int_start, int_end) in refs[ref_name]['sgRNA_intervals']:
+                            new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1, int_end - new_sel_cols_start - 1)]
+
+                        prepped_df_alleles, annotations, y_labels, insertion_dict, per_element_annot_kws, is_reference = CRISPRessoPlot.prep_alleles_table(
+                            df_to_plot,
+                            ref_seq_around_cut,
+                            args.max_rows_alleles_around_cut_to_plot,
+                            args.min_frequency_alleles_around_cut_to_plot,
+                        )
+
+                        x_labels = []
+                        for ind, a in enumerate(refs[ref_name]['sequence'], start=1):
+                            if a == args.conversion_nuc_from:
+                                x_labels.append(ind)
+                        
+                        plot_10h_input = {
+                            'reference_seq': ref_seq_around_cut,
+                            'prepped_df_alleles': prepped_df_alleles,
+                            'annotations': annotations,
+                            'y_labels': y_labels,
+                            'insertion_dict': insertion_dict,
+                            'per_element_annot_kws': per_element_annot_kws,
+                            'is_reference': is_reference,
+                            'fig_filename_root': fig_filename_root,
+                            'custom_colors': custom_config["colors"],
+                            'SAVE_ALSO_PNG': save_png,
+                            'plot_cut_point': None,
+                            'sgRNA_intervals': None,
+                            'sgRNA_names': None,
+                            'sgRNA_mismatches': None,
+                            'annotate_wildtype_allele': '',
+                            'plot_reference_sequence_above': False,
+                            'x_labels': x_labels,
+                        }
+                        debug('Plotting allele distribution around cut for {0}'.format(ref_name))
+                        plot(CRISPRessoPlot.plot_alleles_table_prepped, plot_10h_input)
+                        crispresso2_info['results']['refs'][ref_name]['plot_10h_root'] = os.path.basename(fig_filename_root)
+                        crispresso2_info['results']['refs'][ref_name]['plot_10h_caption'] = "Figure 10h: Quilt of target nucleotide: " + args.conversion_nuc_from + " across entire amplicon. The x-axis shows the corresponding position of the nucleotide in the reference amplicon (1-indexed). Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences."
+                        crispresso2_info['results']['refs'][ref_name]['plot_10h_data'] = [('Allele frequency table', os.path.basename(base_edit_allele_filename))]
 
             ##new plots alleles around cut_sites
             sgRNA_sequences = refs[ref_name]['sgRNA_sequences']
@@ -5432,8 +5737,6 @@ def main():
             crispresso2_info['results']['refs'][ref_name]['plot_9a_roots'] = []
             crispresso2_info['results']['refs'][ref_name]['plot_9a_captions'] = []
             crispresso2_info['results']['refs'][ref_name]['plot_9a_datas'] = []
-            
-            crispresso2_info['results']['refs'][ref_name]['allele_frequency_files'] = []
 
             crispresso2_info['results']['refs'][ref_name]['plot_10d_roots'] = []
             crispresso2_info['results']['refs'][ref_name]['plot_10d_captions'] = []
@@ -5450,6 +5753,10 @@ def main():
             crispresso2_info['results']['refs'][ref_name]['plot_10g_roots'] = []
             crispresso2_info['results']['refs'][ref_name]['plot_10g_captions'] = []
             crispresso2_info['results']['refs'][ref_name]['plot_10g_datas'] = []
+
+            crispresso2_info['results']['refs'][ref_name]['plot_10i_roots'] = []
+            crispresso2_info['results']['refs'][ref_name]['plot_10i_captions'] = []
+            crispresso2_info['results']['refs'][ref_name]['plot_10i_datas'] = []
 
             for sgRNA_ind, sgRNA_seq in enumerate(sgRNA_sequences):
                 cut_point = sgRNA_cut_points[sgRNA_ind]
@@ -5474,7 +5781,7 @@ def main():
                     plot_half_window_left = cut_point + 1
                     pass_cut_point = True
                     warn(f'sgRNA {0} is too close to the start of the amplicon to plot the full window. Truncating the window.')
-                
+
                 #Set right window size
                 if cut_point + args.plot_window_size < ref_len:
                     plot_half_window_right = args.plot_window_size
@@ -5482,7 +5789,7 @@ def main():
                     plot_half_window_right = ref_len - cut_point - 1
                     pass_cut_point = True
                     warn(f'sgRNA {0} is too close to the end of the amplicon to plot the full window. Truncating the window.')
-                    
+
                 df_alleles_around_cut = CRISPRessoShared.get_dataframe_around_cut_asymmetrical(
                     df_alleles.loc[df_alleles['Reference_Name'] == ref_name],
                     cut_point,
@@ -5516,7 +5823,7 @@ def main():
                         new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1, int_end - new_sel_cols_start - 1)]
                         if int_start <= cut_point and cut_point <= int_end:
                             new_cut_point = cut_point - new_sel_cols_start - 1
-         
+
                     prepped_df_alleles, annotations, y_labels, insertion_dict, per_element_annot_kws, is_reference = CRISPRessoPlot.prep_alleles_table(
                         df_to_plot,
                         ref_seq_around_cut,
@@ -5679,20 +5986,81 @@ def main():
                         crispresso2_info['results']['refs'][ref_name]['plot_10g_roots'].append(os.path.basename(fig_filename_root))
                         crispresso2_info['results']['refs'][ref_name]['plot_10g_captions'].append("Figure 10g: Non-reference base counts. For target nucleotides in the plotting window, this plot shows the number of non-reference (non-" + args.conversion_nuc_from + ") bases. The number of each target base is annotated on the reference sequence at the bottom of the plot.")
                         crispresso2_info['results']['refs'][ref_name]['plot_10g_datas'].append([('Nucleotide frequencies at ' + args.conversion_nuc_from +'s', os.path.basename(quant_window_sel_nuc_freq_filename))])
+                        wt_ref_name = ref_name
+                    ref_seq = refs[wt_ref_name]['sequence']
+                    target_seq = get_base_edit_target_sequence(ref_seq, df_alleles, args.base_editor_target_ref_skip_allele_count)
 
-                
+                    if target_seq and args.quantification_window_coordinates is None:
+
+                        # create reference/target read alignment
+                        aln_gap_incentive = refs[wt_ref_name]['gap_incentive']
+                        aln_gap_open_arg = args.needleman_wunsch_gap_open
+                        aln_gap_extend_arg = args.needleman_wunsch_gap_extend
+
+                        aln_matrix_loc = args.needleman_wunsch_aln_matrix_loc
+                        if aln_matrix_loc == 'EDNAFULL':
+                            aln_matrix = CRISPResso2Align.make_matrix()
+                        else:
+                            if not os.path.exists(aln_matrix_loc):
+                                raise Exception('Alignment matrix file not found at ' + aln_matrix_loc)
+                            aln_matrix = CRISPResso2Align.read_matrix(aln_matrix_loc)
+
+                        aln_target_seq, aln_ref_seq, aln_score = CRISPResso2Align.global_align(
+                            target_seq,
+                            ref_seq,
+                            matrix=aln_matrix,
+                            gap_incentive=aln_gap_incentive,
+                            gap_open=aln_gap_open_arg,
+                            gap_extend=aln_gap_extend_arg)
+
+                        debug('Aligned target:    ' + aln_target_seq)
+                        debug('Aligned reference: ' + aln_ref_seq)
+
+                        # get indices of reference sequence to include in analysis
+                        if args.base_editor_consider_changes_outside_qw:
+                            ref_positions_to_include = [x for x in range(len(ref_seq))]
+                        else:
+                            this_start, this_stop = sgRNA_intervals[sgRNA_ind]
+                            ref_positions_to_include = list(range(this_start, this_stop + 1))
+
+                        ref_changes_dict = get_refpos_values(aln_ref_seq, aln_target_seq)
+                        bp_substitutions_arr = get_bp_substitutions(ref_changes_dict, ref_seq, ref_positions_to_include)
+
+                        debug('Found ' + str(len(bp_substitutions_arr)) + ' base changes: ' + str(bp_substitutions_arr))
+                        counts_dict = get_upset_plot_counts(df_alleles, bp_substitutions_arr, wt_ref_name)
+
+                        write_base_edit_counts(ref_name + '.' + sgRNA_label, counts_dict, bp_substitutions_arr, _jp)
+
+                        debug('Read ' + str(counts_dict['total_alleles']) + ' alleles with ' + str(counts_dict['total_alleles_reads']) + ' reads')
+                        debug('Got ' + str(counts_dict['total_alleles_on_ref']) + ' alleles on reference "' + wt_ref_name + '" with ' + str(counts_dict['total_alleles_reads_on_ref']) + ' reads')
+
+
+                        if len(bp_substitutions_arr) > 0:
+                            fig_root_10i = _jp(f'10i.Base_editing_{wt_ref_name}_upset_plot.by_amplicon_combination.no_indels_{sgRNA_label}')
+                            plot_10i_input = {
+                                'fig_root': fig_root_10i,
+                                'ref_name': ref_name,
+                                'bp_substitutions_arr': bp_substitutions_arr,
+                                'binary_allele_counts': counts_dict['binary_allele_counts'],
+                                'save_also_png': save_png,
+                            }
+                            CRISPRessoPlot.plot_combination_upset(**plot_10i_input)
+                            crispresso2_info['results']['refs'][ref_name]['plot_10i_roots'].append(os.path.basename(fig_root_10i))
+                            crispresso2_info['results']['refs'][ref_name]['plot_10i_captions'].append(f"Figure 10i: Upset plot of Base Edits for {args.conversion_nuc_from} around cut site for {sgRNA_legend}. Each dot matrix at the bottom represents a specific combination of base edits (colored by target position), and the bar plot at the top shows the number of reads with each combination.")
+                            crispresso2_info['results']['refs'][ref_name]['plot_10i_datas'].append([('Binary Allele Counts', '10i.' + ref_name + '.' + sgRNA_label + '.binary_allele_counts.txt')])
+                            
             if refs[ref_name]['contains_coding_seq']:
                 for i, coding_seq in enumerate(coding_seqs):
                     fig_filename_root = _jp('9a.'+ref_plot_name+'amino_acid_table_around_'+coding_seq)
                     coding_seq_amino_acids = CRISPRessoShared.get_amino_acids_from_nucs(coding_seq)
-                    amino_acid_cut_point = (cut_point - refs[ref_name]['exon_positions'][0] + 1)// 3  
+                    amino_acid_cut_point = (cut_point - refs[ref_name]['exon_positions'][0] + 1)// 3
                     df_to_plot = CRISPRessoShared.get_amino_acid_dataframe(
                         df_alleles.loc[df_alleles['Reference_Name'] == ref_name],
-                        refs[ref_name]['exon_intervals'][i][0], 
+                        refs[ref_name]['exon_intervals'][i][0],
                         len(coding_seq_amino_acids),
                         os.path.join(_ROOT, "BLOSUM62"),
                         amino_acid_cut_point)
-                                            
+
                     plot_9a_input = {
                         'reference_seq': coding_seq_amino_acids,
                         'df_alleles': df_to_plot,
@@ -5711,14 +6079,14 @@ def main():
 
                     amino_acid_filename = _jp(ref_plot_name+'amino_acid_table_for_'+coding_seq+'.txt')
                     df_to_plot.to_csv(amino_acid_filename, sep='\t', header=True, index=True)
-                    
+
                     debug('Plotting amino acids for {0}'.format(ref_name))
                     plot(CRISPRessoPlot.plot_amino_acid_table, plot_9a_input)
                     crispresso2_info['results']['refs'][ref_name]['plot_9a_roots'].append(os.path.basename(fig_filename_root))
                     crispresso2_info['results']['refs'][ref_name]['plot_9a_captions'].append(
                         "Figure 9a: Visualization of the distribution of identified amino acids based on the coding sequence (" + coding_seq+"). The vertical dashed line indicates the predicted cleavage site.")
                     crispresso2_info['results']['refs'][ref_name]['plot_9a_datas'].append([('Amino Acid table', os.path.basename(amino_acid_filename))])
-                    
+
             info('Done!')
 
             #END GUIDE SPECIFIC PLOTS
@@ -6076,7 +6444,6 @@ def main():
 
         info(CRISPRessoShared.get_crispresso_footer())
         info('Analysis Complete!', {'percent_complete': 100})
-
         sys.exit(0)
 
     except CRISPRessoShared.NTException as e:

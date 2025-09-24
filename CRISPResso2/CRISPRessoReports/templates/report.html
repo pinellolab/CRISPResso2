@@ -573,6 +573,16 @@
 						  				<button class="nav-link" data-bs-toggle="tab" data-bs-target="#{{amplicon_name}}_10f" role="tab" aria-controls="{{amplicon_name}}_10f" aria-selected="false">Non-reference Bases</button>
   						  			</li>
             						{% endif %}
+                  {% if amplicon_name in report_data['figures']['locs'] and 'plot_10a' in report_data['figures']['locs'][amplicon_name] %}
+  						  			<li class="nav-item">
+						  				<button class="nav-link" data-bs-toggle="tab" data-bs-target="#{{amplicon_name}}_10h" role="tab" aria-controls="{{amplicon_name}}_10h" aria-selected="false">Base Edit Quilt</button>
+  						  			</li>
+            						{% endif %}
+									{% if amplicon_name in report_data['figures']['locs'] and '10i' in report_data['figures']['sgRNA_based_names'][amplicon_name] and report_data['figures']['sgRNA_based_names'][amplicon_name]['10i']|length > 0 %}
+  						  			<li class="nav-item">
+						  				<button class="nav-link" data-bs-toggle="tab" data-bs-target="#{{amplicon_name}}_10i" role="tab" aria-controls="{{amplicon_name}}_10i" aria-selected="false">Substitution Co-occurences</button>
+  						  			</li>
+            						{% endif %}
   								</ul>
 							</div>
 							<div class='card-body'>
@@ -588,7 +598,7 @@
                                         <div class="mb-3">
 											{{ render_partial('shared/partials/fig_reports.html', report_data=report_data, fig_name='plot_10c', amplicon_name=amplicon_name)}}
 										</div>
-                                        {% endif %}
+										{% endif %}
 									</div>
 
 									{% if amplicon_name in report_data['figures']['sgRNA_based_names'] and '10d' in report_data['figures']['sgRNA_based_names'][amplicon_name] %}
@@ -622,6 +632,23 @@
                     					</div>
 										{% endfor %}
 									</div>
+                  {% if  'plot_10h' in report_data['figures']['locs'][amplicon_name] %}
+									<div class="tab-pane fade" id="{{amplicon_name}}_10h" role="tabpanel">
+                      <div class='mb-4'>
+                      {{ render_partial('shared/partials/fig_reports.html', report_data=report_data, fig_name='plot_10h', amplicon_name=amplicon_name)}}
+                      </div>
+									</div>
+									{% endif %}
+
+									{% if amplicon_name in report_data['figures']['sgRNA_based_names'] and '10i' in report_data['figures']['sgRNA_based_names'][amplicon_name] %}
+									<div class="tab-pane fade" id="{{amplicon_name}}_10i" role="tabpanel">
+                    {% for fig_name in report_data['figures']['sgRNA_based_names'][amplicon_name]['10i'] %}
+                      <div class='mb-4'>
+                      {{ render_partial('shared/partials/fig_reports.html', report_data=report_data, fig_name=fig_name, amplicon_name=amplicon_name)}}
+                      </div>
+										{% endfor %}
+									</div>
+									{% endif %}
 								</div>
 							{% endif %}
 							</div>
