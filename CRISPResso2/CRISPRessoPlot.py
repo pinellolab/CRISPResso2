@@ -3350,6 +3350,8 @@ def plot_alleles_heatmap(
         sgRNA_intervals=None,
         sgRNA_names=None,
         sgRNA_mismatches=None,
+        plot_reference_sequence_above=True,
+        x_labels=None,
         **kwargs):
     """
     Plots alleles in a heatmap (nucleotides color-coded for easy visualization)
@@ -3370,7 +3372,7 @@ def plot_alleles_heatmap(
     -sgRNA_names: array (for each sgRNA_interval) of names of sgRNAs (otherwise empty)
     -custom_colors: dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     """
-    plot_nuc_len=len(reference_seq)
+    plot_nuc_len = len(X[0]) if len(X) > 0 else len(reference_seq)
 
     # make a color map of fixed colors
     alpha=0.4
@@ -3442,19 +3444,32 @@ def plot_alleles_heatmap(
         ax_hm=plt.subplot(gs2[2:,:])
     else:
         fig=plt.figure(figsize=(plot_nuc_len*0.3, (N_ROWS+1)*0.6))
-        gs1 = gridspec.GridSpec(N_ROWS+1, N_COLUMNS)
-        gs2 = gridspec.GridSpec(N_ROWS+1, N_COLUMNS)
-        #ax_hm_ref heatmap for the reference
-        ax_hm_ref=plt.subplot(gs1[0,:])
-        ax_hm=plt.subplot(gs2[1:,:])
+        if plot_reference_sequence_above:
+            gs1 = gridspec.GridSpec(N_ROWS+1, N_COLUMNS)
+            gs2 = gridspec.GridSpec(N_ROWS+1, N_COLUMNS)
+            #ax_hm_ref heatmap for the reference
+            ax_hm_ref=plt.subplot(gs1[0,:])
+            ax_hm=plt.subplot(gs2[1:,:])
+        else:
+            gs1 = None
+            gs2 = gridspec.GridSpec(N_ROWS+1, N_COLUMNS)
+            ax_hm_ref = None
+            ax_hm = plt.subplot(gs2[:,:])
 
-
-    custom_heatmap(ref_seq_hm, annot=ref_seq_annot_hm, annot_kws={'size':16}, cmap=cmap, fmt='s', ax=ax_hm_ref, vmin=0, vmax=5, square=True)
+    if plot_reference_sequence_above:
+        custom_heatmap(ref_seq_hm, annot=ref_seq_annot_hm, annot_kws={'size':16}, cmap=cmap, fmt='s', ax=ax_hm_ref, vmin=0, vmax=5, square=True)
     custom_heatmap(X, annot=np.array(annot), annot_kws={'size':16}, cmap=cmap, fmt='s', ax=ax_hm, vmin=0, vmax=5, square=True, per_element_annot_kws=per_element_annot_kws)
 
     ax_hm.yaxis.tick_right()
     ax_hm.yaxis.set_ticklabels(y_labels[::-1], rotation=True, va='center')
-    ax_hm.xaxis.set_ticks([])
+
+    if plot_reference_sequence_above:
+        ax_hm.xaxis.set_ticks([])
+    else:
+        ax_hm.xaxis.tick_top()
+        ax_hm.xaxis.set_label_position('top')
+        ax_hm.set_xlabel("Reference position for target nucleotide (1-indexed)")
+        ax_hm.xaxis.set_ticklabels(x_labels, rotation=90)
 
     if sgRNA_intervals and len(sgRNA_intervals) > 0:
         this_sgRNA_y_start = -1*num_sgRNA_rows
@@ -3493,15 +3508,15 @@ def plot_alleles_heatmap(
             cut_point_ind = [plot_nuc_len / 2]
         ax_hm.vlines(cut_point_ind,*ax_hm.get_ylim(),linestyles='dashed')
 
-
-    ax_hm_ref.yaxis.tick_right()
-    ax_hm_ref.xaxis.set_ticks([])
-    ax_hm_ref.yaxis.set_ticklabels(['Reference'], rotation=True, va='center')
-
+    if ax_hm_ref:
+        ax_hm_ref.yaxis.tick_right()
+        ax_hm_ref.xaxis.set_ticks([])
+        ax_hm_ref.yaxis.set_ticklabels(['Reference'], rotation=True, va='center')
 
 
     gs2.update(left=0, right=1, hspace=0.05, wspace=0, top=1*(((N_ROWS)*1.13))/(N_ROWS))
-    gs1.update(left=0, right=1, hspace=0.05, wspace=0,)
+    if gs1:
+        gs1.update(left=0, right=1, hspace=0.05, wspace=0,)
 
     sns.set_context(rc={'axes.facecolor':'white','lines.markeredgewidth': 1,'mathtext.fontset' : 'stix','text.usetex':True,'text.latex.unicode':True} )
 
@@ -3676,7 +3691,7 @@ def plot_alleles_heatmap_hist(reference_seq, X, annot, y_labels, insertion_dict,
 
 def plot_alleles_table_prepped(reference_seq, prepped_df_alleles, annotations, y_labels, insertion_dict, per_element_annot_kws,
         is_reference, fig_filename_root=None, custom_colors=None, SAVE_ALSO_PNG=False, plot_cut_point=True, cut_point_ind=None,
-        sgRNA_intervals=None, sgRNA_names=None, sgRNA_mismatches=None, annotate_wildtype_allele='****', **kwargs,):
+        sgRNA_intervals=None, sgRNA_names=None, sgRNA_mismatches=None, annotate_wildtype_allele='****', plot_reference_sequence_above=True, x_labels=None, **kwargs,):
     """Plot an allele table for a pre-filtered dataframe with allele frequencies.
 
     Parameters
@@ -3713,6 +3728,10 @@ def plot_alleles_table_prepped(reference_seq, prepped_df_alleles, annotations, y
         Array (for each sgRNA_interval) of locations in sgRNA where there are mismatches.
     annotate_wildtype_allele : str
         String to add to the end of the wildtype allele (e.g. '****' or '').
+    plot_reference_sequence_above : bool
+        Whether to plot the reference sequence above the alleles.
+    x_labels : list
+        Custom x-axis labels (otherwise None).
     kwargs : dict
         Additional keyword arguments.
 
@@ -3740,6 +3759,8 @@ def plot_alleles_table_prepped(reference_seq, prepped_df_alleles, annotations, y
         sgRNA_intervals=sgRNA_intervals,
         sgRNA_names=sgRNA_names,
         sgRNA_mismatches=sgRNA_mismatches,
+        plot_reference_sequence_above=plot_reference_sequence_above,
+        x_labels=x_labels,
     )
 
 

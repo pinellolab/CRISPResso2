@@ -4623,7 +4623,6 @@ def main():
         crispresso2_info['results']['alignment_stats']['substitution_pct_vectors'] = substitution_pct_vectors
         crispresso2_info['results']['alignment_stats']['indelsub_pct_vectors'] = indelsub_pct_vectors
 
-
         #set unique plot name to appear as prefix to files for each reference
         seen_ref_names = {} #dict to track unique ref names
         for ref_name in ref_names:
@@ -4658,6 +4657,8 @@ def main():
             #    continue
 
             if not args.suppress_plots:
+                crispresso2_info['results']['refs'][ref_name]['allele_frequency_files'] = []
+
                 ins_pct_vector_filename = _jp(ref_plot_name+'Effect_vector_insertion.txt')
                 save_vector_to_file(insertion_pct_vectors[ref_name], ins_pct_vector_filename)
                 crispresso2_info['results']['refs'][ref_name]['insertion_pct_vector_filename'] = os.path.basename(ins_pct_vector_filename)
@@ -5596,6 +5597,8 @@ def main():
             ######PLOT
             if not args.crispresso1_mode and args.base_editor_output:
                 if not args.suppress_plots:
+
+                    
                     fig_filename_root= _jp('10a.'+ref_plot_name+'Substitution_frequencies_at_each_bp')
                     plot_10a_input = {
                         'ref_len': ref_len,
@@ -5651,6 +5654,72 @@ def main():
                     crispresso2_info['results']['refs'][ref_name]['plot_10c_root'] = os.path.basename(fig_filename_root)
                     crispresso2_info['results']['refs'][ref_name]['plot_10c_caption'] = "Figure 10c: Substitution frequencies in the quantification window"
                     crispresso2_info['results']['refs'][ref_name]['plot_10c_data'] = [('Nucleotide frequencies in quantification window', os.path.basename(quant_window_sub_freq_filename))]
+                    
+                    plot_half_window = max(1, args.plot_window_size)
+                    df_alleles_around_cut = CRISPRessoShared.get_base_edit_dataframe_around_cut(df_alleles.loc[df_alleles['Reference_Name'] == ref_name], args.conversion_nuc_from)
+                    count_total = counts_total[ref_name]
+                    if args.allele_plot_pcts_only_for_assigned_reference:
+                        df_alleles_around_cut['%AllReads']=df_alleles_around_cut['%Reads']
+                        df_alleles_around_cut['%Reads']=df_alleles_around_cut['#Reads']/count_total*100
+
+                    #write alleles table to file
+                    base_edit_allele_filename = _jp(ref_plot_name + 'base_edit_' + args.conversion_nuc_from + 's_quilt.txt')
+                    df_alleles_around_cut.to_csv(base_edit_allele_filename, sep='\t', header=True)
+                    crispresso2_info['results']['refs'][ref_name]['allele_frequency_files'].append(os.path.basename(base_edit_allele_filename))
+
+
+                    ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_half_window+1:cut_point+plot_half_window+1]
+                    fig_filename_root = _jp('10h.'+ref_plot_name+'base_edit_'+args.conversion_nuc_from+'s_quilt')
+                    n_good = df_alleles_around_cut[df_alleles_around_cut['%Reads']>=args.min_frequency_alleles_around_cut_to_plot].shape[0]
+                    if n_good > 0:
+                        # Plot 10h: Edit Quilt around cut site
+                        df_to_plot = df_alleles_around_cut
+                        if not args.expand_allele_plots_by_quantification:
+                            df_to_plot = df_alleles_around_cut.groupby(['Aligned_Sequence', 'Reference_Sequence']).sum().reset_index().set_index('Aligned_Sequence')
+                            df_to_plot.sort_values(by=['#Reads', 'Aligned_Sequence', 'Reference_Sequence'], inplace=True, ascending=[False, True, True])
+
+                        new_sgRNA_intervals = []
+                        #adjust coordinates of sgRNAs
+                        new_sel_cols_start = cut_point - plot_half_window
+                        for (int_start, int_end) in refs[ref_name]['sgRNA_intervals']:
+                            new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1, int_end - new_sel_cols_start - 1)]
+
+                        prepped_df_alleles, annotations, y_labels, insertion_dict, per_element_annot_kws, is_reference = CRISPRessoPlot.prep_alleles_table(
+                            df_to_plot,
+                            ref_seq_around_cut,
+                            args.max_rows_alleles_around_cut_to_plot,
+                            args.min_frequency_alleles_around_cut_to_plot,
+                        )
+
+                        x_labels = []
+                        for ind, a in enumerate(refs[ref_name]['sequence'], start=1):
+                            if a == args.conversion_nuc_from:
+                                x_labels.append(ind)
+                        
+                        plot_10h_input = {
+                            'reference_seq': ref_seq_around_cut,
+                            'prepped_df_alleles': prepped_df_alleles,
+                            'annotations': annotations,
+                            'y_labels': y_labels,
+                            'insertion_dict': insertion_dict,
+                            'per_element_annot_kws': per_element_annot_kws,
+                            'is_reference': is_reference,
+                            'fig_filename_root': fig_filename_root,
+                            'custom_colors': custom_config["colors"],
+                            'SAVE_ALSO_PNG': save_png,
+                            'plot_cut_point': None,
+                            'sgRNA_intervals': None,
+                            'sgRNA_names': None,
+                            'sgRNA_mismatches': None,
+                            'annotate_wildtype_allele': '',
+                            'plot_reference_sequence_above': False,
+                            'x_labels': x_labels,
+                        }
+                        debug('Plotting allele distribution around cut for {0}'.format(ref_name))
+                        plot(CRISPRessoPlot.plot_alleles_table_prepped, plot_10h_input)
+                        crispresso2_info['results']['refs'][ref_name]['plot_10h_root'] = os.path.basename(fig_filename_root)
+                        crispresso2_info['results']['refs'][ref_name]['plot_10h_caption'] = "Figure 10h: Quilt of target nucleotide: " + args.conversion_nuc_from + " across entire amplicon. The x-axis shows the corresponding position of the nucleotide in the reference amplicon (1-indexed). Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences."
+                        crispresso2_info['results']['refs'][ref_name]['plot_10h_data'] = [('Allele frequency table', os.path.basename(base_edit_allele_filename))]
 
             ##new plots alleles around cut_sites
             sgRNA_sequences = refs[ref_name]['sgRNA_sequences']
@@ -5669,8 +5738,6 @@ def main():
             crispresso2_info['results']['refs'][ref_name]['plot_9a_captions'] = []
             crispresso2_info['results']['refs'][ref_name]['plot_9a_datas'] = []
 
-            crispresso2_info['results']['refs'][ref_name]['allele_frequency_files'] = []
-
             crispresso2_info['results']['refs'][ref_name]['plot_10d_roots'] = []
             crispresso2_info['results']['refs'][ref_name]['plot_10d_captions'] = []
             crispresso2_info['results']['refs'][ref_name]['plot_10d_datas'] = []
@@ -5687,77 +5754,9 @@ def main():
             crispresso2_info['results']['refs'][ref_name]['plot_10g_captions'] = []
             crispresso2_info['results']['refs'][ref_name]['plot_10g_datas'] = []
 
-            crispresso2_info['results']['refs'][ref_name]['plot_10h_roots'] = []
-            crispresso2_info['results']['refs'][ref_name]['plot_10h_captions'] = []
-            crispresso2_info['results']['refs'][ref_name]['plot_10h_datas'] = []
-
-            if args.base_editor_output and not args.crispresso1_mode and not args.suppress_plots:
-
-                wt_ref_name = ref_name
-                ref_seq = refs[wt_ref_name]['sequence']
-                target_seq = get_base_edit_target_sequence(ref_seq, df_alleles, args.base_editor_target_ref_skip_allele_count)
-
-                if target_seq:
-
-                    # create reference/target read alignment
-                    aln_gap_incentive = refs[wt_ref_name]['gap_incentive']
-                    aln_gap_open_arg = args.needleman_wunsch_gap_open
-                    aln_gap_extend_arg = args.needleman_wunsch_gap_extend
-
-                    aln_matrix_loc = args.needleman_wunsch_aln_matrix_loc
-                    if aln_matrix_loc == 'EDNAFULL':
-                        aln_matrix = CRISPResso2Align.make_matrix()
-                    else:
-                        if not os.path.exists(aln_matrix_loc):
-                            raise Exception('Alignment matrix file not found at ' + aln_matrix_loc)
-                        aln_matrix = CRISPResso2Align.read_matrix(aln_matrix_loc)
-
-                    # TODO: Not sure if we need to be running this again here... shouldn't this be stored somewhere in refs or df_alleles?
-                    aln_target_seq, aln_ref_seq, aln_score = CRISPResso2Align.global_align(
-                        target_seq,
-                        ref_seq,
-                        matrix=aln_matrix,
-                        gap_incentive=aln_gap_incentive,
-                        gap_open=aln_gap_open_arg,
-                        gap_extend=aln_gap_extend_arg)
-
-                    debug('Aligned target:    ' + aln_target_seq)
-                    debug('Aligned reference: ' + aln_ref_seq)
-
-                    # get indices of reference sequence to include in analysis
-                    if args.base_editor_consider_changes_outside_qw:
-                        ref_positions_to_include = [x for x in range(len(ref_seq))]
-                    else:
-                        ref_positions_to_include = refs[wt_ref_name]['include_idxs']
-
-                    ref_changes_dict = get_refpos_values(aln_ref_seq, aln_target_seq)
-                    bp_substitutions_arr = get_bp_substitutions(ref_changes_dict, ref_seq, ref_positions_to_include)
-
-                    debug('Found ' + str(len(bp_substitutions_arr)) + ' base changes: ' + str(bp_substitutions_arr))
-                    counts_dict = get_upset_plot_counts(df_alleles, bp_substitutions_arr, wt_ref_name)
-
-                    write_base_edit_counts(ref_name, counts_dict, bp_substitutions_arr, _jp)
-
-                    debug('Read ' + str(counts_dict['total_alleles']) + ' alleles with ' + str(counts_dict['total_alleles_reads']) + ' reads')
-                    debug('Got ' + str(counts_dict['total_alleles_on_ref']) + ' alleles on reference "' + wt_ref_name + '" with ' + str(counts_dict['total_alleles_reads_on_ref']) + ' reads')
-
-
-                    if len(bp_substitutions_arr) > 0:
-
-                        fig_root_10i = _jp(f'10i.Base_editing_{wt_ref_name}_upset_plot.by_amplicon_combination.no_indels')
-                        plot_10i_input = {
-                            'fig_root': fig_root_10i,
-                            'ref_name': ref_name,
-                            'bp_substitutions_arr': bp_substitutions_arr,
-                            'binary_allele_counts': counts_dict['binary_allele_counts'],
-                            'save_also_png': save_png,
-                        }
-
-                        CRISPRessoPlot.plot_combination_upset(**plot_10i_input)
-                        crispresso2_info['results']['refs'][ref_name]['plot_10i_root'] = os.path.basename(fig_root_10i)
-                        crispresso2_info['results']['refs'][ref_name]['plot_10i_caption'] = f"Figure 10i: Upset plot of base editing changes for amplicon: {ref_name}"
-                        crispresso2_info['results']['refs'][ref_name]['plot_10i_data'] = [('Binary Allele Counts', '10i.' + ref_name + '.binary_allele_counts.txt')]
-
+            crispresso2_info['results']['refs'][ref_name]['plot_10i_roots'] = []
+            crispresso2_info['results']['refs'][ref_name]['plot_10i_captions'] = []
+            crispresso2_info['results']['refs'][ref_name]['plot_10i_datas'] = []
 
             for sgRNA_ind, sgRNA_seq in enumerate(sgRNA_sequences):
                 cut_point = sgRNA_cut_points[sgRNA_ind]
@@ -5987,67 +5986,69 @@ def main():
                         crispresso2_info['results']['refs'][ref_name]['plot_10g_roots'].append(os.path.basename(fig_filename_root))
                         crispresso2_info['results']['refs'][ref_name]['plot_10g_captions'].append("Figure 10g: Non-reference base counts. For target nucleotides in the plotting window, this plot shows the number of non-reference (non-" + args.conversion_nuc_from + ") bases. The number of each target base is annotated on the reference sequence at the bottom of the plot.")
                         crispresso2_info['results']['refs'][ref_name]['plot_10g_datas'].append([('Nucleotide frequencies at ' + args.conversion_nuc_from +'s', os.path.basename(quant_window_sel_nuc_freq_filename))])
+                        wt_ref_name = ref_name
+                    ref_seq = refs[wt_ref_name]['sequence']
+                    target_seq = get_base_edit_target_sequence(ref_seq, df_alleles, args.base_editor_target_ref_skip_allele_count)
+
+                    if target_seq and args.quantification_window_coordinates is None:
+
+                        # create reference/target read alignment
+                        aln_gap_incentive = refs[wt_ref_name]['gap_incentive']
+                        aln_gap_open_arg = args.needleman_wunsch_gap_open
+                        aln_gap_extend_arg = args.needleman_wunsch_gap_extend
+
+                        aln_matrix_loc = args.needleman_wunsch_aln_matrix_loc
+                        if aln_matrix_loc == 'EDNAFULL':
+                            aln_matrix = CRISPResso2Align.make_matrix()
+                        else:
+                            if not os.path.exists(aln_matrix_loc):
+                                raise Exception('Alignment matrix file not found at ' + aln_matrix_loc)
+                            aln_matrix = CRISPResso2Align.read_matrix(aln_matrix_loc)
+
+                        aln_target_seq, aln_ref_seq, aln_score = CRISPResso2Align.global_align(
+                            target_seq,
+                            ref_seq,
+                            matrix=aln_matrix,
+                            gap_incentive=aln_gap_incentive,
+                            gap_open=aln_gap_open_arg,
+                            gap_extend=aln_gap_extend_arg)
+
+                        debug('Aligned target:    ' + aln_target_seq)
+                        debug('Aligned reference: ' + aln_ref_seq)
+
+                        # get indices of reference sequence to include in analysis
+                        if args.base_editor_consider_changes_outside_qw:
+                            ref_positions_to_include = [x for x in range(len(ref_seq))]
+                        else:
+                            this_start, this_stop = sgRNA_intervals[sgRNA_ind]
+                            ref_positions_to_include = list(range(this_start, this_stop + 1))
+
+                        ref_changes_dict = get_refpos_values(aln_ref_seq, aln_target_seq)
+                        bp_substitutions_arr = get_bp_substitutions(ref_changes_dict, ref_seq, ref_positions_to_include)
+
+                        debug('Found ' + str(len(bp_substitutions_arr)) + ' base changes: ' + str(bp_substitutions_arr))
+                        counts_dict = get_upset_plot_counts(df_alleles, bp_substitutions_arr, wt_ref_name)
+
+                        write_base_edit_counts(ref_name + '.' + sgRNA_label, counts_dict, bp_substitutions_arr, _jp)
+
+                        debug('Read ' + str(counts_dict['total_alleles']) + ' alleles with ' + str(counts_dict['total_alleles_reads']) + ' reads')
+                        debug('Got ' + str(counts_dict['total_alleles_on_ref']) + ' alleles on reference "' + wt_ref_name + '" with ' + str(counts_dict['total_alleles_reads_on_ref']) + ' reads')
 
 
-                        plot_half_window = max(1, args.plot_window_size)
-                        df_alleles_around_cut=CRISPRessoShared.get_base_edit_dataframe_around_cut(df_alleles.loc[df_alleles['Reference_Name'] == ref_name], args.conversion_nuc_from)
-                        count_total = counts_total[ref_name]
-                        if args.allele_plot_pcts_only_for_assigned_reference:
-                            df_alleles_around_cut['%AllReads']=df_alleles_around_cut['%Reads']
-                            df_alleles_around_cut['%Reads']=df_alleles_around_cut['#Reads']/count_total*100
-
-                        #write alleles table to file
-                        base_edit_allele_filename = _jp(ref_plot_name + 'base_edit_' + args.conversion_nuc_from + 's_quilt_' + sgRNA_label + '.txt')
-                        df_alleles_around_cut.to_csv(base_edit_allele_filename, sep='\t', header=True)
-                        crispresso2_info['results']['refs'][ref_name]['allele_frequency_files'].append(os.path.basename(base_edit_allele_filename))
-
-                        ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_half_window+1:cut_point+plot_half_window+1]
-                        fig_filename_root = _jp('10h.'+ref_plot_name+'base_edit_'+args.conversion_nuc_from+'s_quilt_'+sgRNA_label)
-                        n_good = df_alleles_around_cut[df_alleles_around_cut['%Reads']>=args.min_frequency_alleles_around_cut_to_plot].shape[0]
-                        if not args.suppress_plots and n_good > 0:
-                        # Plot 10h: Edit Quilt around cut site
-                            df_to_plot = df_alleles_around_cut
-                            if not args.expand_allele_plots_by_quantification:
-                                df_to_plot = df_alleles_around_cut.groupby(['Aligned_Sequence', 'Reference_Sequence']).sum().reset_index().set_index('Aligned_Sequence')
-                                df_to_plot.sort_values(by=['#Reads', 'Aligned_Sequence', 'Reference_Sequence'], inplace=True, ascending=[False, True, True])
-
-                            new_sgRNA_intervals = []
-                            #adjust coordinates of sgRNAs
-                            new_sel_cols_start = cut_point - plot_half_window
-                            for (int_start, int_end) in refs[ref_name]['sgRNA_intervals']:
-                                new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1, int_end - new_sel_cols_start - 1)]
-
-
-                            prepped_df_alleles, annotations, y_labels, insertion_dict, per_element_annot_kws, is_reference = CRISPRessoPlot.prep_alleles_table(
-                                df_to_plot,
-                                ref_seq_around_cut,
-                                args.max_rows_alleles_around_cut_to_plot,
-                                args.min_frequency_alleles_around_cut_to_plot,
-                            )
-                            plot_10h_input = {
-                                'reference_seq': ref_seq_around_cut,
-                                'prepped_df_alleles': prepped_df_alleles,
-                                'annotations': annotations,
-                                'y_labels': y_labels,
-                                'insertion_dict': insertion_dict,
-                                'per_element_annot_kws': per_element_annot_kws,
-                                'is_reference': is_reference,
-                                'fig_filename_root': fig_filename_root,
-                                'custom_colors': custom_config["colors"],
-                                'SAVE_ALSO_PNG': save_png,
-                                'plot_cut_point': plot_cut_point,
-                                'sgRNA_intervals': new_sgRNA_intervals,
-                                'sgRNA_names': sgRNA_names,
-                                'sgRNA_mismatches': sgRNA_mismatches,
-                                'annotate_wildtype_allele': args.annotate_wildtype_allele,
+                        if len(bp_substitutions_arr) > 0:
+                            fig_root_10i = _jp(f'10i.Base_editing_{wt_ref_name}_upset_plot.by_amplicon_combination.no_indels_{sgRNA_label}')
+                            plot_10i_input = {
+                                'fig_root': fig_root_10i,
+                                'ref_name': ref_name,
+                                'bp_substitutions_arr': bp_substitutions_arr,
+                                'binary_allele_counts': counts_dict['binary_allele_counts'],
+                                'save_also_png': save_png,
                             }
-
-                            debug('Plotting allele distribution around cut for {0}'.format(ref_name))
-                            plot(CRISPRessoPlot.plot_alleles_table_prepped, plot_10h_input)
-                            crispresso2_info['results']['refs'][ref_name]['plot_10h_roots'].append(os.path.basename(fig_filename_root))
-                            crispresso2_info['results']['refs'][ref_name]['plot_10h_captions'].append("Figure 10f: Quilt of Base Edits for " + args.conversion_nuc_from + 'around cut site for ' + sgRNA_legend + ". Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site.")
-                            crispresso2_info['results']['refs'][ref_name]['plot_10h_datas'].append([('Allele frequency table', os.path.basename(base_edit_allele_filename))])
-
+                            CRISPRessoPlot.plot_combination_upset(**plot_10i_input)
+                            crispresso2_info['results']['refs'][ref_name]['plot_10i_roots'].append(os.path.basename(fig_root_10i))
+                            crispresso2_info['results']['refs'][ref_name]['plot_10i_captions'].append(f"Figure 10i: Upset plot of Base Edits for {args.conversion_nuc_from} around cut site for {sgRNA_legend}. Each dot matrix at the bottom represents a specific combination of base edits (colored by target position), and the bar plot at the top shows the number of reads with each combination.")
+                            crispresso2_info['results']['refs'][ref_name]['plot_10i_datas'].append([('Binary Allele Counts', '10i.' + ref_name + '.' + sgRNA_label + '.binary_allele_counts.txt')])
+                            
             if refs[ref_name]['contains_coding_seq']:
                 for i, coding_seq in enumerate(coding_seqs):
                     fig_filename_root = _jp('9a.'+ref_plot_name+'amino_acid_table_around_'+coding_seq)
@@ -6443,7 +6444,6 @@ def main():
 
         info(CRISPRessoShared.get_crispresso_footer())
         info('Analysis Complete!', {'percent_complete': 100})
-
         sys.exit(0)
 
     except CRISPRessoShared.NTException as e:

@@ -146,7 +146,7 @@ def assemble_figs(run_data, crispresso_folder):
         amplicon_figures = {'names': [], 'locs': {}, 'titles': {}, 'captions': {}, 'datas': {}, 'htmls': {}}
 
         for fig in ['2a', '3a', '3b', '4a', '4b', '4c', '4d', '4e', '4f', '4g', '5', '6', '7', '8', '10a', '10b', '10c',
-                    '10i', '11a']:
+                    '10h', '11a']:
             fig_name = 'plot_' + fig
             if fig_name + '_root' in run_data['results']['refs'][amplicon_name]:
                 add_fig_if_exists(fig, fig_name, run_data['results']['refs'][amplicon_name][fig_name + '_root'],
@@ -167,6 +167,18 @@ def assemble_figs(run_data, crispresso_folder):
                                       run_data['results']['refs'][amplicon_name]['plot_' + fig + '_datas'][idx],
                                       this_fig_names, amplicon_figures, crispresso_folder, d3_nuc_quilt_names)
             this_sgRNA_based_fig_names[fig] = this_fig_names
+
+        for fig in ['10i']:
+            this_fig_names = []
+            if 'plot_' + fig + '_roots' in run_data['results']['refs'][amplicon_name]:
+                for idx, plot_root in enumerate(run_data['results']['refs'][amplicon_name]['plot_' + fig + '_roots']):
+                    fig_name = "plot_" + fig + "_" + amplicon_name + "_" + str(idx)
+                    add_fig_if_exists(fig, fig_name, plot_root, 'Figure ' + fig_name + ' sgRNA ' + str(idx + 1),
+                                      run_data['results']['refs'][amplicon_name]['plot_' + fig + '_captions'][idx],
+                                      run_data['results']['refs'][amplicon_name]['plot_' + fig + '_datas'][idx],
+                                      this_fig_names, amplicon_figures, crispresso_folder, d3_nuc_quilt_names)
+            this_sgRNA_based_fig_names[fig] = this_fig_names
+
 
         figures['names'][amplicon_name] = amplicon_figures['names']
         figures['sgRNA_based_names'][amplicon_name] = this_sgRNA_based_fig_names
