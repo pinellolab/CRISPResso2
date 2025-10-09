@@ -172,8 +172,8 @@ def assemble_figs(run_data, crispresso_folder):
             this_fig_names = []
             if 'plot_' + fig + '_roots' in run_data['results']['refs'][amplicon_name]:
                 for idx, plot_root in enumerate(run_data['results']['refs'][amplicon_name]['plot_' + fig + '_roots']):
-                    fig_name = "plot_" + fig + "_" + amplicon_name + "_" + str(idx)
-                    add_fig_if_exists(fig, fig_name, plot_root, 'Figure ' + fig_name + ' sgRNA ' + str(idx + 1),
+                    fig_name = "plot_" + fig + "_" + amplicon_name
+                    add_fig_if_exists(fig, fig_name, plot_root, 'Figure ' + fig_name,
                                       run_data['results']['refs'][amplicon_name]['plot_' + fig + '_captions'][idx],
                                       run_data['results']['refs'][amplicon_name]['plot_' + fig + '_datas'][idx],
                                       this_fig_names, amplicon_figures, crispresso_folder, d3_nuc_quilt_names)
