@@ -5598,7 +5598,7 @@ def main():
             if not args.crispresso1_mode and args.base_editor_output:
                 if not args.suppress_plots:
 
-                    
+
                     fig_filename_root= _jp('10a.'+ref_plot_name+'Substitution_frequencies_at_each_bp')
                     plot_10a_input = {
                         'ref_len': ref_len,
@@ -5654,7 +5654,7 @@ def main():
                     crispresso2_info['results']['refs'][ref_name]['plot_10c_root'] = os.path.basename(fig_filename_root)
                     crispresso2_info['results']['refs'][ref_name]['plot_10c_caption'] = "Figure 10c: Substitution frequencies in the quantification window"
                     crispresso2_info['results']['refs'][ref_name]['plot_10c_data'] = [('Nucleotide frequencies in quantification window', os.path.basename(quant_window_sub_freq_filename))]
-                    
+
                     plot_half_window = max(1, args.plot_window_size)
                     df_alleles_around_cut = CRISPRessoShared.get_base_edit_dataframe_around_cut(df_alleles.loc[df_alleles['Reference_Name'] == ref_name], args.conversion_nuc_from)
                     count_total = counts_total[ref_name]
@@ -5695,7 +5695,7 @@ def main():
                         for ind, a in enumerate(refs[ref_name]['sequence'], start=1):
                             if a == args.conversion_nuc_from:
                                 x_labels.append(ind)
-                        
+
                         plot_10h_input = {
                             'reference_seq': ref_seq_around_cut,
                             'prepped_df_alleles': prepped_df_alleles,
@@ -6048,7 +6048,7 @@ def main():
                             crispresso2_info['results']['refs'][ref_name]['plot_10i_roots'].append(os.path.basename(fig_root_10i))
                             crispresso2_info['results']['refs'][ref_name]['plot_10i_captions'].append(f"Figure 10i: Upset plot of Base Edits for {args.conversion_nuc_from} around cut site for {sgRNA_legend}. Each dot matrix at the bottom represents a specific combination of base edits (colored by target position), and the bar plot at the top shows the number of reads with each combination.")
                             crispresso2_info['results']['refs'][ref_name]['plot_10i_datas'].append([('Binary Allele Counts', '10i.' + ref_name + '.' + sgRNA_label + '.binary_allele_counts.txt')])
-                            
+
             if refs[ref_name]['contains_coding_seq']:
                 for i, coding_seq in enumerate(coding_seqs):
                     fig_filename_root = _jp('9a.'+ref_plot_name+'amino_acid_table_around_'+coding_seq)
