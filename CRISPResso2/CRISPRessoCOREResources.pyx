@@ -136,7 +136,7 @@ def find_indels_substitutions(read_seq_al, ref_seq_al, _include_indx):
             current_insertion_size += 1
 
         if read_seq_al[idx_c] == '-' and start_deletion == -1:  # this is the first part of a deletion
-            if idx_c - 1 > 0:
+            if idx_c - 1 >= 0:
                 start_deletion = ref_positions[idx_c]
             else:
                 start_deletion = 0
@@ -152,13 +152,12 @@ def find_indels_substitutions(read_seq_al, ref_seq_al, _include_indx):
 
     if start_deletion != -1:
         end_deletion = ref_positions[seq_len - 1]
-        all_deletion_positions.extend(range(start_deletion, end_deletion))
-        all_deletion_coordinates.append((start_deletion, end_deletion))
-        if include_indx_set.intersection(range(start_deletion, end_deletion)):
-            deletion_positions.extend(range(start_deletion, end_deletion))
-            deletion_coordinates.append((start_deletion, end_deletion))
-            deletion_sizes.append(end_deletion - start_deletion)
-
+        all_deletion_positions.extend(range(start_deletion, end_deletion + 1))
+        all_deletion_coordinates.append((start_deletion, end_deletion + 1))
+        if include_indx_set.intersection(range(start_deletion, end_deletion + 1)):
+            deletion_positions.extend(range(start_deletion, end_deletion + 1))
+            deletion_coordinates.append((start_deletion, end_deletion + 1))
+            deletion_sizes.append((end_deletion + 1) - start_deletion)
     cdef size_t substitution_n = len(substitution_positions)
     cdef size_t deletion_n = sum(deletion_sizes)
     cdef size_t insertion_n = sum(insertion_sizes)
