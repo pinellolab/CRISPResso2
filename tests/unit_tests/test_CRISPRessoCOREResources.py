@@ -1,5 +1,60 @@
 from CRISPResso2 import CRISPRessoCOREResources
 
+
+def test_find_indels_substitutions_first_del():
+    ref = 'ATGCGTAC'
+    aln = '-TGCGTAC'
+    payload = CRISPRessoCOREResources.find_indels_substitutions(aln, ref, list(range(len(ref))))
+    assert payload['deletion_coordinates'] == [(0, 1)]
+
+
+def test_find_indels_substitutions_second_del():
+    ref = 'ATGCGTAC'
+    aln = 'A-GCGTAC'
+    payload = CRISPRessoCOREResources.find_indels_substitutions(aln, ref, list(range(len(ref))))
+    assert payload['deletion_coordinates'] == [(1, 2)]
+
+
+def test_find_indels_substitutions_third_del():
+    ref = 'ATGCGTAC'
+    aln = 'AT-CGTAC'
+    payload = CRISPRessoCOREResources.find_indels_substitutions(aln, ref, list(range(len(ref))))
+    assert payload['deletion_coordinates'] == [(2, 3)]
+
+
+def test_find_indels_substitutions_last_del():
+    ref = 'ATGCGTAC'
+    aln = 'ATGCGTA-'
+    payload = CRISPRessoCOREResources.find_indels_substitutions(aln, ref, list(range(len(ref))))
+    assert payload['deletion_n'] == 1
+    assert payload['deletion_positions'] == [7]
+    assert payload['all_deletion_positions'] == [7]
+    assert payload['deletion_coordinates'] == [(7, 8)]
+    assert payload['all_deletion_coordinates'] == [(7, 8)]
+
+
+def test_find_indels_substitutions_last_2_del():
+    ref = 'ATGCGTAC'
+    aln = 'ATGCGT--'
+    payload = CRISPRessoCOREResources.find_indels_substitutions(aln, ref, list(range(len(ref))))
+    assert payload['deletion_n'] == 2
+    assert payload['deletion_coordinates'] == [(6, 8)]
+    assert payload['all_deletion_coordinates'] == [(6, 8)]
+    assert payload['deletion_positions'] == [6, 7]
+    assert payload['all_deletion_positions'] == [6, 7]
+
+
+def test_find_indels_substitutions_last_3_del():
+    ref = 'ATGCGTAC'
+    aln = 'ATGCG---'
+    payload = CRISPRessoCOREResources.find_indels_substitutions(aln, ref, list(range(len(ref))))
+    assert payload['deletion_n'] == 3
+    assert payload['deletion_coordinates'] == [(5, 8)]
+    assert payload['all_deletion_coordinates'] == [(5, 8)]
+    assert payload['deletion_positions'] == [5, 6, 7]
+    assert payload['all_deletion_positions'] == [5, 6, 7]
+
+
 def test_find_indels_substitutions():
     # no insertion or deletion
     payload = CRISPRessoCOREResources.find_indels_substitutions(
@@ -131,8 +186,8 @@ def test_find_indels_substitutions():
         'insertion_coordinates': [(91, 92)],
         'insertion_sizes': [54],
         'insertion_n': 54,
-        'all_deletion_positions': [191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221],
-        'all_deletion_coordinates': [(191, 222)],
+        'all_deletion_positions': [191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222],
+        'all_deletion_coordinates': [(191, 223)],
         'deletion_positions': [],
         'deletion_coordinates': [],
         'deletion_sizes': [],
