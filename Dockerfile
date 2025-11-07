@@ -3,10 +3,14 @@
 ############################################################
 
 #FROM continuumio/miniconda3
-FROM mambaorg/micromamba:0.13.1
+FROM mambaorg/micromamba:2.3.3
 
-# File Author / Maintainer
-MAINTAINER Kendell Clement
+USER root
+
+LABEL org.opencontainers.image.authors="support@edilytics.com"
+
+ARG MAMBA_DOCKERFILE_ACTIVATE=1
+
 RUN apt-get update && apt-get install gcc g++ bowtie2 samtools libsys-hostname-long-perl \
   -y --no-install-recommends \
   && apt-get clean \
@@ -14,12 +18,7 @@ RUN apt-get update && apt-get install gcc g++ bowtie2 samtools libsys-hostname-l
   && rm -rf /var/lib/apt/lists/* \
   && rm -rf /usr/share/man/* \
   && rm -rf /usr/share/doc/* \
-  && conda install -c defaults -c conda-forge -c bioconda -y -n base --debug fastp numpy cython jinja2 tbb=2020.2 pyparsing=2.3.1 scipy matplotlib-base pandas plotly upsetplot\
-  && conda clean --all --yes
-
-#install ms fonts
-RUN echo "deb http://httpredir.debian.org/debian buster main contrib" > /etc/apt/sources.list \
-  && echo "deb http://security.debian.org/ buster/updates main contrib" >> /etc/apt/sources.list \
+  && echo "deb http://deb.debian.org/debian trixie main contrib" > /etc/apt/sources.list.d/contrib.list \
   && echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections \
   && apt-get update \
   && apt-get install -y ttf-mscorefonts-installer \
@@ -30,15 +29,18 @@ RUN echo "deb http://httpredir.debian.org/debian buster main contrib" > /etc/apt
   && rm -rf /usr/share/doc/* \
   && rm -rf /usr/share/zoneinfo
 
+
+RUN micromamba install -c conda-forge -c bioconda -y -n base --debug fastp numpy cython jinja2 tbb=2020.2 pyparsing=2.3.1 setuptools scipy matplotlib-base seaborn pandas plotly upsetplot\
+  && micromamba clean --all --yes
+
 # install crispresso
 COPY . /CRISPResso2
 WORKDIR /CRISPResso2
-RUN python setup.py install \
+RUN pip install . \
   && CRISPResso -h \
   && CRISPRessoBatch -h \
   && CRISPRessoPooled -h \
   && CRISPRessoWGS -h \
   && CRISPRessoCompare -h
-
 
 ENTRYPOINT ["python","/CRISPResso2/CRISPResso2_router.py"]
