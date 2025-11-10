@@ -32,7 +32,7 @@ jobs:
           command: |
             rm -rf /opt/conda/bin/CRISPRess*
             rm -rf /opt/conda/lib/python*/site-packages/CRISPResso2*
-            pip install .
+            /usr/local/bin/_entrypoint.sh pip install .
 
       - save_cache:
           paths:
