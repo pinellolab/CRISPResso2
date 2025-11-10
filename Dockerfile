@@ -43,4 +43,4 @@ RUN pip install . \
   && CRISPRessoWGS -h \
   && CRISPRessoCompare -h
 
-ENTRYPOINT ["python","/CRISPResso2/CRISPResso2_router.py"]
+ENTRYPOINT ["/usr/local/bin/_entrypoint.sh", "python", "/CRISPResso2/CRISPResso2_router.py"]
