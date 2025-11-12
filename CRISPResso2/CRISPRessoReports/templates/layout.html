@@ -104,6 +104,32 @@
         {% endfor %}
       {% endif %}
     {% endwith %}
+
+    {% else %}
+        <div id="messages"></div>
+
+        <script>
+        function fetchAndUpdateMessage() {
+        fetch('https://crispresso.com/messages')
+            .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.text();
+            })
+            .then(data => {
+            const messageDiv = document.getElementById('messages');
+            if (messageDiv) {
+                messageDiv.innerHTML = data;
+            }
+            })
+            .catch(error => {});
+        }
+
+        // Call the function
+        fetchAndUpdateMessage();
+        </script>
+
     {% endif %}
 
   {# if default user (normal crispresso mode) #}
