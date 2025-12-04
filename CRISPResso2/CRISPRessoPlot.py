@@ -4626,8 +4626,9 @@ def plot_combination_upset(fig_root, ref_name, bp_substitutions_arr, binary_alle
             header_arr[i] = col[:8] + '...'
     df_by_combination = pd.DataFrame(df_by_combination_items, columns=header_arr)
     df_by_combination.set_index(header_arr[:-1], inplace=True)
-    ax_dict = upsetplot.UpSet(df_by_combination.cat_counts, element_size=40, show_counts=True, sort_categories_by='-input').plot()
-
+    fig = plt.figure(figsize=(15, 10))
+    upsetplot.plot(df_by_combination.cat_counts, fig=fig, element_size=None, show_counts=True, show_percentages='{:.2f}', sort_categories_by='-input')
+    
     if save_also_png:
         plt.savefig(fig_root + '.png')
 
