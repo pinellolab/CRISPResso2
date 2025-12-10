@@ -514,6 +514,8 @@ def get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaf
     """
     aln_scores = []
     best_match_score = -1
+    best_unfiltered_score = -1
+    best_unfiltered_name = None
     best_match_s1s = []
     best_match_s2s = []
     best_match_names = []
@@ -558,6 +560,10 @@ def get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaf
 #                print "for " + ref_name + " got fws1: " + str(fws1) + " and fws2: " + str(fws2) + " score: " +str(fwscore)
         aln_scores.append(score)
         ref_aln_details.append((ref_name, s1, s2, score))
+        if score > best_unfiltered_score:
+            best_unfiltered_score = score
+            best_unfiltered_name = ref_name
+        
 
         #reads are matched to the reference to which they best align. The 'min_aln_score' is calculated using only the changes in 'include_idxs'
         if score > best_match_score and score > refs[ref_name]['min_aln_score']:
@@ -572,6 +578,7 @@ def get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaf
             best_match_names.append(ref_name)
             best_match_strands.append(aln_strand)
 
+    refs[best_unfiltered_name]['all_unfiltered_aln_scores'].append(best_unfiltered_score)
     if best_match_score > 0:
         new_variant = {}
         new_variant['count'] = 1
@@ -2435,6 +2442,16 @@ def to_numeric_ignore_columns(df, ignore_columns):
     return df
 
 
+def get_and_save_homology_scores(refs, alleles_homology_scores_filename, _jp):
+    """Get and save the unfiltered homology scores for all alleles"""
+    alleles_homology_scores = []
+    for dic in refs.values():
+        alleles_homology_scores.extend(dic['all_unfiltered_aln_scores'])
+    with open(_jp(alleles_homology_scores_filename), 'w') as f:
+        json.dump(alleles_homology_scores, f)
+    return alleles_homology_scores
+
+
 def main():
 
     def print_stacktrace_if_debug():
@@ -3231,6 +3248,7 @@ def main():
                    'sequence': this_seq,
                    'sequence_length': this_seq_length,
                    'min_aln_score': this_min_aln_score,
+                   'all_unfiltered_aln_scores': [],
                    'gap_incentive': this_gap_incentive,
                    'sgRNA_cut_points': this_sgRNA_cut_points,
                    'sgRNA_intervals': this_sgRNA_intervals,
@@ -4924,6 +4942,21 @@ def main():
                 crispresso2_info['results']['general_plots']['plot_1d_root'] = os.path.basename(plot_root)
                 crispresso2_info['results']['general_plots']['plot_1d_caption'] = "Figure 1d: Frequency of detection of dsODN " + args.dsODN
                 crispresso2_info['results']['general_plots']['plot_1d_data'] = [('Allele table', os.path.basename(allele_frequency_table_filename))]
+
+            alleles_homology_scores_filename = 'Alleles_homology_scores.txt'
+            breakpoint()
+            homology_scores = get_and_save_homology_scores(refs, alleles_homology_scores_filename, _jp)
+            plot_1e_root = _jp('1e.Allele_homology_histogram')
+            plot_1e_input = {
+                'fig_root': plot_1e_root,
+                'homology_scores': homology_scores,
+                'save_also_png': save_png
+            }
+            debug('Plotting alleles homology histogram', {'percent_complete': 47})
+            plot(CRISPRessoPlot.plot_alleles_homology_histogram, plot_1e_input)
+            crispresso2_info['results']['general_plots']['plot_1e_root'] = os.path.basename(plot_1e_root)
+            crispresso2_info['results']['general_plots']['plot_1e_caption'] = "Figure 1e: Distribution of read alignment homology scores, showing the best-scoring alignment of each sequencing read to the provided amplicons."
+            crispresso2_info['results']['general_plots']['plot_1e_data'] = [('Alleles Homology Scores', os.path.basename(alleles_homology_scores_filename))]
         ###############################################################################################################################################
 
         ref_percent_complete_start, ref_percent_complete_end = 48, 88
