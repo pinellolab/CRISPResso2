@@ -3609,9 +3609,7 @@ def main():
             if not args.crispresso_merge:
                 processed_output_filename = _jp('out.extendedFrags.fastq.gz')
                 info('Processing sequences with fastp...')
-                if args.fastp_options_string: # if fastp_options_string has been set by user, just use those options..
-                    pass
-                else:
+                if not args.fastp_options_string:  # if fastp_options_string has NOT been set by user, set default options
                     if not args.trim_sequences:
                         args.fastp_options_string = ' --disable_adapter_trimming --disable_trim_poly_g --disable_quality_filtering --disable_length_filtering'
                     else:
@@ -3669,9 +3667,7 @@ def main():
                 info('Done!', {'percent_complete': 7})
             else:
                 info('Processing sequences with fastp...')
-                if args.crispresso_options_string: # if crispresso_options_string has been set by user, just use those options..
-                    pass
-                else:
+                if not args.fastp_options_string:  # if fastp_options_string has NOT been set by user, set default options
                     if not args.trim_sequences:
                         args.fastp_options_string = ' --disable_adapter_trimming --disable_trim_poly_g --disable_quality_filtering --disable_length_filtering'
                     else:
