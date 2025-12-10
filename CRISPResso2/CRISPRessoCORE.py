@@ -876,6 +876,8 @@ def get_new_variant_object_from_paired(args, fastq1_seq, fastq2_seq, fastq1_qual
 
     aln_scores = []
     best_match_score = -1
+    best_unfiltered_score = -1
+    best_unfiltered_name = None
     best_match_s1s = []
     best_match_s2s = []
     best_match_names = []
@@ -921,10 +923,15 @@ def get_new_variant_object_from_paired(args, fastq1_seq, fastq2_seq, fastq1_qual
                 qual = rvqual
                 s2 = rvs2
                 score = rvscore
+            
+            if score > best_unfiltered_score:
+                best_unfiltered_score = score
+                best_unfiltered_name = ref_name
 
 #                print "for " + ref_name + " got fws1: " + str(fws1) + " and fws2: " + str(fws2) + " score: " +str(fwscore)
         aln_scores.append(score)
         ref_aln_details.append((ref_name, s1, s2, score, qual))
+
         #reads are matched to the reference to which they best align. The 'min_aln_score' is calculated using only the changes in 'include_idxs'
         if score > best_match_score and score > refs[ref_name]['min_aln_score']:
             best_match_score = score
@@ -936,6 +943,7 @@ def get_new_variant_object_from_paired(args, fastq1_seq, fastq2_seq, fastq1_qual
             best_match_s2s.append(s2)
             best_match_names.append(ref_name)
 
+    refs[best_unfiltered_name]['all_unfiltered_aln_scores'].append(best_unfiltered_score)
     if best_match_score > 0:
         new_variant = {}
         new_variant['count'] = 1
@@ -4944,7 +4952,6 @@ def main():
                 crispresso2_info['results']['general_plots']['plot_1d_data'] = [('Allele table', os.path.basename(allele_frequency_table_filename))]
 
             alleles_homology_scores_filename = 'Alleles_homology_scores.txt'
-            breakpoint()
             homology_scores = get_and_save_homology_scores(refs, alleles_homology_scores_filename, _jp)
             plot_1e_root = _jp('1e.Allele_homology_histogram')
             plot_1e_input = {
