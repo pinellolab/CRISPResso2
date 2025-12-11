@@ -5,7 +5,7 @@
 
 - Add an amino acid nucleotide quilt plot by [@mbowcut2](https://github.com/pinellolab/CRISPResso2/pull/552) in [#552](https://github.com/pinellolab/CRISPResso2/pull/552)
 
-- Add `scriptsreconstituteReads.py` to generate FASTQ from CRISPResso2 output by [@kclem](https://github.com/kclem) in [`a800762`](https://github.com/pinellolab/CRISPResso2/commit/a800762712e692a9fc7005b3510d013924c843a5) and [`cd79dcc`](https://github.com/pinellolab/CRISPResso2/commit/cd79dcc3ca9c06736dc6cd409d43dee8e4d1ae69)
+- Add `scripts/reconstituteReads.py` to generate FASTQ from CRISPResso2 output by [@kclem](https://github.com/kclem) in [`a800762`](https://github.com/pinellolab/CRISPResso2/commit/a800762712e692a9fc7005b3510d013924c843a5) and [`cd79dcc`](https://github.com/pinellolab/CRISPResso2/commit/cd79dcc3ca9c06736dc6cd409d43dee8e4d1ae69)
 
 - Add an [UpSet plot](https://upset.app/) to represent bystander edits for Base Editing analyses by [@mbowcut2](https://github.com/mbowcut2) in [#554](https://github.com/pinellolab/CRISPResso2/pull/554)
 
@@ -23,7 +23,7 @@
 
 - Fix the quantification of deletions at the second position of the sequence by [@Colelyman](https://github.com/Colelyman) in [#574](https://github.com/pinellolab/CRISPResso2/pull/574)
 
-- Fix an issue with
+- Fix an issue with unaligned reads not being reported correctly when writing BAM output by [@trevormartinj7](https://github.com/Colelyman) in [#578](https://github.com/pinellolab/CRISPResso2/pull/578)
 
 ### CHANGED
 
