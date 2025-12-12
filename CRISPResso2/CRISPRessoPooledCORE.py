@@ -291,7 +291,7 @@ def main():
             from CRISPRessoPro import plot as CRISPRessoPlot
 
         crispresso_options = CRISPRessoShared.get_core_crispresso_options()
-        options_to_ignore = {'fastq_r1', 'fastq_r2', 'amplicon_seq', 'amplicon_name', 'output_folder', 'name', 
+        options_to_ignore = {'fastq_r1', 'fastq_r2', 'amplicon_seq', 'amplicon_name', 'output_folder', 'name',
                              'display_name', 'zip_output', 'split_interleaved_input', 'samtools_exclude_flags',
                              'bowtie2_index'} # these options will be set for each sub-run or should be not be passed to sub-runs because they are pooled-specific
         crispresso_options_for_pooled = list(crispresso_options-options_to_ignore)
@@ -691,7 +691,7 @@ def main():
                     _ = amplicons_fin.readline()  # skip header line
                     info('Detected header in amplicon file.')
                 for line in amplicons_fin:
-                    if line[0] == "#": # pandas' comment option will strip after comment character in middle of lines. 
+                    if line[0] == "#": # pandas' comment option will strip after comment character in middle of lines.
                         continue
                     line = line.strip()
                     if not line:
@@ -734,7 +734,7 @@ def main():
             if not len(df_template.amplicon_name.unique())==df_template.shape[0]:
                 duplicated_entries = df_template.amplicon_name[df_template.amplicon_name.duplicated()]
                 raise CRISPRessoShared.BadParameterException('The amplicon names must be distinct! (Duplicated names: ' + str(duplicated_entries.values) + ')')
-            
+
             df_template=df_template.set_index('amplicon_name')
 
             #create clean, distinct run names - this will be used to create file names
