@@ -520,10 +520,11 @@ def main():
             processed_output_filename = output_forward_filename
 
         else:  # paired end reads case
-            if not args.trim_sequences:
-                args.fastp_options_string += ' --disable_adapter_trimming --disable_trim_poly_g --disable_quality_filtering --disable_length_filtering'
-            else:
-                args.fastp_options_string += ' --detect_adapter_for_pe'
+            if not args.fastp_options_string:
+                if not args.trim_sequences:
+                        args.fastp_options_string += ' --disable_adapter_trimming --disable_trim_poly_g --disable_quality_filtering --disable_length_filtering'
+                else:
+                        args.fastp_options_string += ' --detect_adapter_for_pe'
 
             processed_output_filename = _jp('out.extendedFrags.fastq.gz')
             not_combined_1_filename = _jp('out.notCombined_1.fastq.gz')
