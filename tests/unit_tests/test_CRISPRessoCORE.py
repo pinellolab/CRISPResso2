@@ -457,69 +457,254 @@ def test_get_include_idxs_from_quant_window_coordinates():
 
 def test_get_cloned_include_idxs_from_quant_window_coordinates():
     quant_window_coordinates = '1-10_12-20'
-    s1inds = list(range(22))
+    ref = 'TTACCGAGTGCACAAGTGCACGT'
+    aln = 'TTACCGAGTGCACAAGTGCACGT'
+    s1inds, _ = CRISPRessoShared.get_relative_coordinates(ref, aln)
     assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == [*list(range(1, 11)), *list(range(12, 21))]
 
 
 def test_get_cloned_include_idxs_from_quant_window_coordinates_insertion_beginning():
     quant_window_coordinates = '1-10_12-20'
     # represents a 5bp insertion at the beginning (left)
-    s1inds = list(range(5, 27))
+    # Ind:                1111111111222
+    #           01234567890123456789012
+    # QWC:       |        | |       |
+    ref = '-----TTACCGAGTGCACAAGTGCACGT'
+    aln = 'AAGGTTTACCGAGTGCACAAGTGCACGT'
+    # QWC:       |        | |       |
+    # Ind:           111111111122222222
+    #      0123456789012345678901234567
+    s1inds, _ = CRISPRessoShared.get_relative_coordinates(ref, aln)
     assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == [*list(range(6, 16)), *list(range(17, 26))]
+
 
 def test_get_cloned_include_idxs_from_quant_window_coordinates_deletion_beginning():
     quant_window_coordinates = '1-10_12-20'
     # represents a 5bp deletion at the beginning (left)
-    s1inds = [-1, -1, -1, -1, -1 ] + list(range(26))
-    assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == [*list(range(0, 6)), *list(range(7, 16))]
+    # Ind:           1111111111222
+    #      01234567890123456789012
+    # QWC:  |        | |       |
+    ref = 'TTACCGAGTGCACAAGTGCACGT'
+    aln = '------AGTGCACAAGTGCACGT'
+    # QWC:       |   | |       |
+    # Ind:                 1111111
+    #            01234567890123456
+    s1inds, _ = CRISPRessoShared.get_relative_coordinates(ref, aln)
+    assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == [*list(range(0, 5)), *list(range(6, 15))]
+
 
 def test_get_cloned_include_idxs_from_quant_window_coordinates_deletion():
     quant_window_coordinates = '10-20_35-40'
+    ref = 'A' * 23 + 'T' * 7 + 'G' * 30
+    aln = 'A' * 23 + '-' * 7 + 'G' * 30
     # represents a 7bp deletion in the middle
-    s1inds = list(range(23)) + [22, 22, 22, 22, 22, 22, 22] + list(range(23, 34))
+    s1inds, _ = CRISPRessoShared.get_relative_coordinates(ref, aln)
     assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == [*list(range(10, 21)), *list(range(35-7, 41-7))]
+
 
 def test_get_cloned_include_idxs_from_quant_window_coordinates_deletion_modified():
     quant_window_coordinates = '10-25_35-40'
     # represents a 7bp deletion in the middle, where part of the QW is deleted
     # [0, 1, 3, 4, ... , 21, 22, 22, 22, 22, 22, 22, 22, 22, 23, 24, ... , 33]
-    s1inds = list(range(23)) + [22, 22, 22, 22, 22, 22, 22] + list(range(23, 34))
+    ref = 'A' * 23 + 'T' * 7 + 'G' * 30
+    aln = 'A' * 23 + '-' * 7 + 'G' * 30
+    s1inds, _ = CRISPRessoShared.get_relative_coordinates(ref, aln)
     assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == [*list(range(10, 23)), *list(range(35-7, 41-7))]
 
 
 def test_get_cloned_include_idxs_from_quant_window_coordinates_deletion_end_modified():
     # 5 bp deletion at end of 20 bp sequence
     quant_window_coordinates = '1-5_10-20'
-    s1inds = [*list(range(16)), *[15, 15, 15, 15, 15]]
+    # Ind:           11111111112
+    #      012345678901234567890
+    # QWC:  |   |    |         |
+    ref = 'AAAAAAAAAAAAAAAATTTTT'
+    aln = 'AAAAAAAAAAAAAAAA-----'
+    # QWC:  |   |    |    |
+    # Ind:           111111
+    #      0123456789012345
+    s1inds, _ = CRISPRessoShared.get_relative_coordinates(ref, aln)
     assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == [*list(range(1, 6)), *list(range(10, 16))]
+
 
 def test_get_cloned_include_idxs_from_quant_window_coordinates_insertion_and_deletion():
     # 5 bp deletion and 5 bp insertion
-    quant_window_coordinates = '1-5_10-20'
-    s1inds = [0, 1, 2, 3, 4, 5, 5, 5, 5, 5, 5, 6, 7, 8, 9, 15, 16, 17, 18, 19, 20]
-    assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == [*list(range(1, 6)), *[6, 7, 8, 9, 15, 16, 17, 18, 19, 20]]
+    quant_window_coordinates = '1-5_10-18'
+    # Ind:           1111     11111
+    #      01234567890123     45678
+    # QWC:  |   |    |            |
+    ref = 'AAAAATTTTTGGGG-----AAAAA'
+    aln = 'AAAAA-----GGGGCCCCCAAAAA'
+    # QWC:  |                     |
+    # Ind:                111111111
+    #      01234     56789012345678
+    s1inds, _ = CRISPRessoShared.get_relative_coordinates(ref, aln)
+    assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == [*list(range(1, 19))]
+
 
 def test_get_cloned_include_idxs_from_quant_window_coordinates_insertion_and_deletion_modified():
     quant_window_coordinates = '1-5_10-20'
-    s1inds = [0, 1, 2, 2, 4, 5, 6, 7, 7, 7, 7, 7, 7, 8, 9, 10, 15, 16, 17, 18, 19]
-    assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == [*[1,2,4,5], *[8, 9, 10, 15, 16, 17, 18, 19]]
+    # Ind:                 11111111112
+    #      012 34567     8901234567890
+    # QWC:  |    |         |         |
+    ref = 'AAA-CCCCC-----AAATTTTCCCCCC'
+    aln = 'AAAT-CCCCGGGGGAAA----CCCCCC'
+    # QWC:  |    |         |         |
+    # Ind:           1111111    111122
+    #      0123 456789012345    678901
+    s1inds, _ = CRISPRessoShared.get_relative_coordinates(ref, aln)
+    assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == [*[1, 2, 3, 4, 5], *[15, 16, 17, 18, 19, 20, 21]]
+
+
+def test_get_cloned_include_idxs_from_quant_window_coordinates_insertion():
+    quant_window_coordinates = '2-7'
+
+    # Ind: 0123  456789
+    # QWC:   |      |
+    ref = 'AAAA--TTTTTT'
+    aln = 'AAAAGGTTTTTT'
+    # QWC:   |      |
+    # Ind:           11
+    #      012345678901
+    s1inds, _ = CRISPRessoShared.get_relative_coordinates(ref, aln)
+    assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == list(range(2, 10))
+
+
+def test_get_cloned_include_idxs_from_quant_window_coordinates_insertion_start():
+    quant_window_coordinates = '1-3'
+
+    # Ind: 0    123456
+    # QWC:      | |
+    ref = 'T----ACTGT'
+    aln = 'TTCCCACTGT'
+    # QWC:      | |
+    # Ind: 0123456789
+    s1inds, _ = CRISPRessoShared.get_relative_coordinates(ref, aln)
+    assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == [5, 6, 7]
+
+
+def test_get_cloned_include_idxs_from_quant_window_coordinates_insertion_end():
+    quant_window_coordinates = '1-4'
+
+    # Ind: 0123    45678
+    # QWC:  |      |
+    ref = 'GGGT----ACTGT'
+    aln = 'GGGTTCCCACTGT'
+    # QWC:  |      |
+    # Ind:           111
+    #      0123456789012
+    s1inds, _ = CRISPRessoShared.get_relative_coordinates(ref, aln)
+    assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == list(range(1, 9))
+
+
+def test_get_cloned_include_idxs_from_quant_window_coordinates_deletion_before_qw():
+    quant_window_coordinates = '6-9'
+
+    # Ind:           11
+    #      012345678901
+    # QWC:       |  |
+    ref = 'GGGTACTGTCCA'
+    aln = 'GGGTA-TGTCCA'
+    # QWC:       |  |
+    # Ind:            1
+    #      01234 567890
+    s1inds, _ = CRISPRessoShared.get_relative_coordinates(ref, aln)
+    assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == list(range(5, 9))
+
+
+def test_get_cloned_include_idxs_from_quant_window_coordinates_insertion_before_qw():
+    quant_window_coordinates = '6-9'
+    # Ind:            1
+    #      01234 567890
+    # QWC:        |  |
+    ref = 'GGGTA-TGTCCA'
+    aln = 'GGGTACTGTCCA'
+    # QWC:        |  |
+    # Ind:           11
+    #      012345678901
+    s1inds, _ = CRISPRessoShared.get_relative_coordinates(ref, aln)
+    assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == list(range(7, 11))
+
+
+def test_get_cloned_include_idxs_from_quant_window_coordinates_insertion_deletion_outside_qw():
+    quant_window_coordinates = '4-6_11-14'
+
+    # Ind:               11111
+    #      0123    45678901234
+    # QWC:         | |    |  |
+    ref = 'GGGT----ACTTTTGTCCA'
+    aln = 'GGGTTCCCACT---GTCCA'
+    # QWC:         | |    |  |
+    # Ind:           1   11111
+    #      01234567890   12345
+    s1inds, _ = CRISPRessoShared.get_relative_coordinates(ref, aln)
+    assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == [8, 9, 10, 12, 13, 14, 15]
+
 
 def test_get_cloned_include_idxs_from_quant_window_coordinates_insertion_across_qw():
     # 6 bp insertion in middle of 4 bp sequence
-    quant_window_coordinates = '1-4'
-    s1inds = [0,1,2,9,10]
-    assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == [1,2,9,10]
+    quant_window_coordinates = '1-3'
+    # Ind: 01      23
+    # QWC:  |       |
+    ref = 'AA------TT'
+    aln = 'AAGGGGGGTT'
+    # QWC:  |       |
+    # Ind: 0123456789
+    s1inds, _ = CRISPRessoShared.get_relative_coordinates(ref, aln)
+    assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == list(range(1, 10))
+
+
+def test_get_cloned_include_idxs_from_quant_window_coordinates_deletion_overlap_start():
+    quant_window_coordinates = '2-5'
+    # Ind: 012345
+    # QWC:   |  |
+    ref = 'AATTTT'
+    aln = 'A--TTT'
+    # QWC:    | |
+    # Ind: 0  123
+    s1inds, _ = CRISPRessoShared.get_relative_coordinates(ref, aln)
+    assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == [1, 2, 3]
+
+
+def test_get_cloned_include_idxs_from_quant_window_coordinates_deletion_overlap_end():
+    quant_window_coordinates = '1-3'
+    # Ind: 012345
+    # QWC:  | |
+    ref = 'AATTTT'
+    aln = 'AAT---'
+    # QWC:  ||
+    # Ind: 012
+    s1inds, _ = CRISPRessoShared.get_relative_coordinates(ref, aln)
+    assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == [1, 2]
+
+
+def test_get_cloned_include_idxs_from_quant_window_coordinates_deletion_overlap_end_single_bp():
+    quant_window_coordinates = '2-3'
+    # Ind: 012345
+    # QWC:   ||
+    ref = 'AATTTT'
+    aln = 'AAT---'
+    # QWC:   |
+    # Ind: 012
+    s1inds, _ = CRISPRessoShared.get_relative_coordinates(ref, aln)
+    assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == [2]
+
 
 def test_get_cloned_include_idxs_from_quant_window_coordinates_deletion_entire_qw():
     # 5 bp deletion of entire qw
     quant_window_coordinates = '1-4_7-10'
-    s1inds = [0, 1, 2, 3, 4, 5, 6, 6, 6, 6, 6]
+    ref = 'AAAAAATTTT'
+    aln = 'AAAAAA----'
+    s1inds, _ = CRISPRessoShared.get_relative_coordinates(ref, aln)
     assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == [1, 2, 3, 4]
 
+
 def test_get_cloned_include_idxs_from_quant_window_coordinates_include_zero():
-    quant_window_coordinates = '0-5'
-    s1inds = [0, 1, 2, 3, 4, 5]
-    assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == [0, 1, 2, 3, 4, 5]
+    quant_window_coordinates = '0-4'
+    ref = 'AAAAA'
+    aln = 'AAAAA'
+    s1inds, _ = CRISPRessoShared.get_relative_coordinates(ref, aln)
+    assert CRISPRessoCORE.get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinates, s1inds) == [0, 1, 2, 3, 4]
 
 
 # Testing parallelization functions
