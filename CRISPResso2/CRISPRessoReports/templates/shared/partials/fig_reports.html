@@ -1,0 +1,58 @@
+<div id="fig_{{fig_name}}" class="d-flex flex-column">
+    {# Set the width based on the plot #}
+    {%- if fig_name in ['plot_1a', 'plot_1b', 'plot_1c', 'plot_1d', 'plot_3a', 'plot_4a', 'plot_4b', 'plot_4c', 'plot_4e', 'plot_4f', 'plot_5a', 'plot_7', 'plot_8', 'plot_8a', 'plot_11c'] -%}
+        {% set width = '40%' %}
+    {% elif '9a' in fig_name %}
+        {% set coding_seq_length = report_data['run_data']['running_info']['coding_seqs'][seq_itr]|length|int %}
+        {% if 40 > (coding_seq_length // 3 ) %}
+            {% set length = ((coding_seq_length // 3)/40 * 100 + 10)|string %}
+            {% set width = length ~ '%' %}
+        {% else %}
+            {% set width = '100%' %}
+        {% endif %}
+
+    {#- elif '9a' in fig_name -%}
+        {% set coding_seq_length = report_data['run_data']['running_info']['coding_seqs'][seq_itr]|length|int %}
+        {% if 30 > (coding_seq_length // 3) and (coding_seq_length //3) > 17%}
+            {% set length = ((coding_seq_length // 3)/32 * 100)|string %}
+            {% set width = length ~ '%' %}
+        {% elif 17 >= (coding_seq_length // 3) %}
+            {% set length = ((coding_seq_length // 3)/25 * 100)|string %}
+            {% set width = length ~ '%' %}
+        {% else %}
+            {% set width = '100%' %}
+        {% endif #}
+    {%- elif fig_name in ['plot_10b', 'plot_10c'] -%}
+        {% set width = '35%' %}
+    {%- elif fig_name in ['plot_10a'] -%}
+        {% set width = '70%' %}
+    {%- elif fig_name in [('plot_10i_' ~ amplicon_name)] -%}
+        {% set width = '70%' %}
+    {%- else -%}
+        {% set width = '100%' %}
+    {%- endif -%}
+
+    {%- if amplicon_name is defined -%}
+        {%- if 'htmls' in report_data['figures'] and fig_name in report_data['figures']['htmls'][amplicon_name] -%}
+            {{report_data['figures']['htmls'][amplicon_name][fig_name]|safe}}
+        {%- elif fig_name in report_data['figures']['locs'][amplicon_name] -%}
+            <a href="{{report_data['crispresso_data_path']}}{{report_data['figures']['locs'][amplicon_name][fig_name]}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['figures']['locs'][amplicon_name][fig_name]}}.png" width='{{width}}'></a>
+        {% endif -%}
+        <label class="labelpadding">{{report_data['figures']['captions'][amplicon_name][fig_name]}}</label>
+        {%- for (data_label,data_path) in report_data['figures']['datas'][amplicon_name][fig_name] %}
+            <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
+        {%- endfor -%}
+    {%- else %}
+        {%- if 'htmls' in report_data['figures'] and fig_name in report_data['figures']['htmls'] -%}
+            {{report_data['figures']['htmls'][fig_name]|safe}}
+        {%- elif fig_name in report_data['figures']['locs'] -%}
+            <a href="{{report_data['crispresso_data_path']}}{{report_data['figures']['locs'][fig_name]}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['figures']['locs'][fig_name]}}.png" width='{{width}}'></a>
+        {% endif -%}
+        {% if fig_name in report_data['figures']['captions'] and fig_name in report_data['figures']['datas'] %}
+            <label class="labelpadding">{{report_data['figures']['captions'][fig_name]}}</label>
+            {%- for (data_label,data_path) in report_data['figures']['datas'][fig_name] %}
+                <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
+            {%- endfor -%}
+        {%- endif %}
+    {%- endif %}
+</div>

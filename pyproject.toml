@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools", "wheel", "cython", "numpy"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "CRISPResso2"
+version = "2.3.3"
+dependencies = [
+    "pandas",
+    "matplotlib",
+    "seaborn",
+    "jinja2",
+    "scipy",
+    "numpy"
+]
+description = "Software pipeline for the analysis of genome editing outcomes from deep sequencing data"
+authors = [
+    { name = "Edilytics, Inc.", email = "support@edilytics.com" }
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: Other/Proprietary License",
+    "Operating System :: POSIX",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Cython",
+]
+
+[project.optional-dependencies]
+dev = ["cython"]
+
+[project.scripts]
+CRISPResso = "CRISPResso2.CRISPRessoCORE:main"
+CRISPRessoBatch = "CRISPResso2.CRISPRessoBatchCORE:main"
+CRISPRessoPooled = "CRISPResso2.CRISPRessoPooledCORE:main"
+CRISPRessoWGS = "CRISPResso2.CRISPRessoWGSCORE:main"
+CRISPRessoCompare = "CRISPResso2.CRISPRessoCompareCORE:main"
+CRISPRessoPooledWGSCompare = "CRISPResso2.CRISPRessoPooledWGSCompareCORE:main"
+CRISPRessoAggregate = "CRISPResso2.CRISPRessoAggregateCORE:main"
+
+[project.urls]
+Homepage = "https://github.com/pinellolab/CRISPResso2"
+
+[tool.setuptools]
+package-dir = {"" = "CRISPResso2"}
+packages = ["CRISPResso2", "CRISPResso2.CRISPRessoReports"]
+include-package-data = true

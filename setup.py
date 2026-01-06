@@ -33,8 +33,8 @@ import re
 
 def main():
     version = re.search(
-        r'^__version__\s*=\s*"(.*)"',
-        open('CRISPResso2/CRISPRessoShared.py').read(),
+        r'^version\s*=\s*"(.*)"',
+        open('pyproject.toml').read(),
         re.M
     ).group(1)
 
@@ -70,7 +70,7 @@ def main():
           url='http://github.com/pinellolab/CRISPResso2',
           package_dir={'CRISPResso2' : 'CRISPResso2'},
           include_package_data = True,
-          packages=['CRISPResso2'],
+          packages=['CRISPResso2', 'CRISPResso2.CRISPRessoReports'],
           entry_points=entry_points,
           description="Software pipeline for the analysis of genome editing outcomes from deep sequencing data",
           classifiers=[
@@ -91,7 +91,7 @@ def main():
               'jinja2',
               'scipy',
               'numpy',
-              'plotly',
+              'upsetplot',
               ],
           cmdclass = command_classes,
           ext_modules = ext_modules

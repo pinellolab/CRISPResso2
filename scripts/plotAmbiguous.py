@@ -9,7 +9,7 @@ import os
 import numpy as np
 import pandas as pd
 import zipfile
-from CRISPResso2 import CRISPRessoPlot
+
 from CRISPResso2 import CRISPRessoShared
 
 def main():
@@ -21,7 +21,16 @@ def main():
     parser.add_argument("--plot_cut_point",help="If set, a line at the cut point will be plotted.",action="store_true")
     parser.add_argument("--save_png",help="If set, pngs will also be produced (as well as pdfs).",action="store_true")
 
+    #CRISPRessoPro params
+    parser.add_argument('--use_matplotlib', action='store_true',
+                        help='Use matplotlib for plotting instead of plotly/d3 when CRISPRessoPro is installed')
+
     args = parser.parse_args()
+
+    if args.use_matplotlib or not CRISPRessoShared.is_C2Pro_installed():
+        from CRISPResso2 import CRISPRessoPlot
+    else:
+        from CRISPRessoPro import plot as CRISPRessoPlot
 
     plot_ambiguous_alleles_tables_from_folder(args.CRISPResso2_folder,args.output_root,MIN_FREQUENCY=args.min_freq,MAX_N_ROWS=args.max_rows,SAVE_ALSO_PNG=args.save_png,plot_cut_point=args.plot_cut_point)
 
@@ -95,7 +104,7 @@ def plot_ambiguous_alleles_tables_from_folder(crispresso_output_folder,fig_filen
             ref_seq_around_cut=refs[ref_name]['sequence'][cut_point-plot_half_window+1:cut_point+plot_half_window+1]
 
             ambiguous_ref_name = "AMBIGUOUS_"+ref_name
-            df_alleles_around_cut=CRISPRessoShared.get_dataframe_around_cut(df_alleles.loc[df_alleles['Reference_Name'] == ambiguous_ref_name],cut_point,plot_half_window)
+            df_alleles_around_cut=CRISPRessoShared.get_dataframe_around_cut_asymmetrical(df_alleles.loc[df_alleles['Reference_Name'] == ambiguous_ref_name],cut_point,plot_half_window, plot_half_window)
             this_ambig_allele_count = len(df_alleles_around_cut.index)
             if this_ambig_allele_count < 1:
                 print('No ambiguous reads found for ' + ref_name)
@@ -109,7 +118,7 @@ def plot_ambiguous_alleles_tables_from_folder(crispresso_output_folder,fig_filen
             for (int_start, int_end) in refs[ref_name]['sgRNA_intervals']:
                 new_sgRNA_intervals += [(int_start - new_sel_cols_start - 1,int_end - new_sel_cols_start - 1)]
             fig_filename_root = fig_filename_root+"_"+ref_name+"_"+sgRNA_label
-            CRISPRessoPlot.plot_alleles_table(ref_seq_around_cut,df_alleles=df_alleles_around_cut,fig_filename_root=fig_filename_root, MIN_FREQUENCY=MIN_FREQUENCY,MAX_N_ROWS=MAX_N_ROWS,SAVE_ALSO_PNG=SAVE_ALSO_PNG,plot_cut_point=plot_cut_point,sgRNA_intervals=new_sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,annotate_wildtype_allele=crispresso2_info['running_info']['args'].annotate_wildtype_allele)
+            CRISPRessoPlot.plot_alleles_table(ref_seq_around_cut,df_alleles=df_alleles_around_cut,fig_filename_root=fig_filename_root,custom_colors=custom_colors,MIN_FREQUENCY=MIN_FREQUENCY,MAX_N_ROWS=MAX_N_ROWS,SAVE_ALSO_PNG=SAVE_ALSO_PNG,plot_cut_point=plot_cut_point,sgRNA_intervals=new_sgRNA_intervals,sgRNA_names=sgRNA_names,sgRNA_mismatches=sgRNA_mismatches,annotate_wildtype_allele=crispresso2_info['running_info']['args'].annotate_wildtype_allele)
 
             plot_count += 1
     print('Plotted ' + str(plot_count) + ' plots')

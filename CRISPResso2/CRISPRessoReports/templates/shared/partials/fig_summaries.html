@@ -1,0 +1,16 @@
+<div id="fig_summary_{{plot_name}}">
+    {% if 'htmls' in report_data and plot_name in report_data['htmls']%}
+        {{report_data['htmls'][plot_name]|safe}}
+    {% else %}
+        {% if plot_name in ['Nucleotide_conversion_map', 'Nucleotide_percentage_quilt'] %}
+            <a href="{{report_data['crispresso_data_path']}}{{plot_name}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{plot_name}}.png" width='100%'></a>
+        {% else %}
+            <a href="{{report_data['crispresso_data_path']}}{{plot_name}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{plot_name}}.png" width='70%'></a>
+        {% endif %}
+    {% endif %}
+    <label class="labelpadding">{{report_data['labels'][plot_name]}}</label>
+    {% for (data_label,data_path) in report_data['datas'][plot_name] %}
+        <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
+    {% endfor %}
+    <br>
+</div>

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>CRISPResso2</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="CRISPResso2: Analysis of genome editing outcomes from deep sequencing data">
+    <meta name="author" content="Kendell Clement and Luca Pinello">
+    <link href='https://fonts.googleapis.com/css?family=Montserrat|Ranga:700' rel='stylesheet' type='text/css'>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" integrity="sha512-GQGU0fMMi238uA+a/bdWJfpUGKUkBdgfFdgBm72SUQ6BeyWjoY/ton0tEjH+OSH9iP4Dfh+7HM0I9f5eR0L/4w==" crossorigin="anonymous" referrerpolicy="no-referrer" />    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.css" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+    <style>
+      body {
+        font-family: 'Montserrat', sans-serif !important;
+      {% if is_web %}
+        {% if not is_default_user %}
+          padding-top:60px;
+        {% endif %}
+      {% endif %}
+      }
+      @media (max-width:1015px)
+      {
+        #crispresso_h
+        {
+          font-size:5rem;
+          font-weight:300;
+          line-height:1.2;
+        }
+        #left_help_div
+        {
+          display:none
+        }
+        #top_help_div
+        {
+          display:block
+        }
+      }
+      @media (min-width:1015px)
+      {
+        #crispresso_h
+        {
+          font-size:8rem;
+          font-weight:300;
+          line-height:1.2;
+        }
+        #left_help_div
+        {
+          display:block
+        }
+        #top_help_div
+        {
+          display:none
+        }
+      }
+    </style>
+
+
+    <!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame
+    Remove this if you use the .htaccess -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+    <!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
+    {% if is_web %}
+    <link rel="shortcut icon" href="/static/favicon.ico">
+    <link rel="stylesheet" href="/static/css/main.css">
+    <script src="/static/js/htmx-1.9.1.min.js"></script>
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    {% else %}
+    <link rel="shortcut icon" href="http://crispresso.com/static/favicon.ico" />
+    {% endif %}
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+
+
+  <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+  {% block head %}{% endblock %}
+
+  </head>
+
+  <body class="m-2">
+    {% if is_web %}
+    <div id='left_help_div' style='position:fixed;top:50%;transform:translateY(-50%);left:1%;width:290px;z-index:99'>
+      {{ self.help_block() }}
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          {% if category == "error" %}
+          <div class="alert alert-danger alert-dismissible fade show m-2" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+          {% else %}
+          <div class="alert alert-warning alert-dismissible fade show m-2" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% else %}
+        <div id="messages"></div>
+
+        <script>
+        function fetchAndUpdateMessage() {
+        fetch('https://crispresso.com/messages')
+            .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.text();
+            })
+            .then(data => {
+            const messageDiv = document.getElementById('messages');
+            if (messageDiv) {
+                messageDiv.innerHTML = data;
+            }
+            })
+            .catch(error => {});
+        }
+
+        // Call the function
+        fetchAndUpdateMessage();
+        </script>
+
+    {% endif %}
+
+  {# if default user (normal crispresso mode) #}
+  {% if not is_web or is_default_user %}
+  <div class="container">
+      <div class="row pb-2">
+        <div class="col-sm-1"></div>
+        {% if is_web %}
+          <div class="col-sm-3 crispresso_cup"> <a href='/'><img class='img-fluid' src="../../../static/imgs/CRISPResso_justcup.png" width="80%"></a>
+        {% else %}
+          <div class="col-sm-3 crispresso_cup"> <a href='https://crispresso.com'><img class='img-fluid' src="https://crispresso.com/static/imgs/CRISPResso_justcup.png" width="80%"></a>
+        {% endif %}
+          </div>
+        <div class="col-sm-7" >
+          <a href="{{'/' if is_web else 'https://crispresso.com'}}" style="text-decoration:none !important; color:rgb(33, 37, 41)"><h1 id='crispresso_h' style="font-family:'Ranga', sans-serif">CRISPResso2 </h1></a>
+          <h3 style="margin-top: -0.5em;padding-right: 2em;">Analysis of genome editing outcomes from deep sequencing data</h3>
+        </div>
+        <div class="col-sm-1">
+        </div>
+      </div>
+
+
+    {% else %}
+      {# if doing user sessions #}
+  <nav class="navbar fixed-top ms-1 navbar-expand-md bg-light navbar-light">
+  <!-- Brand -->
+  <a class="navbar-brand" href="/">
+{{config['BANNER_TEXT']}}</a>
+
+  <!-- Toggler/collapsibe Button -->
+  <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#collapsibleNavbar">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <!-- Navbar links -->
+    <div class="collapse navbar-collapse" id="collapsibleNavbar">
+      <ul class="navbar-nav ms-auto">
+      {% if not is_default_user %}
+        <li class="nav-item">
+           <a class="nav-link" href="{{url_for('home')}}">
+            <i class="fas fa-user"></i> {{ current_user.username}}
+          </a>
+        </li>
+        <li class="nav-item">
+           <a class="nav-link" href="{{url_for('home')}}">
+            Home
+          </a>
+        </li>
+      {% endif %}
+      {% block extranavs %}{% endblock %}
+      {% if current_user.role == "Admin" %}
+         <li class="nav-item">
+           <a class="nav-link" href="{{url_for('admin.index')}}">Admin</a>
+         </li>
+      {% endif %}
+      {% if not is_default_user and not current_user.is_authenticated %}
+         <li class="nav-item">
+           <a class="nav-link" href="{{url_for('login')}}">Log in</a>
+         </li>
+      {% else %}
+         <li class="nav-item">
+           <a class="nav-link" href="{{url_for('logout')}}">Logout</a>
+         </li>
+      {% endif %}
+      </ul>
+    </div>
+  </nav>
+  <div class="container">
+  {% endif %}
+
+      <div id='top_help_div'>
+        <div class="row">
+          <div class="col-sm-1"></div>
+          <div class='col-sm-10 pb-2 crispresso_body_div'>
+          {% block help_block %} {% endblock %}
+          </div>
+          <div class="col-sm-1"></div>
+        </div>
+      </div>
+
+      {% block content %}{% endblock %}
+
+      {% if not is_web or is_default_user %}
+      <div class="row">
+      <div class="col-sm-1"></div>
+      <footer class="col-sm-10 crispresso_body_div screen-only py-5">
+        <p class="text-center">
+      If you like CRISPResso2 please support us by citing it in your work: <br>
+          Clement K, Rees H, Canver MC, Gehrke JM, Farouni R, Hsu JY, Cole MA, Liu DR, Joung JK, Bauer DE, Pinello L.<br>
+          <a href="https://rdcu.be/boxVG" target="_blank">CRISPResso2 provides accurate and rapid genome editing sequence analysis. </a><br>
+          Nat Biotechnol. 2019 Mar; 37(3):224-226. doi: 10.1038/s41587-019-0032-3. PubMed PMID: 30809026.
+        </p>
+        <p class="text-center"><small> &copy; Copyright <a href="http://pinellolab.org">Kendell Clement and Luca Pinello</a></small></p>
+        <p class="text-center">
+          <small>
+        <a href="https://twitter.com/intent/tweet?text=CRISPResso2%20provides%20accurate%20and%20rapid%20genome%20editing%20sequence%20analysis%20%40kendellclement%20%40lucapinello%20%23CRISPR%20%23CRISPResso2"
+          class="twitter-share-button" data-via="kendellclement" data-size="large" data-count="none" data-hashtags="CRISPR" data-url="http://crispresso2.pinellolab.org">Tweet about CRISPresso2!</a>
+        </small>
+        </p>
+
+      </footer>
+      <div class="col-sm-1"></div>
+    </div>
+    {% else %}
+      <div class="row">
+      <div class="col-sm-1"></div>
+      <footer id="copyright_div" class="col-sm-10 crispresso_body_div py-5">
+        <p class="text-center"><small> &copy; Copyright <a href="http://edilytics.com">Edilytics</a></small></p>
+      </footer>
+      <div class="col-sm-1"></div>
+    </div>
+    {% endif %}
+    </div>
+    {% block foot %}{% endblock %}
+  </body>
+
+</html>

@@ -13,9 +13,8 @@ import re
 import traceback
 import json
 from CRISPResso2 import CRISPRessoShared
-from CRISPResso2 import CRISPRessoPlot
 from CRISPResso2 import CRISPRessoMultiProcessing
-from CRISPResso2 import CRISPRessoReport
+from CRISPResso2.CRISPRessoReports import CRISPRessoReport
 
 
 import logging
@@ -85,9 +84,9 @@ def main():
 |  |_| |_| |_| |_|____   |_|   |_|  |_|  |
 |________________________________________|
         '''
-        print(CRISPRessoShared.get_crispresso_header(description, meta_string))
+        info(CRISPRessoShared.get_crispresso_header(description, meta_string))
 
-        parser = CRISPRessoShared.getCRISPRessoArgParser(parser_title = 'CRISPRessoMeta Parameters')
+        parser = CRISPRessoShared.getCRISPRessoArgParser("Meta", parser_title = 'CRISPRessoMeta Parameters')
 
         #batch specific params
         parser.add_argument('--metadata', type=str, help='Metadata file according to NIST specification', required=True)
@@ -96,11 +95,16 @@ def main():
 
         args = parser.parse_args()
 
+        if args.use_matplotlib or not CRISPRessoShared.is_C2Pro_installed():
+            from CRISPResso2 import CRISPRessoPlot
+        else:
+            from CRISPRessoPro import plot as CRISPRessoPlot
+
         CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
 
         debug_flag = args.debug
 
-        crispresso_options = CRISPRessoShared.get_crispresso_options()
+        crispresso_options = CRISPRessoShared.get_core_crispresso_options()
         options_to_ignore = {'name', 'output_folder'}
         crispresso_options_for_meta = list(crispresso_options-options_to_ignore)
 
@@ -123,7 +127,7 @@ def main():
         print('table:')
         print(meta_params)
         #rename column "a" to "amplicon_seq", etc
-        meta_params.rename(index=str, columns=CRISPRessoShared.get_crispresso_options_lookup(), inplace=True)
+        meta_params.rename(index=str, columns=CRISPRessoShared.get_crispresso_options_lookup("Core"), inplace=True)
         meta_count = meta_params.shape[0]
         meta_params.index = range(meta_count)
 
@@ -229,7 +233,7 @@ def main():
 
         log_filename=_jp('CRISPRessoMeta_RUNNING_LOG.txt')
         logger.addHandler(logging.FileHandler(log_filename))
-        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('CRISPRessoMeta_status.txt')))
+        logger.addHandler(CRISPRessoShared.StatusHandler(os.path.join(OUTPUT_DIRECTORY, 'CRISPRessoMeta_status.json')))
 
         with open(log_filename, 'w+') as outfile:
             outfile.write('[Command used]:\n%s\n\n[Execution log]:\n' % ' '.join(sys.argv))
@@ -354,7 +358,7 @@ def main():
                 report_name = _jp("CRISPResso2Meta_report.html")
             else:
                 report_name = OUTPUT_DIRECTORY+'.html'
-            CRISPRessoReport.make_meta_report_from_folder(report_name, crispresso2_info, OUTPUT_DIRECTORY, _ROOT)
+            CRISPRessoReport.make_meta_report_from_folder(report_name, crispresso2_info, OUTPUT_DIRECTORY, _ROOT, logger)
             crispresso2_info['running_info']['report_location'] = report_name
             crispresso2_info['running_info']['report_filename'] = os.path.basename(report_name)
 
@@ -362,7 +366,7 @@ def main():
             crispresso2Meta_info_file, crispresso2_info,
         )
         info('Analysis Complete!', {'percent_complete': 100})
-        print(CRISPRessoShared.get_crispresso_footer())
+        info(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)
 
     except Exception as e:

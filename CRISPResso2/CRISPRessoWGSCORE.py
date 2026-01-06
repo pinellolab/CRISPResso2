@@ -16,11 +16,12 @@ import subprocess as sb
 import sys
 import traceback
 import unicodedata
+
+from functools import partial
+
 from CRISPResso2 import CRISPRessoShared
 from CRISPResso2 import CRISPRessoMultiProcessing
-from CRISPResso2 import CRISPRessoReport
-from CRISPResso2 import CRISPRessoPlot
-
+from CRISPResso2.CRISPRessoReports import CRISPRessoReport
 
 import logging
 
@@ -53,12 +54,6 @@ def find_wrong_nt(sequence):
 
 def capitalize_sequence(x):
     return str(x).upper() if not pd.isnull(x) else x
-
-def check_file(filename):
-    try:
-        with open(filename): pass
-    except IOError:
-        raise Exception('I cannot open the file: '+filename)
 
 #the dependencies are bowtie2 and samtools
 def which(program):
@@ -210,7 +205,7 @@ def get_n_reads_fastq(fastq_filename):
      n_reads = int(float(p.communicate()[0])/4.0)
      return n_reads
 
-def extract_reads(row):
+def extract_reads(row, samtools_exclude_flags):
     if row.sequence:
         #create place-holder fastq files
         open(row.fastq_file_trimmed_reads_in_region, 'w+').close()
@@ -219,7 +214,7 @@ def extract_reads(row):
 
         info('Extracting reads in:%s and creating .bam file: %s' % (region, row.bam_file_with_reads_in_region))
 
-        cmd=r'''samtools view -b -F 4 --reference %s %s %s > %s ''' % (row.reference_file, row.original_bam, region, row.bam_file_with_reads_in_region)
+        cmd = rf'''samtools view -b -F {samtools_exclude_flags} --reference {row.reference_file} {row.original_bam} {region} > {row.bam_file_with_reads_in_region} '''
         sb.call(cmd, shell=True)
 
         cmd=r'''samtools index %s ''' % (row.bam_file_with_reads_in_region)
@@ -234,10 +229,10 @@ def extract_reads(row):
 
     return row
 
-def extract_reads_chunk(df):
+def extract_reads_chunk(df, samtools_exclude_flags):
     new_df = pd.DataFrame(columns=df.columns)
     for i in range(len(df)):
-        new_df.loc[i] = extract_reads(df.iloc[i].copy())
+        new_df.loc[i] = extract_reads(df.iloc[i].copy(), samtools_exclude_flags)
     new_df.set_index(df.index,inplace=True)
     return new_df
 
@@ -271,21 +266,6 @@ def normalize_name(name, bam_file):
             )
         return clean_name
 
-
-###EXCEPTIONS############################
-
-class AmpliconsNamesNotUniqueException(Exception):
-    pass
-
-class SgRNASequenceException(Exception):
-    pass
-
-class NTException(Exception):
-    pass
-
-class ExonSequenceException(Exception):
-    pass
-
 def main():
     def print_stacktrace_if_debug():
         debug_flag = False
@@ -299,19 +279,9 @@ def main():
         start_time =  datetime.now()
         start_time_string =  start_time.strftime('%Y-%m-%d %H:%M:%S')
 
-        description = ['~~~CRISPRessoWGS~~~', '-Analysis of CRISPR/Cas9 outcomes from WGS data-']
-        wgs_string = r'''
- ____________
-|     __  __ |
-||  |/ _ (_  |
-||/\|\__)__) |
-|____________|
-        '''
-        print(CRISPRessoShared.get_crispresso_header(description, wgs_string))
-
         # if no args are given, print a simplified help message
         if len(sys.argv) == 1:
-            print(CRISPRessoShared.format_cl_text('usage: CRISPRessoWGS [-b BAM_FILE] [-f REGION_FILE] [-r REFERENCE_FILE] [-n NAME]\n' + \
+            raise CRISPRessoShared.BadParameterException(CRISPRessoShared.format_cl_text('usage: CRISPRessoWGS [-b BAM_FILE] [-f REGION_FILE] [-r REFERENCE_FILE] [-n NAME]\n' + \
                 'commonly-used arguments:\n' + \
                 '-h, --help            show the full list of arguments\n' + \
                 '-v, --version         show program\'s version number and exit\n' + \
@@ -322,32 +292,31 @@ def main():
             ))
             sys.exit()
 
-        parser = CRISPRessoShared.getCRISPRessoArgParser(parser_title = 'CRISPRessoWGS Parameters', required_params=[],
-                    suppress_params=['bam_input',
-                                   'bam_chr_loc',
-                                   'fastq_r1',
-                                   'fastq_r2',
-                                   'amplicon_seq',
-                                   'amplicon_name',
-                                   ])
-
-        #tool specific optional
-        parser.add_argument('-b', '--bam_file', type=str,  help='WGS aligned bam file', required=True, default='bam filename' )
-        parser.add_argument('-f', '--region_file', type=str,  help='Regions description file. A BED format  file containing the regions to analyze, one per line. The REQUIRED\
-        columns are: chr_id(chromosome name), bpstart(start position), bpend(end position), the optional columns are:name (an unique indentifier for the region), guide_seq, expected_hdr_amplicon_seq,coding_seq, see CRISPResso help for more details on these last 3 parameters)', required=True)
-        parser.add_argument('-r', '--reference_file', type=str, help='A FASTA format reference file (for example hg19.fa for the human genome)', default='', required=True)
-        parser.add_argument('--min_reads_to_use_region',  type=float, help='Minimum number of reads that align to a region to perform the CRISPResso analysis', default=10)
-        parser.add_argument('--skip_failed',  help='Continue with pooled analysis even if one sample fails', action='store_true')
-        parser.add_argument('--gene_annotations', type=str, help='Gene Annotation Table from UCSC Genome Browser Tables (http://genome.ucsc.edu/cgi-bin/hgTables?command=start), \
-        please select as table "knownGene", as output format "all fields from selected table" and as file returned "gzip compressed"', default='')
-        parser.add_argument('--crispresso_command', help='CRISPResso command to call', default='CRISPResso')
+        parser = CRISPRessoShared.getCRISPRessoArgParser("WGS", parser_title = 'CRISPRessoWGS Parameters')
 
         args = parser.parse_args()
 
         CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
 
-        crispresso_options = CRISPRessoShared.get_crispresso_options()
-        options_to_ignore = {'fastq_r1', 'fastq_r2', 'amplicon_seq', 'amplicon_name', 'output_folder', 'name', 'zip_output'}
+        description = ['~~~CRISPRessoWGS~~~', '-Analysis of CRISPR/Cas9 outcomes from WGS data-']
+        wgs_string = r'''
+ ____________
+|     __  __ |
+||  |/ _ (_  |
+||/\|\__)__) |
+|____________|
+        '''
+        info(CRISPRessoShared.get_crispresso_header(description, wgs_string))
+
+        if args.use_matplotlib or not CRISPRessoShared.is_C2Pro_installed():
+            from CRISPResso2 import CRISPRessoPlot
+        else:
+            from CRISPRessoPro import plot as CRISPRessoPlot
+
+        crispresso_options = CRISPRessoShared.get_core_crispresso_options()
+        options_to_ignore = {'fastq_r1', 'fastq_r2', 'amplicon_seq', 'amplicon_name', 'output_folder', 'name', 
+                             'display_name', 'zip_output', 'split_interleaved_input', 'samtools_exclude_flags',
+                             'bowtie2_index'} # these options will be set for each sub-run or should be not be passed to sub-runs because they are wgs-specific
         crispresso_options_for_wgs = list(crispresso_options-options_to_ignore)
 
         OUTPUT_DIRECTORY='CRISPRessoWGS_on_%s' % normalize_name(args.name, args.bam_file)
@@ -362,7 +331,7 @@ def main():
         except:
             warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
 
-        logger.addHandler(CRISPRessoShared.StatusHandler(_jp('CRISPRessoWGS_status.txt')))
+        logger.addHandler(CRISPRessoShared.StatusHandler(os.path.join(OUTPUT_DIRECTORY, 'CRISPRessoWGS_status.json')))
 
         info('Checking dependencies...')
 
@@ -376,14 +345,14 @@ def main():
             sys.exit(1)
 
         #check files
-        check_file(args.bam_file)
+        CRISPRessoShared.check_file(args.bam_file)
 
-        check_file(args.reference_file)
+        CRISPRessoShared.check_file(args.reference_file)
 
-        check_file(args.region_file)
+        CRISPRessoShared.check_file(args.region_file)
 
         if args.gene_annotations:
-            check_file(args.gene_annotations)
+            CRISPRessoShared.check_file(args.gene_annotations)
 
         # for computation performed in CRISPRessoWGS (e.g. bowtie alignment, etc) use n_processes_for_wgs
         n_processes_for_wgs = 1
@@ -431,7 +400,7 @@ def main():
                 if previous_run_data['running_info']['version'] == CRISPRessoShared.__version__:
                     args_are_same = True
                     for arg in vars(args):
-                        if arg == "no_rerun" or arg == "debug" or arg == "n_processes":
+                        if arg == "no_rerun" or arg == "debug" or arg == "n_processes" or arg == "verbosity":
                             continue
                         if arg not in vars(previous_run_data['running_info']['args']):
                             info('Comparing current run to previous run: old run had argument ' + str(arg) + ' \nRerunning.')
@@ -482,7 +451,7 @@ def main():
                 df_genes.txStart=df_genes.txStart.astype(int)
                 df_genes.head()
             except:
-                raise Exception('Failed to load the gene annotations file.')
+                raise CRISPRessoShared.BadParameterException('Failed to load the gene annotations file.')
 
 
         #Load and validate the REGION FILE
@@ -506,11 +475,24 @@ def main():
 
 
         if not len(df_regions.Name.unique())==df_regions.shape[0]:
-            raise Exception('The amplicon names should be all distinct!')
+            raise CRISPRessoShared.BadParameterException('The amplicon names should be all distinct!')
 
         df_regions.set_index('Name', inplace=True)
         #df_regions.index=df_regions.index.str.replace(' ','_')
         df_regions.index=df_regions.index.to_series().str.replace(' ', '_')
+
+        #create clean, distinct run names - this will be used to create CRISPResso folder names
+        seen_runnames = {}
+        run_names = []
+        for idx, row in df_regions.iterrows():
+            this_run_name = CRISPRessoShared.clean_filename(idx)
+            this_index = 0
+            while this_run_name in seen_runnames:
+                this_run_name = CRISPRessoShared.clean_filename(idx) + '_' + str(this_index)
+                this_index += 1
+            seen_runnames[this_run_name] = 1
+            run_names.append(this_run_name)
+        df_regions['run_name'] = run_names
 
         #extract sequence for each region
         uncompressed_reference=args.reference_file
@@ -535,7 +517,7 @@ def main():
 
                     wrong_nt=find_wrong_nt(current_guide_seq)
                     if wrong_nt:
-                        raise NTException('The sgRNA sequence %s contains wrong characters:%s'  % (current_guide_seq, ' '.join(wrong_nt)))
+                        raise CRISPRessoShared.NTException('The sgRNA sequence %s contains wrong characters:%s'  % (current_guide_seq, ' '.join(wrong_nt)))
 
                     offset_fw=guide_qw_centers[idx]+len(current_guide_seq)-1
                     offset_rc=(-guide_qw_centers[idx])-1
@@ -569,8 +551,8 @@ def main():
 
         def set_filenames(row):
             row_fastq_exists = False
-            fastq_gz_filename=os.path.join(ANALYZED_REGIONS, '%s.fastq.gz' % CRISPRessoShared.clean_filename('REGION_'+str(row.region_number)))
-            bam_region_filename=os.path.join(ANALYZED_REGIONS, '%s.bam' % CRISPRessoShared.clean_filename('REGION_'+str(row.region_number)))
+            fastq_gz_filename=os.path.join(ANALYZED_REGIONS, '%s.fastq.gz' % CRISPRessoShared.clean_filename('REGION_'+str(row.run_name)))
+            bam_region_filename=os.path.join(ANALYZED_REGIONS, '%s.bam' % CRISPRessoShared.clean_filename('REGION_'+str(row.run_name)))
             #if bam file already exists, don't regenerate it
             if os.path.isfile(fastq_gz_filename):
                 row_fastq_exists = True
@@ -580,7 +562,6 @@ def main():
         df_regions['n_reads'] = 0
         df_regions['original_bam'] = args.bam_file #stick this in the df so we can parallelize the analysis and not pass params
         df_regions['reference_file'] = args.reference_file
-
 
         report_reads_aligned_filename = _jp('REPORT_READS_ALIGNED_TO_SELECTED_REGIONS_WGS.txt')
         num_rows_without_fastq = len(df_regions[df_regions.row_fastq_exists == False])
@@ -592,12 +573,17 @@ def main():
 
         else:
             #run region extraction here
-            df_regions = CRISPRessoMultiProcessing.run_pandas_apply_parallel(df_regions, extract_reads_chunk, n_processes_for_wgs)
+            extract_reads_chunk_partial = partial(extract_reads_chunk, samtools_exclude_flags=args.samtools_exclude_flags)
+            df_regions = CRISPRessoMultiProcessing.run_pandas_apply_parallel(
+                df_regions, 
+                extract_reads_chunk_partial, 
+                n_processes_for_wgs
+            )
             df_regions.sort_values('region_number', inplace=True)
-            cols_to_print = ["chr_id", "bpstart", "bpend", "sgRNA", "Expected_HDR", "Coding_sequence", "sequence", "n_reads", "bam_file_with_reads_in_region", "fastq_file_trimmed_reads_in_region"]
+            cols_to_print = ["chr_id", "bpstart", "bpend", "sgRNA", "Expected_HDR", "Coding_sequence", "sequence", "n_reads", "bam_file_with_reads_in_region", "fastq_file_trimmed_reads_in_region","run_name"]
             if args.gene_annotations:
                 cols_to_print.append('gene_overlapping')
-            df_regions.fillna('NA').to_csv(report_reads_aligned_filename, sep='\t', columns = cols_to_print, index_label="Name")
+            df_regions.infer_objects(copy=False).fillna('NA').to_csv(report_reads_aligned_filename, sep='\t', columns = cols_to_print, index_label="Name")
 
             #save progress
             crispresso2_info['running_info']['finished_steps']['generation_of_fastq_files_for_each_amplicon'] = True
@@ -605,7 +591,7 @@ def main():
                 crispresso2_info_file, crispresso2_info,
             )
 
-        #Run Crispresso
+        #Run CRISPResso
         info('Running CRISPResso on each region...')
         crispresso_cmds = []
         for idx, row in df_regions.iterrows():
@@ -613,7 +599,7 @@ def main():
                 info('\nThe region [%s] has enough reads (%d) mapped to it!' % (idx, row['n_reads']))
 
                 crispresso_cmd= args.crispresso_command + ' -r1 %s -a %s -o %s --name %s' %\
-                (row['fastq_file_trimmed_reads_in_region'], row['sequence'], OUTPUT_DIRECTORY, idx)
+                (row['fastq_file_trimmed_reads_in_region'], row['sequence'], OUTPUT_DIRECTORY, row['run_name'])
 
                 if row['sgRNA'] and not pd.isnull(row['sgRNA']):
                     crispresso_cmd+=' -g %s' % row['sgRNA']
@@ -624,15 +610,13 @@ def main():
                 if row['Coding_sequence'] and not pd.isnull(row['Coding_sequence']):
                     crispresso_cmd+=' -c %s' % row['Coding_sequence']
 
-                crispresso_cmd=CRISPRessoShared.propagate_crispresso_options(crispresso_cmd, crispresso_options_for_wgs, args)
+                crispresso_cmd=CRISPRessoShared.overwrite_crispresso_options(cmd=crispresso_cmd, option_names_to_overwrite=crispresso_options_for_wgs, option_values=args)
 
                 #logging like this causes the multiprocessing step to not block for some reason #mysteriesOfThPythonUniverse
                 #log_name = _jp("CRISPResso_on_"+idx) +".log"
                 #crispresso_cmd += " &> %s"%log_name
 
                 crispresso_cmds.append(crispresso_cmd)
-#                    info('Running CRISPResso:%s' % crispresso_cmd)
-#                    sb.call(crispresso_cmd,shell=True)
 
             else:
                 info('\nThe region [%s] has too few reads mapped to it (%d)! Not running CRISPResso!' % (idx, row['n_reads']))
@@ -650,15 +634,19 @@ def main():
         header_el_count = len(header_els)
         empty_line_els = [np.nan]*(header_el_count-1)
         n_reads_index = header_els.index('Reads_total') - 1
+        failed_batch_arr = []
+        failed_batch_arr_desc = []
         for idx, row in df_regions.iterrows():
-            run_name = CRISPRessoShared.slugify(str(idx))
+            run_name = row.run_name
             folder_name = 'CRISPResso_on_%s' % run_name
 
+            failed_run_bool, failed_run_desc = CRISPRessoShared.check_if_failed_run(_jp(folder_name), info)
             all_region_names.append(run_name)
             all_region_read_counts[run_name] = row.n_reads
 
-            run_file = os.path.join(_jp(folder_name), 'CRISPResso2_info.json')
-            if not os.path.exists(run_file):
+            if failed_run_bool:
+                failed_batch_arr.append(run_name)
+                failed_batch_arr_desc.append(failed_run_desc)
                 warn('Skipping the folder %s: not enough reads, incomplete, or empty folder.'% folder_name)
                 this_els = empty_line_els[:]
                 this_els[n_reads_index] = row.n_reads
@@ -710,6 +698,8 @@ def main():
         else:
             df_summary_quantification.fillna('NA').to_csv(samples_quantification_summary_filename, sep='\t', index=None)
 
+        crispresso2_info['results']['failed_batch_arr'] = failed_batch_arr
+        crispresso2_info['results']['failed_batch_arr_desc'] = failed_batch_arr_desc
         crispresso2_info['results']['alignment_stats']['samples_quantification_summary_filename'] = os.path.basename(samples_quantification_summary_filename)
         crispresso2_info['results']['regions'] = df_regions
         crispresso2_info['results']['all_region_names'] = all_region_names
@@ -731,7 +721,7 @@ def main():
 
         if not args.suppress_plots:
             plot_root = _jp("CRISPRessoWGS_reads_summary")
-            CRISPRessoPlot.plot_reads_total(plot_root, df_summary_quantification, save_png, args.min_reads_to_use_region)
+            CRISPRessoPlot.plot_reads_total(df_summary_quantification=df_summary_quantification, fig_filename_root=plot_root, save_png=save_png, cutoff=args.min_reads_to_use_region)
             plot_name = os.path.basename(plot_root)
             crispresso2_info['results']['general_plots']['reads_summary_plot'] = plot_name
             crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
@@ -740,7 +730,7 @@ def main():
             crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('CRISPRessoWGS summary', os.path.basename(samples_quantification_summary_filename))]
 
             plot_root = _jp("CRISPRessoWGS_modification_summary")
-            CRISPRessoPlot.plot_unmod_mod_pcts(plot_root, df_summary_quantification, save_png, args.min_reads_to_use_region)
+            CRISPRessoPlot.plot_unmod_mod_pcts(df_summary_quantification=df_summary_quantification, fig_filename_root=plot_root, save_png=save_png, cutoff=args.min_reads_to_use_region)
             plot_name = os.path.basename(plot_root)
             crispresso2_info['results']['general_plots']['modification_summary_plot'] = plot_name
             crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
@@ -753,7 +743,7 @@ def main():
                 report_name = _jp("CRISPResso2WGS_report.html")
             else:
                 report_name = OUTPUT_DIRECTORY+'.html'
-            CRISPRessoReport.make_wgs_report_from_folder(report_name, crispresso2_info, OUTPUT_DIRECTORY, _ROOT)
+            CRISPRessoReport.make_wgs_report_from_folder(report_name, crispresso2_info, OUTPUT_DIRECTORY, _ROOT, logger)
             crispresso2_info['running_info']['report_location'] = report_name
             crispresso2_info['running_info']['report_filename'] = os.path.basename(report_name)
 
@@ -774,7 +764,7 @@ def main():
         info('Analysis Complete!', {'percent_complete': 100})
         if args.zip_output:
             CRISPRessoShared.zip_results(OUTPUT_DIRECTORY)
-        print(CRISPRessoShared.get_crispresso_footer())
+        info(CRISPRessoShared.get_crispresso_footer())
         sys.exit(0)
 
     except Exception as e:

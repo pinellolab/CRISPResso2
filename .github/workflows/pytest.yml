@@ -1,0 +1,49 @@
+name: Run Pytest
+
+on:
+  push:
+
+  pull_request:
+    types: [opened, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    strategy:
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Conda
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+          channels: conda-forge,bioconda,defaults
+          auto-activate-base: false
+          activate-environment: test_env
+          environment-file: .github/envs/test_env.yml
+
+    - name: Install apt dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc g++ bowtie2 samtools libsys-hostname-long-perl
+
+    - name: Install Pytest
+      run: |
+        pip install pytest pytest-cov
+
+    - name: Install CRISPResso
+      run: |
+        pip install -e .
+
+    - name: Run Pytest
+      run: |
+        pytest tests --cov CRISPResso2

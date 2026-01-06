@@ -1,0 +1,97 @@
+{% extends "layout.html" %}
+{% block head %}
+<style>
+.nav-tabs.amp-header {
+  border-bottom:none !important;
+}
+
+.card-header.amp-header {
+  border-bottom:none !important;
+}
+.nav-tabs.amp-header .nav-link.active {
+  background-color:lightsteelblue;
+  border-bottom:lightsteelblue;
+}
+
+.tab-content.amp-body {
+  background-color:lightsteelblue;
+}
+
+@media print {
+   .tab-content > .tab-pane {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+		margin-bottom: 2em !important;
+		page-break-inside: avoid;
+  }
+  .nav-tabs {
+    display:none !important;
+    visibility:hidden !important;
+  }
+  .tab-content.amp-body {
+    background-color:transparent !important;
+  	border:None !important;
+  }
+}
+@media only screen and (max-width: 600px) {
+	.jumbotron img {
+		width:100%
+	}
+}
+</style>
+
+{% if C2PRO_INSTALLED %}
+<script src="https://cdn.plot.ly/plotly-3.3.0.min.js" charset="utf-8"></script>
+{% endif %}
+
+{% endblock %}
+
+{% block content %}
+<div class="row">
+<div class="col-sm-1"></div>
+<div class="col-sm-10">
+
+	<div class="jumbotron" style="background:rgba(0,0,0,0.0); padding:0px" >
+		<div id='jumbotron_content' >
+
+            {% if run_names|length > 0 %}
+            <div class='card text-center mb-2'>
+                <div class='card-header'>
+                    <h5>{{report_name}}</h5>
+                </div>
+                <div class='card-body p-0'>
+                    <div class="list-group list-group-flush">
+                        {% for region_name in run_names %}
+	                        <a href="{{sub_html_files[region_name]}}" class="list-group-item list-group-item-action">{{region_name}}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {{render_partial('shared/partials/failed_runs.html', failed_runs=failed_runs, failed_runs_desc=failed_runs_desc)}}
+
+          {% if report_data['names']|length > 0 %}
+            {% for plot_name in report_data['names'] %}
+            <div class='card text-center mb-2'>
+              <div class='card-header'>
+                <h5 id="modification_summary_title">{{report_data['titles'][plot_name]}}</h5>
+              </div>
+              <div class='card-body' style='max-height:80vh;overflow-y:auto'>
+                {{ render_partial('shared/partials/fig_summaries.html', report_data=report_data, plot_name=plot_name) }}
+              </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            {{render_partial('shared/partials/report_footer_buttons.html', report_zip_filename=report_zip_filename, report_path=report_path)}}
+
+	</div> {# jumbotron_content #} <!-- end jumbotron_content -->
+</div> {# jumbrotron #} <!-- end jumbotron -->
+
+</div> {# column #} <!-- end column -->
+
+<div class="col-sm-1"></div>
+</div>
+{% endblock %}

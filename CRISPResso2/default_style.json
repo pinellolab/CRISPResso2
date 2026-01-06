@@ -1,0 +1,14 @@
+{
+  "colors": {
+    "Substitution": "#0000FF",
+    "Insertion": "#008000",
+    "Deletion": "#FF0000",
+    "A": "#7FC97F",
+    "T": "#BEAED4",
+    "C": "#FDC086",
+    "G": "#FFFF99",
+    "N": "#C8C8C8",
+    "-": "#C1C1C1",
+    "amino_acid_scheme": "unique"
+  }
+}
