@@ -23,7 +23,11 @@
 
 - Fix the quantification of deletions at the second position of the sequence by [@Colelyman](https://github.com/Colelyman) in [#574](https://github.com/pinellolab/CRISPResso2/pull/574)
 
-- Fix an issue with unaligned reads not being reported correctly when writing BAM output by [@trevormartinj7](https://github.com/Colelyman) in [#578](https://github.com/pinellolab/CRISPResso2/pull/578)
+- Fix an issue with unaligned reads not being reported correctly when writing BAM output by [@trevormartinj7](https://github.com/trevormartinj7) in [#578](https://github.com/pinellolab/CRISPResso2/pull/578)
+
+- Fix an issue where quantification window coordinates we not being correctly inferred by [@Colelyman](https://github.com/Colelyman) in [#598](https://github.com/pinellolab/CRISPResso2/pull/598)
+  - This issue is present when there is a single quantifcation window coordinate provided and multiple amplicons. What happens is CRISPResso aligns the second amplicon to the first and then infers what the quantification window coordinates should be based on the alignment. A regression was introduced where the inference of the quantification window coordinates for the second amplicon was no longer correct. This change fixes the regression and brings the behavior back to match that of v2.2.9.
+  - If you don't set quantification window coordinates and don't use multiple amplicons, there is no need for this fix and therefore no change in behavior.
 
 ### CHANGED
 

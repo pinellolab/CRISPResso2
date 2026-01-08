@@ -451,11 +451,15 @@ def get_cloned_include_idxs_from_quant_window_coordinates(quant_window_coordinat
         but adjusted according to s1inds.
     """
     include_idxs = []
-    for i in range(1, len(idxs)):
-        if abs(idxs[i-1]) == idxs[i]:
-            idxs[i] = -1 * abs(idxs[i])
     for coord in split_quant_window_coordinates(quant_window_coordinates):
-        include_idxs.extend(idxs[coord[0]:coord[1] + 1])
+        start, end = coord
+        min_idx, max_idx = min(idxs), max(idxs)
+        while start not in idxs and start < max_idx:
+            start += 1
+        while end not in idxs and end > min_idx:
+            end -= 1
+        if end >= start:
+            include_idxs.extend(range(idxs.index(start), idxs.index(end) + 1))
 
     return list(filter(lambda x: x >= 0, include_idxs))
 
@@ -3339,7 +3343,14 @@ def main():
                 if not needs_cut_points and not needs_sgRNA_intervals and not needs_exon_positions and args.quantification_window_coordinates is None:
                     continue
 
-                fws1, fws2, fwscore=CRISPResso2Align.global_align(refs[ref_name]['sequence'], refs[clone_ref_name]['sequence'], matrix=aln_matrix, gap_open=args.needleman_wunsch_gap_open, gap_extend=args.needleman_wunsch_gap_extend, gap_incentive=refs[clone_ref_name]['gap_incentive'])
+                fws1, fws2, fwscore = CRISPResso2Align.global_align(
+                    refs[clone_ref_name]['sequence'],
+                    refs[ref_name]['sequence'],
+                    matrix=aln_matrix,
+                    gap_open=args.needleman_wunsch_gap_open,
+                    gap_extend=args.needleman_wunsch_gap_extend,
+                    gap_incentive=refs[ref_name]['gap_incentive'],
+                )
                 if fwscore < 60:
                     continue
 
@@ -3348,17 +3359,7 @@ def main():
                 if needs_exon_positions and clone_has_exons and args.debug:
                     info("Reference '%s' has NO exon_positions defined. Inferring from '%s'."%(ref_name, clone_ref_name))
                 #Create a list such that the nucleotide at ix in the old reference corresponds to s1inds[ix]
-                s1inds = []
-                s1ix = -1
-                s2ix = -1
-                for ix in range(len(fws1)):
-                    if fws1[ix] != "-":
-                        s1ix += 1
-                    if fws2[ix] != "-":
-                        s2ix += 1
-                        s1inds.append(s1ix)
-#                print("aln:\n%s\n%s"%(fws1,fws2))
-#                print(str(s1inds))
+                s1inds, _ = CRISPRessoShared.get_relative_coordinates(fws1, fws2)
 
                 if (needs_cut_points or needs_sgRNA_intervals) and clone_has_cut_points:
                     this_cut_points = [s1inds[X] for X in refs[clone_ref_name]['sgRNA_cut_points']]
