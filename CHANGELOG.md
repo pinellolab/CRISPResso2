@@ -11,7 +11,7 @@
 
 - Allow for messages to be served via CRISPResso reports by [@Colelyman](https://github.com/Colelyman) in [#583](https://github.com/pinellolab/CRISPResso2/pull/583)
 
-- Add a plot that shows the distribution of homology scores for reads by [@mbowcut2](https://github.com/mbowcut2) in [#601](https://github.com/pinellolab/CRISPResso2/pull/601)
+- Add a plot that shows the distribution of homology scores for reads by [@mbowcut2](https://github.com/mbowcut2) in [#600](https://github.com/pinellolab/CRISPResso2/pull/600)
 
 ### FIXED
 
