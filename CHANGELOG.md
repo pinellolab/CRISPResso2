@@ -3,13 +3,15 @@
 ## Unreleased
 ### ADDED
 
-- Add an amino acid nucleotide quilt plot by [@mbowcut2](https://github.com/pinellolab/CRISPResso2/pull/552) in [#552](https://github.com/pinellolab/CRISPResso2/pull/552)
+- Add an amino acid nucleotide quilt plot by [@mbowcut2](https://github.com/mbowcut2) in [#552](https://github.com/pinellolab/CRISPResso2/pull/552)
 
 - Add `scripts/reconstituteReads.py` to generate FASTQ from CRISPResso2 output by [@kclem](https://github.com/kclem) in [`a800762`](https://github.com/pinellolab/CRISPResso2/commit/a800762712e692a9fc7005b3510d013924c843a5) and [`cd79dcc`](https://github.com/pinellolab/CRISPResso2/commit/cd79dcc3ca9c06736dc6cd409d43dee8e4d1ae69)
 
 - Add an [UpSet plot](https://upset.app/) to represent bystander edits for Base Editing analyses by [@mbowcut2](https://github.com/mbowcut2) in [#554](https://github.com/pinellolab/CRISPResso2/pull/554)
 
 - Allow for messages to be served via CRISPResso reports by [@Colelyman](https://github.com/Colelyman) in [#583](https://github.com/pinellolab/CRISPResso2/pull/583)
+
+- Add a plot that shows the distribution of homology scores for reads by [@mbowcut2](https://github.com/mbowcut2) in [#601](https://github.com/pinellolab/CRISPResso2/pull/601)
 
 ### FIXED
 
@@ -28,6 +30,8 @@
 - Fix an issue where quantification window coordinates we not being correctly inferred by [@Colelyman](https://github.com/Colelyman) in [#598](https://github.com/pinellolab/CRISPResso2/pull/598)
   - This issue is present when there is a single quantifcation window coordinate provided and multiple amplicons. What happens is CRISPResso aligns the second amplicon to the first and then infers what the quantification window coordinates should be based on the alignment. A regression was introduced where the inference of the quantification window coordinates for the second amplicon was no longer correct. This change fixes the regression and brings the behavior back to match that of v2.2.9.
   - If you don't set quantification window coordinates and don't use multiple amplicons, there is no need for this fix and therefore no change in behavior.
+
+- Fix a `SyntaxWarning` for an unescaped sequence in a matplotlib function by [@Colelyman](https://github.com/Colelyman) in [#600](https://github.com/pinellolab/CRISPResso2/pull/600)
 
 ### CHANGED
 

@@ -1,6 +1,6 @@
 <div id="fig_{{fig_name}}" class="d-flex flex-column">
     {# Set the width based on the plot #}
-    {%- if fig_name in ['plot_1a', 'plot_1b', 'plot_1c', 'plot_1d', 'plot_3a', 'plot_4a', 'plot_4b', 'plot_4c', 'plot_4e', 'plot_4f', 'plot_5a', 'plot_7', 'plot_8', 'plot_8a', 'plot_11c'] -%}
+    {%- if fig_name in ['plot_1a', 'plot_1b', 'plot_1c', 'plot_1d', 'plot_1e', 'plot_3a', 'plot_4a', 'plot_4b', 'plot_4c', 'plot_4e', 'plot_4f', 'plot_5a', 'plot_7', 'plot_8', 'plot_8a', 'plot_11c'] -%}
         {% set width = '40%' %}
     {% elif '9a' in fig_name %}
         {% set coding_seq_length = report_data['run_data']['running_info']['coding_seqs'][seq_itr]|length|int %}

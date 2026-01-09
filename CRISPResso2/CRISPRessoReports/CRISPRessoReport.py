@@ -132,7 +132,7 @@ def assemble_figs(run_data, crispresso_folder):
     d3_nuc_quilt_names = []
 
     global_fig_names = []
-    for fig in ['1a', '1b', '1c', '1d', '5a', '6a', '8a', '11c']:
+    for fig in ['1a', '1b', '1c', '1d', '1e', '5a', '6a', '8a', '11c']:
         fig_name = 'plot_' + fig
         if fig_name + '_root' in run_data['results']['general_plots']:
             add_fig_if_exists(fig, fig_name, run_data['results']['general_plots'][fig_name + '_root'], 'Figure ' + fig,

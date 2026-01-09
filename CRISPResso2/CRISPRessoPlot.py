@@ -2806,7 +2806,7 @@ def plot_conversion_at_sel_nucs_not_include_ref(df_subs, ref_name, ref_sequence,
     ax2 = ax.twiny()
     ax2.set_xlim(ax.get_xlim())
     ax2.set_xticks(np.append(ind, len(from_nuc_indices)-0.5))
-    ax2.set_xticklabels(["%0.2f%%"%(x*100)  for x in sub_freq] +["         $\it{\% Non-" + conversion_nuc_from + "}$"])
+    ax2.set_xticklabels(["%0.2f%%"%(x*100)  for x in sub_freq] +[r"         $\it{\% Non-" + conversion_nuc_from + "}$"])
 
     #plot legend
     legend_patches = []
@@ -4628,9 +4628,27 @@ def plot_combination_upset(fig_root, ref_name, bp_substitutions_arr, binary_alle
     df_by_combination.set_index(header_arr[:-1], inplace=True)
     fig = plt.figure(figsize=(15, 10))
     upsetplot.plot(df_by_combination.cat_counts, fig=fig, element_size=None, show_counts=True, show_percentages='{:.2f}', sort_categories_by='-input')
-    
+
     if save_also_png:
         plt.savefig(fig_root + '.png')
 
     plt.savefig(fig_root + '.pdf')
     plt.close()
+
+
+def plot_alleles_homology_histogram(fig_root, homology_scores, counts, min_homology, bin_size=5, save_also_png=False):
+    """Plot histogram of homology scores for all reads."""
+    fig, ax = plt.subplots(figsize=(12, 8))
+    bins = np.arange(0, 105, bin_size)
+    ax.hist(homology_scores, bins=bins, weights=counts, color='blue', alpha=0.7, edgecolor='black')
+
+    ax.axvline(min_homology, color='red', linestyle='dashed', linewidth=2)
+
+    ax.set_xlabel('Homology Score')
+    ax.set_ylabel('# of Reads')
+    ax.set_title('Distribution of Homology Scores')
+    
+    if save_also_png:
+        fig.savefig(fig_root + '.png')
+    fig.savefig(fig_root + '.pdf')
+    plt.close(fig)
