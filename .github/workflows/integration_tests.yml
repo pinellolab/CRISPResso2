@@ -67,6 +67,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: edilytics/CRISPResso2_tests
+          ref: 'mckay/hom-historgram'
           # ref: '<BRANCH-NAME>' # update to specific branch
 
       - name: Run Basic
