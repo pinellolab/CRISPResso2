@@ -2806,7 +2806,7 @@ def plot_conversion_at_sel_nucs_not_include_ref(df_subs, ref_name, ref_sequence,
     ax2 = ax.twiny()
     ax2.set_xlim(ax.get_xlim())
     ax2.set_xticks(np.append(ind, len(from_nuc_indices)-0.5))
-    ax2.set_xticklabels(["%0.2f%%"%(x*100)  for x in sub_freq] +["         $\it{\% Non-" + conversion_nuc_from + "}$"])
+    ax2.set_xticklabels(["%0.2f%%"%(x*100)  for x in sub_freq] +[r"         $\it{\% Non-" + conversion_nuc_from + "}$"])
 
     #plot legend
     legend_patches = []
@@ -4628,7 +4628,7 @@ def plot_combination_upset(fig_root, ref_name, bp_substitutions_arr, binary_alle
     df_by_combination.set_index(header_arr[:-1], inplace=True)
     fig = plt.figure(figsize=(15, 10))
     upsetplot.plot(df_by_combination.cat_counts, fig=fig, element_size=None, show_counts=True, show_percentages='{:.2f}', sort_categories_by='-input')
-    
+
     if save_also_png:
         plt.savefig(fig_root + '.png')
 

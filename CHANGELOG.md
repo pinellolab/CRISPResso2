@@ -29,6 +29,8 @@
   - This issue is present when there is a single quantifcation window coordinate provided and multiple amplicons. What happens is CRISPResso aligns the second amplicon to the first and then infers what the quantification window coordinates should be based on the alignment. A regression was introduced where the inference of the quantification window coordinates for the second amplicon was no longer correct. This change fixes the regression and brings the behavior back to match that of v2.2.9.
   - If you don't set quantification window coordinates and don't use multiple amplicons, there is no need for this fix and therefore no change in behavior.
 
+- Fix a `SyntaxWarning` for an unescaped sequence in a matplotlib function by [@Colelyman](https://github.com/Colelyman) in [#600](https://github.com/pinellolab/CRISPResso2/pull/600)
+
 ### CHANGED
 
 - Update the base Docker image to `mambaorg/micromamba:2.3.3` and remove dependency on Anaconda `defaults` channel by [@Colelyman](https://github.com/Colelyman) in [#575](https://github.com/pinellolab/CRISPResso2/pull/575)
