@@ -2441,7 +2441,6 @@ def process_single_fastq_write_bam_out(fastq_input, bam_output, bam_header, vari
                         " ALN_DETAILS=" + ('&'.join([','.join([str(y) for y in x]) for x in new_variant['ref_aln_details']]))
                 new_sam_entry.append(crispresso_sam_optional_fields)
                 sam_out_handle.write("\t".join(new_sam_entry)+"\n")  # write cached alignment with modified read id and qual
-                continue
 
             if fastq_seq in variantCache:
                 new_variant = variantCache[fastq_seq]
