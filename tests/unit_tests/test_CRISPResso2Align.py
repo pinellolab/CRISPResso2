@@ -174,6 +174,27 @@ def test_global_align_gap_incentive_s2():
     assert round(score,3) == round(100*4/5.0,3)
 
 
+def test_global_align_regression_cases():
+    """Regression cases to lock in alignment tie-breaking and scoring."""
+    cases = [
+        ("ACGTACGT", "ACGTTACGT", "ACGT-ACGT", "ACGTTACGT", 88.889),
+        ("ACGTACGT", "ACGACGT", "ACGTACGT", "ACG-ACGT", 87.5),
+        ("AAAACCCC", "AAACCCC", "AAAACCCC", "AAA-CCCC", 87.5),
+        ("GATTACA", "GATTTACA", "GATT-ACA", "GATTTACA", 87.5),
+        ("GATTACA", "GATTACAA", "GATTACA-", "GATTACAA", 87.5),
+    ]
+    for seq1, seq2, exp1, exp2, exp_score in cases:
+        aln1, aln2, score = CRISPResso2Align.global_align(
+            seq1,
+            seq2,
+            matrix=ALN_MATRIX,
+            gap_incentive=np.zeros(len(seq2) + 1, dtype=int),
+        )
+        assert aln1 == exp1
+        assert aln2 == exp2
+        assert round(score, 3) == round(exp_score, 3)
+
+
 if __name__ == "__main__":
     # execute only if run as a script
     test_global_align()
