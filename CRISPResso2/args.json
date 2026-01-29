@@ -382,6 +382,13 @@
             "default": 1,
             "tools": ["Core", "Batch", "Pooled", "WGS"]
         },
+        "needleman_wunsch_bandwidth": {
+            "keys": ["--needleman_wunsch_bandwidth"],
+            "help": "Bandwidth for Needleman-Wunsch alignment. If > 0, the alignment is restricted to a band of this width around the diagonal. This significantly improves performance for long reads but may miss alignments with large gaps. Default is 0 (disabled, full matrix).",
+            "type": "int",
+            "default": 0,
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
         "needleman_wunsch_aln_matrix_loc": {
             "name": "Needleman Wunsch Alignment Matrix Location",
             "keys": ["--needleman_wunsch_aln_matrix_loc"],

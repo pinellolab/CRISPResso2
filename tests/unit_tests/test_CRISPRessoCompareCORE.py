@@ -1,5 +1,9 @@
 """Unit tests for CRISPRessoCompareCORE."""
 
+import pytest
+
+pytest.importorskip("scipy")
+
 from CRISPResso2 import CRISPRessoCompareCORE
 
 from copy import deepcopy
@@ -82,4 +86,3 @@ def test_get_matching_allele_files_multiple_guides(run_info_1, run_info_2):
         ('Alleles_frequency_table_around_sgRNA_GGCCCTTAAAA.txt', 'Alleles_frequency_table_around_sgRNA_GGCCCTTAAAA.txt'),
         ('Alleles_frequency_table_around_sgRNA_AAAAAAAAAAAAAAAAAAA.txt', 'Alleles_frequency_table_around_sgRNA_AAAAAAAAAAAAAAAAAAA.txt'),
     ]
-
