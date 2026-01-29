@@ -377,11 +377,15 @@ def propagate_crispresso_options(cmd, options, params, paramInd=None):
 #######
 # Sequence functions
 #######
-nt_complement = dict({'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A', 'N': 'N', '_': '_', '-': '-'})
+_RC_TRANS = str.maketrans("ACGTNacgtn_-", "TGCANtgcan_-")
+_RC_INVALID_RE = re.compile(r"[^ACGTNacgtn_-]")
 
 
 def reverse_complement(seq):
-    return "".join([nt_complement[c] for c in seq.upper()[-1::-1]])
+    match = _RC_INVALID_RE.search(seq)
+    if match:
+        raise KeyError(match.group(0))
+    return seq.translate(_RC_TRANS)[::-1].upper()
 
 
 def reverse(seq):
@@ -971,6 +975,54 @@ def get_command_output(command):
             break
 
 
+class _PigzHandle:
+    def __init__(self, proc):
+        self._proc = proc
+        self._stream = proc.stdout
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        line = self._stream.readline()
+        if line == '':
+            raise StopIteration
+        return line
+
+    def read(self, *args, **kwargs):
+        return self._stream.read(*args, **kwargs)
+
+    def readline(self, *args, **kwargs):
+        return self._stream.readline(*args, **kwargs)
+
+    def readlines(self, *args, **kwargs):
+        return self._stream.readlines(*args, **kwargs)
+
+    def close(self):
+        if self._stream is not None and not self._stream.closed:
+            self._stream.close()
+        if self._proc is not None:
+            self._proc.wait()
+        self._proc = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self.close()
+
+
+def open_fastq_handle(filename, mode='rt'):
+    if 'r' in mode and 'b' not in mode and filename.endswith('.gz'):
+        pigz_path = shutil.which('pigz')
+        if pigz_path and not os.environ.get('CRISPRESSO_DISABLE_PIGZ'):
+            proc = sb.Popen([pigz_path, '-dc', filename], stdout=sb.PIPE, stderr=sb.DEVNULL, text=True)
+            return _PigzHandle(proc)
+    if filename.endswith('.gz'):
+        return gzip.open(filename, mode)
+    return open(filename, mode)
+
+
 def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, fastp_command, min_paired_end_reads_overlap, split_interleaved_input=False, debug=False):
     """
     Get the most frequent amplicon from a fastq file (or after merging a r1 and r2 fastq file).
@@ -993,10 +1045,7 @@ def get_most_frequent_reads(fastq_r1, fastq_r2, number_of_reads_to_consider, fas
     if split_interleaved_input:
         output_r1 = fastq_r1 + ".tmp.r1.gz"
         output_r2 = fastq_r2 + ".tmp.r2.gz"
-        if fastq_r1.endswith('.gz'):
-            fastq_handle = gzip.open(fastq_r1, 'rt')
-        else:
-            fastq_handle=open(fastq_r1)
+        fastq_handle = open_fastq_handle(fastq_r1, 'rt')
 
         try:
             o1 = gzip.open(output_r1, 'wt')
@@ -1359,14 +1408,8 @@ def force_merge_pairs(r1_filename, r2_filename, output_filename):
     linecount: the number of lines of the resulting file
     """
 
-    if r1_filename.endswith('.gz'):
-        f1 = gzip.open(r1_filename, 'rt')
-    else:
-        f1 = open(r1_filename, 'r')
-    if r2_filename.endswith('.gz'):
-        f2 = gzip.open(r2_filename, 'rt')
-    else:
-        f2 = open(r2_filename, 'r')
+    f1 = open_fastq_handle(r1_filename, 'rt')
+    f2 = open_fastq_handle(r2_filename, 'rt')
 
     if output_filename.endswith('.gz'):
         f_out = gzip.open(output_filename, 'wt')
@@ -1434,10 +1477,7 @@ def split_interleaved_fastq(fastq_filename, output_filename_r1, output_filename_
     output_filename_r2 : str
         Path to the output fastq file for r2.
     """
-    if fastq_filename.endswith('.gz'):
-        fastq_handle = gzip.open(fastq_filename, 'rt')
-    else:
-        fastq_handle = open(fastq_filename)
+    fastq_handle = open_fastq_handle(fastq_filename, 'rt')
 
     try:
         fastq_splitted_outfile_r1 = gzip.open(output_filename_r1, 'wt')
