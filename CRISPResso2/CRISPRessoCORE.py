@@ -3656,13 +3656,13 @@ def main():
                     else:
                         args.fastp_options_string = ' --detect_adapter_for_pe'
 
-                fastp_cmd = '{command} -i {r1} -I {r2} --merge --merged_out {out_merged} --unpaired1 {unpaired1} --unpaired2 {unpaired2} --overlap_len_require {min_overlap} --thread {num_threads} --json {json_report} --html {html_report} {options} >> {log} 2>&1'.format(
+                fastp_cmd = '{command} -i {r1} -I {r2} --merge --merged_out {out_merged} --out1 {unmerged1} --out2 {unmerged2} --overlap_len_require {min_overlap} --thread {num_threads} --json {json_report} --html {html_report} {options} >> {log} 2>&1'.format(
                     command=args.fastp_command,
                     r1=args.fastq_r1,
                     r2=args.fastq_r2,
                     out_merged=processed_output_filename,
-                    unpaired1=not_combined_1_filename,
-                    unpaired2=not_combined_2_filename,
+                    unmerged1=not_combined_1_filename,
+                    unmerged2=not_combined_2_filename,
                     min_overlap=args.min_paired_end_reads_overlap,
                     num_threads=n_processes,
                     json_report=_jp('fastp_report.json'),
@@ -3697,7 +3697,7 @@ def main():
                     if merge_status:
                         raise CRISPRessoShared.FastpException('Force-merging read pairs failed to run, please check the log file.')
                     else:
-                        info(f'Forced {num_reads_force_merged} read paisr together.')
+                        info(f'Forced {num_reads_force_merged} read pairs together.')
                     processed_output_filename = new_output_filename
 
                     files_to_remove += [new_merged_filename]
@@ -3714,12 +3714,12 @@ def main():
                     else:
                         args.fastp_options_string = ' --detect_adapter_for_pe'
 
-                fastp_cmd = '{command} -i {r1} -I {r2} --out1 {unpaired1} --out2 {unpaired2} --thread {num_threads} --json {json_report} --html {html_report} {options} >> {log} 2>&1'.format(
+                fastp_cmd = '{command} -i {r1} -I {r2} --out1 {unmerged1} --out2 {unmerged2} --thread {num_threads} --json {json_report} --html {html_report} {options} >> {log} 2>&1'.format(
                     command=args.fastp_command,
                     r1=args.fastq_r1,
                     r2=args.fastq_r2,
-                    unpaired1=not_combined_1_filename,
-                    unpaired2=not_combined_2_filename,
+                    unmerged1=not_combined_1_filename,
+                    unmerged2=not_combined_2_filename,
                     min_overlap=args.min_paired_end_reads_overlap,
                     num_threads=n_processes,
                     json_report=_jp('fastp_report.json'),
@@ -5010,7 +5010,7 @@ def main():
             #only show reference name in filenames if more than one reference
             ref_plot_name = refs[ref_name]['ref_plot_name']
 
-            info('Begin processing plots for amplicon {0}'.format(ref_name), {'percent_complete': ref_percent_complete_start + (ref_percent_complete_step * ref_index)})
+            info('Processing plots for amplicon {0}...'.format(ref_name), {'percent_complete': ref_percent_complete_start + (ref_percent_complete_step * ref_index)})
 
             if n_this_category < 1:
                 continue
