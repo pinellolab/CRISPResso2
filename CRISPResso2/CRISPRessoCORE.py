@@ -13,7 +13,6 @@ import gzip
 import json
 import logging
 import os
-import pickle
 import re
 import sys
 import subprocess as sb
@@ -1352,7 +1351,7 @@ def process_fastq_streaming(fastq_filename, variantCache, ref_names, refs, args,
 
 
 def variant_file_generator_process(seq_list, get_new_variant_object, args, refs, ref_names, aln_matrix, pe_scaffold_dna_info, process_id, variants_dir, quals_list=None, result_queue=None, batch_size=1000):
-    """the target of the multiprocessing.Process object, generates the new variants for a subset of the reads in the fastq file and stores them in pickle files
+    """the target of the multiprocessing.Process object, generates the new variants for a subset of the reads in the fastq file and returns them via a result_queue
     Parameters
     ----------
         seq_list: list of reads to process
@@ -1366,9 +1365,9 @@ def variant_file_generator_process(seq_list, get_new_variant_object, args, refs,
         shortest dna sequence to identify scaffold sequence
         )
         process_id: the id of the process to print out debug information
-        variants_dir: the directory to store the pickle files
+        variants_dir: the directory for temporary files (unused)
         quals_list: list of quality scores for the reads
-        result_queue: multiprocessing queue for in-memory IPC (if provided)
+        result_queue: multiprocessing queue for in-memory IPC (required)
         batch_size: number of records to batch per queue message
     Returns
     ----------
@@ -1396,20 +1395,6 @@ def variant_file_generator_process(seq_list, get_new_variant_object, args, refs,
         info(f"Process {process_id + 1} has finished processing {len(seq_list)} unique reads", {'percent_complete': 10})
         return
 
-    variant_file_path = os.path.join(variants_dir, f"variants_{process_id}.pkl")
-    with open(variant_file_path, 'wb') as file:
-        file.truncate() # Ensures file is empty before writing to it
-        for index, fastq_seq in enumerate(seq_list):
-            if args.crispresso_merge: # If using CRISPResso to merge the passed in function is get_new_variant_object_from_paired
-                fastq1_seq, fastq2_seq = fastq_seq.split('+')
-                fastq1_qual, fastq2_qual = quals_list[index].split(' ')
-                new_variant = get_new_variant_object(args, fastq1_seq, fastq2_seq, fastq1_qual, fastq2_qual, refs, ref_names, aln_matrix, pe_scaffold_dna_info)
-            else:
-                new_variant = get_new_variant_object(args, fastq_seq, refs, ref_names, aln_matrix, pe_scaffold_dna_info)
-            pickle.dump((fastq_seq, new_variant), file, protocol=pickle.HIGHEST_PROTOCOL)
-            if index % 10000 == 0 and index != 0:
-                info(f"Process {process_id + 1} has processed {index} unique reads", {'percent_complete': 10})
-        info(f"Process {process_id + 1} has finished processing {len(seq_list)} unique reads", {'percent_complete': 10})
 
 
 def process_paired_fastq(fastq1_filename, fastq2_filename, variantCache, ref_names, refs, args, files_to_remove, output_directory, fastq_write_out_file=None):
@@ -2853,7 +2838,7 @@ def main():
 
         #create output directory
         crispresso2_info_file = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso2_info.json')
-        crispresso2_info = {'running_info': {}, 'results': {'alignment_stats': {}, 'general_plots': {}}} #keep track of all information for this run to be pickled and saved at the end of the run
+        crispresso2_info = {'running_info': {}, 'results': {'alignment_stats': {}, 'general_plots': {}}} #keep track of all information for this run to be saved at the end of the run
         crispresso2_info['running_info']['version'] = CRISPRessoShared.__version__
         crispresso2_info['running_info']['args'] = deepcopy(args)
 
