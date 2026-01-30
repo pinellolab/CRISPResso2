@@ -2,8 +2,18 @@ from CRISPResso2 import CRISPResso2Align, CRISPRessoShared
 import tempfile
 import os
 import gzip
+import pytest
 
 ALN_MATRIX = CRISPResso2Align.read_matrix('./CRISPResso2/EDNAFULL')
+
+
+def test_reverse_complement_basic():
+    assert CRISPRessoShared.reverse_complement("ACGTN_-") == "-_NACGT"
+
+
+def test_reverse_complement_invalid():
+    with pytest.raises(KeyError):
+        CRISPRessoShared.reverse_complement("ACGTX")
 
 
 def test_get_mismatches():

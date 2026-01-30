@@ -102,7 +102,7 @@ def make_matrix(match_score=5, mismatch_score=-4, n_mismatch_score=-2, n_match_s
 @cython.nonecheck(False)
 def global_align(str pystr_seqj, str pystr_seqi, np.ndarray[DTYPE_LONG, ndim=2] matrix,
           np.ndarray[DTYPE_LONG,ndim=1] gap_incentive, int gap_open=-1,
-          int gap_extend=-1):
+          int gap_extend=-1, int bandwidth=-1):
     """
     Global sequence alignment (needleman-wunsch) on seq i and j.
     Reference is seq_i, sequenced read is seq_j
@@ -111,7 +111,8 @@ def global_align(str pystr_seqj, str pystr_seqi, np.ndarray[DTYPE_LONG, ndim=2] 
     gap_incentive is the incentive for having a gap at each position in seqi -
       this allows for the preferential location of gaps to be at the predicted
       cut site in genome editing experiments.
-
+    bandwidth: constraint for the alignment band. If > 0, the alignment is restricted
+      to a diagonal band of this width.
     """
 
     byte_seqj = pystr_seqj.encode('UTF-8')
@@ -148,6 +149,14 @@ def global_align(str pystr_seqj, str pystr_seqi, np.ndarray[DTYPE_LONG, ndim=2] 
 
 
     cdef int min_score = gap_open * max_j * max_i
+    
+    # Initialize matrices with min_score if using bandwidth to ensure boundary conditions
+    if bandwidth > 0:
+        for i in range(max_i + 1):
+            for j in range(max_j + 1):
+                mScore[i, j] = min_score
+                iScore[i, j] = min_score
+                jScore[i, j] = min_score
 
     #init match matrix
     mScore[0,1:] = min_score
@@ -162,15 +171,25 @@ def global_align(str pystr_seqj, str pystr_seqi, np.ndarray[DTYPE_LONG, ndim=2] 
 #    score[1:, 0] = 0
 # gap extension penalty for gaps starting at beginning
     #init i matrix
-    for i in range(1,max_j+1):
-        iScore[0,i] = gap_extend * i + gap_incentive[0]
+    if bandwidth <= 0:
+        for i in range(1,max_j+1):
+            iScore[0,i] = gap_extend * i + gap_incentive[0]
+    else:
+        for i in range(1, min(max_j+1, bandwidth + 1)):
+            iScore[0,i] = gap_extend * i + gap_incentive[0]
+
 #    iScore[0,1:] = [gap_extend * np.arange(1, max_j+1, dtype=int)]
     iScore[0:,0] = min_score
     iPointer[0,1:] = IARRAY
 
     #init j matrix
-    for i in range(1,max_i+1):
-        jScore[i,0] = gap_extend * i + gap_incentive[0]
+    if bandwidth <= 0:
+        for i in range(1,max_i+1):
+            jScore[i,0] = gap_extend * i + gap_incentive[0]
+    else:
+        for i in range(1, min(max_i+1, bandwidth + 1)):
+            jScore[i,0] = gap_extend * i + gap_incentive[0]
+
     #jScore[1:,0] = np.vectorize(gap_extend * np.arange(1, max_i+1, dtype=int))
     jScore[0,0:] = min_score
     jPointer[1:,0] = JARRAY
@@ -182,12 +201,23 @@ def global_align(str pystr_seqj, str pystr_seqi, np.ndarray[DTYPE_LONG, ndim=2] 
     cdef int jFromMVal
     cdef int jExtendVal
     cdef int mVal, iVal, jVal
+    
+    cdef int start_j = 1
+    cdef int end_j = max_j
 
     #apply NW algorithm for inside squares (not last row or column)
     for i in range(1, max_i):
         ci = seqi[i - 1] #char in i
-
-        for j in range(1, max_j):
+        
+        if bandwidth > 0:
+            start_j = i - bandwidth
+            if start_j < 1:
+                start_j = 1
+            end_j = i + bandwidth
+            if end_j > max_j:
+                end_j = max_j
+        
+        for j in range(start_j, end_j):
             cj = seqj[j - 1] #char in j
 
             iFromMVal = gap_open + mScore[i, j - 1] + gap_incentive[i]
@@ -233,50 +263,65 @@ def global_align(str pystr_seqj, str pystr_seqi, np.ndarray[DTYPE_LONG, ndim=2] 
     #last column
     j = max_j
     cj = seqj[j-1]
-    for i in range(1, max_i):
-        ci = seqi[i-1]
+    
+    # Check if last column is reachable within bandwidth
+    if bandwidth <= 0 or (max_j <= max_i + bandwidth):
+        start_i_lc = 1
+        if bandwidth > 0:
+            start_i_lc = max_j - bandwidth
+            if start_i_lc < 1: start_i_lc = 1
+            
+        for i in range(start_i_lc, max_i):
+            ci = seqi[i-1]
 
-        iFromMVal = gap_extend + mScore[i, j - 1] + gap_incentive[i]
-        iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]
-        if iFromMVal > iExtendVal:
-            iScore[i,j] =  iFromMVal
-            iPointer[i,j] = MARRAY
-        else:
-            iScore[i,j] = iExtendVal
-            iPointer[i,j] = IARRAY
-
-        jFromMVal = gap_extend + mScore[i - 1, j] + gap_incentive[i-1]
-        jExtendVal = gap_extend + jScore[i - 1, j]
-        if jFromMVal > jExtendVal:
-            jScore[i,j] =  jFromMVal
-            jPointer[i,j] = MARRAY
-        else:
-            jScore[i,j] = jExtendVal
-            jPointer[i,j] = JARRAY
-
-        mVal = mScore[i - 1, j - 1] + matrix[ci,cj]
-        iVal = iScore[i - 1, j - 1] + matrix[ci,cj]
-        jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
-        if mVal > jVal:
-            if mVal > iVal:
-                mScore[i, j] = mVal
-                mPointer[i, j] = MARRAY
+            iFromMVal = gap_extend + mScore[i, j - 1] + gap_incentive[i]
+            iExtendVal = gap_extend + iScore[i, j - 1] + gap_incentive[i]
+            if iFromMVal > iExtendVal:
+                iScore[i,j] =  iFromMVal
+                iPointer[i,j] = MARRAY
             else:
-                mScore[i, j]   = iVal
-                mPointer[i, j] = IARRAY
-        else:
-            if jVal > iVal:
-                mScore[i, j]  = jVal
-                mPointer[i, j] = JARRAY
+                iScore[i,j] = iExtendVal
+                iPointer[i,j] = IARRAY
+
+            jFromMVal = gap_extend + mScore[i - 1, j] + gap_incentive[i-1]
+            jExtendVal = gap_extend + jScore[i - 1, j]
+            if jFromMVal > jExtendVal:
+                jScore[i,j] =  jFromMVal
+                jPointer[i,j] = MARRAY
             else:
-                mScore[i, j] = iVal
-                mPointer[i, j] = IARRAY
+                jScore[i,j] = jExtendVal
+                jPointer[i,j] = JARRAY
+
+            mVal = mScore[i - 1, j - 1] + matrix[ci,cj]
+            iVal = iScore[i - 1, j - 1] + matrix[ci,cj]
+            jVal = jScore[i - 1, j - 1] + matrix[ci,cj]
+            if mVal > jVal:
+                if mVal > iVal:
+                    mScore[i, j] = mVal
+                    mPointer[i, j] = MARRAY
+                else:
+                    mScore[i, j]   = iVal
+                    mPointer[i, j] = IARRAY
+            else:
+                if jVal > iVal:
+                    mScore[i, j]  = jVal
+                    mPointer[i, j] = JARRAY
+                else:
+                    mScore[i, j] = iVal
+                    mPointer[i, j] = IARRAY
 #        print('lastCol: mScore['+str(i) + ',' + str(j) +']: ' + str(mScore[i,j]) + ': max(' + str(mScore[i - 1, j - 1])+ '+ (' + str(ci)+ ',' + str(cj) + ') ' + str(matrix[ci,cj]) + ', i:'+str(iVal) + ',j:' + str(jVal))
 
     #last row
     i = max_i
     ci = seqi[i - 1]
-    for j in range(1, max_j+1):
+    
+    # Check if last row is reachable within bandwidth
+    start_j_lr = 1
+    if bandwidth > 0:
+        start_j_lr = max_i - bandwidth
+        if start_j_lr < 1: start_j_lr = 1
+        
+    for j in range(start_j_lr, max_j+1):
         cj = seqj[j - 1]
 
         iFromMVal = gap_extend + mScore[i, j - 1] + gap_incentive[i]
@@ -411,12 +456,6 @@ def global_align(str pystr_seqj, str pystr_seqi, np.ndarray[DTYPE_LONG, ndim=2] 
             else:
                 j = 0
                 cj = seqj[j]
-        else:
-            print('i: ' + str(i) + ' j: ' + str(j))
-            print('currMatrix:' + str(currMatrix))
-            print('seqj: ' + str(seqj) + ' seqi: ' + str(seqi))
-            raise Exception('wtf4!:pointer: %i', i)
-#          print('at end, currMatrix is ' + str(currMatrix))
 
         align_counter += 1
     try:

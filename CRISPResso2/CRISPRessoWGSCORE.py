@@ -173,14 +173,9 @@ def write_trimmed_fastq(in_bam_filename, bpstart, bpend, out_fastq_filename):
         text=True,
     )
 
-    output, stderr = p.communicate()
     n_reads = 0
-    if stderr:
-        logger.debug('Stderr from samtools view:')
-        logger.debug(stderr)
-
     with gzip.open(out_fastq_filename, 'wt') as outfile:
-        for line in output.split('\n'):
+        for line in p.stdout:
             if line:
                 (name, pos, cigar, seq, qual)=line.split("\t")
                 #print name,pos,cigar,seq
@@ -195,6 +190,11 @@ def write_trimmed_fastq(in_bam_filename, bpstart, bpend, out_fastq_filename):
                     n_reads+=1
                     #print '>%s\n%s\n+\n%s\n' %(name,seq[st:en],qual[st:en])
                     outfile.write('@%s_%d\n%s\n+\n%s\n' %(name, n_reads, seq[st:en], qual[st:en]))
+    stderr = p.stderr.read()
+    if stderr:
+        logger.debug('Stderr from samtools view:')
+        logger.debug(stderr)
+    p.wait()
     return n_reads
 
 pd=check_library('pandas')

@@ -100,7 +100,10 @@ def find_indels_substitutions(read_seq_al, ref_seq_al, _include_indx):
     cdef int start_insertion = -1  # the -1 value indicates that there currently isn't an insertion
 
     cdef size_t seq_len = len(ref_seq_al)
-    include_indx_set = set(_include_indx)
+    if isinstance(_include_indx, set):
+        include_indx_set = _include_indx
+    else:
+        include_indx_set = set(_include_indx)
     nucSet = set(['A', 'T', 'C', 'G', 'N'])
     cdef int idx = 0
     cdef int idx_c
@@ -111,7 +114,7 @@ def find_indels_substitutions(read_seq_al, ref_seq_al, _include_indx):
             if ref_seq_al[idx_c]!=read_seq_al[idx_c] and read_seq_al[idx_c] != '-' and read_seq_al[idx_c] != 'N':
                 all_substitution_positions.append(idx)
                 all_substitution_values.append(read_seq_al[idx_c])
-                if idx in _include_indx:
+                if idx in include_indx_set:
                     substitution_positions.append(idx)
                     substitution_values.append(read_seq_al[idx_c])
             if start_insertion != -1:  # this is the end of an insertion
@@ -214,6 +217,10 @@ def find_indels_substitutions_legacy(read_seq_al, ref_seq_al, _include_indx):
     substitution_positions=[]
     all_substitution_values=[]
     substitution_values=[]
+    if isinstance(_include_indx, set):
+        include_indx_set = _include_indx
+    else:
+        include_indx_set = set(_include_indx)
     nucSet = set(['A', 'T', 'C', 'G', 'N'])
     idx=0
     for idx_c, c in enumerate(ref_seq_al):
@@ -222,7 +229,7 @@ def find_indels_substitutions_legacy(read_seq_al, ref_seq_al, _include_indx):
             if ref_seq_al[idx_c]!=read_seq_al[idx_c] and read_seq_al[idx_c] != '-' and read_seq_al[idx_c] != 'N':
                 all_substitution_positions.append(idx)
                 all_substitution_values.append(read_seq_al[idx_c])
-                if idx in _include_indx:
+                if idx in include_indx_set:
                     substitution_positions.append(idx)
                     substitution_values.append(read_seq_al[idx_c])
 
@@ -249,7 +256,6 @@ def find_indels_substitutions_legacy(read_seq_al, ref_seq_al, _include_indx):
     insertion_coordinates = []
     insertion_sizes=[]
 
-    include_indx_set = set(_include_indx)
     for p in re_find_indels.finditer(read_seq_al):
         st,en=p.span()
         ref_st = 0
@@ -281,7 +287,7 @@ def find_indels_substitutions_legacy(read_seq_al, ref_seq_al, _include_indx):
         all_insertion_left_positions.append(ref_st)
         all_insertion_positions.append(ref_st)
         all_insertion_positions.append(ref_en)
-        if(ref_st in _include_indx or ref_en in _include_indx):
+        if(ref_st in include_indx_set or ref_en in include_indx_set):
           insertion_coordinates.append((ref_st,ref_en))
           insertion_positions.append(ref_st)
           insertion_positions.append(ref_en)
