@@ -456,12 +456,6 @@ def global_align(str pystr_seqj, str pystr_seqi, np.ndarray[DTYPE_LONG, ndim=2] 
             else:
                 j = 0
                 cj = seqj[j]
-        else:
-            print('i: ' + str(i) + ' j: ' + str(j))
-            print('currMatrix:' + str(currMatrix))
-            print('seqj: ' + str(seqj) + ' seqi: ' + str(seqi))
-            raise Exception('wtf4!:pointer: %i', i)
-#          print('at end, currMatrix is ' + str(currMatrix))
 
         align_counter += 1
     try:

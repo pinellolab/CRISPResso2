@@ -947,8 +947,6 @@ def get_consensus_alignment_from_pairs(
             continue
 
         if r1_in_range and aln_seq_r1[aln_ind_r1] == '-' and r2_in_range and aln_seq_r2[aln_ind_r2] == '-':
-            if aln_ref_r1[aln_ind_r1] != aln_ref_r2[aln_ind_r2]:
-                print(f'{aln_ref_r1[aln_ind_r1] = } {aln_ref_r2[aln_ind_r2] = }')
             final_aln_parts.append('-' if ind_start_r1 <= aln_ind_r1 <= ind_stop_r1 or ind_start_r2 <= aln_ind_r2 <= ind_stop_r2 else 'N')
             final_ref_parts.append(aln_ref_r1[aln_ind_r1])
         elif r1_in_range and aln_seq_r1[aln_ind_r1] == '-' and r2_in_range and aln_seq_r2[aln_ind_r2] != '-':
