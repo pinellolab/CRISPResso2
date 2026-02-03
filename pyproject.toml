@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "CRISPResso2"
-version = "2.3.3"
+version = "2.3.4"
 dependencies = [
     "pandas",
     "matplotlib",
@@ -50,3 +50,4 @@ Homepage = "https://github.com/pinellolab/CRISPResso2"
 package-dir = {"" = "CRISPResso2"}
 packages = ["CRISPResso2", "CRISPResso2.CRISPRessoReports"]
 include-package-data = true
+
