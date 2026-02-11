@@ -71,7 +71,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: edilytics/CRISPResso2_tests
-          ref: 'cole/vcf-parameters'
 
       - name: Run Tests
         run: |
