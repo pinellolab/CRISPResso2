@@ -13,37 +13,21 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
 
     strategy:
       fail-fast: false
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
-    - name: Set up Conda
-      uses: conda-incubator/setup-miniconda@v3
+    - name: Set up Pixi
+      uses: prefix-dev/setup-pixi@v0.8.8
       with:
-          channels: conda-forge,bioconda,defaults
-          auto-activate-base: false
-          activate-environment: test_env
-          environment-file: .github/envs/test_env.yml
-
-    - name: Install apt dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y gcc g++ bowtie2 samtools libsys-hostname-long-perl
-
-    - name: Install Pytest
-      run: |
-        pip install pytest pytest-cov
+        environments: test
+        cache: true
 
     - name: Install CRISPResso
-      run: |
-        pip install -e .
+      run: pixi run -e test install
 
     - name: Run Pytest
-      run: |
-        pytest tests --cov CRISPResso2
+      run: pixi run -e test test

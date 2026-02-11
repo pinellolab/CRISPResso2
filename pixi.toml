@@ -1,0 +1,59 @@
+[workspace]
+name = "CRISPResso2"
+version = "2.3.4"
+description = "Software pipeline for the analysis of genome editing outcomes from deep sequencing data"
+channels = ["conda-forge", "bioconda"]
+platforms = ["linux-64", "osx-64", "osx-arm64"]
+
+[dependencies]
+python = ">=3.10"
+numpy = "<2"
+cython = "*"
+scipy = "*"
+matplotlib = "==3.8.4"
+seaborn = "*"
+pandas = ">2"
+jinja2 = "*"
+tbb = "==2020.2"
+pyparsing = "==2.3.1"
+fastp = "*"
+bowtie2 = "*"
+samtools = "*"
+upsetplot = "*"
+plotly = "*"
+setuptools = "*"
+pip = "*"
+
+[target.linux-64.dependencies]
+gcc_linux-64 = "*"
+gxx_linux-64 = "*"
+
+[feature.test.dependencies]
+pytest = "*"
+pytest-cov = "*"
+pytest-check = "*"
+
+[feature.test.pypi-dependencies]
+ydiff = "*"
+
+[feature.lint.dependencies]
+pylint = "*"
+
+[environments]
+default = { features = [], solve-group = "default" }
+test = { features = ["test"], solve-group = "default" }
+lint = { features = ["lint"], solve-group = "default" }
+
+[tasks]
+install = "pip install -e ."
+
+[feature.test.tasks]
+test = { cmd = "pytest tests --cov CRISPResso2", depends-on = ["install"] }
+
+[feature.test.tasks.integration]
+cmd = "make $TARGETS test print"
+cwd = "../CRISPResso2_tests"
+depends-on = ["install"]
+
+[feature.lint.tasks]
+lint = { cmd = "pylint --fail-under=6.2 $(git ls-files '*.py') --rcfile=.github/workflows/.pylintrc" }

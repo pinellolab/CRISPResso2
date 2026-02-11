@@ -11,52 +11,45 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  integration-tests:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
     env:
       CRISPRESSO2_DIR: ${GITHUB_WORKSPACE}/../CRISPResso2_copy
 
     strategy:
       fail-fast: false
+      matrix:
+        include:
+          - name: "Basic, Params, NHEJ"
+            targets: "basic params nhej_native_merge"
+          - name: "Editors"
+            targets: "prime-editor base_editor"
+          - name: "BAM"
+            targets: "bam bam-out bam-out-genome"
+          - name: "Batch, Compare, Aggregate"
+            targets: "batch compare aggregate"
+          - name: "Pooled"
+            targets: "pooled pooled-paired-sim pooled-prime-editing"
+          - name: "Pooled Mixed Mode"
+            targets: "pooled-mixed-mode pooled-mixed-mode-genome-demux"
+          - name: "WGS, Asym"
+            targets: "wgs asym-left asym-right asym-both"
+          - name: "VCF"
+            targets: "vcf"
+
+    name: ${{ matrix.name }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Setup Conda Env
-        uses: conda-incubator/setup-miniconda@v3
+      - name: Set up Pixi
+        uses: prefix-dev/setup-pixi@v0.8.8
         with:
-          activate-environment: test_env
-          channels: conda-forge,bioconda,defaults
-          auto-activate-base: false
-          use-mamba: true
+          environments: test
+          cache: true
 
-      - name: Get Date
-        run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
-        shell: bash
-
-      - name: Cache Conda Env
-        id: cache-env
-        uses: actions/cache@v3
-        env:
-          # Increase this number to reset the cache if envs/test_env.yml hasn't changed
-          CACHE_NUMBER: 0
-        with:
-          path: /usr/share/miniconda/envs/test_env
-          key: conda-${{ runner.os }}--${{ runner.arch }}--${{ steps.get-date.outputs.today }}-${{ env.CACHE_NUMBER }}-${{ hashFiles('.github/envs/test_env.yml') }}
-
-      - name: Update Conda Env
-        run: |
-          conda env update -n test_env -f .github/envs/test_env.yml
-        if: steps.cache-env.outputs.cache-hit != 'true'
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc g++ bowtie2 samtools libsys-hostname-long-perl
-          conda list
+      - name: Install CRISPResso
+        run: pixi run -e test install
 
       - name: Create directory for files
         run: |
@@ -64,101 +57,23 @@ jobs:
           cp -r * ../CRISPResso2_copy
 
       - name: Copy C2_tests repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: edilytics/CRISPResso2_tests
-          # ref: '<BRANCH-NAME>' # update to specific branch
+          ref: 'cole/vcf-parameters'
 
-      - name: Run Basic
+      - name: Run Tests
         run: |
-          make basic test print
-
-      - name: Run Params
-        if: success() || failure()
-        run: |
-          make params test print
-
-      - name: Run Prime Editor
-        if: success() || failure()
-        run: |
-          make prime-editor test print
-
-      - name: Run Base Editor
-        if: success() || failure()
-        run: |
-          make base_editor test print
-
-      - name: Run Native Merging
-        if: success() || failure()
-        run: |
-          make nhej_native_merge test print
-
-      - name: Run BAM Input
-        if: success() || failure()
-        run: |
-          make bam test print
-
-      - name: Run BAM Output
-        if: success() || failure()
-        run: |
-          make bam-out test print
-
-      - name: Run BAM Genome Output
-        if: success() || failure()
-        run: |
-          make bam-out-genome test print
-
-      - name: Run Batch
-        if: success() || failure()
-        run: |
-          make batch test print
-
-      - name: Run Pooled
-        if: success() || failure()
-        run: |
-          make pooled test print
-
-      - name: Run Pooled Mixed Mode
-        if: success() || failure()
-        run: |
-          make pooled-mixed-mode test print
-
-      - name: Run Pooled Mixed Mode Demux
-        if: success() || failure()
-        run: |
-          make pooled-mixed-mode-genome-demux test print
-
-      - name: Run Pooled Paired Sim
-        if: success() || failure()
-        run: |
-          make pooled-paired-sim test print
-
-      - name: Run WGS
-        if: success() || failure()
-        run: |
-          make wgs test print
-
-      - name: Run Compare
-        if: success() || failure()
-        run: |
-          make compare test print
-
-      - name: Run Aggregate
-        if: success() || failure()
-        run: |
-          make aggregate test print
-
-      - name: Run Asym Allele Plot Left
-        if: success() || failure()
-        run: |
-          make asym-left test print
-
-      - name: Run Asym Allele Plot Right
-        if: success() || failure()
-        run: |
-          make asym-right test print
-
-      - name: Run Asym Allele Plot Both
-        if: success() || failure()
-        run: |
-          make asym-both test print
+          set +e
+          failed=0
+          for target in ${{ matrix.targets }}; do
+            echo "::group::Running $target"
+            pixi run -e test -- make "$target" test print
+            rc=$?
+            if [ $rc -ne 0 ]; then
+              echo "::error::Test '$target' failed with exit code $rc"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          exit $failed
