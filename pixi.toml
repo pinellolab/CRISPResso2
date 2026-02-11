@@ -3,7 +3,7 @@ name = "CRISPResso2"
 version = "2.3.4"
 description = "Software pipeline for the analysis of genome editing outcomes from deep sequencing data"
 channels = ["conda-forge", "bioconda"]
-platforms = ["linux-64", "osx-64", "osx-arm64"]
+platforms = ["linux-64", "linux-aarch64", "osx-64", "osx-arm64"]
 
 [dependencies]
 python = ">=3.10"
