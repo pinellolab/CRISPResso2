@@ -1,0 +1,71 @@
+CRISPResso version 2.3.4
+[Command used]:
+/Users/cole/code/edilytics/CRISPResso2/.pixi/envs/default/bin/CRISPResso -r1 ../C2Web/CRISPRessoWEB/static/demo/hdr.fastq.gz -a ACATTTGCTTCTGACACAACTGTGTTCACTAGCAACCTCAAACAGACACCATGGTGCATCTGACTCCTGTGGAGAAGTCTGCCGTTACTGCCCTGTGGGGCAAGGTGAACGTGGATGAAGTTGGTGGTGAGGCCCTGGGCAGGTTGGTATCAAGGTTA -g TGCACCATGGTGTCTGTTTG --name fneyqav1 --write_cleaned_report --place_report_in_output_folder -c ATGGTGCATCTGACTCCTGTGGAGAAGTCTGCCGTTACTGCCCTGTGGGGCAAGGTGAACGTGGATGAAGTTGGTGGTGAGGCCCTGGGCAG --use_matplotlib --debug
+
+[Execution log]:
+CRISPRessoPro not installed
+Computing quantification windows
+Added 0 guides with flexible matching
+	Original flexiguides: ['None']
+	Found guides: []
+	Mismatch locations: []
+Counting reads in input
+Counting reads after preprocessing...
+Aligning sequences...
+Finished reading fastq file; 1107 unique reads found of 25000 total reads found 
+Processing Reads; 0 Completed out of 1107 Unique Reads
+Finished reads; N_TOT_READS: 25000 N_COMPUTED_ALN: 1107 N_CACHED_ALN: 23893 N_COMPUTED_NOTALN: 0 N_CACHED_NOTALN: 0
+Done!
+Quantifying indels/substitutions...
+Done!
+Calculating allele frequencies...
+Done!
+Saving processed data...
+Making Plots...
+Plotting read bar plot
+Plotting read class pie chart and bar plot
+Plotting alleles homology histogram
+Processing plots for amplicon Reference...
+Plotting nucleotide quilt across amplicon
+Plotting nucleotide distribuition around sgRNA TGCACCATGGTGTCTGTTTG for Reference
+Plotting indel size distribution for Reference
+Plotting frequency deletions/insertions for Reference
+Plotting amplication modifications for Reference
+Plotting modification frequency for Reference
+Plotting quantification window locations for Reference
+Plotting position dependent indel for Reference
+Plotting frameshift analysis for Reference
+Plotting frameshift frequency for Reference
+Plotting non-coding mutation positions for Reference
+Plotting potential splice sites
+Plotting allele distribution around cut for Reference
+Traceback (most recent call last):
+  File "/Users/cole/code/edilytics/CRISPResso2/CRISPResso2/CRISPRessoCORE.py", line 6117, in main
+    df_to_plot = CRISPRessoShared.get_amino_acid_dataframe(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cole/code/edilytics/CRISPResso2/CRISPResso2/CRISPRessoShared.py", line 1583, in get_amino_acid_dataframe
+    df_alleles_around_cut=pd.DataFrame(list(df_alleles.apply(lambda row: get_amino_acid_row(row,plot_left_idx,sequence_length,matrix_path, amino_acid_cut_point),axis=1).values),
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cole/code/edilytics/CRISPResso2/.pixi/envs/default/lib/python3.12/site-packages/pandas/core/frame.py", line 12419, in apply
+    return op.apply().__finalize__(self, method="apply")
+           ^^^^^^^^^^
+  File "/Users/cole/code/edilytics/CRISPResso2/.pixi/envs/default/lib/python3.12/site-packages/pandas/core/apply.py", line 1015, in apply
+    return self.apply_standard()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cole/code/edilytics/CRISPResso2/.pixi/envs/default/lib/python3.12/site-packages/pandas/core/apply.py", line 1167, in apply_standard
+    results, res_index = self.apply_series_generator()
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cole/code/edilytics/CRISPResso2/.pixi/envs/default/lib/python3.12/site-packages/pandas/core/apply.py", line 1183, in apply_series_generator
+    results[i] = self.func(v, *self.args, **self.kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cole/code/edilytics/CRISPResso2/CRISPResso2/CRISPRessoShared.py", line 1583, in <lambda>
+    df_alleles_around_cut=pd.DataFrame(list(df_alleles.apply(lambda row: get_amino_acid_row(row,plot_left_idx,sequence_length,matrix_path, amino_acid_cut_point),axis=1).values),
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cole/code/edilytics/CRISPResso2/CRISPResso2/CRISPRessoShared.py", line 1540, in get_amino_acid_row
+    cut_idx = row['ref_positions'].index(amino_acid_cut_point)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: -3 is not in list
+
+Unexpected error, please check your input.
+
+ERROR: -3 is not in list

@@ -1,0 +1,3 @@
+Splice sites analysis:
+	Unmodified:24497 reads
+	Potential splice sites modified:503 reads
