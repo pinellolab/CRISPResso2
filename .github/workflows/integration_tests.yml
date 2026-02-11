@@ -13,8 +13,6 @@ concurrency:
 jobs:
   integration-tests:
     runs-on: ubuntu-latest
-    env:
-      CRISPRESSO2_DIR: ${GITHUB_WORKSPACE}/../CRISPResso2_copy
 
     strategy:
       fail-fast: false
@@ -62,15 +60,11 @@ jobs:
       - name: Install CRISPResso
         run: pixi run -e test install
 
-      - name: Create directory for files
-        run: |
-          mkdir ../CRISPResso2_copy
-          cp -r * ../CRISPResso2_copy
-
       - name: Copy C2_tests repo
         uses: actions/checkout@v4
         with:
           repository: edilytics/CRISPResso2_tests
+          path: ../CRISPResso2_tests
 
       - name: Run Tests
         run: |
@@ -78,7 +72,7 @@ jobs:
           failed=0
           for target in ${{ matrix.targets }}; do
             echo "::group::Running $target"
-            pixi run -e test -- make "$target" test print
+            pixi run -e test -- make -C ../CRISPResso2_tests "$target" test print
             rc=$?
             if [ $rc -ne 0 ]; then
               echo "::error::Test '$target' failed with exit code $rc"
