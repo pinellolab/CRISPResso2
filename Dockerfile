@@ -1,17 +1,32 @@
 ############################################################
-# Dockerfile to build CRISPResso2
+# Dockerfile to build CRISPResso2 (multi-stage)
 ############################################################
 
+# --- Build stage: resolve deps and install package ---
 FROM ghcr.io/prefix-dev/pixi:0.43.0 AS build
 
 USER root
 
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends gcc g++ \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /CRISPResso2
+COPY pixi.toml pyproject.toml ./
+RUN pixi install
+
+COPY . .
+RUN pixi run install
+
+# --- Runtime stage: slim image with just the environment ---
+FROM ubuntu:24.04
+
 LABEL org.opencontainers.image.authors="support@edilytics.com"
 
-# Install system dependencies and MS core fonts for plots
+# Install MS core fonts for plots
 RUN echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections \
   && apt-get update \
-  && apt-get install -y --no-install-recommends gcc g++ ttf-mscorefonts-installer \
+  && apt-get install -y --no-install-recommends ttf-mscorefonts-installer \
   && apt-get clean \
   && apt-get autoremove -y \
   && rm -rf /var/lib/apt/lists/* \
@@ -19,15 +34,16 @@ RUN echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula sele
   && rm -rf /usr/share/doc/* \
   && rm -rf /usr/share/zoneinfo
 
-# Copy Pixi and project config first for layer caching
-WORKDIR /CRISPResso2
-COPY pixi.toml pyproject.toml ./
-RUN pixi install
+# Copy pixi binary from build stage
+COPY --from=build /usr/local/bin/pixi /usr/local/bin/pixi
 
-# Copy source and install the package
-COPY . .
-RUN pixi run install \
-  && pixi run -- CRISPResso -h \
+# Copy the project (includes .pixi/ environment) from build stage
+COPY --from=build /CRISPResso2 /CRISPResso2
+
+WORKDIR /CRISPResso2
+
+# Verify
+RUN pixi run -- CRISPResso -h \
   && pixi run -- CRISPRessoBatch -h \
   && pixi run -- CRISPRessoPooled -h \
   && pixi run -- CRISPRessoWGS -h \
