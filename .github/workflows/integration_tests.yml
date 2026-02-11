@@ -47,6 +47,7 @@ jobs:
         with:
           environments: test
           cache: true
+          locked: false
 
       - name: Install CRISPResso
         run: pixi run -e test install
