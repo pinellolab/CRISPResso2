@@ -4,7 +4,7 @@ import pytest
 import pandas as pd
 from pytest_check import check
 
-from CRISPResso2 import CRISPRessoCORE, CRISPRessoShared
+from CRISPResso2 import CRISPRessoCORE, CRISPRessoShared, CRISPRessoCOREResources
 
 def calc_score(seq, ref):
     score = 0
@@ -903,8 +903,6 @@ def test_write_base_edit_counts():
             os.remove(filename)
         else:
             assert False
-
-
 
 
 if __name__ == "__main__":

@@ -13,6 +13,9 @@
 
 - Add a plot that shows the distribution of homology scores for reads by [@mbowcut2](https://github.com/mbowcut2) in [#600](https://github.com/pinellolab/CRISPResso2/pull/600)
 
+- Add the option to output edits in VCF format by [@trevormartinj7](https://github.com/trevormartinj7) and [@Colelyman](https://github.com/Colelyman) in [#613](https://github.com/pinellolab/CRISPResso2/pull/613)
+  - To use the feature, add `--vcf_output` and `--amplicon_coordinates` parameters, and all of the edits within the quantification window will be compiled into a VCF file called `CRISPResso_output.vcf` in your results directory.
+
 ### FIXED
 
 - Fix the `x_lim` settings on plot 3b by [@kclem](https://github.com/kclem) in [`56bd430`](https://github.com/pinellolab/CRISPResso2/commit/56bd4306292136ed95d7032b0582c6ad370dd79b)
