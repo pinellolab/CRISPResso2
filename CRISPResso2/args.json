@@ -896,6 +896,19 @@
             "action": "store_true",
             "tools": ["Core", "Batch", "Pooled", "WGS", "Compare"]
         },
+        "vcf_output": {
+            "keys": ["--vcf_output"],
+            "help": "Generate a VCF file that contains the edits that occur within the quantification window(s). This parameter requires `--amplicon_coordinates` to be provided. Note: this implicitly enables `--write_detailed_allele_table`.",
+            "action": "store_true",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
+        "amplicon_coordinates": {
+            "keys": ["--amplicon_coordinates"],
+            "help": "Comma separated chromosome name and positions of the leftmost base of the amplicon sequence(s) in the reference genome. This is used to generate the VCF file. Ex: 'chr19:14039,chr18:430', where chr19 will be in the CHROM VCF column and 14039 is the position of the leftmost basepair of the first amplicon and chr18 will be in the CHROM VCF column and 430 is the position of the leftmost basepair of the second amplicon. When multiple coordinates are provided, the order corresponds to the order of the amplicons.",
+            "type": "str",
+            "default": "",
+            "tools": ["Core", "Batch", "Pooled", "WGS"]
+        },
         "base_editor_consider_changes_outside_qw": {
             "keys": ["--base_editor_consider_changes_outside_qw"],
             "help": "Consider changes outside of the quantification window for the base editor substitution co-occurences plot. If this flag is not set, only reads with changes in the quantification window are considered for analysis in the plot.",

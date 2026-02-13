@@ -1,3 +1,5 @@
+import pytest
+
 from CRISPResso2 import CRISPRessoCOREResources
 
 
