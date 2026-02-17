@@ -11,7 +11,7 @@ Software pipeline for the analysis of genome editing outcomes from deep sequenci
 (c) 2020 The General Hospital Corporation. All Rights Reserved.
 """
 
-from setuptools import setup, Extension
+from setuptools import setup, Extension, find_packages
 from io import open
 
 # Use build_ext from Cython if found
@@ -70,7 +70,7 @@ def main():
           url='http://github.com/pinellolab/CRISPResso2',
           package_dir={'CRISPResso2' : 'CRISPResso2'},
           include_package_data = True,
-          packages=['CRISPResso2', 'CRISPResso2.CRISPRessoReports'],
+          packages=find_packages(include=['CRISPResso2*']),
           entry_points=entry_points,
           description="Software pipeline for the analysis of genome editing outcomes from deep sequencing data",
           classifiers=[
