@@ -542,8 +542,8 @@ def get_prime_editing_guides(this_amp_seq, ref0_seq, prime_editing_edited_amp_se
         pe_start_loc = match.start()
         pe_end_loc = match.end()
         coords_l, coords_r = CRISPRessoShared.get_alignment_coordinates(to_sequence=this_amp_seq, from_sequence=prime_editing_edited_amp_seq,aln_matrix=aln_matrix,needleman_wunsch_gap_open=needleman_wunsch_gap_open,needleman_wunsch_gap_extend=needleman_wunsch_gap_extend)
-        if pe_end_loc >= len(coords_l):
-            new_seq = this_amp_seq[coords_l[pe_start_loc]:] #if regex matches at the end coords_l will be too short
+        if pe_end_loc >= len(coords_r):
+            new_seq = this_amp_seq[coords_l[pe_start_loc]:] #if regex matches at the end coords_r will be too short
             pe_end_loc = len(coords_r) - 1 #adjust end loc to be the end of the sequence for mismatch calculations
         else:
             new_seq = this_amp_seq[coords_l[pe_start_loc]:coords_r[pe_end_loc]]
@@ -590,7 +590,7 @@ def get_prime_editing_guides(this_amp_seq, ref0_seq, prime_editing_edited_amp_se
         r0_end_loc = match.end()
         coords_l, coords_r = CRISPRessoShared.get_alignment_coordinates(to_sequence=this_amp_seq, from_sequence=ref0_seq,aln_matrix=aln_matrix,needleman_wunsch_gap_open=needleman_wunsch_gap_open,needleman_wunsch_gap_extend=needleman_wunsch_gap_extend)
         if r0_end_loc >= len(coords_r):
-            new_seq = this_amp_seq[coords_l[r0_start_loc]:] #if regex matches at the end coords_l will be too short
+            new_seq = this_amp_seq[coords_l[r0_start_loc]:] #if regex matches at the end coords_r will be too short
             r0_end_loc = len(coords_r) - 1 #adjust end loc to be the end of the sequence for mismatch calculations
         else:
             new_seq = this_amp_seq[coords_l[r0_start_loc]:coords_r[r0_end_loc]]
@@ -637,8 +637,8 @@ def get_prime_editing_guides(this_amp_seq, ref0_seq, prime_editing_edited_amp_se
             r0_start_loc = match.start()
             r0_end_loc = match.end()
             coords_l, coords_r = CRISPRessoShared.get_alignment_coordinates(to_sequence=rc_this_amp_seq, from_sequence=rc_ref0_seq,aln_matrix=aln_matrix,needleman_wunsch_gap_open=needleman_wunsch_gap_open,needleman_wunsch_gap_extend=needleman_wunsch_gap_extend)
-            if r0_end_loc >= len(coords_l):
-                new_seq = rc_this_amp_seq[coords_l[r0_start_loc]:] #if regex matches at the end coords_l will be too short
+            if r0_end_loc >= len(coords_r):
+                new_seq = rc_this_amp_seq[coords_l[r0_start_loc]:] #if regex matches at the end coords_r will be too short
                 r0_end_loc = len(coords_r) - 1 #adjust end loc to be the end of the sequence for mismatch calculations
             else:
                 new_seq = rc_this_amp_seq[coords_l[r0_start_loc]:coords_r[r0_end_loc]]
