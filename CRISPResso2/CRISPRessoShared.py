@@ -8,6 +8,7 @@ import argparse
 import datetime
 import errno
 import gzip
+import hashlib
 import importlib.metadata
 import importlib.util
 import io
@@ -586,6 +587,28 @@ def clean_filename(filename):
     filename = slugify(str(filename).replace(' ', '_'))
     cleanedFilename = unicodedata.normalize('NFKD', filename)
     return (''.join(c for c in cleanedFilename if c in validFilenameChars))
+
+def _get_short_seq_id(seq, max_len=20):
+    """Return a short identifier for a nucleotide sequence suitable for use in filenames.
+
+    If the sequence is already short enough (<= max_len characters), it is
+    returned unchanged.  For longer sequences the first 8 characters are kept
+    and an underscore plus an 8-character MD5 hex digest of the full sequence
+    is appended, guaranteeing uniqueness while staying well within filesystem
+    filename-length limits.
+
+    Examples
+    --------
+    >>> _get_short_seq_id('ATCG')
+    'ATCG'
+    >>> _get_short_seq_id('A' * 200)  # doctest: +ELLIPSIS
+    'AAAAAAAA_...'
+    """
+    if len(seq) <= max_len:
+        return seq
+    seq_hash = hashlib.md5(seq.encode('utf-8')).hexdigest()[:8]
+    return seq[:8] + '_' + seq_hash
+
 
 def check_file(filename):
     try:

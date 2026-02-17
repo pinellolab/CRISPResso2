@@ -905,6 +905,32 @@ def test_write_base_edit_counts():
             assert False
 
 
+def test_long_coding_seq_filename_not_too_long():
+    """Verify that a long coding_seq doesn't produce filenames exceeding OS limits.
+
+    This is a regression test for the issue where coding sequences >200bp
+    were embedded verbatim in filenames, exceeding the 255-byte limit.
+    """
+    long_coding_seq = 'ATCGATCG' * 50  # 400 characters
+
+    coding_seq_short = CRISPRessoShared._get_short_seq_id(long_coding_seq)
+
+    # Simulate the two filename patterns from CRISPRessoCORE.py
+    ref_plot_name = 'Reference.'  # typical ref_plot_name
+    fig_filename = '9a.' + ref_plot_name + 'amino_acid_table_around_' + coding_seq_short + '.pdf'
+    table_filename = ref_plot_name + 'amino_acid_table_for_' + coding_seq_short + '.txt'
+
+    # 255 bytes is the typical max filename length on macOS/Linux
+    assert len(fig_filename.encode('utf-8')) <= 255, \
+        f"Figure filename too long: {len(fig_filename.encode('utf-8'))} bytes"
+    assert len(table_filename.encode('utf-8')) <= 255, \
+        f"Table filename too long: {len(table_filename.encode('utf-8'))} bytes"
+
+    # The short id should be much shorter than the original
+    assert len(coding_seq_short) < len(long_coding_seq)
+    assert len(coding_seq_short) == 17  # 8 prefix + '_' + 8 hash
+
+
 if __name__ == "__main__":
 # execute only if run as a script
     test_get_consensus_alignment_from_pairs()

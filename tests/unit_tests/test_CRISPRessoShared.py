@@ -284,3 +284,57 @@ def test_get_silent_edits_middle_insertion():
 
     silent_edits = CRISPRessoShared.get_silent_edits(ref_seq, ref_codons, seq, seq_codons)
     assert silent_edits == 'AGTs'
+
+
+def test_get_short_seq_id_short_seq_returned_unchanged():
+    """Sequences at or below max_len are returned as-is."""
+    assert CRISPRessoShared._get_short_seq_id('ATCG') == 'ATCG'
+
+
+def test_get_short_seq_id_exact_max_len_returned_unchanged():
+    seq = 'A' * 20
+    assert CRISPRessoShared._get_short_seq_id(seq) == seq
+
+
+def test_get_short_seq_id_long_seq_is_truncated():
+    seq = 'ATCGATCG' * 30  # 240 chars
+    result = CRISPRessoShared._get_short_seq_id(seq)
+    # 8-char prefix + '_' + 8-char hash = 17 chars
+    assert len(result) == 17
+    assert result.startswith('ATCGATCG_')
+
+
+def test_get_short_seq_id_deterministic():
+    """Same input always produces same output."""
+    seq = 'A' * 200
+    assert CRISPRessoShared._get_short_seq_id(seq) == CRISPRessoShared._get_short_seq_id(seq)
+
+
+def test_get_short_seq_id_different_long_seqs_produce_different_ids():
+    """Two different long sequences with the same 8-char prefix get different IDs."""
+    seq_a = 'ATCGATCG' + 'A' * 200
+    seq_b = 'ATCGATCG' + 'T' * 200
+    result_a = CRISPRessoShared._get_short_seq_id(seq_a)
+    result_b = CRISPRessoShared._get_short_seq_id(seq_b)
+    assert result_a != result_b
+    # Both share the same prefix
+    assert result_a[:8] == result_b[:8] == 'ATCGATCG'
+
+
+def test_get_short_seq_id_custom_max_len():
+    seq = 'ATCGATCG'  # 8 chars
+    # With max_len=5, this should be truncated
+    result = CRISPRessoShared._get_short_seq_id(seq, max_len=5)
+    assert len(result) == 17
+    assert result.startswith('ATCGATCG_')
+
+
+def test_get_short_seq_id_empty_string():
+    assert CRISPRessoShared._get_short_seq_id('') == ''
+
+
+def test_get_short_seq_id_result_is_filename_safe():
+    """Output should contain only alphanumeric chars and underscores."""
+    seq = 'ATCG' * 100
+    result = CRISPRessoShared._get_short_seq_id(seq)
+    assert all(c.isalnum() or c == '_' for c in result)

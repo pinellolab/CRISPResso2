@@ -6115,7 +6115,8 @@ def main():
 
             if refs[ref_name]['contains_coding_seq']:
                 for i, coding_seq in enumerate(coding_seqs):
-                    fig_filename_root = _jp('9a.'+ref_plot_name+'amino_acid_table_around_'+coding_seq)
+                    coding_seq_short = CRISPRessoShared._get_short_seq_id(coding_seq)
+                    fig_filename_root = _jp('9a.'+ref_plot_name+'amino_acid_table_around_'+coding_seq_short)
                     coding_seq_amino_acids = CRISPRessoShared.get_amino_acids_from_nucs(coding_seq)
                     amino_acid_cut_point = (cut_point - refs[ref_name]['exon_positions'][0] + 1)// 3
                     df_to_plot = CRISPRessoShared.get_amino_acid_dataframe(
@@ -6141,7 +6142,7 @@ def main():
                         'cut_point': amino_acid_cut_point,
                     }
 
-                    amino_acid_filename = _jp(ref_plot_name+'amino_acid_table_for_'+coding_seq+'.txt')
+                    amino_acid_filename = _jp(ref_plot_name+'amino_acid_table_for_'+coding_seq_short+'.txt')
                     df_to_plot.to_csv(amino_acid_filename, sep='\t', header=True, index=True)
 
                     debug('Plotting amino acids for {0}'.format(ref_name))
