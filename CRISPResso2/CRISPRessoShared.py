@@ -2333,7 +2333,10 @@ def safety_check(crispresso2_info, aln_stats, guardrails):
 
     crispresso2_info['results']['guardrails'] = messageHandler.get_messages()
 
-    return messageHandler.get_html_messages()
+    return {
+        'failed': messageHandler.get_failed_html_messages(),
+        'passed': messageHandler.get_passed_html_messages(),
+    }
 
 
 class GuardrailMessageHandler:
@@ -2347,7 +2350,8 @@ class GuardrailMessageHandler:
             logger object used to display messages
         """
         self.logger = logger
-        self.html_messages = []
+        self.failed_html_messages = []
+        self.passed_html_messages = []
         self.messages = {}
 
     def display_warning(self, guardrail, message):
@@ -2369,16 +2373,31 @@ class GuardrailMessageHandler:
         message : string
             Related guardrail message
         """
-        html_warning = '<div class="alert alert-danger"><strong>Guardrail Warning!</strong>{0}</div>'.format(message)
-        self.html_messages.append(html_warning)
+        html_warning = '<div class="alert alert-danger"><strong>Guardrail Warning!</strong> {0}</div>'.format(message)
+        self.failed_html_messages.append(html_warning)
+
+    def report_pass(self, message):
+        """Create and store a passed guardrail html message for the report
+
+        Parameters:
+        -----------
+        message : string
+            Related guardrail pass message
+        """
+        html_pass = '<div class="alert alert-success"><strong>Guardrail Passed:</strong> {0}</div>'.format(message)
+        self.passed_html_messages.append(html_pass)
 
     def get_messages(self):
         """Return the messages accumulated by the message handler"""
         return self.messages
 
-    def get_html_messages(self):
-        """Return the html messages accumulated by the message handler"""
-        return self.html_messages
+    def get_failed_html_messages(self):
+        """Return the failed html messages accumulated by the message handler"""
+        return self.failed_html_messages
+
+    def get_passed_html_messages(self):
+        """Return the passed html messages accumulated by the message handler"""
+        return self.passed_html_messages
 
 
 class TotalReadsGuardrail:
@@ -2395,7 +2414,7 @@ class TotalReadsGuardrail:
         """
         self.messageHandler = messageHandler
         self.minimum = minimum
-        self.message = " Low number of total reads: <{}.".format(minimum)
+        self.message = "Low number of total reads: <{}.".format(minimum)
 
     def safety(self, total_reads):
         """Safety check, if total is below minimum send warnings
@@ -2409,6 +2428,8 @@ class TotalReadsGuardrail:
             self.message = self.message + " Total reads: {}.".format(total_reads)
             self.messageHandler.display_warning('TotalReadsGuardrail', self.message)
             self.messageHandler.report_warning(self.message)
+        else:
+            self.messageHandler.report_pass("Total reads ({}) above minimum threshold ({}).".format(total_reads, self.minimum))
 
 
 class OverallReadsAlignedGuardrail:
@@ -2424,7 +2445,7 @@ class OverallReadsAlignedGuardrail:
             The float representation of percentage of minimum reads to be aligned
         """
         self.messageHandler = messageHandler
-        self.message = " <={val}% of reads were aligned.".format(val=(cutoff * 100))
+        self.message = "<={val}% of reads were aligned.".format(val=(cutoff * 100))
         self.cutoff = cutoff
 
     def safety(self, total_reads, n_read_aligned):
@@ -2443,6 +2464,8 @@ class OverallReadsAlignedGuardrail:
             self.message = self.message + " Total reads: {}, Aligned reads: {}.".format(total_reads, n_read_aligned)
             self.messageHandler.display_warning('OverallReadsAlignedGuardrail', self.message)
             self.messageHandler.report_warning(self.message)
+        else:
+            self.messageHandler.report_pass("Read alignment rate above threshold. {:.1f}% of reads aligned.".format((n_read_aligned / total_reads) * 100))
 
 
 class DisproportionateReadsAlignedGuardrail:
@@ -2458,7 +2481,7 @@ class DisproportionateReadsAlignedGuardrail:
             The float representation of the accepted percentage deviation from the expected distribution
         """
         self.messageHandler = messageHandler
-        self.message = " Disproportionate percentages of reads were aligned to amplicon: "
+        self.message = "Disproportionate percentages of reads were aligned to amplicon: "
         self.cutoff = cutoff
 
     def safety(self, n_read_aligned, reads_aln_amplicon):
@@ -2474,11 +2497,15 @@ class DisproportionateReadsAlignedGuardrail:
         if len(reads_aln_amplicon.keys()) <= 1:
             return
         expected_per_amplicon = n_read_aligned / len(reads_aln_amplicon.keys())
+        failed = False
         for amplicon, aligned in reads_aln_amplicon.items():
             if aligned <= (expected_per_amplicon * self.cutoff) or aligned >= (expected_per_amplicon * (1 - self.cutoff)):
                 amplicon_message = self.message + amplicon + ", Percent of aligned reads aligned to this amplicon: {}%.".format(round((aligned/n_read_aligned) * 100, 2))
                 self.messageHandler.display_warning('DisproportionateReadsAlignedGuardrail', amplicon_message)
                 self.messageHandler.report_warning(amplicon_message)
+                failed = True
+        if not failed:
+            self.messageHandler.report_pass("Read distribution across amplicons is proportionate.")
 
 
 class LowRatioOfModsInWindowToOutGuardrail:
@@ -2494,7 +2521,7 @@ class LowRatioOfModsInWindowToOutGuardrail:
             The float representation of the maximum percentage of modifications outside of the quantification window
         """
         self.messageHandler = messageHandler
-        self.message = " <={}% of modifications were inside of the quantification window.".format(cutoff * 100)
+        self.message = "<={}% of modifications were inside of the quantification window.".format(cutoff * 100)
         self.cutoff = cutoff
 
     def safety(self, mods_in_window, mods_outside_window):
@@ -2514,6 +2541,8 @@ class LowRatioOfModsInWindowToOutGuardrail:
             self.message = self.message + " Total modifications: {}, Modifications in window: {}, Modifications outside window: {}.".format(total_mods, mods_in_window, mods_outside_window)
             self.messageHandler.display_warning('LowRatioOfModsInWindowToOutGuardrail', self.message)
             self.messageHandler.report_warning(self.message)
+        else:
+            self.messageHandler.report_pass("Sufficient ratio of modifications inside quantification window.")
 
 
 class HighRateOfModificationAtEndsGuardrail:
@@ -2529,7 +2558,7 @@ class HighRateOfModificationAtEndsGuardrail:
             The float representation of the maximum percentage reads that have modifications on either end
         """
         self.messageHandler = messageHandler
-        self.message = " >={}% of reads have modifications at the start or end.".format(round(percentage_start_end * 100, 2))
+        self.message = ">={}% of reads have modifications at the start or end.".format(round(percentage_start_end * 100, 2))
         self.percent = percentage_start_end
 
     def safety(self, total_reads, irregular_reads):
@@ -2548,6 +2577,8 @@ class HighRateOfModificationAtEndsGuardrail:
             self.message = self.message + " Total reads: {}, Irregular reads: {}.".format(total_reads, irregular_reads)
             self.messageHandler.display_warning('HighRateOfModificationAtEndsGuardrail', self.message)
             self.messageHandler.report_warning(self.message)
+        else:
+            self.messageHandler.report_pass("Acceptable rate of modifications at read ends.")
 
 
 class HighRateOfSubstitutionsOutsideWindowGuardrail:
@@ -2563,7 +2594,7 @@ class HighRateOfSubstitutionsOutsideWindowGuardrail:
             The float representation of how many of the total substitutions can be outside of the quantification window
         """
         self.messageHandler = messageHandler
-        self.message = " >={}% of substitutions were outside of the quantification window.".format(cutoff * 100)
+        self.message = ">={}% of substitutions were outside of the quantification window.".format(cutoff * 100)
         self.cutoff = cutoff
 
     def safety(self, global_subs, subs_outside_window):
@@ -2582,6 +2613,8 @@ class HighRateOfSubstitutionsOutsideWindowGuardrail:
             self.message = self.message + " Total substitutions: {}, Substitutions outside window: {}.".format(global_subs, subs_outside_window)
             self.messageHandler.display_warning('HighRateOfSubstitutionsOutsideWindowGuardrail', self.message)
             self.messageHandler.report_warning(self.message)
+        else:
+            self.messageHandler.report_pass("Acceptable rate of substitutions outside quantification window.")
 
 
 class HighRateOfSubstitutionsGuardrail:
@@ -2597,7 +2630,7 @@ class HighRateOfSubstitutionsGuardrail:
             The float representation of how many of the total modifications can be subsitutions
         """
         self.messageHandler = messageHandler
-        self.message = " >={}% of modifications were substitutions. This could potentially indicate poor sequencing quality.".format(cutoff * 100)
+        self.message = ">={}% of modifications were substitutions. This could potentially indicate poor sequencing quality.".format(cutoff * 100)
         self.cutoff = cutoff
 
     def safety(self, mods_in_window, mods_outside_window, global_subs):
@@ -2619,6 +2652,8 @@ class HighRateOfSubstitutionsGuardrail:
             self.message = self.message + " Total modifications: {}, Substitutions: {}.".format(int(total_mods), global_subs)
             self.messageHandler.display_warning('HighRateOfSubstitutionsGuardrail', self.message)
             self.messageHandler.report_warning(self.message)
+        else:
+            self.messageHandler.report_pass("Substitution rate within acceptable range.")
 
 
 class ShortSequenceGuardrail:
@@ -2637,7 +2672,8 @@ class ShortSequenceGuardrail:
         """
         self.messageHandler = messageHandler
         self.cutoff = cutoff
-        self.message = f" {string.capwords(sequence_type)} length <{cutoff}: "
+        self.sequence_type = sequence_type
+        self.message = f"{string.capwords(sequence_type)} length <{cutoff}: "
 
     def safety(self, sequences):
         """Safety check, comparison between sequence lengths and minimum lengths
@@ -2647,11 +2683,15 @@ class ShortSequenceGuardrail:
         sequences : dict
             Dictionary with the name of the sequence as the key and the length of the sequence as the value
         """
+        failed = False
         for name, length in sequences.items():
             if length < self.cutoff:
                 sequence_message = self.message + name + ", Length: {}.".format(length)
                 self.messageHandler.display_warning('ShortSequenceGuardrail', sequence_message)
                 self.messageHandler.report_warning(sequence_message)
+                failed = True
+        if not failed:
+            self.messageHandler.report_pass("All {} lengths above minimum threshold ({}).".format(self.sequence_type, self.cutoff))
 
 
 class LongAmpliconShortReadsGuardrail:
@@ -2669,7 +2709,7 @@ class LongAmpliconShortReadsGuardrail:
         """
         self.messageHandler = messageHandler
         self.cutoff = cutoff
-        self.message = " Amplicon length is greater than {}x the length of the reads: ".format(cutoff)
+        self.message = "Amplicon length is greater than {}x the length of the reads: ".format(cutoff)
 
     def safety(self, amplicons, read_len):
         """Safety check, comparison between amplicon length and read length
@@ -2681,8 +2721,12 @@ class LongAmpliconShortReadsGuardrail:
         read_len : int
             Average length of reads
         """
+        failed = False
         for name, length in amplicons.items():
             if length > (read_len * self.cutoff):
                 sequence_message = self.message + name + ", Amplicon length: {}, Read length: {}.".format(length, read_len)
                 self.messageHandler.display_warning('LongAmpliconShortReadsGuardrail', sequence_message)
                 self.messageHandler.report_warning(sequence_message)
+                failed = True
+        if not failed:
+            self.messageHandler.report_pass("Amplicon lengths within acceptable range of read lengths.")
