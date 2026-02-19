@@ -36,7 +36,7 @@
 
 - Fix a `SyntaxWarning` for an unescaped sequence in a matplotlib function by [@Colelyman](https://github.com/Colelyman) in [#600](https://github.com/pinellolab/CRISPResso2/pull/600)
 
-- Fix a bug during `--bam_output` when there is an unaligned read, the remainder of the reads will not bu output by [@Colelyman](https://github.com/Colelyman) in [#602](https://github.com/pinellolab/CRISPResso2/pull/602)
+- Fix a bug during `--bam_output` when there is an unaligned read, the remainder of the reads will not be output by [@Colelyman](https://github.com/Colelyman) in [#602](https://github.com/pinellolab/CRISPResso2/pull/602)
 
 ### CHANGED
 
