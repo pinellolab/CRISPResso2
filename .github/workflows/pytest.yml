@@ -13,60 +13,32 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
 
     strategy:
       fail-fast: false
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
-    - name: Compute Conda Cache Key
-      id: conda-cache-key
-      run: echo "key=conda-${{ runner.os }}--${{ runner.arch }}--0-${{ hashFiles('.github/envs/test_env.yml') }}" >> $GITHUB_OUTPUT
-
-    - name: Setup Conda Env
-      uses: conda-incubator/setup-miniconda@v3
+    - name: Set up Pixi
+      uses: prefix-dev/setup-pixi@v0.8.8
       with:
-        activate-environment: test_env
-        channels: conda-forge,bioconda,defaults
-        auto-activate-base: false
-        use-mamba: true
+        environments: test
+        locked: false
+        frozen: false
+        cache: false
 
-    - name: Restore Conda Env Cache
-      id: cache-env
-      uses: actions/cache/restore@v4
+    - name: Cache Pixi environment
+      uses: actions/cache@v4
       with:
-        path: /usr/share/miniconda/envs/test_env
-        key: ${{ steps.conda-cache-key.outputs.key }}
+        path: .pixi
+        key: pixi-${{ runner.os }}-${{ runner.arch }}-test-${{ hashFiles('pixi.toml') }}
 
-    - name: Update Conda Env
-      run: |
-        conda env update -n test_env -f .github/envs/test_env.yml
-      if: steps.cache-env.outputs.cache-hit != 'true'
-
-    - name: Install apt dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y gcc g++ bowtie2 samtools libsys-hostname-long-perl
-
-    - name: Install Pytest
-      run: |
-        pip install pytest pytest-cov
+    - name: Install environment
+      run: pixi install -e test
 
     - name: Install CRISPResso
-      run: |
-        pip install -e .
+      run: pixi run -e test install
 
     - name: Run Pytest
-      run: |
-        pytest tests --cov CRISPResso2
-
-    - name: Save Conda Env Cache
-      uses: actions/cache/save@v4
-      if: always() && steps.cache-env.outputs.cache-hit != 'true'
-      with:
-        path: /usr/share/miniconda/envs/test_env
-        key: ${{ steps.conda-cache-key.outputs.key }}
+      run: pixi run -e test test
