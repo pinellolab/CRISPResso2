@@ -16,6 +16,8 @@
 - Add the option to output edits in VCF format by [@trevormartinj7](https://github.com/trevormartinj7) and [@Colelyman](https://github.com/Colelyman) in [#613](https://github.com/pinellolab/CRISPResso2/pull/613)
   - To use the feature, add `--vcf_output` and `--amplicon_coordinates` parameters, and all of the edits within the quantification window will be compiled into a VCF file called `CRISPResso_output.vcf` in your results directory.
 
+- Add support for [`pixi`](https://pixi.prefix.dev/latest/) for dependency management and installation by [@Colelyman](https://github.com/Colelyman) in [#618](https://github.com/pinellolab/CRISPResso2/pull/618)
+
 ### FIXED
 
 - Fix the `x_lim` settings on plot 3b by [@kclem](https://github.com/kclem) in [`56bd430`](https://github.com/pinellolab/CRISPResso2/commit/56bd4306292136ed95d7032b0582c6ad370dd79b)
