@@ -17,25 +17,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
+        pro: [false, true]
+        group:
           - name: "Basic, Params, NHEJ"
-            targets: "basic params nhej_native_merge"
+            filter: "basic or params or nhej_native_merge"
           - name: "Editors"
-            targets: "prime-editor base_editor"
+            filter: "prime_editor or base_editor"
           - name: "BAM"
-            targets: "bam bam-out bam-out-genome"
+            filter: "bam"
           - name: "Batch, Compare, Aggregate"
-            targets: "batch compare aggregate"
+            filter: "batch or compare or aggregate"
           - name: "Pooled"
-            targets: "pooled pooled-paired-sim pooled-prime-editing"
-          - name: "Pooled Mixed Mode"
-            targets: "pooled-mixed-mode pooled-mixed-mode-genome-demux"
+            filter: "pooled"
           - name: "WGS, Asym"
-            targets: "wgs asym-left asym-right asym-both"
+            filter: "wgs or asym"
           - name: "VCF"
-            targets: "vcf"
+            filter: "vcf"
 
-    name: ${{ matrix.name }}
+    name: "${{ matrix.group.name }} (Pro: ${{ matrix.pro }})"
 
     steps:
       - uses: actions/checkout@v4
@@ -60,26 +59,25 @@ jobs:
       - name: Install CRISPResso
         run: pixi run -e test install
 
-      - name: Copy C2_tests repo
+      - name: Checkout CRISPResso2_tests
         uses: actions/checkout@v4
         with:
           repository: edilytics/CRISPResso2_tests
           path: CRISPResso2_tests
 
+      - name: Checkout CRISPRessoPro
+        if: matrix.pro
+        uses: actions/checkout@v4
+        with:
+          repository: edilytics/CRISPRessoPro
+          token: ${{ secrets.CRISPRESSOPRO_PAT }}
+          path: CRISPRessoPro
+
+      - name: Install CRISPRessoPro
+        if: matrix.pro
+        run: pixi run -e test -- pip install -e CRISPRessoPro && pixi run -e test -- pip install kaleido==0.2.1
+
       - name: Run Tests
         run: |
-          # Disable set -e that setup-miniconda injects via ~/.profile,
-          # since we handle errors explicitly with || failed=1
-          set +e
-          failed=0
-          for target in ${{ matrix.targets }}; do
-            echo "::group::Running $target"
-            CRISPRESSO2_DIR=$(pwd) pixi run -e test -- make -C CRISPResso2_tests "$target" test print
-            rc=$?
-            if [ $rc -ne 0 ]; then
-              echo "::error::Test '$target' failed with exit code $rc"
-              failed=1
-            fi
-            echo "::endgroup::"
-          done
-          exit $failed
+          pixi run -e test -- pytest CRISPResso2_tests/test_cli.py \
+            -k "${{ matrix.group.filter }}" -v ${{ matrix.pro && '--pro' || '' }} --test --print
