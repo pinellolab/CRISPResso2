@@ -2562,7 +2562,7 @@ def normalize_name(name, fastq_r1, fastq_r2, bam_input):
             return '%s_%s' % (get_name_from_fasta(fastq_r1), get_name_from_fasta(fastq_r2))
         elif fastq_r1:
             return '%s' % get_name_from_fasta(fastq_r1)
-        elif bam_input != '':
+        elif bam_input is not None and bam_input != '':
             return '%s' % get_name_from_bam(bam_input)
     else:
         clean_name=CRISPRessoShared.slugify(name)

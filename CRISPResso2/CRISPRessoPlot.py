@@ -71,7 +71,7 @@ def get_nuc_color(nuc, alpha):
             charSum += thisval
         charSum = (charSum/len(nuc))/90.0
 
-        return (charSum, (1-charSum), (2*charSum*(1-charSum)))
+        return (charSum, (1-charSum), (2*charSum*(1-charSum)), alpha)
 
 def get_color_lookup(nucs, alpha, custom_colors=None):
     if custom_colors is None:
