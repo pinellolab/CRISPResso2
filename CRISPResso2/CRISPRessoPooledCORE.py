@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-'''
-CRISPResso2 - Kendell Clement and Luca Pinello 2020
+"""CRISPResso2 - Kendell Clement and Luca Pinello 2020
 Software pipeline for the analysis of genome editing outcomes from deep sequencing data
 (c) 2020 The General Hospital Corporation. All Rights Reserved.
-'''
+"""
 import difflib
 import os
 import sys
@@ -12,8 +11,6 @@ from datetime import datetime
 import subprocess as sb
 import glob
 import gzip
-import unicodedata
-import string
 import re
 import zipfile
 from CRISPResso2 import CRISPRessoShared
@@ -28,16 +25,18 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(CRISPRessoShared.LogStreamHandler())
 
-error   = logger.critical
-warn    = logger.warning
-debug   = logger.debug
-info    = logger.info
+error = logger.critical
+warn = logger.warning
+debug = logger.debug
+info = logger.info
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
-####Support functions###
+
+# Support functions###
 def get_data(path):
         return os.path.join(_ROOT, 'data', path)
+
 
 def check_library(library_name):
         try:
@@ -47,7 +46,7 @@ def check_library(library_name):
                 sys.exit(1)
 
 
-#the dependencies are bowtie2 and samtools
+# the dependencies are bowtie2 and samtools
 def which(program):
     def is_exe(fpath):
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
@@ -67,35 +66,33 @@ def which(program):
 
 
 def check_samtools():
+    """Assert that samtools is installed
     """
-    Assert that samtools is installed
-    """
-
-    cmd_path=which('samtools')
+    cmd_path = which('samtools')
     if cmd_path:
         return True
     else:
         raise CRISPRessoShared.InstallationException('CRISPRessoPooled requires samtools\nPlease install samtools and add it to your path following the instructions at: http://www.htslib.org/download/')
 
-def check_bowtie2():
-    """
-    Assert that bowtie2 is installed
-    """
 
-    cmd_path1=which('bowtie2')
-    cmd_path2=which('bowtie2-inspect')
+def check_bowtie2():
+    """Assert that bowtie2 is installed
+    """
+    cmd_path1 = which('bowtie2')
+    cmd_path2 = which('bowtie2-inspect')
 
     if cmd_path1 and cmd_path2:
         return True
     else:
         raise CRISPRessoShared.InstallationException('\nCRISPRessoPooled requires Bowtie2!\nPlease install Bowtie2 and add it to your path following the instructions at: http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#obtaining-bowtie-2')
 
+
 def print_full_pandas_df(x):
-    """
-    Print the full pandas dataframe (no clipping of rows or columns)
+    """Print the full pandas dataframe (no clipping of rows or columns)
 
     Args:
         x (pd.DataFrame): The dataframe to print
+
     """
     pd.set_option('display.max_rows', len(x))
     pd.set_option('display.max_columns', None)
@@ -109,24 +106,26 @@ def print_full_pandas_df(x):
     pd.reset_option('display.float_format')
     pd.reset_option('display.max_colwidth')
 
-#get n_reads and region data from region fastq file (location is pulled from filename)
+
+# get n_reads and region data from region fastq file (location is pulled from filename)
 def summarize_region_fastq_chunk(input_arr):
     ret_val = []
     for input in input_arr:
 #        print('doing region ' + str(input))
         region_fastq, uncompressed_reference = input.split(" ")
         # region format: REGION_chr8_1077_1198.fastq.gz
-        #But if the chr has underscores, it could look like this:
+        # But if the chr has underscores, it could look like this:
         #    REGION_chr8_KI270812v1_alt_1077_1198.fastq.gz
         region_info = os.path.basename(region_fastq).replace('.fastq.gz', '').replace('.fastq', '').split('_')
-        chr_string = "_".join(region_info[1:len(region_info)-2]) #in case there are underscores
-        region_string='%s:%s-%d' % (chr_string, region_info[-2], int(region_info[-1])-1)
-        p = sb.Popen("samtools faidx %s %s | grep -v ^\> | tr -d '\n'" %(uncompressed_reference, region_string), shell=True, stdout=sb.PIPE)
+        chr_string = "_".join(region_info[1:len(region_info) - 2])  # in case there are underscores
+        region_string = '%s:%s-%d' % (chr_string, region_info[-2], int(region_info[-1]) - 1)
+        p = sb.Popen("samtools faidx %s %s | grep -v ^\\> | tr -d '\n'" % (uncompressed_reference, region_string), shell=True, stdout=sb.PIPE)
         seq = p.communicate()[0].decode('utf-8')
-        p = sb.Popen(('z' if region_fastq.endswith('.gz') else '' ) +"cat < %s | wc -l" % region_fastq, shell=True, stdout=sb.PIPE)
-        n_reads = int(float(p.communicate()[0])/4.0)
-        ret_val.append([chr_string] + region_info[-2:]+[region_fastq, n_reads, seq])
+        p = sb.Popen(('z' if region_fastq.endswith('.gz') else '') + "cat < %s | wc -l" % region_fastq, shell=True, stdout=sb.PIPE)
+        n_reads = int(float(p.communicate()[0]) / 4.0)
+        ret_val.append([chr_string] + region_info[-2:] + [region_fastq, n_reads, seq])
     return ret_val
+
 
 #                                                              Consumes  Consumes
 # Op  BAM Description                                             query  reference
@@ -140,8 +139,7 @@ def summarize_region_fastq_chunk(input_arr):
 # =   7   sequence match                                          yes   yes
 # X   8   sequence mismatch                                       yes   yes
 def get_read_length_from_cigar(cigar_string):
-    """
-    Given a CIGAR string, return the number of bases consumed from the
+    """Given a CIGAR string, return the number of bases consumed from the
     query sequence.
     """
     read_consuming_ops = ("M", "I", "S", "=", "X")
@@ -153,9 +151,11 @@ def get_read_length_from_cigar(cigar_string):
             result += int(length)
     return result
 
+
 def get_n_reads_bam(bam_filename):
     p = sb.Popen("samtools view -c %s" % bam_filename, shell=True, stdout=sb.PIPE)
     return int(p.communicate()[0])
+
 
 def calculate_aligned_samtools_exclude_flags(samtools_exclude_flags):
     """Calculate the samtools exclude flags for aligned reads.
@@ -179,31 +179,31 @@ def get_n_aligned_bam(bam_filename, samtools_exclude_flags):
     p = sb.Popen(f"samtools view -F {calculate_aligned_samtools_exclude_flags(samtools_exclude_flags)} -c {bam_filename}", shell=True, stdout=sb.PIPE)
     return int(p.communicate()[0])
 
+
 def get_n_aligned_bam_region(bam_filename, chr_name, chr_start, chr_end, samtools_exclude_flags):
     p = sb.Popen(f"samtools view -F {calculate_aligned_samtools_exclude_flags(samtools_exclude_flags)} -c {bam_filename} {chr_name}:{chr_start}-{chr_end}", shell=True, stdout=sb.PIPE)
     return int(p.communicate()[0])
 
+
 def find_overlapping_genes(row, df_genes):
-    df_genes_overlapping=df_genes.loc[(df_genes.chrom==row.chr_id) &
-                                     (df_genes.txStart<=row.bpend) &
-                                     (row.bpstart<=df_genes.txEnd)]
-    genes_overlapping=[]
+    df_genes_overlapping = df_genes.loc[(df_genes.chrom == row.chr_id) &
+                                     (df_genes.txStart <= row.bpend) &
+                                     (row.bpstart <= df_genes.txEnd)]
+    genes_overlapping = []
 
     for idx_g, row_g in df_genes_overlapping.iterrows():
         if 'name' in row_g.keys() and 'name2' in row_g.keys():
-            genes_overlapping.append( '%s (%s)' % (row_g.name2, row_g['name']))
+            genes_overlapping.append('%s (%s)' % (row_g.name2, row_g['name']))
         elif '#name' in row_g.keys() and 'name2' in row_g.keys():
-            genes_overlapping.append( '%s (%s)' % (row_g.name2, row_g['#name']))
+            genes_overlapping.append('%s (%s)' % (row_g.name2, row_g['#name']))
         elif '#name' in row_g.keys():
-            genes_overlapping.append( '%s' % (row_g['#name']))
+            genes_overlapping.append('%s' % (row_g['#name']))
         elif 'name' in row_g.keys():
-            genes_overlapping.append( '%s' % (row_g['name']))
+            genes_overlapping.append('%s' % (row_g['name']))
         else:
-            genes_overlapping.append( '%s' % (row_g[0]))
+            genes_overlapping.append('%s' % (row_g[0]))
 
-
-
-    row['gene_overlapping']=','.join(genes_overlapping)
+    row['gene_overlapping'] = ','.join(genes_overlapping)
 
     return row
 
@@ -226,6 +226,7 @@ def normalize_name(name, fastq_r1, fastq_r2, aligned_pooled_bam):
     -------
     str
         The normalized name.
+
     """
     get_name_from_fastq = lambda x: os.path.basename(x).replace('.fastq', '').replace('.gz', '').replace('.fq', '')
     get_name_from_bam = lambda x: os.path.basename(x).replace('.bam', '')
@@ -248,28 +249,29 @@ def normalize_name(name, fastq_r1, fastq_r2, aligned_pooled_bam):
         return clean_name
 
 
-pd=check_library('pandas')
-np=check_library('numpy')
+pd = check_library('pandas')
+np = check_library('numpy')
+
 
 def main():
     try:
-        start_time =  datetime.now()
-        start_time_string =  start_time.strftime('%Y-%m-%d %H:%M:%S')
+        start_time = datetime.now()
+        start_time_string = start_time.strftime('%Y-%m-%d %H:%M:%S')
 
         # if no args are given, print a simplified help message
         if len(sys.argv) == 1:
-            raise CRISPRessoShared.BadParameterException(CRISPRessoShared.format_cl_text('usage: CRISPRessoPooled [-r1 FASTQ_R1] [-r2 FASTQ_R2] [-f AMPLICONS_FILE] [-x GENOME_ROOT] [-n NAME]\n' + \
-                'commonly-used arguments:\n' + \
-                '-h, --help            show the full list of arguments\n' + \
-                '-v, --version         show program\'s version number and exit\n' + \
-                '-r1 FASTQ_R1          Input fastq file R1 (default: None)\n' + \
-                '-r2 FASTQ_R2          Input fastq file R2 (default: None)\n' + \
-                '-f AMPLICONS_FILE     Tab-separated file containing information for each amplicon, including at least columns for the amplicon_name and amplicon_seq (default: None)\n' + \
-                '-x GENOME_ROOT        Folder that contains the bowtie2-indexed genome for optional unbiased alignment of reads (default: None, reads are only aligned to provided amplicon sequences)\n' + \
+            raise CRISPRessoShared.BadParameterException(CRISPRessoShared.format_cl_text('usage: CRISPRessoPooled [-r1 FASTQ_R1] [-r2 FASTQ_R2] [-f AMPLICONS_FILE] [-x GENOME_ROOT] [-n NAME]\n' +
+                'commonly-used arguments:\n' +
+                '-h, --help            show the full list of arguments\n' +
+                '-v, --version         show program\'s version number and exit\n' +
+                '-r1 FASTQ_R1          Input fastq file R1 (default: None)\n' +
+                '-r2 FASTQ_R2          Input fastq file R2 (default: None)\n' +
+                '-f AMPLICONS_FILE     Tab-separated file containing information for each amplicon, including at least columns for the amplicon_name and amplicon_seq (default: None)\n' +
+                '-x GENOME_ROOT        Folder that contains the bowtie2-indexed genome for optional unbiased alignment of reads (default: None, reads are only aligned to provided amplicon sequences)\n' +
                 '-n NAME, --name NAME  Name for the analysis (default: name based on input file name)\n'
             ))
 
-        parser = CRISPRessoShared.getCRISPRessoArgParser("Pooled", parser_title = 'CRISPRessoPooled Parameters')
+        parser = CRISPRessoShared.getCRISPRessoArgParser("Pooled", parser_title='CRISPRessoPooled Parameters')
 
         args = parser.parse_args()
 
@@ -291,10 +293,10 @@ def main():
             from CRISPRessoPro import plot as CRISPRessoPlot
 
         crispresso_options = CRISPRessoShared.get_core_crispresso_options()
-        options_to_ignore = {'fastq_r1', 'fastq_r2', 'amplicon_seq', 'amplicon_name', 'output_folder', 'name', 
+        options_to_ignore = {'fastq_r1', 'fastq_r2', 'amplicon_seq', 'amplicon_name', 'output_folder', 'name',
                              'display_name', 'zip_output', 'split_interleaved_input', 'samtools_exclude_flags',
-                             'bowtie2_index'} # these options will be set for each sub-run or should be not be passed to sub-runs because they are pooled-specific
-        crispresso_options_for_pooled = list(crispresso_options-options_to_ignore)
+                             'bowtie2_index'}  # these options will be set for each sub-run or should be not be passed to sub-runs because they are pooled-specific
+        crispresso_options_for_pooled = list(crispresso_options - options_to_ignore)
 
         files_to_remove = []
 
@@ -303,7 +305,7 @@ def main():
         if args.output_folder:
             OUTPUT_DIRECTORY = os.path.join(os.path.abspath(args.output_folder), OUTPUT_DIRECTORY)
 
-        _jp = lambda filename: os.path.join(OUTPUT_DIRECTORY, filename) #handy function to put a file in the output directory
+        _jp = lambda filename: os.path.join(OUTPUT_DIRECTORY, filename)  # handy function to put a file in the output directory
 
         try:
             info('Creating Folder %s' % OUTPUT_DIRECTORY)
@@ -327,7 +329,7 @@ def main():
         else:
             sys.exit(1)
 
-        #check files
+        # check files
         if args.aligned_pooled_bam is not None:
             CRISPRessoShared.check_file(args.aligned_pooled_bam)
             if args.fastq_r1 != '':
@@ -336,7 +338,6 @@ def main():
                 raise CRISPRessoShared.BadParameterException('The bowtie2 index must be provided when the aligned pooled bam is given in order to extract reference sequences for alignment. Please provide the bowtie2 index file with the parameter -x or --bowtie2_index.')
             if args.trim_sequences:
                 raise CRISPRessoShared.BadParameterException('Cannot trim input sequences if input bam is provided.')
-
 
         elif args.fastq_r1:
             if args.fastq_r1 == '':
@@ -351,11 +352,10 @@ def main():
             raise CRISPRessoShared.BadParameterException('Please provide input data for pooled analysis e.g. using the --fastq_r1 parameter.')
 
         if args.bowtie2_index:
-            if (os.path.isfile(args.bowtie2_index+'.1.bt2l')):
-                CRISPRessoShared.check_file(args.bowtie2_index+'.1.bt2l')
+            if (os.path.isfile(args.bowtie2_index + '.1.bt2l')):
+                CRISPRessoShared.check_file(args.bowtie2_index + '.1.bt2l')
             else:
-                CRISPRessoShared.check_file(args.bowtie2_index+'.1.bt2')
-
+                CRISPRessoShared.check_file(args.bowtie2_index + '.1.bt2')
 
         if args.amplicons_file:
             CRISPRessoShared.check_file(args.amplicons_file)
@@ -364,14 +364,14 @@ def main():
             CRISPRessoShared.check_file(args.gene_annotations)
 
         if args.amplicons_file and not args.bowtie2_index:
-            RUNNING_MODE='ONLY_AMPLICONS'
+            RUNNING_MODE = 'ONLY_AMPLICONS'
             info('Only the amplicon description file was provided. The analysis will be performed using only the provided amplicon sequences.')
 
         elif args.bowtie2_index and not args.amplicons_file:
-            RUNNING_MODE='ONLY_GENOME'
+            RUNNING_MODE = 'ONLY_GENOME'
             info('Only the bowtie2 reference genome index file was provided. The analysis will be performed using only genomic regions with sufficient read alignment depth.')
         elif args.bowtie2_index and args.amplicons_file:
-            RUNNING_MODE='AMPLICONS_AND_GENOME'
+            RUNNING_MODE = 'AMPLICONS_AND_GENOME'
             info('Amplicon description file and bowtie2 reference genome index files provided. The analysis will be performed using the reads that are aligned to the genome only where the provided amplicons align and not to other genomic regions.')
         else:
             error('Please provide the amplicons description file (-f or --amplicons_file option) or the bowtie2 reference genome index file (-x or --bowtie2_index option) or both.')
@@ -382,10 +382,8 @@ def main():
             if args.use_legacy_bowtie2_options_string:
                 bowtie2_options_string = '-k 1 --end-to-end -N 0 --np 0'
             else:
-                homology_param = -3 * (1-(args.default_min_aln_score/100.0))
+                homology_param = -3 * (1 - (args.default_min_aln_score / 100.0))
                 bowtie2_options_string = " --end-to-end -N 0 --np 0 --mp 3,2 --score-min L,-5," + str(homology_param) + " "
-
-
 
         if args.alternate_alleles:
             CRISPRessoShared.check_file(args.alternate_alleles)
@@ -397,19 +395,19 @@ def main():
         else:
             n_processes_for_pooled = int(args.n_processes)
 
-        ####TRIMMING AND MERGING
+        # TRIMMING AND MERGING
 
         crispresso2_info_file = os.path.join(
             OUTPUT_DIRECTORY, 'CRISPResso2Pooled_info.json',
         )
-        crispresso2_info = {'running_info': {}, 'results': {'alignment_stats': {}, 'general_plots': {}}} #keep track of all information for this run to be pickled and saved at the end of the run
+        crispresso2_info = {'running_info': {}, 'results': {'alignment_stats': {}, 'general_plots': {}}}  # keep track of all information for this run to be pickled and saved at the end of the run
         crispresso2_info['running_info']['version'] = CRISPRessoShared.__version__
         crispresso2_info['running_info']['args'] = deepcopy(args)
 
         crispresso2_info['running_info']['log_filename'] = os.path.basename(log_filename)
         crispresso2_info['running_info']['finished_steps'] = {}
 
-        #keep track of args to see if it is possible to skip computation steps on rerun
+        # keep track of args to see if it is possible to skip computation steps on rerun
         can_finish_incomplete_run = False
         if args.no_rerun:
             if os.path.exists(crispresso2_info_file):
@@ -428,11 +426,11 @@ def main():
 
                     if args_are_same:
                         if 'end_time_string' in previous_run_data:
-                            info('Analysis already completed on %s!'%previous_run_data['running_info']['end_time_string'])
+                            info('Analysis already completed on %s!' % previous_run_data['running_info']['end_time_string'])
                             sys.exit(0)
                         else:
                             can_finish_incomplete_run = True
-                            #add previous run info to this run
+                            # add previous run info to this run
                             if 'finished_steps' in previous_run_data['running_info']:
                                 for key in previous_run_data['running_info']['finished_steps'].keys():
                                     crispresso2_info['running_info']['finished_steps'][key] = previous_run_data['running_info']['finished_steps'][key]
@@ -440,7 +438,6 @@ def main():
                                         info('Skipping cached step: ' + key)
                 else:
                     info('The no_rerun flag is set, but this analysis will be rerun because the existing run was performed using an old version of CRISPResso (' + str(previous_run_data['running_info']['version']) + ').')
-
 
         crispresso_cmd_to_write = ' '.join(sys.argv)
         if args.write_cleaned_report:
@@ -450,16 +447,16 @@ def main():
                 if os.sep in cmd_copy[i]:
                     cmd_copy[i] = os.path.basename(cmd_copy[i])
 
-            crispresso_cmd_to_write = ' '.join(cmd_copy) #clean command doesn't show the absolute path to the executable or other files
+            crispresso_cmd_to_write = ' '.join(cmd_copy)  # clean command doesn't show the absolute path to the executable or other files
         crispresso2_info['running_info']['command_used'] = crispresso_cmd_to_write
 
-        #write this file early on so we can check the params if we have to rerun
+        # write this file early on so we can check the params if we have to rerun
         CRISPRessoShared.write_crispresso_info(
             crispresso2_info_file, crispresso2_info,
         )
 
         with open(log_filename, 'w+') as outfile:
-            outfile.write('CRISPResso version %s\n[Command used]:\n%s\n\n[Execution log]:\n' %(CRISPRessoShared.__version__, crispresso_cmd_to_write))
+            outfile.write('CRISPResso version %s\n[Command used]:\n%s\n\n[Execution log]:\n' % (CRISPRessoShared.__version__, crispresso_cmd_to_write))
 
         info('Processing input', {'percent_complete': 5})
 
@@ -566,7 +563,6 @@ def main():
 
             if not args.keep_intermediate:
                 files_to_remove += [processed_output_filename, not_combined_1_filename, not_combined_2_filename]
-
 
             if args.force_merge_pairs:
                 new_merged_filename = _jp('out.forcemerged_uncombined.fastq.gz')
@@ -690,7 +686,7 @@ def main():
                     _ = amplicons_fin.readline()  # skip header line
                     info('Detected header in amplicon file.')
                 for line in amplicons_fin:
-                    if line[0] == "#": # pandas' comment option will strip after comment character in middle of lines. 
+                    if line[0] == "#":  # pandas' comment option will strip after comment character in middle of lines.
                         continue
                     line = line.strip()
                     if not line:
@@ -700,43 +696,43 @@ def main():
                 df_template = pd.DataFrame(amplicon_rows, columns=headers)
             except Exception as e:
                 debug('Error in parsing amplicon file using old method: %s\nTrying native pandas read_csv...' % e)
-                df_template = pd.read_csv(args.amplicons_file, names=headers, comment='#', sep='\t', dtype={'amplicon_name':str})
+                df_template = pd.read_csv(args.amplicons_file, names=headers, comment='#', sep='\t', dtype={'amplicon_name': str})
                 if has_header:
                     df_template.drop(0, axis=0, inplace=True)
                     info('Detected header in amplicon file.')
 
             df_template['amplicon_name'] = df_template['amplicon_name'].astype(str)
 
-            #remove empty amplicons/lines
+            # remove empty amplicons/lines
             df_template.dropna(subset=['amplicon_seq'], inplace=True)
             df_template.dropna(subset=['amplicon_name'], inplace=True)
 
-            df_template.amplicon_seq=df_template.amplicon_seq.apply(CRISPRessoShared.capitalize_sequence)
+            df_template.amplicon_seq = df_template.amplicon_seq.apply(CRISPRessoShared.capitalize_sequence)
             if 'expected_hdr_amplicon_seq' in df_template.columns:
-                df_template.expected_hdr_amplicon_seq=df_template.expected_hdr_amplicon_seq.apply(CRISPRessoShared.capitalize_sequence)
+                df_template.expected_hdr_amplicon_seq = df_template.expected_hdr_amplicon_seq.apply(CRISPRessoShared.capitalize_sequence)
             if 'guide_seq' in df_template.columns:
-                df_template.guide_seq=df_template.guide_seq.apply(CRISPRessoShared.capitalize_sequence)
+                df_template.guide_seq = df_template.guide_seq.apply(CRISPRessoShared.capitalize_sequence)
             if 'coding_seq' in df_template.columns:
-                df_template.coding_seq=df_template.coding_seq.apply(CRISPRessoShared.capitalize_sequence)
+                df_template.coding_seq = df_template.coding_seq.apply(CRISPRessoShared.capitalize_sequence)
 
-            if not len(df_template.amplicon_seq.unique())==df_template.shape[0]:
+            if not len(df_template.amplicon_seq.unique()) == df_template.shape[0]:
                 duplicated_entries = df_template.amplicon_seq[df_template.amplicon_seq.duplicated()]
                 raise CRISPRessoShared.BadParameterException('The amplicon sequences must be distinct! (Duplicated entries: ' + str(duplicated_entries.values) + ')')
 
-            #check to see that no sequences and their reverse complements are present
-            amp_seqs = df_template.amplicon_seq.values #Beware, this is a numpy array of dtype str and if you add these arrays amp_seqs + rc_amp_seqs, it will concat the strings, not the arrays....
+            # check to see that no sequences and their reverse complements are present
+            amp_seqs = df_template.amplicon_seq.values  # Beware, this is a numpy array of dtype str and if you add these arrays amp_seqs + rc_amp_seqs, it will concat the strings, not the arrays....
             rc_amp_seqs = [CRISPRessoShared.reverse_complement(amp_seq) for amp_seq in amp_seqs]
             for seq in amp_seqs:
                 if seq in rc_amp_seqs:
                     raise Exception('Amplicon sequences must be distinct! The amplicon sequence %s is the reverse complement of another amplicon sequence in the region file. Please provide only one of the two sequences.' % seq)
 
-            if not len(df_template.amplicon_name.unique())==df_template.shape[0]:
+            if not len(df_template.amplicon_name.unique()) == df_template.shape[0]:
                 duplicated_entries = df_template.amplicon_name[df_template.amplicon_name.duplicated()]
                 raise CRISPRessoShared.BadParameterException('The amplicon names must be distinct! (Duplicated names: ' + str(duplicated_entries.values) + ')')
-            
-            df_template=df_template.set_index('amplicon_name')
 
-            #create clean, distinct run names - this will be used to create file names
+            df_template = df_template.set_index('amplicon_name')
+
+            # create clean, distinct run names - this will be used to create file names
             seen_runnames = {}
             run_names = []
             for idx, row in df_template.iterrows():
@@ -750,7 +746,7 @@ def main():
             df_template['run_name'] = run_names
 
             for idx, row in df_template.iterrows():
-                wrong_nt=CRISPRessoShared.find_wrong_nt(row.amplicon_seq)
+                wrong_nt = CRISPRessoShared.find_wrong_nt(row.amplicon_seq)
                 if wrong_nt:
                     raise CRISPRessoShared.NTException('The amplicon sequence %s contains wrong characters:%s' % (idx, ' '.join(wrong_nt)))
 
@@ -762,43 +758,39 @@ def main():
 
                         wrong_nt = CRISPRessoShared.find_wrong_nt(current_guide_seq)
                         if wrong_nt:
-                            raise CRISPRessoShared.NTException('The sgRNA sequence %s contains wrong characters:%s'  % (current_guide_seq, ' '.join(wrong_nt)))
+                            raise CRISPRessoShared.NTException('The sgRNA sequence %s contains wrong characters:%s' % (current_guide_seq, ' '.join(wrong_nt)))
 
-                        offset_fw=guide_qw_centers[idx]+len(current_guide_seq)-1
-                        offset_rc=(-guide_qw_centers[idx])-1
-                        cut_points+=[m.start() + offset_fw for \
-                                    m in re.finditer(current_guide_seq,  row.amplicon_seq)]+[m.start() + offset_rc for m in re.finditer(CRISPRessoShared.reverse_complement(current_guide_seq),  row.amplicon_seq)]
+                        offset_fw = guide_qw_centers[idx] + len(current_guide_seq) - 1
+                        offset_rc = (-guide_qw_centers[idx]) - 1
+                        cut_points += [m.start() + offset_fw for
+                                    m in re.finditer(current_guide_seq, row.amplicon_seq)] + [m.start() + offset_rc for m in re.finditer(CRISPRessoShared.reverse_complement(current_guide_seq), row.amplicon_seq)]
 
                     if not cut_points:
                         warn('\nThe guide sequence/s provided: %s is(are) not present in the amplicon sequence:%s! \nNOTE: The guide will be ignored for the analysis. Please check your input!' % (row.guide_seq, row.amplicon_seq))
-                        df_template.iloc[idx,df_template.columns.get_loc('guide_seq')] = ''
+                        df_template.iloc[idx, df_template.columns.get_loc('guide_seq')] = ''
 
-
-
-        if RUNNING_MODE=='ONLY_AMPLICONS':
-            #create a fasta file with all the amplicons
-            amplicon_fa_filename=_jp('AMPLICONS.fa')
-            fastq_gz_amplicon_filenames=[]
+        if RUNNING_MODE == 'ONLY_AMPLICONS':
+            # create a fasta file with all the amplicons
+            amplicon_fa_filename = _jp('AMPLICONS.fa')
+            fastq_gz_amplicon_filenames = []
             with open(amplicon_fa_filename, 'w+') as outfile:
                 for idx, row in df_template.iterrows():
                     if row['amplicon_seq']:
-                        outfile.write('>%s\n%s\n' %(CRISPRessoShared.clean_filename('AMPL_'+idx), row['amplicon_seq']))
+                        outfile.write('>%s\n%s\n' % (CRISPRessoShared.clean_filename('AMPL_' + idx), row['amplicon_seq']))
 
-                        #create place-holder fastq files
-                        fastq_gz_amplicon_filenames.append(_jp('%s.fastq.gz' % CRISPRessoShared.clean_filename('AMPL_'+idx)))
+                        # create place-holder fastq files
+                        fastq_gz_amplicon_filenames.append(_jp('%s.fastq.gz' % CRISPRessoShared.clean_filename('AMPL_' + idx)))
                         open(fastq_gz_amplicon_filenames[-1], 'w+').close()
 
-            df_template['Demultiplexed_fastq.gz_filename']=fastq_gz_amplicon_filenames
+            df_template['Demultiplexed_fastq.gz_filename'] = fastq_gz_amplicon_filenames
             info('Creating a custom index file with all the amplicons...')
-            custom_index_filename=_jp('CUSTOM_BOWTIE2_INDEX')
-            sb.call('bowtie2-build %s %s >>%s 2>&1' %(amplicon_fa_filename, custom_index_filename, log_filename), shell=True)
+            custom_index_filename = _jp('CUSTOM_BOWTIE2_INDEX')
+            sb.call('bowtie2-build %s %s >>%s 2>&1' % (amplicon_fa_filename, custom_index_filename, log_filename), shell=True)
 
-
-            #align the file to the amplicons (MODE 1)
+            # align the file to the amplicons (MODE 1)
             info('Align reads to the amplicons...')
-            bam_filename_amplicons= _jp('CRISPResso_AMPLICONS_ALIGNED.bam')
-            aligner_command= 'bowtie2 -x %s -p %s %s -U %s 2>>%s | samtools view -bS - > %s' %(custom_index_filename, n_processes_for_pooled, bowtie2_options_string, processed_output_filename, log_filename, bam_filename_amplicons)
-
+            bam_filename_amplicons = _jp('CRISPResso_AMPLICONS_ALIGNED.bam')
+            aligner_command = 'bowtie2 -x %s -p %s %s -U %s 2>>%s | samtools view -bS - > %s' % (custom_index_filename, n_processes_for_pooled, bowtie2_options_string, processed_output_filename, log_filename, bam_filename_amplicons)
 
             info('Alignment command: ' + aligner_command, {'percent_complete': 15})
             sb.call(aligner_command, shell=True)
@@ -846,7 +838,7 @@ def main():
                 s2 = r'''|awk '{ gzip_filename=sprintf("gzip >> OUTPUTPATH%s.fastq.gz",$3);\
                 print "@"$1"\n"$10"\n+\n"$11  | gzip_filename;}' '''
 
-                cmd = s1+s2.replace('OUTPUTPATH', _jp(''))
+                cmd = s1 + s2.replace('OUTPUTPATH', _jp(''))
                 sb.call(cmd, shell=True)
 
             alternate_alleles = {}
@@ -859,7 +851,7 @@ def main():
                     if 'region_name' in alt_head_els:
                         region_name_ind = alt_head_els.index('region_name')
                     else:
-                        alt_in.seek(0, 0) #start at beginning of file -- no header
+                        alt_in.seek(0, 0)  # start at beginning of file -- no header
                     if 'reference_seqs' in alt_head_els:
                         allele_seq_ind = alt_head_els.index('reference_seqs')
                     if 'reference_names' in alt_head_els:
@@ -869,7 +861,7 @@ def main():
                         alternate_alleles[line_els[region_name_ind]] = (line_els[allele_seq_ind], line_els[allele_name_ind])
 
             info('Demultiplexing reads and running CRISPResso on each amplicon...')
-            n_reads_aligned_amplicons=[]
+            n_reads_aligned_amplicons = []
             crispresso_cmds = []
             for idx, row in df_template.iterrows():
                 this_n_reads = CRISPRessoShared.get_n_reads_fastq(row['Demultiplexed_fastq.gz_filename'])
@@ -881,22 +873,22 @@ def main():
                     this_amp_seq = new_refs
                     this_amp_name_string = "-an " + new_names
 
-            df_template['n_reads']=n_reads_aligned_amplicons
+            df_template['n_reads'] = n_reads_aligned_amplicons
             df_template['n_reads'] = df_template['n_reads'].astype(int)
-            df_template['n_reads_aligned_%']=df_template['n_reads']/float(N_READS_ALIGNED)*100
+            df_template['n_reads_aligned_%'] = df_template['n_reads'] / float(N_READS_ALIGNED) * 100
 
             df_template['crispresso_command'] = ''
             df_template['crispresso_output_folder'] = ''
 
-            #get count of rows with > args.min_reads_to_use_region
+            # get count of rows with > args.min_reads_to_use_region
             count_good_runs = df_template[df_template['n_reads'] >= args.min_reads_to_use_region].shape[0]
             args.n_processes = 1
-            if count_good_runs > 0 and int(n_processes_for_pooled/count_good_runs) > 1:
-                args.n_processes = int(n_processes_for_pooled/count_good_runs)
+            if count_good_runs > 0 and int(n_processes_for_pooled / count_good_runs) > 1:
+                args.n_processes = int(n_processes_for_pooled / count_good_runs)
             debug('Running sub-CRISPResso runs with %d processes each' % args.n_processes)
 
             for idx, row in df_template.iterrows():
-                info('Processing: %s with %d reads'%(idx,row.n_reads))
+                info('Processing: %s with %d reads' % (idx, row.n_reads))
                 if row['n_reads'] > args.min_reads_to_use_region:
                     info('The amplicon [%s] has enough reads (%d) mapped to it! Running CRISPResso!\n' % (idx, row.n_reads))
 
@@ -908,13 +900,13 @@ def main():
 
                     this_run_name = row['run_name']
                     crispresso_cmd = 'CRISPResso -r1 %s -a %s %s -o %s --name "%s" --display_name "%s"' % (row['Demultiplexed_fastq.gz_filename'], this_amp_seq, this_amp_name_string, OUTPUT_DIRECTORY, this_run_name, idx)
-                    #first, set the general CRISPResso options from args for this sub-run (e.g. plotting options, etc)
-                    #note that the crispresso_options_for_pooled doesn't include e.g. amplicon_seq so when someone calls CRISPRessoPooled with -a that won't get passed on here
+                    # first, set the general CRISPResso options from args for this sub-run (e.g. plotting options, etc)
+                    # note that the crispresso_options_for_pooled doesn't include e.g. amplicon_seq so when someone calls CRISPRessoPooled with -a that won't get passed on here
                     crispresso_cmd = CRISPRessoShared.overwrite_crispresso_options(cmd=crispresso_cmd, tool='Core', option_names_to_overwrite=crispresso_options_for_pooled, option_values=args)
-                    #next set the per-amplicon options we read from the Amplicons file (and are stored in this_run_args_from_amplicons_file)
+                    # next set the per-amplicon options we read from the Amplicons file (and are stored in this_run_args_from_amplicons_file)
                     crispresso_cmd = CRISPRessoShared.overwrite_crispresso_options(cmd=crispresso_cmd, tool='Core', option_names_to_overwrite=default_input_amplicon_headers, option_values=this_run_args_from_amplicons_file)
 
-                    crispresso_cmd = args.crispresso_command + " " + " ".join(crispresso_cmd.split()[1:]) # remove the CRISPResso command from the beginning and replace with args.crispresso_command (in case the args.crispresso_command contains spaces)
+                    crispresso_cmd = args.crispresso_command + " " + " ".join(crispresso_cmd.split()[1:])  # remove the CRISPResso command from the beginning and replace with args.crispresso_command (in case the args.crispresso_command contains spaces)
 
                     debug('CRISPResso command for %s: %s' % (idx, crispresso_cmd))
                     crispresso_cmds.append(crispresso_cmd)
@@ -922,7 +914,7 @@ def main():
                     df_template.at[idx, 'crispresso_output_folder'] = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso_on_%s' % this_run_name)
 
                 else:
-                    warn('Skipping amplicon [%s] because too few reads (%d) align to it\n'%(idx, row.n_reads))
+                    warn('Skipping amplicon [%s] because too few reads (%d) align to it\n' % (idx, row.n_reads))
 
             CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_pooled, 'amplicon', args.skip_failed, start_end_percent=(16, 80))
 
@@ -946,7 +938,7 @@ def main():
 
             df_template.fillna('NA').to_csv(_jp('REPORT_READS_ALIGNED_TO_AMPLICONS.txt'), sep='\t')
 
-        if RUNNING_MODE=='AMPLICONS_AND_GENOME':
+        if RUNNING_MODE == 'AMPLICONS_AND_GENOME':
             info('Mapping amplicons to the reference genome...')
             filename_amplicon_aligned_locations = _jp('CRISPResso_amplicon_aligned_locations.txt')
             filename_aligned_amplicons_sam = _jp('CRISPResso_amplicons_aligned.sam')
@@ -958,26 +950,26 @@ def main():
                 additional_columns_df = pd.read_csv(filename_amplicon_aligned_locations, sep="\t")
                 additional_columns_df.set_index('amplicon_name', inplace=True)
             else:
-                #write amplicons as fastq for alignment
+                # write amplicons as fastq for alignment
                 with open(filename_amplicon_seqs_fasta, 'w') as fastas:
                     for idx, row in df_template.iterrows():
-                        fastas.write('>%s\n%s\n'%(row.run_name, row.amplicon_seq))
+                        fastas.write('>%s\n%s\n' % (row.run_name, row.amplicon_seq))
 
-                aligner_command= 'bowtie2 -x %s -p %s %s -f -U %s --no-hd --no-sq 2> %s > %s ' %(args.bowtie2_index, n_processes_for_pooled, bowtie2_options_string, \
+                aligner_command = 'bowtie2 -x %s -p %s %s -f -U %s --no-hd --no-sq 2> %s > %s ' % (args.bowtie2_index, n_processes_for_pooled, bowtie2_options_string,
                     filename_amplicon_seqs_fasta, filename_aligned_amplicons_sam_log, filename_aligned_amplicons_sam)
-                bowtie_status=sb.call(aligner_command, shell=True)
+                bowtie_status = sb.call(aligner_command, shell=True)
                 if bowtie_status:
                         raise CRISPRessoShared.AlignmentException('Bowtie2 failed to align amplicons to the genome, please check the output file.')
 
                 additional_columns = []
-                with open (filename_aligned_amplicons_sam) as aln:
+                with open(filename_aligned_amplicons_sam) as aln:
                     for line in aln.readlines():
                         line_els = line.split("\t")
-                        this_run_name = line_els[0] # run name has no spaces
+                        this_run_name = line_els[0]  # run name has no spaces
                         if this_run_name not in df_template.run_name.values:
                             info('The amplicon [%s] is not present in the amplicon file provided!' % this_run_name)
                             continue
-                        this_amplicon_name = df_template.loc[df_template.run_name == this_run_name].index[0] # amplicon name may have spaces and other bad characters
+                        this_amplicon_name = df_template.loc[df_template.run_name == this_run_name].index[0]  # amplicon name may have spaces and other bad characters
                         if line_els[2] == "*":
                             info('The amplicon [%s] is not mappable to the reference genome provided!' % this_amplicon_name)
                             additional_columns.append([this_amplicon_name, 'NOT_ALIGNED', 0, -1, '+', ''])
@@ -999,43 +991,42 @@ def main():
             files_to_remove.append(filename_amplicon_seqs_fasta)
             files_to_remove.append(filename_aligned_amplicons_sam)
 
-            df_template=df_template.join(additional_columns_df)
+            df_template = df_template.join(additional_columns_df)
 
-            df_template.bpstart=df_template.bpstart.astype(int)
-            df_template.bpend=df_template.bpend.astype(int)
+            df_template.bpstart = df_template.bpstart.astype(int)
+            df_template.bpend = df_template.bpend.astype(int)
 
-            #Check reference is the same otherwise throw a warning
+            # Check reference is the same otherwise throw a warning
             for idx, row in df_template.iterrows():
                 if row.amplicon_seq != row.reference_seq and row.amplicon_seq != CRISPRessoShared.reverse_complement(row.reference_seq):
-                    warn('The amplicon sequence %s provided:\n%s\n\nis different from the reference sequence(both strands):\n\n%s\n\n%s\n' %(row.name, row.amplicon_seq, row.amplicon_seq, CRISPRessoShared.reverse_complement(row.amplicon_seq)))
+                    warn('The amplicon sequence %s provided:\n%s\n\nis different from the reference sequence(both strands):\n\n%s\n\n%s\n' % (row.name, row.amplicon_seq, row.amplicon_seq, CRISPRessoShared.reverse_complement(row.amplicon_seq)))
 
+        if RUNNING_MODE == 'ONLY_GENOME' or RUNNING_MODE == 'AMPLICONS_AND_GENOME':
 
-        if RUNNING_MODE=='ONLY_GENOME' or RUNNING_MODE=='AMPLICONS_AND_GENOME':
+            # HERE we recreate the uncompressed genome file if not available###
 
-            ###HERE we recreate the uncompressed genome file if not available###
+            # check you have all the files for the genome and create a fa idx for samtools
 
-            #check you have all the files for the genome and create a fa idx for samtools
+            uncompressed_reference = args.bowtie2_index + '.fa'
 
-            uncompressed_reference=args.bowtie2_index+'.fa'
-
-            #if not os.path.exists(GENOME_LOCAL_FOLDER):
+            # if not os.path.exists(GENOME_LOCAL_FOLDER):
             #    os.mkdir(GENOME_LOCAL_FOLDER)
 
             if os.path.exists(uncompressed_reference):
                 info('The uncompressed reference fasta file for %s is already present! Skipping generation.' % args.bowtie2_index)
             else:
-                #uncompressed_reference=os.path.join(GENOME_LOCAL_FOLDER,'UNCOMPRESSED_REFERENCE_FROM_'+args.bowtie2_index.replace('/','_')+'.fa')
+                # uncompressed_reference=os.path.join(GENOME_LOCAL_FOLDER,'UNCOMPRESSED_REFERENCE_FROM_'+args.bowtie2_index.replace('/','_')+'.fa')
                 info('Extracting uncompressed reference from the provided bowtie2 index since it is not available... Please be patient!')
 
-                cmd_to_uncompress='bowtie2-inspect %s > %s 2>>%s' % (args.bowtie2_index, uncompressed_reference, log_filename)
+                cmd_to_uncompress = 'bowtie2-inspect %s > %s 2>>%s' % (args.bowtie2_index, uncompressed_reference, log_filename)
                 sb.call(cmd_to_uncompress, shell=True)
 
                 info('Indexing fasta file with samtools...')
-                #!samtools faidx {uncompressed_reference}
+                # !samtools faidx {uncompressed_reference}
                 sb.call('samtools faidx %s 2>>%s ' % (uncompressed_reference, log_filename), shell=True)
 
         # align reads to the genome in an unbiased way
-        if RUNNING_MODE=='ONLY_GENOME' or RUNNING_MODE=='AMPLICONS_AND_GENOME':
+        if RUNNING_MODE == 'ONLY_GENOME' or RUNNING_MODE == 'AMPLICONS_AND_GENOME':
             bam_filename_genome = _jp('{0}_GENOME_ALIGNED.bam'.format(normalize_name(
                 args.name, args.fastq_r1, args.fastq_r2, args.aligned_pooled_bam,
             )))
@@ -1051,7 +1042,7 @@ def main():
                 def rreplace(s, old, new):
                     li = s.rsplit(old)
                     return new.join(li)
-                if os.path.exists(rreplace(args.aligned_pooled_bam, ".bam", ".bai")) or os.path.exists(args.aligned_pooled_bam+'.bai'):
+                if os.path.exists(rreplace(args.aligned_pooled_bam, ".bam", ".bai")) or os.path.exists(args.aligned_pooled_bam + '.bai'):
                     info('Index file for input .bam file exists, skipping generation.')
                 else:
                     info('Index file for input .bam file does not exist. Generating bam index file.')
@@ -1066,7 +1057,7 @@ def main():
             # otherwise, align reads to the genome and count reads
             else:
                 info('Aligning reads to the provided genome index...')
-                aligner_command = 'bowtie2 -x %s -p %s %s -U %s 2>>%s| samtools view -bS - | samtools sort -@ %d - -o %s' %(args.bowtie2_index, n_processes_for_pooled,
+                aligner_command = 'bowtie2 -x %s -p %s %s -U %s 2>>%s| samtools view -bS - | samtools sort -@ %d - -o %s' % (args.bowtie2_index, n_processes_for_pooled,
                     bowtie2_options_string, processed_output_filename, log_filename, n_processes_for_pooled, bam_filename_genome)
                 if args.debug:
                     info('Aligning with command: ' + aligner_command)
@@ -1088,14 +1079,14 @@ def main():
             if can_finish_incomplete_run and 'genome_demultiplexing' in crispresso2_info['running_info']['finished_steps'] and os.path.isfile(REPORT_ALL_DEPTH):
                 info('Using previously-computed demultiplexing of genomic reads')
                 df_all_demux = pd.read_csv(REPORT_ALL_DEPTH, sep='\t')
-                df_all_demux['loc'] = df_all_demux['chr_id'].apply(str) + ' ' + df_all_demux['start'].apply(str) + ' '+df_all_demux['end'].apply(str)
+                df_all_demux['loc'] = df_all_demux['chr_id'].apply(str) + ' ' + df_all_demux['start'].apply(str) + ' ' + df_all_demux['end'].apply(str)
                 df_all_demux.set_index(['loc'], inplace=True)
             else:
-                #REDISCOVER LOCATIONS and DEMULTIPLEX READS
+                # REDISCOVER LOCATIONS and DEMULTIPLEX READS
 
                 # first get rid of all files in the output directory
                 if os.path.exists(MAPPED_REGIONS):
-                    info('Deleting partially-completed demultiplexing in %s...'%MAPPED_REGIONS)
+                    info('Deleting partially-completed demultiplexing in %s...' % MAPPED_REGIONS)
                     cmd = "rm -rf %s" % MAPPED_REGIONS
                     p = sb.call(cmd, shell=True)
 
@@ -1103,7 +1094,7 @@ def main():
                 os.mkdir(MAPPED_REGIONS)
 
                 # if we should only demultiplex where amplicons aligned... (as opposed to the whole genome)
-                if RUNNING_MODE=='AMPLICONS_AND_GENOME' and not args.demultiplex_genome_wide:
+                if RUNNING_MODE == 'AMPLICONS_AND_GENOME' and not args.demultiplex_genome_wide:
                     s1 = rf'''samtools view -F {args.samtools_exclude_flags} {bam_filename_genome} __REGIONCHR__:__REGIONSTART__-__REGIONEND__ 2>>{log_filename} |''' +\
                     r'''awk 'BEGIN{OFS="\t";num_records=0;fastq_filename="__OUTPUTPATH__REGION___REGIONCHR_____REGIONSTART_____REGIONEND__.fastq";} \
                         { \
@@ -1132,8 +1123,8 @@ def main():
                     chr_output_filenames = []
                     for idx, row in df_template.iterrows():
                         chr_output_filename = _jp('MAPPED_REGIONS/REGION_%s_%s_%s.info' % (row.chr_id, row.bpstart, row.bpend))
-                        sub_chr_command = cmd.replace('__REGIONCHR__', str(row.chr_id)).replace('__REGIONSTART__',str(row.bpstart)).replace('__REGIONEND__',str(row.bpend)).replace("__DEMUX_CHR_LOGFILENAME__", chr_output_filename)
-                        if chr_output_filename not in chr_output_filenames: # sometimes multiple amplicons map to the same region so we don't want the region to be written to by multiple processes
+                        sub_chr_command = cmd.replace('__REGIONCHR__', str(row.chr_id)).replace('__REGIONSTART__', str(row.bpstart)).replace('__REGIONEND__', str(row.bpend)).replace("__DEMUX_CHR_LOGFILENAME__", chr_output_filename)
+                        if chr_output_filename not in chr_output_filenames:  # sometimes multiple amplicons map to the same region so we don't want the region to be written to by multiple processes
                             chr_commands.append(sub_chr_command)
                             chr_output_filenames.append(chr_output_filename)
 
@@ -1184,7 +1175,7 @@ def main():
                         }\
                         print record_log_str > "__DEMUX_CHR_LOGFILENAME__" \
                     }' '''
-                    cmd = (s1+s2).replace('__OUTPUTPATH__', MAPPED_REGIONS)
+                    cmd = (s1 + s2).replace('__OUTPUTPATH__', MAPPED_REGIONS)
                     cmd = cmd.replace("__MIN_READS__", str(args.min_reads_to_use_region))
 
                     info('Preparing to demultiplex reads aligned to the genome...')
@@ -1207,37 +1198,37 @@ def main():
                         # if we have a lot of reads, split up the chrs too
                         # with a step size of 10M, there are about 220 regions in hg19
                         # with a step size of 5M, there are about 368 regions in hg19
-                        chr_step_size = 5000000 #step size for splitting up chrs
+                        chr_step_size = 5000000  # step size for splitting up chrs
                         chr_len = chr_lens[chr_str]
-                        if N_READS_ALIGNED > 10000000 and chr_len > chr_step_size*2:
+                        if N_READS_ALIGNED > 10000000 and chr_len > chr_step_size * 2:
                             curr_pos = 0
                             curr_end = curr_pos + chr_step_size
                             while curr_end < chr_len:
                                 # make sure there aren't any reads at this breakpoint
-                                n_reads_at_end = get_n_aligned_bam_region(bam_filename_genome, chr_str, curr_end-5, curr_end+5, args.samtools_exclude_flags)
+                                n_reads_at_end = get_n_aligned_bam_region(bam_filename_genome, chr_str, curr_end - 5, curr_end + 5, args.samtools_exclude_flags)
                                 while n_reads_at_end > 0:
                                     curr_end += 500  # look for another place with no reads
                                     if curr_end >= chr_len:
                                         curr_end = chr_len
                                         break
-                                    n_reads_at_end = get_n_aligned_bam_region(bam_filename_genome, chr_str, curr_end-5, curr_end+5, args.samtools_exclude_flags)
+                                    n_reads_at_end = get_n_aligned_bam_region(bam_filename_genome, chr_str, curr_end - 5, curr_end + 5, args.samtools_exclude_flags)
 
                                 chr_output_filename = _jp('MAPPED_REGIONS/%s_%s_%s.info' % (chr_str, curr_pos, curr_end))
-                                sub_chr_command = chr_cmd.replace("__REGION__", ":%d-%d "%(curr_pos, curr_end)).replace("__DEMUX_CHR_LOGFILENAME__",chr_output_filename)
+                                sub_chr_command = chr_cmd.replace("__REGION__", ":%d-%d " % (curr_pos, curr_end)).replace("__DEMUX_CHR_LOGFILENAME__", chr_output_filename)
                                 chr_commands.append(sub_chr_command)
                                 chr_output_filenames.append(chr_output_filename)
                                 curr_pos = curr_end
                                 curr_end = curr_pos + chr_step_size
                             if curr_end < chr_len:
                                 chr_output_filename = _jp('MAPPED_REGIONS/%s_%s_%s.info' % (chr_str, curr_pos, chr_len))
-                                sub_chr_command = chr_cmd.replace("__REGION__", ":%d-%d "%(curr_pos, chr_len)).replace("__DEMUX_CHR_LOGFILENAME__",chr_output_filename)
+                                sub_chr_command = chr_cmd.replace("__REGION__", ":%d-%d " % (curr_pos, chr_len)).replace("__DEMUX_CHR_LOGFILENAME__", chr_output_filename)
                                 chr_commands.append(sub_chr_command)
                                 chr_output_filenames.append(chr_output_filename)
 
                         else:
                             # otherwise do the whole chromosome
                             chr_output_filename = _jp('MAPPED_REGIONS/%s.info' % (chr_str))
-                            sub_chr_command = chr_cmd.replace("__REGION__", "").replace("__DEMUX_CHR_LOGFILENAME__",chr_output_filename)
+                            sub_chr_command = chr_cmd.replace("__REGION__", "").replace("__DEMUX_CHR_LOGFILENAME__", chr_output_filename)
                             chr_commands.append(sub_chr_command)
                             chr_output_filenames.append(chr_output_filename)
 
@@ -1247,7 +1238,7 @@ def main():
                         fout.write("\n\n\n".join(chr_commands))
                     info('Wrote demultiplexing commands to ' + demux_file)
 
-                info('Demultiplexing reads by location (%d genomic regions)...'%len(chr_commands), {'percent_complete': 85})
+                info('Demultiplexing reads by location (%d genomic regions)...' % len(chr_commands), {'percent_complete': 85})
                 CRISPRessoMultiProcessing.run_parallel_commands(chr_commands, n_processes=n_processes_for_pooled, descriptor='Demultiplexing reads by location', continue_on_fail=args.skip_failed)
 
                 with open(REPORT_ALL_DEPTH, 'w') as f:
@@ -1262,7 +1253,7 @@ def main():
                 sum_aligned_reads = df_all_demux["number of reads"].sum()
                 # write the sorted file
                 df_all_demux.to_csv(REPORT_ALL_DEPTH, sep="\t", index=False, na_rep="NA")
-                df_all_demux['loc'] = df_all_demux['chr_id']+' ' + df_all_demux['start'].apply(str) + ' '+df_all_demux['end'].apply(str)
+                df_all_demux['loc'] = df_all_demux['chr_id'] + ' ' + df_all_demux['start'].apply(str) + ' ' + df_all_demux['end'].apply(str)
                 df_all_demux.set_index(['loc'], inplace=True)
 
                 if sum_aligned_reads == 0:
@@ -1291,19 +1282,19 @@ def main():
 
             if can_finish_incomplete_run and 'crispresso_amplicons_and_genome' in crispresso2_info['running_info']['finished_steps']:
                 info('Using previously-computed crispresso runs')
-                (n_reads_aligned_genome, fastq_region_filenames, files_to_match) = crispresso2_info['running_info']['finished_steps']['crispresso_amplicons_and_genome'];
+                (n_reads_aligned_genome, fastq_region_filenames, files_to_match) = crispresso2_info['running_info']['finished_steps']['crispresso_amplicons_and_genome']
             else:
-                #set number of processes for CRISPResso runs based on the number of regions with sufficient reads
+                # set number of processes for CRISPResso runs based on the number of regions with sufficient reads
                 count_good_runs = df_all_demux[df_all_demux['number of reads'] >= args.min_reads_to_use_region].shape[0]
                 args.n_processes = 1
-                if count_good_runs > 0 and int(n_processes_for_pooled/count_good_runs) > 1:
-                    args.n_processes = int(n_processes_for_pooled/count_good_runs)
+                if count_good_runs > 0 and int(n_processes_for_pooled / count_good_runs) > 1:
+                    args.n_processes = int(n_processes_for_pooled / count_good_runs)
                 debug('Running sub-CRISPResso runs with %d processes each' % args.n_processes)
 
                 crispresso_cmds = []
                 for idx, row in df_template.iterrows():
 
-                    info('Processing amplicon: %s' % idx )
+                    info('Processing amplicon: %s' % idx)
 
                     # check if we have reads
                     demux_key = row['chr_id'] + ' ' + str(row['bpstart']) + ' ' + str(row['bpend'])
@@ -1314,9 +1305,8 @@ def main():
                         fastq_filename_region = str(demux_row['output filename'])
                         if fastq_filename_region == "nan":
                             fastq_filename_region = ""
-                        else:
-                            if fastq_filename_region in files_to_match:
-                                files_to_match.remove(fastq_filename_region)
+                        elif fastq_filename_region in files_to_match:
+                            files_to_match.remove(fastq_filename_region)
                         fastq_region_filenames.append(fastq_filename_region)
 
                         if N_READS >= args.min_reads_to_use_region and fastq_filename_region != "":
@@ -1330,13 +1320,13 @@ def main():
 
                             this_run_name = row['run_name']
                             crispresso_cmd = 'CRISPResso -r1 %s -o %s --name "%s" --display_name "%s"' % (fastq_filename_region, OUTPUT_DIRECTORY, this_run_name, idx)
-                            #first, set the general CRISPResso options for this sub-run (e.g. plotting options, etc)
-                            #note that the crispresso_options_for_pooled doesn't include e.g. amplicon_seq so when someone calls CRISPRessoPooled with -a that won't get passed on here
+                            # first, set the general CRISPResso options for this sub-run (e.g. plotting options, etc)
+                            # note that the crispresso_options_for_pooled doesn't include e.g. amplicon_seq so when someone calls CRISPRessoPooled with -a that won't get passed on here
                             crispresso_cmd = CRISPRessoShared.overwrite_crispresso_options(cmd=crispresso_cmd, option_names_to_overwrite=crispresso_options_for_pooled, option_values=args, tool='Core')
-                            #next set the per-amplicon options we read from the Amplicons file (and are stored in this_run_args_from_amplicons_file)
+                            # next set the per-amplicon options we read from the Amplicons file (and are stored in this_run_args_from_amplicons_file)
                             crispresso_cmd = CRISPRessoShared.overwrite_crispresso_options(cmd=crispresso_cmd, option_names_to_overwrite=default_input_amplicon_headers, option_values=this_run_args_from_amplicons_file, tool='Core')
 
-                            crispresso_cmd = args.crispresso_command + ' ' + ' '.join(crispresso_cmd.split()[1:]) # set the crispresso_command in case it had spaces and would be hard to parse
+                            crispresso_cmd = args.crispresso_command + ' ' + ' '.join(crispresso_cmd.split()[1:])  # set the crispresso_command in case it had spaces and would be hard to parse
 
                             debug('CRISPResso command for %s: %s' % (idx, crispresso_cmd))
                             crispresso_cmds.append(crispresso_cmd)
@@ -1348,7 +1338,7 @@ def main():
                     else:
                         fastq_region_filenames.append('')
                         n_reads_aligned_genome.append(0)
-                        warn("The amplicon %s doesn't have any reads mapped to it!\n Please check your amplicon sequence." %  idx)
+                        warn("The amplicon %s doesn't have any reads mapped to it!\n Please check your amplicon sequence." % idx)
 
                 CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_pooled, 'amplicon', args.skip_failed, start_end_percent=(15, 85))
 
@@ -1359,14 +1349,14 @@ def main():
 
             df_template['Amplicon_Specific_fastq.gz_filename'] = fastq_region_filenames
             df_template['n_reads'] = n_reads_aligned_genome
-            df_template['n_reads_aligned_%'] = df_template['n_reads']/float(N_READS_ALIGNED)*100
+            df_template['n_reads_aligned_%'] = df_template['n_reads'] / float(N_READS_ALIGNED) * 100
 
             if args.gene_annotations:
                 df_template = df_template.apply(lambda row: find_overlapping_genes(row, df_genes), axis=1)
 
             df_template.fillna('NA').to_csv(_jp('REPORT_READS_ALIGNED_TO_GENOME_AND_AMPLICONS.txt'), sep='\t')
 
-            #write another file with the not amplicon regions
+            # write another file with the not amplicon regions
 
             if args.skip_reporting_problematic_regions:
                 df_regions = pd.DataFrame(columns=['chr_id', 'bpstart', 'bpend', 'fastq_file', 'n_reads', 'Reference_sequence'])
@@ -1377,10 +1367,10 @@ def main():
                     df_regions = pd.read_csv(filename_problematic_regions, sep='\t')
                 else:
                     info('Reporting problematic regions...')
-                    summarize_region_fastq_input = [f+" "+uncompressed_reference for f in files_to_match] #pass both params to parallel function
+                    summarize_region_fastq_input = [f + " " + uncompressed_reference for f in files_to_match]  # pass both params to parallel function
                     coordinates = CRISPRessoMultiProcessing.run_function_on_array_chunk_parallel(summarize_region_fastq_input, summarize_region_fastq_chunk, n_processes=n_processes_for_pooled)
                     df_regions = pd.DataFrame(coordinates, columns=['chr_id', 'bpstart', 'bpend', 'fastq_file', 'n_reads', 'Reference_sequence'])
-                    df_regions.dropna(inplace=True) #remove regions in chrUn
+                    df_regions.dropna(inplace=True)  # remove regions in chrUn
 
                     df_regions['bpstart'] = pd.to_numeric(df_regions['bpstart'])
                     df_regions['bpend'] = pd.to_numeric(df_regions['bpend'])
@@ -1389,7 +1379,7 @@ def main():
                     df_regions.bpstart = df_regions.bpstart.astype(int)
                     df_regions.bpend = df_regions.bpend.astype(int)
 
-                    df_regions['n_reads_aligned_%'] = df_regions['n_reads']/float(N_READS_ALIGNED)*100
+                    df_regions['n_reads_aligned_%'] = df_regions['n_reads'] / float(N_READS_ALIGNED) * 100
 
                     if args.gene_annotations:
                         info('Checking overlapping genes...')
@@ -1404,7 +1394,7 @@ def main():
                         crispresso2_info_file, crispresso2_info,
                     )
 
-        if RUNNING_MODE=='ONLY_GENOME' :
+        if RUNNING_MODE == 'ONLY_GENOME':
             # Load regions and build REFERENCE TABLES
             filename_reads_aligned_to_genome_only = _jp('REPORT_READS_ALIGNED_TO_GENOME_ONLY.txt')
             if can_finish_incomplete_run and 'demultiplexing_genome_only_regions' in crispresso2_info['running_info']['finished_steps'] and os.path.exists(filename_reads_aligned_to_genome_only):
@@ -1413,11 +1403,11 @@ def main():
             else:
                 info('Parsing the demultiplexed files and extracting locations and reference sequences...')
                 files_to_match = list(df_all_demux['output filename'].dropna())
-                summarize_region_fastq_input = [f+" "+uncompressed_reference for f in files_to_match] #pass both params to parallel function
+                summarize_region_fastq_input = [f + " " + uncompressed_reference for f in files_to_match]  # pass both params to parallel function
                 coordinates = CRISPRessoMultiProcessing.run_function_on_array_chunk_parallel(summarize_region_fastq_input, summarize_region_fastq_chunk, n_processes=n_processes_for_pooled)
                 df_regions = pd.DataFrame(coordinates, columns=['chr_id', 'bpstart', 'bpend', 'fastq_file', 'n_reads', 'sequence'])
 
-                df_regions.dropna(inplace=True)  #remove regions in chrUn
+                df_regions.dropna(inplace=True)  # remove regions in chrUn
 
                 df_regions['bpstart'] = pd.to_numeric(df_regions['bpstart'])
                 df_regions['bpend'] = pd.to_numeric(df_regions['bpend'])
@@ -1426,7 +1416,7 @@ def main():
                 df_regions.bpstart = df_regions.bpstart.astype(int)
                 df_regions.bpend = df_regions.bpend.astype(int)
 
-                df_regions['n_reads_aligned_%'] = df_regions['n_reads']/float(N_READS_ALIGNED)*100
+                df_regions['n_reads_aligned_%'] = df_regions['n_reads'] / float(N_READS_ALIGNED) * 100
 
                 if args.gene_annotations:
                     info('Checking overlapping genes...')
@@ -1437,7 +1427,7 @@ def main():
                 # Create unique run names for each region
                 seen_runnames = {}
                 run_names = []
-                run_display_names = [] # may be different than run_names if e.g. the chromosome name contains an emoji.... (don't doubt my premonitions)
+                run_display_names = []  # may be different than run_names if e.g. the chromosome name contains an emoji.... (don't doubt my premonitions)
                 for idx, row in df_regions.iterrows():
                     this_unclean_name = 'REGION_%s_%d_%d' % (row.chr_id, row.bpstart, row.bpend)
                     this_run_name = CRISPRessoShared.clean_filename(this_unclean_name)
@@ -1465,15 +1455,15 @@ def main():
                 # set number of processes for CRISPResso runs based on the number of regions with sufficient reads
                 count_good_runs = df_regions[df_regions['n_reads'] >= args.min_reads_to_use_region].shape[0]
                 args.n_processes = 1
-                if count_good_runs > 0 and int(n_processes_for_pooled/count_good_runs) > 1:
-                    args.n_processes = int(n_processes_for_pooled/count_good_runs)
+                if count_good_runs > 0 and int(n_processes_for_pooled / count_good_runs) > 1:
+                    args.n_processes = int(n_processes_for_pooled / count_good_runs)
                 debug('Running sub-CRISPResso runs with %d processes each' % args.n_processes)
 
                 info('Running CRISPResso on the discovered regions...')
                 crispresso_cmds = []
                 for idx, row in df_regions.iterrows():
                     if row.n_reads > args.min_reads_to_use_region:
-                        info('\nRunning CRISPResso on: %s-%d-%d...'%(row.chr_id, row.bpstart, row.bpend))
+                        info('\nRunning CRISPResso on: %s-%d-%d...' % (row.chr_id, row.bpstart, row.bpend))
 
                         this_run_name = row.run_name
                         this_run_display_name = row.run_display_name
@@ -1481,14 +1471,14 @@ def main():
                         if pd.isna(row.sequence):
                             raise CRISPRessoShared.BadParameterException('Cannot extract sequence ' + str(row.sequence) + ' from input reference ' + uncompressed_reference)
 
-                        crispresso_cmd = 'CRISPResso -r1 %s -a %s -o %s -n "%s" --display_name "%s"' %(row.fastq_file, row.sequence, OUTPUT_DIRECTORY, this_run_name, this_run_display_name)
+                        crispresso_cmd = 'CRISPResso -r1 %s -a %s -o %s -n "%s" --display_name "%s"' % (row.fastq_file, row.sequence, OUTPUT_DIRECTORY, this_run_name, this_run_display_name)
                         crispresso_cmd = CRISPRessoShared.overwrite_crispresso_options(cmd=crispresso_cmd, option_names_to_overwrite=crispresso_options_for_pooled, option_values=args, tool='Core')
-                        crispresso_cmd = args.crispresso_command + " " + " ".join(crispresso_cmd.split()[1:]) # remove the CRISPResso command from the beginning and replace with args.crispresso_command (in case the args.crispresso_command contains spaces)
+                        crispresso_cmd = args.crispresso_command + " " + " ".join(crispresso_cmd.split()[1:])  # remove the CRISPResso command from the beginning and replace with args.crispresso_command (in case the args.crispresso_command contains spaces)
                         debug('CRISPResso command for %s: %s' % (this_run_display_name, crispresso_cmd))
 
                         crispresso_cmds.append(crispresso_cmd)
                     else:
-                        info('Skipping region: %s-%d-%d, not enough reads (%d)' %(row.chr_id, row.bpstart, row.bpend, row.n_reads))
+                        info('Skipping region: %s-%d-%d, not enough reads (%d)' % (row.chr_id, row.bpstart, row.bpend, row.n_reads))
                 CRISPRessoMultiProcessing.run_crispresso_cmds(crispresso_cmds, n_processes_for_pooled, 'region', args.skip_failed, start_end_percent=(15, 85))
 
                 crispresso2_info['running_info']['finished_steps']['crispresso_genome_only'] = True
@@ -1515,16 +1505,16 @@ def main():
         header = 'Name\tUnmodified%\tModified%\tReads_total\tReads_aligned\tUnmodified\tModified\tDiscarded\tInsertions\tDeletions\tSubstitutions\tOnly Insertions\tOnly Deletions\tOnly Substitutions\tInsertions and Deletions\tInsertions and Substitutions\tDeletions and Substitutions\tInsertions Deletions and Substitutions'
         header_els = header.split("\t")
         header_el_count = len(header_els)
-        empty_line_els = [np.nan]*(header_el_count-1)
+        empty_line_els = [np.nan] * (header_el_count - 1)
         n_reads_index = header_els.index('Reads_total') - 1
         for idx, row in df_final_data.iterrows():
                 amplicon_name = idx
-                if RUNNING_MODE=='ONLY_AMPLICONS' or RUNNING_MODE=='AMPLICONS_AND_GENOME':
-                    amplicon_name=idx
+                if RUNNING_MODE == 'ONLY_AMPLICONS' or RUNNING_MODE == 'AMPLICONS_AND_GENOME':
+                    amplicon_name = idx
                 else:
-                    amplicon_name='REGION_%s_%d_%d' %(row.chr_id, row.bpstart, row.bpend )
+                    amplicon_name = 'REGION_%s_%d_%d' % (row.chr_id, row.bpstart, row.bpend)
 
-                folder_name = 'CRISPResso_on_%s'%row.run_name #row.run_name may be different than idx because it has been slugified
+                folder_name = 'CRISPResso_on_%s' % row.run_name  # row.run_name may be different than idx because it has been slugified
 
                 all_region_names.append(row.run_name)
                 all_region_display_names[row.run_name] = amplicon_name
@@ -1534,7 +1524,7 @@ def main():
                 try:
                     run_data = CRISPRessoShared.load_crispresso_info(_jp(folder_name))
                 except:
-                    warn('Skipping the folder %s: not enough reads, incomplete, or empty folder.'% folder_name)
+                    warn('Skipping the folder %s: not enough reads, incomplete, or empty folder.' % folder_name)
                     debug('Folder cannot be read at ' + _jp(folder_name) + ' with error: %s' % traceback.format_exc())
 
                     this_els = empty_line_els[:]
@@ -1560,7 +1550,7 @@ def main():
                     n_deletion_and_substitution = 0
                     n_insertion_and_deletion_and_substitution = 0
 
-                    for ref_name in run_data['results']['ref_names']: #multiple alleles could be provided
+                    for ref_name in run_data['results']['ref_names']:  # multiple alleles could be provided
                         n_aligned += run_data['results']['alignment_stats']['counts_total'][ref_name]
                         n_unmod += run_data['results']['alignment_stats']['counts_unmodified'][ref_name]
                         n_mod += run_data['results']['alignment_stats']['counts_modified'][ref_name]
@@ -1580,9 +1570,8 @@ def main():
                     unmod_pct = np.nan
                     mod_pct = np.nan
                     if n_aligned > 0:
-                        unmod_pct = 100*n_unmod/float(n_aligned)
-                        mod_pct = 100*n_mod/float(n_aligned)
-
+                        unmod_pct = 100 * n_unmod / float(n_aligned)
+                        mod_pct = 100 * n_mod / float(n_aligned)
 
                     vals = [amplicon_name]
                     vals.extend([round(unmod_pct, 8), round(mod_pct, 8), n_tot, n_aligned, n_unmod, n_mod, n_discarded, n_insertion, n_deletion, n_substitution, n_only_insertion, n_only_deletion, n_only_substitution, n_insertion_and_deletion, n_insertion_and_substitution, n_deletion_and_substitution, n_insertion_and_deletion_and_substitution])
@@ -1590,7 +1579,6 @@ def main():
 
                     good_region_names.append(row.run_name)
                     good_region_folders[row.run_name] = folder_name
-
 
         samples_quantification_summary_filename = _jp('SAMPLES_QUANTIFICATION_SUMMARY.txt')
 
@@ -1615,7 +1603,6 @@ def main():
         crispresso2_info['results']['general_plots']['summary_plot_titles'] = {}
         crispresso2_info['results']['general_plots']['summary_plot_labels'] = {}
         crispresso2_info['results']['general_plots']['summary_plot_datas'] = {}
-
 
         df_summary_quantification.set_index('Name')
 
@@ -1645,72 +1632,69 @@ def main():
             crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Each bar shows the total number of reads aligned to each amplicon, divided into the reads that are modified and unmodified. The vertical line shows the cutoff for analysis, set using the --min_reads_to_use_region parameter.'
             crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('CRISPRessoPooled summary', os.path.basename(samples_quantification_summary_filename))]
 
-
-
-
-        #if many reads weren't aligned, print those out for the user
+        # if many reads weren't aligned, print those out for the user
         if RUNNING_MODE != 'ONLY_GENOME':
             tot_reads_aligned = df_summary_quantification['Reads_aligned'].fillna(0).sum()
             tot_reads = df_summary_quantification['Reads_total'].sum()
 
-            if RUNNING_MODE=='AMPLICONS_AND_GENOME':
+            if RUNNING_MODE == 'AMPLICONS_AND_GENOME':
                 this_bam_filename = bam_filename_genome
-            if RUNNING_MODE=='ONLY_AMPLICONS':
+            if RUNNING_MODE == 'ONLY_AMPLICONS':
                 this_bam_filename = bam_filename_amplicons
-            #if less than 1/2 of reads aligned, find most common unaligned reads and advise the user
-            if N_READS_INPUT > 0 and tot_reads/float(N_READS_INPUT) < 0.5:
-                warn('Less than half (%d/%d) of reads aligned to amplicons. Finding most frequent unaligned reads.'%(tot_reads, N_READS_INPUT))
+            # if less than 1/2 of reads aligned, find most common unaligned reads and advise the user
+            if N_READS_INPUT > 0 and tot_reads / float(N_READS_INPUT) < 0.5:
+                warn('Less than half (%d/%d) of reads aligned to amplicons. Finding most frequent unaligned reads.' % (tot_reads, N_READS_INPUT))
                 ###
-                ###this results in the unpretty messages being printed:
-                ### sort: write failed: standard output: Broken pipe
-                ### sort: write error
+                # this results in the unpretty messages being printed:
+                # sort: write failed: standard output: Broken pipe
+                # sort: write error
                 ###
-                #cmd = "samtools view -f 4 %s | awk '{print $10}' | sort | uniq -c | sort -nr | head -n 10"%this_bam_filename
+                # cmd = "samtools view -f 4 %s | awk '{print $10}' | sort | uniq -c | sort -nr | head -n 10"%this_bam_filename
                 import signal
+
                 def default_sigpipe():
                     signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
-                cmd = "samtools view -f 4 %s | head -n 10000 | awk '{print $10}' | sort | uniq -c | sort -nr | head -n 10 | awk '{print $2}'"%this_bam_filename
+                cmd = "samtools view -f 4 %s | head -n 10000 | awk '{print $10}' | sort | uniq -c | sort -nr | head -n 10 | awk '{print $2}'" % this_bam_filename
 #    			print("command is: "+cmd)
 #    		    p = sb.Popen(cmd, shell=True,stdout=sb.PIPE)
                 p = sb.Popen(cmd, shell=True, stdout=sb.PIPE, preexec_fn=default_sigpipe)
                 top_unaligned = p.communicate()[0].decode('utf-8')
-                top_unaligned_filename=_jp('CRISPRessoPooled_TOP_UNALIGNED.txt')
+                top_unaligned_filename = _jp('CRISPRessoPooled_TOP_UNALIGNED.txt')
 
                 with open(top_unaligned_filename, 'w') as outfile:
                     outfile.write(top_unaligned)
-                warn('Perhaps one or more of the given amplicon sequences were incomplete or incorrect. Below is a list of the most frequent unaligned reads (in the first 10000 unaligned reads). Check this list to see if an amplicon is among these reads.\n%s'%top_unaligned)
+                warn('Perhaps one or more of the given amplicon sequences were incomplete or incorrect. Below is a list of the most frequent unaligned reads (in the first 10000 unaligned reads). Check this list to see if an amplicon is among these reads.\n%s' % top_unaligned)
 
-
-        #cleaning up
+        # cleaning up
         if not args.keep_intermediate:
              info('Removing Intermediate files...')
 
-             if RUNNING_MODE=='ONLY_GENOME' or RUNNING_MODE=='AMPLICONS_AND_GENOME':
+             if RUNNING_MODE == 'ONLY_GENOME' or RUNNING_MODE == 'AMPLICONS_AND_GENOME':
                  if args.aligned_pooled_bam is None:
-                     files_to_remove+=[bam_filename_genome]
-                     files_to_remove+=[bam_filename_genome+".bai"]
+                     files_to_remove += [bam_filename_genome]
+                     files_to_remove += [bam_filename_genome + ".bai"]
 
-             if RUNNING_MODE=='ONLY_AMPLICONS':
-                files_to_remove+=[bam_filename_amplicons, amplicon_fa_filename]
+             if RUNNING_MODE == 'ONLY_AMPLICONS':
+                files_to_remove += [bam_filename_amplicons, amplicon_fa_filename]
                 for bowtie2_file in glob.glob(_jp('CUSTOM_BOWTIE2_INDEX.*')):
                     files_to_remove.append(bowtie2_file)
 
              for file_to_remove in files_to_remove:
                  try:
                          if os.path.islink(file_to_remove):
-                             #print 'LINK',file_to_remove
+                             # print 'LINK',file_to_remove
                              os.unlink(file_to_remove)
                          else:
                              os.remove(file_to_remove)
                  except:
-                         warn('Skipping:%s' %file_to_remove)
+                         warn('Skipping:%s' % file_to_remove)
 
         if not args.suppress_report and not args.suppress_plots:
             if (args.place_report_in_output_folder):
                 report_name = _jp("CRISPResso2Pooled_report.html")
             else:
-                report_name = OUTPUT_DIRECTORY+'.html'
+                report_name = OUTPUT_DIRECTORY + '.html'
             CRISPRessoReport.make_pooled_report_from_folder(report_name, crispresso2_info, OUTPUT_DIRECTORY, _ROOT, logger)
             crispresso2_info['running_info']['report_location'] = report_name
             crispresso2_info['running_info']['report_filename'] = os.path.basename(report_name)
@@ -1724,12 +1708,12 @@ def main():
                 run_data = None
                 try:
                     run_data = CRISPRessoShared.load_crispresso_info(sub_folder)
-                except Exception as e:
-                    raise CRISPRessoShared.OutputFolderIncompleteException('CRISPResso run %s is not complete. Cannot read CRISPResso2_info.json file.'% sub_folder)
+                except Exception:
+                    raise CRISPRessoShared.OutputFolderIncompleteException('CRISPResso run %s is not complete. Cannot read CRISPResso2_info.json file.' % sub_folder)
                 ref_sequences = [run_data['results']['refs'][ref_name]['sequence'] for ref_name in run_data['results']['ref_names']]
                 allele_frequency_table_zip_filename = os.path.join(sub_folder, run_data['running_info']['allele_frequency_table_zip_filename'])
                 if not os.path.exists(allele_frequency_table_zip_filename):
-                    raise Exception('CRISPResso run %s is not complete. Cannot read allele frequency table.'% sub_folder)
+                    raise Exception('CRISPResso run %s is not complete. Cannot read allele frequency table.' % sub_folder)
                 this_alleles = []
                 this_freqs = []
                 this_names = []
@@ -1745,7 +1729,7 @@ def main():
                             line_els = line.decode('UTF-8').split('\t')
                             allele_seq = line_els[allele_ind].replace('-', '')
                             allele_freq = float(line_els[freq_ind])
-                            #add first allele -- then add other alleles if they are more frequent than the cutoff
+                            # add first allele -- then add other alleles if they are more frequent than the cutoff
                             if len(this_alleles) > 0 and allele_freq < args.compile_postrun_reference_allele_cutoff:
                                 break
                             if allele_seq not in this_alleles:
@@ -1766,10 +1750,10 @@ def main():
             crispresso2_info['postrun_reference_file'] = os.path.basename(postrun_reference_file)
             info('Produced postrun reference file: ' + postrun_reference_file)
 
-        end_time =  datetime.now()
-        end_time_string =  end_time.strftime('%Y-%m-%d %H:%M:%S')
+        end_time = datetime.now()
+        end_time_string = end_time.strftime('%Y-%m-%d %H:%M:%S')
         running_time = end_time - start_time
-        running_time_string =  str(running_time)
+        running_time_string = str(running_time)
 
         crispresso2_info['running_info']['end_time'] = end_time
         crispresso2_info['running_info']['end_time_string'] = end_time_string
@@ -1797,6 +1781,7 @@ def main():
 
         error('\n\nERROR: %s' % e)
         sys.exit(-1)
+
 
 if __name__ == '__main__':
     main()

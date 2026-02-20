@@ -27,6 +27,7 @@ def _left_normalize_deletion(start, end, ref_positions, ref_str):
     -------
     (int, int)
         Left-normalized (start, end) coordinates.
+
     """
     while start > 0:
         idx_before = ref_positions.index(start - 1)
@@ -99,6 +100,7 @@ def _left_normalize_insertion(anchor_ref_pos, ins_bases, ref_positions, ref_str)
     -------
     (int, str)
         Left-normalized (anchor_ref_pos, ins_bases).
+
     """
     while anchor_ref_pos > 0:
         anchor_idx = ref_positions.index(anchor_ref_pos)
@@ -185,6 +187,7 @@ def build_edit_counts(df_alleles, amplicon_positions):
     -------
     dict
         Mapping of (chrom, pos, ref, alt) -> total read count.
+
     """
     edit_counts = defaultdict(int)
 
@@ -200,11 +203,11 @@ def build_edit_counts(df_alleles, amplicon_positions):
         chrom, pos = amplicon_positions[ref_name]
 
         for chrom_v, pos_v, ref, alt, reads in _edits_from_deletions(row, chrom, pos):
-            edit_counts[(chrom_v, pos_v, ref, alt)] += reads
+            edit_counts[chrom_v, pos_v, ref, alt] += reads
         for chrom_v, pos_v, ref, alt, reads in _edits_from_insertions(row, chrom, pos):
-            edit_counts[(chrom_v, pos_v, ref, alt)] += reads
+            edit_counts[chrom_v, pos_v, ref, alt] += reads
         for chrom_v, pos_v, ref, alt, reads in _edits_from_substitutions(row, chrom, pos):
-            edit_counts[(chrom_v, pos_v, ref, alt)] += reads
+            edit_counts[chrom_v, pos_v, ref, alt] += reads
 
     return dict(edit_counts)
 
@@ -227,6 +230,7 @@ def write_vcf_from_edits(edit_counts, num_reads, amplicon_lens, vcf_path):
     -------
     int
         Number of VCF data lines written (excluding header).
+
     """
     if num_reads is None or num_reads <= 0:
         raise CRISPRessoShared.BadParameterException("Error counting total number of reads.")
@@ -277,6 +281,7 @@ def write_vcf_file(df_alleles, ref_names, ref_lens, args, vcf_path):
     -------
     int
         Solely for testing; the number of VCF data lines written.
+
     """
     try:
         all_coords = args.amplicon_coordinates.strip().split(',')

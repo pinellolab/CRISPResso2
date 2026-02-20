@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-'''
-CRISPResso2 - Kendell Clement and Luca Pinello 2018
+"""CRISPResso2 - Kendell Clement and Luca Pinello 2018
 Software pipeline for the analysis of genome editing outcomes from deep sequencing data
 (c) 2018 The General Hospital Corporation. All Rights Reserved.
-'''
+"""
 
 import argparse
 from copy import deepcopy
@@ -21,10 +20,10 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(CRISPRessoShared.LogStreamHandler())
 
-error   = logger.critical
-warn    = logger.warning
-debug   = logger.debug
-info    = logger.info
+error = logger.critical
+warn = logger.warning
+debug = logger.debug
+info = logger.info
 
 
 def check_library(library_name):
@@ -53,7 +52,7 @@ def check_PooledWGS_output_folder(output_folder):
 pd = check_library('pandas')
 
 
-###EXCEPTIONS############################
+# EXCEPTIONS############################
 class PooledWGSOutputFolderIncompleteException(Exception):
     pass
 
@@ -99,8 +98,8 @@ def main():
             help='Second output folder with CRISPRessoPooled or CRISPRessoWGS analysis',
         )
 
-        #OPTIONALS
-        parser.add_argument('-n', '--name',  help='Output name', default='')
+        # OPTIONALS
+        parser.add_argument('-n', '--name', help='Output name', default='')
         parser.add_argument(
             '-n1',
             '--sample_1_name',
@@ -113,7 +112,7 @@ def main():
             help='Sample 2 name',
             default='Sample_2',
         )
-        parser.add_argument('-o', '--output_folder',  help='', default='')
+        parser.add_argument('-o', '--output_folder', help='', default='')
         parser.add_argument(
             '-p',
             '--n_processes',
@@ -219,7 +218,7 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
                 os.path.abspath(args.output_folder), OUTPUT_DIRECTORY,
             )
 
-        _jp = lambda filename: os.path.join(OUTPUT_DIRECTORY, filename) #handy function to put a file in the output directory
+        _jp = lambda filename: os.path.join(OUTPUT_DIRECTORY, filename)  # handy function to put a file in the output directory
         log_filename = _jp('CRISPRessoPooledWGSCompare_RUNNING_LOG.txt')
 
         try:
@@ -240,8 +239,8 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
                 ),
             )
 
-        crispresso2Compare_info_file = os.path.join(OUTPUT_DIRECTORY,'CRISPResso2PooledWGSCompare_info.json')
-        crispresso2_info = {'running_info': {}, 'results': {'alignment_stats': {}, 'general_plots': {}}} #keep track of all information for this run to be saved at the end of the run
+        crispresso2Compare_info_file = os.path.join(OUTPUT_DIRECTORY, 'CRISPResso2PooledWGSCompare_info.json')
+        crispresso2_info = {'running_info': {}, 'results': {'alignment_stats': {}, 'general_plots': {}}}  # keep track of all information for this run to be saved at the end of the run
         crispresso2_info['running_info']['version'] = CRISPRessoShared.__version__
         crispresso2_info['running_info']['args'] = deepcopy(args)
 
@@ -318,7 +317,7 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
                     OUTPUT_DIRECTORY,
                     'CRISPRessoCompare_on_' + compare_output_name,
                 )
-                this_sub_html_file = os.path.basename(sub_folder)+".html"
+                this_sub_html_file = os.path.basename(sub_folder) + ".html"
                 if args.place_report_in_output_folder:
                     this_sub_html_file = os.path.join(
                         os.path.basename(sub_folder),
@@ -335,7 +334,7 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
         sig_count_summary_lines = []
         for region in processed_regions:
             processed_region_folder_name = processed_region_folder_names[region]
-            processed_region_folder = os.path.join(OUTPUT_DIRECTORY, 'CRISPRessoCompare_on_'+processed_region_folder_name)
+            processed_region_folder = os.path.join(OUTPUT_DIRECTORY, 'CRISPRessoCompare_on_' + processed_region_folder_name)
             run_info = CRISPRessoShared.load_crispresso_info(processed_region_folder, 'CRISPResso2Compare_info.json')
             sig_counts_filename = run_info['running_info']['sig_counts_report_location']
             this_sig_filepath = os.path.join(processed_region_folder, sig_counts_filename)
@@ -346,14 +345,14 @@ increase the memory required to run CRISPResso. Can be set to 'max'.
                         sig_count_summary_lines.append(region + "\t" + line)
         sig_count_summary_file = _jp("CRISPRessoPooledWGSCompare_significant_base_count_summary.txt")
         with open(sig_count_summary_file, 'w') as fout:
-            fout.write('Sample\t'+header_string)
+            fout.write('Sample\t' + header_string)
             fout.writelines(sig_count_summary_lines)
 
         if not args.suppress_report:
             if args.place_report_in_output_folder:
                 report_name = _jp("CRISPResso2PooledWGSCompare_report.html")
             else:
-                report_name = OUTPUT_DIRECTORY+'.html'
+                report_name = OUTPUT_DIRECTORY + '.html'
             empty_failed_runs_arr = []
             empty_failed_runs_arr_desc = []
             CRISPRessoReport.make_multi_report(

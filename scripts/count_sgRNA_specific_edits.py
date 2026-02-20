@@ -6,6 +6,7 @@ import zipfile
 from collections import defaultdict
 from CRISPResso2 import CRISPRessoShared
 
+
 def count_sgRNA_specific_edits(crispresso_output_folder):
     crispresso2_info = CRISPRessoShared.load_crispresso_info(crispresso_output_folder)
 
@@ -17,9 +18,9 @@ def count_sgRNA_specific_edits(crispresso_output_folder):
     if not crispresso2_info['running_info']['args'].write_detailed_allele_table:
         raise Exception('CRISPResso run must be run with the parameter --write_detailed_allele_table')
 
-    include_idxs = {} # ref_name > guide_name > idxs
-    all_reference_guides = {} # order of guides for each reference
-    modified_counts_by_amplicon = {} # ref_name > category > count
+    include_idxs = {}  # ref_name > guide_name > idxs
+    all_reference_guides = {}  # order of guides for each reference
+    modified_counts_by_amplicon = {}  # ref_name > category > count
     for reference_name in crispresso2_info['results']['ref_names']:
         include_idxs[reference_name] = {}
         all_reference_guides[reference_name] = []
@@ -33,20 +34,19 @@ def count_sgRNA_specific_edits(crispresso_output_folder):
             include_idxs[reference_name][this_guide_name] = crispresso2_info['results']['refs'][reference_name]['sgRNA_include_idxs'][idx]
             all_reference_guides[reference_name].append(this_guide_name)
 
-
     z = zipfile.ZipFile(os.path.join(crispresso_output_folder, crispresso2_info['running_info']['allele_frequency_table_zip_filename']))
     zf = z.open(crispresso2_info['running_info']['allele_frequency_table_filename'])
-    df_alleles = pd.read_csv(zf,sep="\t")
+    df_alleles = pd.read_csv(zf, sep="\t")
 
-    read_alleles_count = 0 # all alleles read
-    reference_count = defaultdict(int) # counts of modification at reference level
+    read_alleles_count = 0  # all alleles read
+    reference_count = defaultdict(int)  # counts of modification at reference level
     reference_modified_count = defaultdict(int)
     total_counts = defaultdict(int)
     modified_counts = defaultdict(int)
     for idx, row in df_alleles.iterrows():
         read_alleles_count += row['#Reads']
         this_reference_name = row['Reference_Name']
-        if this_reference_name in include_idxs: # sometimes (e.g. AMBIGUOUS) reads aren't assigned to a reference, so exclude them here..
+        if this_reference_name in include_idxs:  # sometimes (e.g. AMBIGUOUS) reads aren't assigned to a reference, so exclude them here..
             reference_count[this_reference_name] += row['#Reads']
 
             this_allele_modified_guide_names = []
@@ -66,20 +66,18 @@ def count_sgRNA_specific_edits(crispresso_output_folder):
                 if is_modified:
                     this_allele_modified_guide_names.append(guide_name)
                     ref_is_modified = True
-            
+
             this_category = 'UNMODIFIED'
             if ref_is_modified:
                 reference_modified_count[this_reference_name] += row['#Reads']
                 this_category = 'MODIFIED ' + ' + '.join(this_allele_modified_guide_names)
             modified_counts_by_amplicon[this_reference_name][this_category] += row['#Reads']
 
-
     print('Processed ' + str(read_alleles_count) + ' alleles')
     for reference_name in crispresso2_info['results']['ref_names']:
-        print ('Reference: ' + reference_name + ' (' + str(reference_modified_count[reference_name]) + '/' + str(reference_count[reference_name]) + ' modified reads)')
+        print('Reference: ' + reference_name + ' (' + str(reference_modified_count[reference_name]) + '/' + str(reference_count[reference_name]) + ' modified reads)')
         for category in modified_counts_by_amplicon[reference_name]:
             print("\t" + category + ": " + str(modified_counts_by_amplicon[reference_name][category]))
-
 
 
 if __name__ == "__main__":
@@ -88,4 +86,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     count_sgRNA_specific_edits(args.folder)
-    

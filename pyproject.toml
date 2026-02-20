@@ -51,3 +51,113 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 include = ["CRISPResso2*"]
+
+[tool.ruff]
+cache-dir = "/tmp/.ruff_cache"
+line-length = 150
+exclude = [
+    "tests",
+    "tests/",
+    "**/tests/**",
+]
+
+[tool.ruff.lint]
+select = [
+    "F",  # pyflakes
+    "E",  # pycodestyle
+    "W",  # pycodestyle warnings
+    "N",  # pep8-naming
+    "D",  # pydocstyle (docstring conventions)
+    "PL", # pylint rules
+    "B",  # flake8-bugbear (common bugs and design problems)
+    "A",  # flake8-builtins
+    "RUF",# ruff-specific rules
+]
+preview = true
+ignore = [
+    "D100",  # Requires a docstring in public modules
+    "D101",  # Requires a docstring in public classes
+    "D104",  # Requires a docstring in public packages
+    "D105",  # Requires a docstring in magic methods and functions
+    "D203",  # Requires a blank line between the function/method signature and the docstring
+    "D204",  # Requires a blank line after the docstring
+    "D205",  # Requires a blank line after the docstring in multi-line docstrings
+    "D213",  # Requires a multi-line docstring to start at the second line
+    "D400",  # Requires periods in docstrings
+    "D401",  # Requires specific verbage in docstrings
+    "D404",  # Requires first word in docstring to not be "This"
+    "D415",  # Requires punctuation at the end of docstrings
+    "D417",  # Requires argument descriptions in docstrings
+    "E115",  # Expected an indented block (comment)
+    "E402",  # Module level import not at top of file - intentional for conditional imports
+    "N812",  # Lowercase imported as non-lowercase - intentional for API consistency (e.g., `from CRISPRessoPro import plot as CRISPRessoPlot`)
+    "N818",  # Exception name should be named with an Error suffix - existing codebase uses Exception suffix consistently
+    "N999",  # Invalid module name - CRISPResso2 uses established CamelCase module naming convention
+    "PLC0415",  # Import not at top-level - intentional for conditional imports, lazy loading, and avoiding circular imports
+    "N802",  # Requires function names to be all lowercase
+    "N806",  # Requires variables to be all lowercase
+    "N803",  # Requires passed variables to be all lowercase
+    "PLC0206",  # dict-index-missing-items - iteration pattern is intentional for modifying dict during iteration
+    "PLR0911",  # too-many-return-statements - refactoring would reduce readability
+    "PLR6301",  # no-self-use - methods are part of class interfaces (e.g., JSON decoder)
+    "PLW1509",  # subprocess-popen-preexec-fn - intentional for signal handling
+    "RUF059",  # unused-unpacked-variable - tuple unpacking pattern is consistent across the codebase
+    "B905",  # zip-without-explicit-strict - strict parameter requires Python 3.10+
+    "PLR1730", # Replace if block to assign lower value to variable with min() function call
+    # These should be fixed but will require a larger refactor
+    "PLR0912",  # too-many-branches
+    "PLR0913",  # too-many-arguments
+    "PLR0914",  # too-many-locals
+    "PLR0915",  # too-many-statements
+    "PLR0917",  # too-many-positional-arguments
+    "PLR1702",  # too-many-nested-blocks
+    "PLR2004",  # magic-value-comparison
+    # These should be fixed incrementally
+    "A001",     # builtin-variable-shadowing (e.g., using `id`, `type`, `input` as variable names)
+    "A004",     # builtin-import-shadowing (import shadows a Python builtin)
+    "B007",     # unused-loop-control-variable (loop variable not used in body)
+    "B020",     # loop-variable-overrides-iterator (loop control variable overrides iterable it iterates)
+    "B026",     # star-arg-unpacking-after-keyword-arg (star-arg unpacking after keyword argument)
+    "B904",     # raise-without-from-inside-except (use `raise ... from err` in except blocks)
+    "D102",     # undocumented-public-method (missing docstring in public method)
+    "D103",     # undocumented-public-function (missing docstring in public function)
+    "D107",     # undocumented-public-init (missing docstring in __init__)
+    "D200",     # unnecessary-multiline-docstring (one-line docstring should fit on one line)
+    "E101",     # mixed-spaces-and-tabs (indentation contains mixed spaces and tabs)
+    "E111",     # indentation-with-invalid-multiple (indentation is not a multiple of the configured value)
+    "E114",     # indentation-with-invalid-multiple-comment (indentation of comment is not a multiple of the configured value)
+    "E117",     # over-indented (over-indented code)
+    "E501",     # line-too-long (line exceeds configured maximum length)
+    "E701",     # multiple-statements-on-one-line-colon (multiple statements on one line with colon)
+    "E711",     # none-comparison (comparison to None using == or !=, use `is` or `is not`)
+    "E712",     # true-false-comparison (comparison to True/False, use `if cond:` or `if not cond:`)
+    "E721",     # type-comparison (use `isinstance()` instead of `type()` comparison)
+    "E722",     # bare-except (do not use bare `except`, specify exception type)
+    "E731",     # lambda-assignment (do not assign a lambda expression, use a def)
+    "E741",     # ambiguous-variable-name (ambiguous variable name like `l`, `O`, `I`)
+    "F601",     # multi-value-repeated-key-literal (dictionary key literal repeated)
+    "F821",     # undefined-name (undefined name in source code)
+    "N801",     # invalid-class-name (class name should use CapWords convention)
+    "N816",     # mixed-case-variable-in-global-scope (global variable should be lowercase)
+    "PLC1901",  # compare-to-empty-string (comparison to empty string, use `not str` or `str`)
+    "PLR1714",  # repeated-equality-comparison (repeated equality comparisons, use `in` operator)
+    "PLR1722",  # sys-exit-alias (use `sys.exit()` instead of `exit()` or `quit()`)
+    "PLR6104",  # non-augmented-assignment (use augmented assignment like `+=` instead of `x = x +`)
+    "PLR6201",  # literal-membership (use a `set` literal for membership testing)
+    "PLW1514",  # unspecified-encoding (open() without explicit `encoding` argument)
+    "PLW2901",  # redefined-loop-name (outer loop variable overwritten by inner assignment)
+    "PLW3301",  # nested-min-max (nested `min`/`max` calls can be flattened)
+    "RUF005",   # collection-literal-concatenation (use `[*a, *b]` instead of `a + b` for collections)
+    "F841",     # unused-variable (local variable is assigned but never used)
+    "RUF052",   # used-dummy-variable (variable prefixed with `_` is used, rename without prefix)
+    "W191",     # tab-indentation (indentation contains tabs)
+]
+
+[tool.ruff.lint.pylint]
+max-args = 10
+
+[tool.ruff.lint.per-file-ignores]
+# Embedded awk scripts have long lines that cannot be easily broken
+"CRISPResso2/CRISPRessoPooledCORE.py" = ["E501"]
+# setup.py requires conditional imports for Cython detection
+"setup.py" = ["E402"]
