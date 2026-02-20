@@ -1,5 +1,4 @@
-'''
-This file is derived from https://github.com/mikeckennedy/jinja_partials and is subject to the following license:
+"""This file is derived from https://github.com/mikeckennedy/jinja_partials and is subject to the following license:
 
 MIT License
 
@@ -22,7 +21,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-'''
+"""
 
 from functools import partial
 
@@ -35,8 +34,7 @@ except ImportError:
 
 
 def render_partial(template_name, renderer=None, markup=True, **data):
-    """
-    Renders a partial template and returns the result. If `markup` is True, the result is wrapped in a `Markup` object.
+    """Renders a partial template and returns the result. If `markup` is True, the result is wrapped in a `Markup` object.
     """
     if renderer is None:
         if flask is None:
@@ -50,7 +48,6 @@ def render_partial(template_name, renderer=None, markup=True, **data):
 
 
 def generate_render_partial(renderer, markup=True):
-    """
-    Returns a partial function that renders a template using the specified renderer.
+    """Returns a partial function that renders a template using the specified renderer.
     """
     return partial(render_partial, renderer=renderer, markup=markup)

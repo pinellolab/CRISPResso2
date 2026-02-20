@@ -5,8 +5,7 @@ pyproject.toml. This file only exists to configure the Cython/C
 extension modules, which setuptools does not support declaratively.
 """
 
-from setuptools import setup, Extension, find_packages
-from io import open
+from setuptools import setup, Extension
 
 try:
     from Cython.Build import cythonize

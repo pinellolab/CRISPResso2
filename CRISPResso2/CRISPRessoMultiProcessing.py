@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-'''
-CRISPResso2 - Kendell Clement and Luca Pinello 2018
+"""CRISPResso2 - Kendell Clement and Luca Pinello 2018
 Software pipeline for the analysis of genome editing outcomes from deep sequencing data
 (c) 2018 The General Hospital Corporation. All Rights Reserved.
-'''
+"""
 
 
 import logging
@@ -22,16 +21,16 @@ from CRISPResso2.CRISPRessoShared import PlotException
 def get_max_processes():
     return mp.cpu_count()
 
+
 def run_crispresso(crispresso_cmds, descriptor, idx):
-    """
-    Runs a specified crispresso command specified by idx
+    """Runs a specified crispresso command specified by idx
     Used for multiprocessing by run_crispresso_cmds
     input:
     crispresso_cmds: list of commands to run
     descriptor: label printed out describing a command e.g. "Could not process 'region' 5" or "Could not process 'batch' 5"
     idx: index of the command to run
     """
-    crispresso_cmd=crispresso_cmds[idx]
+    crispresso_cmd = crispresso_cmds[idx]
     logger = logging.getLogger(getmodule(stack()[1][0]).__name__)
 
     logger.info('Running CRISPResso on %s #%d/%d: %s' % (descriptor, idx, len(crispresso_cmds), crispresso_cmd))
@@ -39,11 +38,11 @@ def run_crispresso(crispresso_cmds, descriptor, idx):
     return_value = sb.call(crispresso_cmd, shell=True)
 
     if return_value == 137:
-        logger.warn('CRISPResso was killed by your system (return value %d) on %s #%d: "%s"\nPlease reduce the number of processes (-p) and run again.'%(return_value, descriptor, idx, crispresso_cmd))
+        logger.warn('CRISPResso was killed by your system (return value %d) on %s #%d: "%s"\nPlease reduce the number of processes (-p) and run again.' % (return_value, descriptor, idx, crispresso_cmd))
     elif return_value != 0:
-        logger.warn('CRISPResso command failed (return value %d) on %s #%d: "%s"'%(return_value, descriptor, idx, crispresso_cmd))
+        logger.warn('CRISPResso command failed (return value %d) on %s #%d: "%s"' % (return_value, descriptor, idx, crispresso_cmd))
     else:
-        logger.info('Finished CRISPResso %s #%d' %(descriptor, idx))
+        logger.info('Finished CRISPResso %s #%d' % (descriptor, idx))
     return return_value
 
 
@@ -52,7 +51,7 @@ def wrapper(func, args):
     return (idx, func(args))
 
 
-def run_crispresso_cmds(crispresso_cmds, n_processes="1", descriptor = 'region', continue_on_fail=False, start_end_percent=None, logger=None):
+def run_crispresso_cmds(crispresso_cmds, n_processes="1", descriptor='region', continue_on_fail=False, start_end_percent=None, logger=None):
     """Run multiple CRISPResso commands in parallel.
 
     Parameters
@@ -79,6 +78,7 @@ def run_crispresso_cmds(crispresso_cmds, n_processes="1", descriptor = 'region',
     Returns
     -------
     None
+
     """
     if not crispresso_cmds:
         return
@@ -109,7 +109,7 @@ def run_crispresso_cmds(crispresso_cmds, n_processes="1", descriptor = 'region',
         percent_complete_step = 1 / len(crispresso_cmds)
         percent_complete = 0
 
-    #handle signals -- bug in python 2.7 (https://stackoverflow.com/questions/11312525/catch-ctrlc-sigint-and-exit-multiprocesses-gracefully-in-python)
+    # handle signals -- bug in python 2.7 (https://stackoverflow.com/questions/11312525/catch-ctrlc-sigint-and-exit-multiprocesses-gracefully-in-python)
     original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGINT, original_sigint_handler)
     try:
@@ -134,9 +134,9 @@ def run_crispresso_cmds(crispresso_cmds, n_processes="1", descriptor = 'region',
                 )
         for idx, ret in enumerate(ret_vals):
             if ret == 137:
-                raise Exception('CRISPResso %s #%d was killed by your system. Please decrease the number of processes (-p) and run again.'%(descriptor, idx))
+                raise Exception('CRISPResso %s #%d was killed by your system. Please decrease the number of processes (-p) and run again.' % (descriptor, idx))
             if ret != 0 and not continue_on_fail:
-                raise Exception('CRISPResso %s #%d failed. For more information, try running the command: "%s"'%(descriptor, idx, crispresso_cmds[idx]))
+                raise Exception('CRISPResso %s #%d failed. For more information, try running the command: "%s"' % (descriptor, idx, crispresso_cmds[idx]))
     except KeyboardInterrupt:
         pool.terminate()
         logger.warn('Caught SIGINT. Program Terminated')
@@ -145,18 +145,18 @@ def run_crispresso_cmds(crispresso_cmds, n_processes="1", descriptor = 'region',
         print('CRISPResso2 failed')
         raise e
     else:
-        plural = descriptor+"s"
+        plural = descriptor + "s"
         if descriptor.endswith("ch") or descriptor.endswith("sh"):
-            plural = descriptor+"es"
+            plural = descriptor + "es"
         logger.info("Finished all " + plural)
         if int_n_processes > 1:
             pool.close()
     if int_n_processes > 1:
         pool.join()
 
+
 def run_pandas_apply_parallel(input_df, input_function_chunk, n_processes=1):
-    """
-    Runs a function on chunks of the input_df
+    """Runs a function on chunks of the input_df
     This is a little clunky, but seems to work better than serial runs
     The input_function should be a wrapper that takes in df chunks and applies a real function on the rows
     For example, the input_function should be:
@@ -176,20 +176,20 @@ def run_pandas_apply_parallel(input_df, input_function_chunk, n_processes=1):
     This is useful for functions for which the operation on the row takes a significant amount of time and the overhead
         of dataframe manipulation is relatively small
     """
-    #shuffle the dataset to avoid finishing all the ones on top while leaving the ones on the bottom unfinished
+    # shuffle the dataset to avoid finishing all the ones on top while leaving the ones on the bottom unfinished
     n_splits = min(n_processes, len(input_df))
     df_split = np.array_split(input_df.sample(frac=1), n_splits)
     if n_processes > 1:
-        pool = mp.Pool(processes = n_splits)
+        pool = mp.Pool(processes=n_splits)
     else:
         return input_function_chunk(input_df)
 
-    #handle signals -- bug in python 2.7 (https://stackoverflow.com/questions/11312525/catch-ctrlc-sigint-and-exit-multiprocesses-gracefully-in-python)
+    # handle signals -- bug in python 2.7 (https://stackoverflow.com/questions/11312525/catch-ctrlc-sigint-and-exit-multiprocesses-gracefully-in-python)
     original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGINT, original_sigint_handler)
     try:
         r = pool.map_async(input_function_chunk, df_split)
-        results = r.get(60*60*60) # Without the timeout this blocking call ignores all signals.
+        results = r.get(60 * 60 * 60)  # Without the timeout this blocking call ignores all signals.
         df_new = pd.concat(results)
     except KeyboardInterrupt:
         pool.terminate()
@@ -205,8 +205,7 @@ def run_pandas_apply_parallel(input_df, input_function_chunk, n_processes=1):
 
 
 def run_function_on_array_chunk_parallel(input_array, input_function, n_processes=1):
-    """
-    Runs a function on chunks of input_array
+    """Runs a function on chunks of input_array
     input_array: array of values
     input_function: function to run on chunks of the array
         input_function should take in a smaller array of objects
@@ -219,21 +218,21 @@ def run_function_on_array_chunk_parallel(input_array, input_function, n_processe
             raise e
         return results
     else:
-        pool = mp.Pool(processes = n_processes)
+        pool = mp.Pool(processes=n_processes)
 
-        #handle signals -- bug in python 2.7 (https://stackoverflow.com/questions/11312525/catch-ctrlc-sigint-and-exit-multiprocesses-gracefully-in-python)
+        # handle signals -- bug in python 2.7 (https://stackoverflow.com/questions/11312525/catch-ctrlc-sigint-and-exit-multiprocesses-gracefully-in-python)
         original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
         signal.signal(signal.SIGINT, original_sigint_handler)
         try:
-            n = int(max(10, len(input_array)/n_processes)) #don't parallelize unless at least 10 tasks
-            input_chunks = [input_array[i * n:(i + 1) * n] for i in range((len(input_array) + n - 1) // n )]
+            n = int(max(10, len(input_array) / n_processes))  # don't parallelize unless at least 10 tasks
+            input_chunks = [input_array[i * n:(i + 1) * n] for i in range((len(input_array) + n - 1) // n)]
             r = pool.map_async(input_function, input_chunks)
-            results = r.get(60*60*60) # Without the timeout this blocking call ignores all signals.
+            results = r.get(60 * 60 * 60)  # Without the timeout this blocking call ignores all signals.
         except KeyboardInterrupt:
             pool.terminate()
             logging.warn('Caught SIGINT. Program Terminated')
             raise Exception('CRISPResso2 Terminated')
-            exit (0)
+            exit(0)
         except Exception as e:
             print('CRISPResso2 failed')
             raise e
@@ -243,17 +242,16 @@ def run_function_on_array_chunk_parallel(input_array, input_function, n_processe
         return [y for x in results for y in x]
 
 
-
 def run_subprocess(cmd):
     return sb.call(cmd, shell=True)
 
+
 def run_parallel_commands(commands_arr, n_processes=1, descriptor='CRISPResso2', continue_on_fail=False):
-    """
-    input: commands_arr: list of shell commands to run
+    """input: commands_arr: list of shell commands to run
     descriptor: string to print out to user describing run
     """
     if n_processes > 1:
-        pool = mp.Pool(processes = n_processes)
+        pool = mp.Pool(processes=n_processes)
     else:
         for idx, command in enumerate(commands_arr):
             return_value = run_subprocess(command)
@@ -261,17 +259,17 @@ def run_parallel_commands(commands_arr, n_processes=1, descriptor='CRISPResso2',
                 raise Exception(f'{descriptor} #{idx} was failed')
         return
 
-    #handle signals -- bug in python 2.7 (https://stackoverflow.com/questions/11312525/catch-ctrlc-sigint-and-exit-multiprocesses-gracefully-in-python)
+    # handle signals -- bug in python 2.7 (https://stackoverflow.com/questions/11312525/catch-ctrlc-sigint-and-exit-multiprocesses-gracefully-in-python)
     original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGINT, original_sigint_handler)
     try:
         res = pool.map_async(run_subprocess, commands_arr)
-        ret_vals = res.get(60*60*60) # Without the timeout this blocking call ignores all signals.
+        ret_vals = res.get(60 * 60 * 60)  # Without the timeout this blocking call ignores all signals.
         for idx, ret in enumerate(ret_vals):
             if ret == 137:
-                raise Exception('%s #%d was killed by your system. Please decrease the number of processes (-p) and run again.'%(descriptor, idx))
+                raise Exception('%s #%d was killed by your system. Please decrease the number of processes (-p) and run again.' % (descriptor, idx))
             if ret != 0 and not continue_on_fail:
-                raise Exception('%s #%d failed'%(descriptor, idx))
+                raise Exception('%s #%d failed' % (descriptor, idx))
     except KeyboardInterrupt:
         pool.terminate()
         logging.warn('Caught SIGINT. Program Terminated')
@@ -305,6 +303,7 @@ def run_plot(plot_func, plot_args, num_processes, process_futures, process_pool,
     Returns
     -------
     None
+
     """
     logger = logging.getLogger(getmodule(stack()[1][0]).__name__)
     try:
@@ -314,7 +313,7 @@ def run_plot(plot_func, plot_args, num_processes, process_futures, process_pool,
             plot_func(**plot_args)
     except Exception as e:
         if halt_on_plot_fail:
-            logger.critical(f"Plot error, halting execution \n")
+            logger.critical("Plot error, halting execution \n")
             raise PlotException(f'There was an error generating plot {plot_func.__name__}.')
         logger.warn(f"Plot error {e}, skipping plot \n")
         logger.debug(traceback.format_exc())

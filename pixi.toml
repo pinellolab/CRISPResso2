@@ -35,7 +35,7 @@ pytest-check = "*"
 ydiff = "*"
 
 [feature.lint.dependencies]
-pylint = "*"
+ruff = "=0.14.13"
 
 [environments]
 default = { features = [], solve-group = "default" }
@@ -53,4 +53,5 @@ cmd = "make $TARGETS test print"
 cwd = "../CRISPResso2_tests"
 
 [feature.lint.tasks]
-lint = { cmd = "pylint --fail-under=6.2 $(git ls-files '*.py') --rcfile=.github/workflows/.pylintrc" }
+lint = { cmd = "ruff check . --statistics" }
+fix = { cmd = "ruff check . --fix" }

@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-'''
-CRISPResso2 - Kendell Clement and Luca Pinello 2018
+"""CRISPResso2 - Kendell Clement and Luca Pinello 2018
 Software pipeline for the analysis of genome editing outcomes from deep sequencing data
 (c) 2018 The General Hospital Corporation. All Rights Reserved.
-'''
+"""
 
 import os
 import glob
@@ -21,7 +20,6 @@ from CRISPResso2.CRISPRessoReports import CRISPRessoReport
 from CRISPResso2.CRISPRessoMultiProcessing import get_max_processes, run_plot
 
 if CRISPRessoShared.is_C2Pro_installed():
-    from CRISPRessoPro import __version__ as CRISPRessoProVersion
     C2PRO_INSTALLED = True
 else:
     C2PRO_INSTALLED = False
@@ -32,29 +30,29 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(CRISPRessoShared.LogStreamHandler())
 
-error   = logger.critical
-warn    = logger.warning
-debug   = logger.debug
-info    = logger.info
+error = logger.critical
+warn = logger.warning
+debug = logger.debug
+info = logger.info
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
 def main():
     try:
-        start_time =  datetime.now()
-        start_time_string =  start_time.strftime('%Y-%m-%d %H:%M:%S')
+        start_time = datetime.now()
+        start_time_string = start_time.strftime('%Y-%m-%d %H:%M:%S')
 
         parser = argparse.ArgumentParser(description="Aggregate CRISPResso2 Runs")
         parser.add_argument("-p", "--prefix", action='append', help="Prefix for CRISPResso folders to aggregate (may be specified multiple times)", default=[])
         parser.add_argument("-s", "--suffix", type=str, help="Suffix for CRISPResso folders to aggregate", default="")
 
         parser.add_argument("-n", "--name", type=str, help="Output name of the report", required=True)
-        parser.add_argument('--min_reads_for_inclusion',  help='Minimum number of reads for a run to be included in the run summary', type=int, default=0)
+        parser.add_argument('--min_reads_for_inclusion', help='Minimum number of reads for a run to be included in the run summary', type=int, default=0)
 
-        parser.add_argument('--place_report_in_output_folder',  help='If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output.', action='store_true')
-        parser.add_argument('--suppress_report',  help='Suppress output report', action='store_true')
-        parser.add_argument('--suppress_plots',  help='Suppress output plots', action='store_true')
+        parser.add_argument('--place_report_in_output_folder', help='If true, report will be written inside the CRISPResso output folder. By default, the report will be written one directory up from the report output.', action='store_true')
+        parser.add_argument('--suppress_report', help='Suppress output report', action='store_true')
+        parser.add_argument('--suppress_plots', help='Suppress output plots', action='store_true')
         parser.add_argument('--max_samples_per_summary_plot', type=int, help="Maximum number of samples on each page of the pdf report plots. If this number gets above ~150, they will be too big for matplotlib.", default=150)
         parser.add_argument('--n_processes', type=str, help='Specify the number of processes to use for analysis.\
         Please use with caution since increasing this parameter will significantly increase the memory required to run CRISPResso. Can be set to \'max\'.', default='1')
@@ -86,11 +84,10 @@ ___________________________________
         '''
         info(CRISPRessoShared.get_crispresso_header(description, aggregate_string))
 
+        output_folder_name = 'CRISPRessoAggregate_on_%s' % args.name
+        OUTPUT_DIRECTORY = os.path.abspath(output_folder_name)
 
-        output_folder_name='CRISPRessoAggregate_on_%s' % args.name
-        OUTPUT_DIRECTORY=os.path.abspath(output_folder_name)
-
-        _jp = lambda filename: os.path.join(OUTPUT_DIRECTORY, filename) #handy function to put a file in the output directory
+        _jp = lambda filename: os.path.join(OUTPUT_DIRECTORY, filename)  # handy function to put a file in the output directory
 
         try:
              info('Creating Folder %s' % OUTPUT_DIRECTORY)
@@ -98,7 +95,7 @@ ___________________________________
         except:
              warn('Folder %s already exists.' % OUTPUT_DIRECTORY)
 
-        log_filename=_jp('CRISPRessoAggregate_RUNNING_LOG.txt')
+        log_filename = _jp('CRISPRessoAggregate_RUNNING_LOG.txt')
         logger.addHandler(logging.FileHandler(log_filename))
         logger.addHandler(CRISPRessoShared.StatusHandler(os.path.join(OUTPUT_DIRECTORY, 'CRISPRessoAggregate_status.json')))
 
@@ -108,7 +105,7 @@ ___________________________________
         crispresso2Aggregate_info_file = os.path.join(
             OUTPUT_DIRECTORY, 'CRISPResso2Aggregate_info.json',
         )
-        crispresso2_info = {'running_info': {}, 'results': {'alignment_stats': {}, 'general_plots': {}}} #keep track of all information for this run to be pickled and saved at the end of the run
+        crispresso2_info = {'running_info': {}, 'results': {'alignment_stats': {}, 'general_plots': {}}}  # keep track of all information for this run to be pickled and saved at the end of the run
         crispresso2_info['running_info']['version'] = CRISPRessoShared.__version__
         crispresso2_info['running_info']['args'] = deepcopy(args)
         crispresso2_info['running_info']['command_used'] = ' '.join(sys.argv)
@@ -136,33 +133,33 @@ ___________________________________
             halt_on_plot_fail=args.halt_on_plot_fail,
         )
 
-        #glob returns paths including the original prefix
+        # glob returns paths including the original prefix
         all_files = []
         for prefix in args.prefix:
-            all_files.extend(glob.glob(prefix + '*'+args.suffix))
+            all_files.extend(glob.glob(prefix + '*' + args.suffix))
             if args.prefix != "":
-                all_files.extend(glob.glob(prefix + '/*'+args.suffix)) #if a folder is given, add all subfolders
+                all_files.extend(glob.glob(prefix + '/*' + args.suffix))  # if a folder is given, add all subfolders
 
         seen_folders = {}
-        crispresso2_folder_infos = {} #file_loc->crispresso_info; these are only CRISPResso runs -- this bit unrolls batch, pooled, and wgs runs
+        crispresso2_folder_infos = {}  # file_loc->crispresso_info; these are only CRISPResso runs -- this bit unrolls batch, pooled, and wgs runs
         successfully_imported_count = 0
         not_imported_count = 0
         for folder in all_files:
-            if folder in seen_folders: #skip if we've seen this folder (glob could have added it twice)
+            if folder in seen_folders:  # skip if we've seen this folder (glob could have added it twice)
                 continue
             seen_folders[folder] = 1
             if os.path.isdir(folder) and str(folder).endswith(args.suffix):
-                #first, try to import a plain CRISPResso2 run
+                # first, try to import a plain CRISPResso2 run
                 crispresso_info_file = os.path.join(folder, 'CRISPResso2_info.json')
                 if os.path.exists(crispresso_info_file):
                     try:
                         run_data = CRISPRessoShared.load_crispresso_info(folder)
                         crispresso2_folder_infos[folder] = run_data
                         successfully_imported_count += 1
-                    except Exception as e:
+                    except Exception:
                         warn('Could not open CRISPResso2 info file in ' + folder)
                         not_imported_count += 1
-                #second, check pooled
+                # second, check pooled
                 pooled_info_file = os.path.join(folder, 'CRISPResso2Pooled_info.json')
                 if os.path.exists(pooled_info_file):
                     pooled_data = CRISPRessoShared.load_crispresso_info(
@@ -171,18 +168,18 @@ ___________________________________
                     if 'good_region_names' in pooled_data['results']:
                         run_names = pooled_data['results']['good_region_names']
                         for run_name in run_names:
-                            run_folder_loc = os.path.join(folder, 'CRISPResso_on_%s'%run_name)
+                            run_folder_loc = os.path.join(folder, 'CRISPResso_on_%s' % run_name)
                             try:
                                 run_data = CRISPRessoShared.load_crispresso_info(run_folder_loc)
                                 crispresso2_folder_infos[run_folder_loc] = run_data
                                 successfully_imported_count += 1
-                            except Exception as e:
+                            except Exception:
                                 warn('Could not open CRISPResso2 info file in ' + run_folder_loc)
                                 not_imported_count += 1
                     else:
                         warn('Could not process pooled folder ' + folder)
                         not_imported_count += 1
-                #third, check batch
+                # third, check batch
                 batch_info_file = os.path.join(folder, 'CRISPResso2Batch_info.json')
                 if os.path.exists(batch_info_file):
                     batch_data = CRISPRessoShared.load_crispresso_info(
@@ -191,18 +188,18 @@ ___________________________________
                     if 'completed_batch_arr' in batch_data['results']:
                         run_names = batch_data['results']['completed_batch_arr']
                         for run_name in run_names:
-                            run_folder_loc = os.path.join(folder, 'CRISPResso_on_%s'%run_name)
+                            run_folder_loc = os.path.join(folder, 'CRISPResso_on_%s' % run_name)
                             try:
                                 run_data = CRISPRessoShared.load_crispresso_info(run_folder_loc)
                                 crispresso2_folder_infos[run_folder_loc] = run_data
                                 successfully_imported_count += 1
-                            except Exception as e:
+                            except Exception:
                                 warn('Could not open CRISPResso2 info file in ' + run_folder_loc)
                                 not_imported_count += 1
                     else:
                         warn('Could not process batch folder ' + folder)
                         not_imported_count += 1
-                #fourth, check WGS
+                # fourth, check WGS
                 wgs_info_file = os.path.join(folder, 'CRISPResso2WGS_info.json')
                 if os.path.exists(wgs_info_file):
                     wgs_data = CRISPRessoShared.load_crispresso_info(
@@ -211,7 +208,7 @@ ___________________________________
                     if 'good_region_folders' in wgs_data['results']:
                         run_names = wgs_data['results']['good_region_folders']
                         for run_name in run_names:
-                            run_folder_loc = os.path.join(folder, 'CRISPResso_on_%s'%run_name)
+                            run_folder_loc = os.path.join(folder, 'CRISPResso_on_%s' % run_name)
                             try:
                                 run_data = CRISPRessoShared.load_crispresso_info(run_folder_loc)
                                 crispresso2_folder_infos[run_folder_loc] = run_data
@@ -233,12 +230,12 @@ ___________________________________
 
             crispresso2_folders = list(sorted(crispresso2_folder_infos.keys()))
             crispresso2_folder_names = {}
-            crispresso2_folder_htmls = {}#file_loc->html folder loc
+            crispresso2_folder_htmls = {}  # file_loc->html folder loc
             quilt_plots_to_show = {}  # name->{'href':path to report, 'img': png}
             for crispresso2_folder in crispresso2_folders:
                 this_folder_name = CRISPRessoShared.slugify(crispresso2_folder)
                 crispresso2_folder_names[crispresso2_folder] = this_folder_name
-                this_sub_html_file = crispresso2_folder+".html"
+                this_sub_html_file = crispresso2_folder + ".html"
                 if crispresso2_folder_infos[crispresso2_folder]['running_info']['args'].place_report_in_output_folder:
                     this_sub_html_file = os.path.join(crispresso2_folder, crispresso2_folder_infos[crispresso2_folder]['running_info']['report_filename'])
                 crispresso2_folder_htmls[crispresso2_folder] = os.path.abspath(this_sub_html_file)
@@ -247,8 +244,8 @@ ___________________________________
                 for ref_name in run_data['results']['ref_names']:
                     if 'plot_2a_root' in run_data['results']['refs'][ref_name]:
                         plot_root = run_data['results']['refs'][ref_name]['plot_2a_root']
-                        quilt_plots_to_show[this_folder_name+" "+ref_name] = {'href': os.path.abspath(this_sub_html_file),
-                                'img': os.path.abspath(os.path.join(crispresso2_folder,plot_root+".png"))}
+                        quilt_plots_to_show[this_folder_name + " " + ref_name] = {'href': os.path.abspath(this_sub_html_file),
+                                'img': os.path.abspath(os.path.join(crispresso2_folder, plot_root + ".png"))}
 
             all_amplicons = set()
             amplicon_names = {}  # sequence -> ref name (to check for amplicons with the same name but different sequences)
@@ -267,21 +264,21 @@ ___________________________________
                     if ref_seq not in amplicon_counts:
                         amplicon_counts[ref_seq] = 0
                         amplicon_sources[ref_seq] = []
-                    amplicon_counts[ref_seq]+= 1
-                    amplicon_sources[ref_seq].append(crispresso2_folder+'(' + ref_name + ')')
+                    amplicon_counts[ref_seq] += 1
+                    amplicon_sources[ref_seq].append(crispresso2_folder + '(' + ref_name + ')')
 
             # make sure amplicon names aren't super long
             for amplicon in all_amplicons:
                 if len(amplicon_names[amplicon]) > 21:
                     amplicon_names[amplicon] = amplicon_names[amplicon][0:21]
 
-            #make sure no duplicate amplicon names (same name for the different amplicons)
+            # make sure no duplicate amplicon names (same name for the different amplicons)
             seen_names = []
             for amplicon in all_amplicons:
                 suffix_counter = 2
                 orig_name = amplicon_names[amplicon]
                 while amplicon_names[amplicon] in seen_names:
-                    amplicon_names[amplicon] = orig_name+"_"+str(suffix_counter)
+                    amplicon_names[amplicon] = orig_name + "_" + str(suffix_counter)
                     suffix_counter += 1
                 seen_names.append(amplicon_names[amplicon])
 
@@ -304,11 +301,11 @@ ___________________________________
 
             percent_complete_start, percent_complete_end = 11, 90
             percent_complete_step = (percent_complete_end - percent_complete_start) / len(all_amplicons)
-            #report for amplicons that appear multiple times
+            # report for amplicons that appear multiple times
             for amplicon_index, amplicon_seq in enumerate(all_amplicons):
                 amplicon_name = amplicon_names[amplicon_seq]
                 crispresso2_info['results']['refs'][amplicon_name] = {}
-                #only perform comparison if amplicon seen in more than one sample
+                # only perform comparison if amplicon seen in more than one sample
                 if amplicon_counts[amplicon_seq] < 2:
                     continue
 
@@ -321,7 +318,7 @@ ___________________________________
                 modification_frequency_summary = []
                 modification_percentage_summary = []
 
-                amp_found_count = 0 #how many folders had information for this amplicon
+                amp_found_count = 0  # how many folders had information for this amplicon
                 consensus_guides = []
                 consensus_include_idxs = []
                 consensus_sgRNA_plot_idxs = []
@@ -352,7 +349,7 @@ ___________________________________
                         guides_all_same = False
 
                     if 'nuc_freq_filename' not in run_data['results']['refs'][run_amplicon_name]:
-                        info("Skipping the amplicon '%s' in folder '%s'. Cannot find nucleotide information."%(run_amplicon_name, crispresso2_folder))
+                        info("Skipping the amplicon '%s' in folder '%s'. Cannot find nucleotide information." % (run_amplicon_name, crispresso2_folder))
                         continue
 
                     nucleotide_frequency_file = os.path.join(crispresso2_folder, run_data['results']['refs'][run_amplicon_name]['nuc_freq_filename'])
@@ -365,26 +362,26 @@ ___________________________________
                     ampSeq_cf, mod_freqs = CRISPRessoShared.parse_count_file(count_file)
 
                     if ampSeq_nf is None or ampSeq_np is None or ampSeq_cf is None:
-                        info("Skipping the amplicon '%s' in folder '%s'. Could not parse run output."%(run_amplicon_name, crispresso2_folder))
-                        info("Nucleotide frequency amplicon: '%s', Nucleotide percentage amplicon: '%s', Count vectors amplicon: '%s'"%(ampSeq_nf, ampSeq_np, ampSeq_cf))
+                        info("Skipping the amplicon '%s' in folder '%s'. Could not parse run output." % (run_amplicon_name, crispresso2_folder))
+                        info("Nucleotide frequency amplicon: '%s', Nucleotide percentage amplicon: '%s', Count vectors amplicon: '%s'" % (ampSeq_nf, ampSeq_np, ampSeq_cf))
                         continue
                     if ampSeq_nf != ampSeq_np or ampSeq_np != ampSeq_cf:
-                        warn("Skipping the amplicon '%s' in folder '%s'. Parsed amplicon sequences do not match\nnf:%s\nnp:%s\ncf:%s\nrf:%s"%(run_amplicon_name, crispresso2_folder, ampSeq_nf, ampSeq_np, ampSeq_cf, amplicon_seq))
+                        warn("Skipping the amplicon '%s' in folder '%s'. Parsed amplicon sequences do not match\nnf:%s\nnp:%s\ncf:%s\nrf:%s" % (run_amplicon_name, crispresso2_folder, ampSeq_nf, ampSeq_np, ampSeq_cf, amplicon_seq))
                         continue
                     if consensus_sequence == "":
                         consensus_sequence = ampSeq_nf
                     if ampSeq_nf != consensus_sequence:
-                        info("Skipping the amplicon '%s' in folder '%s'. Amplicon sequences do not match."%(run_amplicon_name, crispresso2_folder))
+                        info("Skipping the amplicon '%s' in folder '%s'. Amplicon sequences do not match." % (run_amplicon_name, crispresso2_folder))
                         continue
                     if 'Total' not in mod_freqs:
-                        info("Skipping the amplicon '%s' in folder '%s'. Processing did not complete."%(run_amplicon_name, crispresso2_folder))
+                        info("Skipping the amplicon '%s' in folder '%s'. Processing did not complete." % (run_amplicon_name, crispresso2_folder))
                         continue
                     if mod_freqs['Total'][0] == 0 or mod_freqs['Total'][0] == "0":
-                        info("Skipping the amplicon '%s' in folder '%s'. Got no reads for amplicon."%(run_amplicon_name, crispresso2_folder))
+                        info("Skipping the amplicon '%s' in folder '%s'. Got no reads for amplicon." % (run_amplicon_name, crispresso2_folder))
                         continue
                     this_amp_total_reads = run_data['results']['alignment_stats']['counts_total'][run_amplicon_name]
                     if this_amp_total_reads < args.min_reads_for_inclusion:
-                        info("Skipping the amplicon '%s' in folder '%s'. Got %s reads (min_reads_for_inclusion is %d)."%(run_amplicon_name, crispresso2_folder, str(this_amp_total_reads), args.min_reads_for_inclusion))
+                        info("Skipping the amplicon '%s' in folder '%s'. Got %s reads (min_reads_for_inclusion is %d)." % (run_amplicon_name, crispresso2_folder, str(this_amp_total_reads), args.min_reads_for_inclusion))
                         continue
 
                     mod_pcts = {}
@@ -416,9 +413,9 @@ ___________________________________
                         modification_percentage_summary.append(pct_row)
 
                 if amp_found_count == 0:
-                    info("Couldn't find any data for amplicon '%s'. Not compiling results."%amplicon_name)
+                    info("Couldn't find any data for amplicon '%s'. Not compiling results." % amplicon_name)
                 else:
-                    amplicon_plot_name = amplicon_name+"."
+                    amplicon_plot_name = amplicon_name + "."
                     if len(amplicon_names) == 1 and amplicon_name == "Reference":
                         amplicon_plot_name = ""
 
@@ -458,31 +455,31 @@ ___________________________________
 
                     this_number_samples = len(pd.unique(nucleotide_percentage_summary_df['Folder']))
 
-                    #if guides are all the same, merge substitutions and perform base editor comparison at guide quantification window
+                    # if guides are all the same, merge substitutions and perform base editor comparison at guide quantification window
                     if guides_all_same and consensus_guides != []:
-                        info("All guides are equal. Performing comparison of runs for amplicon '%s'"% amplicon_name)
-                        include_idxs = consensus_include_idxs #include indexes are the same for all guides
+                        info("All guides are equal. Performing comparison of runs for amplicon '%s'" % amplicon_name)
+                        include_idxs = consensus_include_idxs  # include indexes are the same for all guides
                         for idx, sgRNA in enumerate(consensus_guides):
                             sgRNA_plot_idxs = consensus_sgRNA_plot_idxs[idx]
-                            plot_idxs_flat = [0, 1] # guide, nucleotide
+                            plot_idxs_flat = [0, 1]  # guide, nucleotide
                             plot_idxs_flat.extend([plot_idx + 2 for plot_idx in sgRNA_plot_idxs])
 
                             sub_nucleotide_frequency_summary_df = nucleotide_frequency_summary_df.iloc[:, plot_idxs_flat]
                             sub_nucleotide_frequency_summary_df = pd.concat([sub_nucleotide_frequency_summary_df.iloc[:, 0:2],
                                                                         sub_nucleotide_frequency_summary_df.iloc[:, 2:].apply(pd.to_numeric)], axis=1)
-                            sub_nucleotide_frequency_summary_filename = _jp(amplicon_plot_name + 'Nucleotide_frequency_summary_around_sgRNA_'+sgRNA+'.txt')
+                            sub_nucleotide_frequency_summary_filename = _jp(amplicon_plot_name + 'Nucleotide_frequency_summary_around_sgRNA_' + sgRNA + '.txt')
                             sub_nucleotide_frequency_summary_df.to_csv(sub_nucleotide_frequency_summary_filename, sep='\t', index=None)
 
                             sub_nucleotide_percentage_summary_df = nucleotide_percentage_summary_df.iloc[:, plot_idxs_flat]
                             sub_nucleotide_percentage_summary_df = pd.concat([sub_nucleotide_percentage_summary_df.iloc[:, 0:2],
                                                                         sub_nucleotide_percentage_summary_df.iloc[:, 2:].apply(pd.to_numeric)], axis=1)
-                            sub_nucleotide_percentage_summary_filename = _jp(amplicon_plot_name + 'Nucleotide_percentage_summary_around_sgRNA_'+sgRNA+'.txt')
+                            sub_nucleotide_percentage_summary_filename = _jp(amplicon_plot_name + 'Nucleotide_percentage_summary_around_sgRNA_' + sgRNA + '.txt')
                             sub_nucleotide_percentage_summary_df.to_csv(sub_nucleotide_percentage_summary_filename, sep='\t', index=None)
 
                             sub_modification_percentage_summary_df = modification_percentage_summary_df.iloc[:, plot_idxs_flat]
                             sub_modification_percentage_summary_df = pd.concat([sub_modification_percentage_summary_df.iloc[:, 0:2],
                                                                         sub_modification_percentage_summary_df.iloc[:, 2:].apply(pd.to_numeric)], axis=1)
-                            sub_modification_percentage_summary_filename = _jp(amplicon_plot_name + 'Modification_percentage_summary_around_sgRNA_'+sgRNA+'.txt')
+                            sub_modification_percentage_summary_filename = _jp(amplicon_plot_name + 'Modification_percentage_summary_around_sgRNA_' + sgRNA + '.txt')
                             sub_modification_percentage_summary_df.to_csv(sub_modification_percentage_summary_filename, sep='\t', index=None)
 
                             if not args.suppress_plots and this_number_samples < args.max_samples_per_summary_plot:
@@ -498,21 +495,21 @@ ___________________________________
                                         if newend is None and i >= sgRNA_interval[1]:
                                             newend = idx
 
-                                    #if guide doesn't overlap with plot idxs
+                                    # if guide doesn't overlap with plot idxs
                                     if newend == 0 or newstart == len(sgRNA_plot_idxs):
                                         continue
-                                    #otherwise, correct partial overlaps
+                                    # otherwise, correct partial overlaps
                                     elif newstart == None and newend == None:
                                         newstart = 0
-                                        newend = len(include_idxs) -1
+                                        newend = len(include_idxs) - 1
                                     elif newstart == None:
                                         newstart = 0
                                     elif newend == None:
-                                        newend = len(include_idxs) -1
-                                    #and add it to the list
+                                        newend = len(include_idxs) - 1
+                                    # and add it to the list
                                     sub_sgRNA_intervals.append((newstart, newend))
 
-                                this_window_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt_around_sgRNA_'+sgRNA)
+                                this_window_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt_around_sgRNA_' + sgRNA)
                                 nucleotide_quilt_input = {
                                     'nuc_pct_df': sub_nucleotide_percentage_summary_df,
                                     'mod_pct_df': sub_modification_percentage_summary_df,
@@ -538,18 +535,18 @@ ___________________________________
                                 crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [(amplicon_name + ' nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), (amplicon_name + ' modification frequencies', os.path.basename(modification_frequency_summary_filename))]
                         # done with per-sgRNA plots
 
-                        if not args.suppress_plots: # and this_number_samples < 500: # plot the whole region
-                            this_plot_suffix = "" # in case we have a lot of regions, split them up and add a suffix here
+                        if not args.suppress_plots:  # and this_number_samples < 500: # plot the whole region
+                            this_plot_suffix = ""  # in case we have a lot of regions, split them up and add a suffix here
                             this_plot_suffix_int = 1
-                            nrow_per_sample_nucs = nucleotide_percentage_summary_df.shape[0] / this_number_samples # calculate number of rows per sample for subsetting the tables
+                            nrow_per_sample_nucs = nucleotide_percentage_summary_df.shape[0] / this_number_samples  # calculate number of rows per sample for subsetting the tables
                             nrow_per_sample_mods = modification_percentage_summary_df.shape[0] / this_number_samples
                             for sample_start_ind in range(0, this_number_samples, args.max_samples_per_summary_plot):
                                 sample_end_ind = min(sample_start_ind + args.max_samples_per_summary_plot, this_number_samples)
                                 this_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt' + this_plot_suffix)
-                                this_nuc_start_ind = int(sample_start_ind*nrow_per_sample_nucs)
-                                this_nuc_end_ind = int((sample_end_ind+1)*nrow_per_sample_nucs - 1)
-                                this_mod_start_ind = int(sample_start_ind*nrow_per_sample_mods)
-                                this_mod_end_ind = int((sample_end_ind+1)*nrow_per_sample_mods - 1)
+                                this_nuc_start_ind = int(sample_start_ind * nrow_per_sample_nucs)
+                                this_nuc_end_ind = int((sample_end_ind + 1) * nrow_per_sample_nucs - 1)
+                                this_mod_start_ind = int(sample_start_ind * nrow_per_sample_mods)
+                                this_mod_end_ind = int((sample_end_ind + 1) * nrow_per_sample_mods - 1)
                                 nucleotide_quilt_input = {
                                     'nuc_pct_df': nucleotide_percentage_summary_df.iloc[this_nuc_start_ind:this_nuc_end_ind, :],
                                     'mod_pct_df': modification_percentage_summary_df.iloc[this_mod_start_ind:this_mod_end_ind, :],
@@ -577,46 +574,45 @@ ___________________________________
                                 this_plot_suffix_int += 1
                                 this_plot_suffix = "_" + str(this_plot_suffix_int)
 
-                    else: # guides are not the same
-                        if not args.suppress_plots: # and this_number_samples < 150:
-                            this_plot_suffix = "" # in case we have a lot of regions, split them up and add a suffix here
-                            this_plot_suffix_int = 1
-                            nrow_per_sample_nucs = nucleotide_percentage_summary_df.shape[0] / this_number_samples # calculate number of rows per sample for subsetting the tables
-                            nrow_per_sample_mods = modification_percentage_summary_df.shape[0] / this_number_samples
-                            for sample_start_ind in range(0,this_number_samples,args.max_samples_per_summary_plot):
-                                sample_end_ind = min(sample_start_ind + args.max_samples_per_summary_plot, this_number_samples)
-                                this_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt' + this_plot_suffix)
-                                this_nuc_start_ind = int(sample_start_ind*nrow_per_sample_nucs)
-                                this_nuc_end_ind = int((sample_end_ind+1)*nrow_per_sample_nucs - 1)
-                                this_mod_start_ind = int(sample_start_ind*nrow_per_sample_mods)
-                                this_mod_end_ind = int((sample_end_ind+1)*nrow_per_sample_mods - 1)
+                    elif not args.suppress_plots:  # and this_number_samples < 150:
+                        this_plot_suffix = ""  # in case we have a lot of regions, split them up and add a suffix here
+                        this_plot_suffix_int = 1
+                        nrow_per_sample_nucs = nucleotide_percentage_summary_df.shape[0] / this_number_samples  # calculate number of rows per sample for subsetting the tables
+                        nrow_per_sample_mods = modification_percentage_summary_df.shape[0] / this_number_samples
+                        for sample_start_ind in range(0, this_number_samples, args.max_samples_per_summary_plot):
+                            sample_end_ind = min(sample_start_ind + args.max_samples_per_summary_plot, this_number_samples)
+                            this_nuc_pct_quilt_plot_name = _jp(amplicon_plot_name + 'Nucleotide_percentage_quilt' + this_plot_suffix)
+                            this_nuc_start_ind = int(sample_start_ind * nrow_per_sample_nucs)
+                            this_nuc_end_ind = int((sample_end_ind + 1) * nrow_per_sample_nucs - 1)
+                            this_mod_start_ind = int(sample_start_ind * nrow_per_sample_mods)
+                            this_mod_end_ind = int((sample_end_ind + 1) * nrow_per_sample_mods - 1)
 
-                                nucleotide_quilt_input = {
-                                    'nuc_pct_df': nucleotide_percentage_summary_df.iloc[this_nuc_start_ind:this_nuc_end_ind, :],
-                                    'mod_pct_df': modification_percentage_summary_df.iloc[this_mod_start_ind:this_mod_end_ind, :],
-                                    'fig_filename_root': this_nuc_pct_quilt_plot_name,
-                                    'save_also_png': save_png,
-                                    'sgRNA_intervals': consensus_sgRNA_intervals,
-                                    'sgRNA_sequences': consensus_guides,
-                                    'quantification_window_idxs': consensus_include_idxs,
-                                    'group_column': 'Folder',
-                                    'custom_colors': None,
-                                }
-                                plot(
-                                    CRISPRessoPlot.plot_nucleotide_quilt,
-                                    nucleotide_quilt_input,
-                                )
+                            nucleotide_quilt_input = {
+                                'nuc_pct_df': nucleotide_percentage_summary_df.iloc[this_nuc_start_ind:this_nuc_end_ind, :],
+                                'mod_pct_df': modification_percentage_summary_df.iloc[this_mod_start_ind:this_mod_end_ind, :],
+                                'fig_filename_root': this_nuc_pct_quilt_plot_name,
+                                'save_also_png': save_png,
+                                'sgRNA_intervals': consensus_sgRNA_intervals,
+                                'sgRNA_sequences': consensus_guides,
+                                'quantification_window_idxs': consensus_include_idxs,
+                                'group_column': 'Folder',
+                                'custom_colors': None,
+                            }
+                            plot(
+                                CRISPRessoPlot.plot_nucleotide_quilt,
+                                nucleotide_quilt_input,
+                            )
 
-                                plot_name = os.path.basename(this_nuc_pct_quilt_plot_name)
-                                nuc_pct_quilt_plot_names.append(plot_name)
-                                crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'Amplicon: ' + amplicon_name + this_plot_suffix
-                                if len(amplicon_names) == 1:
-                                    crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = ''
-                                crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Composition of each base for the amplicon ' + amplicon_name
-                                crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [(amplicon_name + ' nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), (amplicon_name + ' modification frequencies', os.path.basename(modification_frequency_summary_filename))]
+                            plot_name = os.path.basename(this_nuc_pct_quilt_plot_name)
+                            nuc_pct_quilt_plot_names.append(plot_name)
+                            crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'Amplicon: ' + amplicon_name + this_plot_suffix
+                            if len(amplicon_names) == 1:
+                                crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = ''
+                            crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Composition of each base for the amplicon ' + amplicon_name
+                            crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [(amplicon_name + ' nucleotide frequencies', os.path.basename(nucleotide_frequency_summary_filename)), (amplicon_name + ' modification frequencies', os.path.basename(modification_frequency_summary_filename))]
 
-                                this_plot_suffix_int += 1
-                                this_plot_suffix = "_" + str(this_plot_suffix_int)
+                            this_plot_suffix_int += 1
+                            this_plot_suffix = "_" + str(this_plot_suffix_int)
 
                     if C2PRO_INSTALLED and not args.use_matplotlib and not args.suppress_plots:
                         crispresso2_info['results']['general_plots']['allele_modification_heatmap_plot_names'] = []
@@ -726,16 +722,16 @@ ___________________________________
             crispresso2_info['results']['general_plots']['window_nuc_conv_plot_names'] = window_nuc_conv_plot_names
             crispresso2_info['results']['general_plots']['nuc_conv_plot_names'] = nuc_conv_plot_names
 
-            quantification_summary=[]
-            #summarize amplicon modifications
+            quantification_summary = []
+            # summarize amplicon modifications
             debug('Summarizing amplicon modifications...', {'percent_complete': 92})
-            samples_quantification_summary_by_amplicon_filename = _jp('CRISPRessoAggregate_quantification_of_editing_frequency_by_amplicon.txt') #this file has separate lines for each amplicon in each run
+            samples_quantification_summary_by_amplicon_filename = _jp('CRISPRessoAggregate_quantification_of_editing_frequency_by_amplicon.txt')  # this file has separate lines for each amplicon in each run
             with open(samples_quantification_summary_by_amplicon_filename, 'w') as outfile:
                 wrote_header = False
                 for crispresso2_folder in crispresso2_folders:
                     run_data = crispresso2_folder_infos[crispresso2_folder]
                     run_name = crispresso2_folder_names[crispresso2_folder]
-                    amplicon_modification_file=os.path.join(crispresso2_folder, run_data['running_info']['quant_of_editing_freq_filename'])
+                    amplicon_modification_file = os.path.join(crispresso2_folder, run_data['running_info']['quant_of_editing_freq_filename'])
                     with open(amplicon_modification_file, 'r') as infile:
                         file_head = infile.readline()
                         if not wrote_header:
@@ -761,7 +757,7 @@ ___________________________________
                     n_deletion_and_substitution = 0
                     n_insertion_and_deletion_and_substitution = 0
 
-                    for ref_name in run_data['results']['ref_names']: #multiple alleles could be provided
+                    for ref_name in run_data['results']['ref_names']:  # multiple alleles could be provided
                         n_aligned += run_data['results']['alignment_stats']['counts_total'][ref_name]
                         n_unmod += run_data['results']['alignment_stats']['counts_unmodified'][ref_name]
                         n_mod += run_data['results']['alignment_stats']['counts_modified'][ref_name]
@@ -781,9 +777,8 @@ ___________________________________
                     unmod_pct = np.nan
                     mod_pct = np.nan
                     if n_aligned > 0:
-                        unmod_pct = 100*n_unmod/float(n_aligned)
-                        mod_pct = 100*n_mod/float(n_aligned)
-
+                        unmod_pct = 100 * n_unmod / float(n_aligned)
+                        mod_pct = 100 * n_mod / float(n_aligned)
 
                     vals = [run_name]
                     vals.extend([round(unmod_pct, 8), round(mod_pct, 8), n_aligned, n_tot, n_unmod, n_mod, n_discarded, n_insertion, n_deletion, n_substitution, n_only_insertion, n_only_deletion, n_only_substitution, n_insertion_and_deletion, n_insertion_and_substitution, n_deletion_and_substitution, n_insertion_and_deletion_and_substitution])
@@ -791,8 +786,8 @@ ___________________________________
 
             header = 'Name\tUnmodified%\tModified%\tReads_total\tReads_aligned\tUnmodified\tModified\tDiscarded\tInsertions\tDeletions\tSubstitutions\tOnly Insertions\tOnly Deletions\tOnly Substitutions\tInsertions and Deletions\tInsertions and Substitutions\tDeletions and Substitutions\tInsertions Deletions and Substitutions'
             header_els = header.split("\t")
-            df_summary_quantification=pd.DataFrame(quantification_summary, columns=header_els).sort_values(by=['Name'])
-            samples_quantification_summary_filename = _jp('CRISPRessoAggregate_quantification_of_editing_frequency.txt') #this file has one line for each run (sum of all amplicons)
+            df_summary_quantification = pd.DataFrame(quantification_summary, columns=header_els).sort_values(by=['Name'])
+            samples_quantification_summary_filename = _jp('CRISPRessoAggregate_quantification_of_editing_frequency.txt')  # this file has one line for each run (sum of all amplicons)
             df_summary_quantification.fillna('NA').to_csv(samples_quantification_summary_filename, sep='\t', index=None)
             crispresso2_info['results']['alignment_stats']['samples_quantification_summary_filename'] = os.path.basename(samples_quantification_summary_filename)
             crispresso2_info['results']['alignment_stats']['samples_quantification_summary_by_amplicon_filename'] = os.path.basename(samples_quantification_summary_by_amplicon_filename)
@@ -833,14 +828,14 @@ ___________________________________
                 crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Each bar shows the total number of reads aligned to each amplicon, divided into the reads that are modified and unmodified. The vertical line shows the cutoff for analysis, set using the --min_reads_for_inclusion parameter.'
                 crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('CRISPRessoAggregate summary', os.path.basename(samples_quantification_summary_filename)), ('CRISPRessoAggregate summary by amplicon', os.path.basename(samples_quantification_summary_by_amplicon_filename))]
 
-            #summarize alignment
+            # summarize alignment
             debug('Summarizing alignment...', {'percent_complete': 96})
             with open(_jp('CRISPRessoAggregate_mapping_statistics.txt'), 'w') as outfile:
                 wrote_header = False
                 for crispresso2_folder in crispresso2_folders:
                     run_data = crispresso2_folder_infos[crispresso2_folder]
                     run_name = crispresso2_folder_names[crispresso2_folder]
-                    mapping_file=os.path.join(crispresso2_folder, run_data['running_info']['mapping_stats_filename'])
+                    mapping_file = os.path.join(crispresso2_folder, run_data['running_info']['mapping_stats_filename'])
                     with open(mapping_file, 'r') as infile:
                         file_head = infile.readline()
                         if not wrote_header:
@@ -850,7 +845,7 @@ ___________________________________
                             outfile.write(crispresso2_folder + "\t" + line)
 
             if not args.suppress_report:
-                report_filename = OUTPUT_DIRECTORY+'.html'
+                report_filename = OUTPUT_DIRECTORY + '.html'
                 if (args.place_report_in_output_folder):
                     report_filename = _jp("CRISPResso2Aggregate_report.html")
                 CRISPRessoReport.make_aggregate_report(
@@ -866,7 +861,7 @@ ___________________________________
                 )
                 crispresso2_info['running_info']['report_location'] = report_filename
                 crispresso2_info['running_info']['report_filename'] = os.path.basename(report_filename)
-        else: #no files successfully imported
+        else:  # no files successfully imported
             files_in_curr_dir = os.listdir('.')
             if len(files_in_curr_dir) > 15:
                 files_in_curr_dir = files_in_curr_dir[0:15]
@@ -917,6 +912,7 @@ ___________________________________
 
         error('\n\nERROR: %s' % e)
         sys.exit(-1)
+
 
 if __name__ == '__main__':
     main()
