@@ -1,5 +1,31 @@
-{% if 'guardrails_htmls' in report_data['run_data']['results'] and report_data['run_data']['results']['guardrails_htmls']|length > 0 %}
-	{% for message in report_data['run_data']['results']['guardrails_htmls'] %}
-		{{message | safe}}
-	{% endfor %}
+{% set failed = report_data['run_data']['results'].get('guardrails_failed_htmls', []) %}
+{% set passed = report_data['run_data']['results'].get('guardrails_passed_htmls', []) %}
+{% if failed|length > 0 or passed|length > 0 %}
+<style>
+.guardrail-toggle { transition: transform 0.2s ease; }
+details[open] > summary .guardrail-toggle { transform: rotate(180deg); }
+.guardrail-summary { list-style: none; }
+.guardrail-summary::-webkit-details-marker { display: none; }
+</style>
+<details style="margin-bottom: 10px; text-align: center; border-radius: 5px;">
+	<summary style="cursor: pointer; font-weight: bold; font-size: 1.1em; padding: 8px 10px; border-radius: 5px; list-style: none; display: flex; justify-content: center; align-items: center;{% if failed|length > 0 %} background-color: #f8d7da; border: 2px solid #dc3545;{% else %} background-color: #d1e7dd; border: 2px solid #198754;{% endif %}">{% if failed|length > 0 %}Guardrails — {{ failed|length }} out of {{ failed|length + passed|length }} failed{% else %}All {{ passed|length }} guardrails passed{% endif %} <i class="fas fa-chevron-down guardrail-toggle" style="margin-left: auto;"></i></summary>
+	<div style="padding: 10px; background-color: #ffffff;">
+	{% if failed|length > 0 %}
+	<details open style="margin-left: 20px; margin-top: 5px; text-align: left;">
+		<summary class="guardrail-summary" style="cursor: pointer; font-weight: bold; color: #842029;"><i class="fas fa-chevron-down guardrail-toggle" style="margin-right: 5px;"></i>Failed Guardrails ({{ failed|length }})</summary>
+		{% for message in failed %}
+			{{ message | safe }}
+		{% endfor %}
+	</details>
+	{% endif %}
+	{% if passed|length > 0 %}
+	<details style="margin-left: 20px; margin-top: 5px; text-align: left;">
+		<summary class="guardrail-summary" style="cursor: pointer; font-weight: bold; color: #0f5132;"><i class="fas fa-chevron-down guardrail-toggle" style="margin-right: 5px;"></i>Passed Guardrails ({{ passed|length }})</summary>
+		{% for message in passed %}
+			{{ message | safe }}
+		{% endfor %}
+	</details>
+	{% endif %}
+	</div>
+</details>
 {% endif %}
