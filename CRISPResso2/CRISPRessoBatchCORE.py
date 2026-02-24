@@ -138,7 +138,7 @@ def main():
         _jp = lambda filename: os.path.join(OUTPUT_DIRECTORY, filename)  # handy function to put a file in the output directory
 
         if args.use_matplotlib or not C2PRO_INSTALLED:
-            from CRISPResso2 import CRISPRessoPlot
+            from CRISPResso2.plots import CRISPRessoPlot
         else:
             from CRISPRessoPro import plot as CRISPRessoPlot
         CRISPRessoPlot.setMatplotlibDefaults()

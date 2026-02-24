@@ -17,7 +17,7 @@ from copy import deepcopy
 import re
 from matplotlib import colors as colors_mpl
 import seaborn as sns
-import upsetplot
+from CRISPResso2.plots import upsetplot
 
 from CRISPResso2 import CRISPRessoShared
 

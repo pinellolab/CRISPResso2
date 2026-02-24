@@ -288,7 +288,7 @@ def main():
         info(CRISPRessoShared.get_crispresso_header(description, pooled_string))
 
         if args.use_matplotlib or not CRISPRessoShared.is_C2Pro_installed():
-            from CRISPResso2 import CRISPRessoPlot
+            from CRISPResso2.plots import CRISPRessoPlot
         else:
             from CRISPRessoPro import plot as CRISPRessoPlot
 
