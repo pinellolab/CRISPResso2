@@ -2,7 +2,7 @@
 
 import pytest
 
-from CRISPResso2 import CRISPRessoPlot
+from CRISPResso2.plots import CRISPRessoPlot
 
 
 # =============================================================================

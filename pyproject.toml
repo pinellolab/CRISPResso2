@@ -148,6 +148,9 @@ ignore = [
     "PLW2901",  # redefined-loop-name (outer loop variable overwritten by inner assignment)
     "PLW3301",  # nested-min-max (nested `min`/`max` calls can be flattened)
     "RUF005",   # collection-literal-concatenation (use `[*a, *b]` instead of `a + b` for collections)
+    "RUF012",   # Mutable class attributes should be annotated with `typing.ClassVar`
+    "RUF017",   # Avoid quadratic list summation
+    "RUF067",   # `__init__` module should only contain docstrings and re-exports
     "F841",     # unused-variable (local variable is assigned but never used)
     "RUF052",   # used-dummy-variable (variable prefixed with `_` is used, rename without prefix)
     "W191",     # tab-indentation (indentation contains tabs)
