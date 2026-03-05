@@ -4681,14 +4681,13 @@ def main():
 
         for ref_name in ref_names:
             ref_plot_name = refs[ref_name]['ref_plot_name']
+            crispresso2_info['results']['refs'][ref_name]['allele_frequency_files'] = []
 
             # n_this_category = counts_total[ref_name]
             # if n_this_category < 1:
             #    continue
 
             if not args.suppress_plots:
-                crispresso2_info['results']['refs'][ref_name]['allele_frequency_files'] = []
-
                 ins_pct_vector_filename = _jp(ref_plot_name + 'Effect_vector_insertion.txt')
                 save_vector_to_file(insertion_pct_vectors[ref_name], ins_pct_vector_filename)
                 crispresso2_info['results']['refs'][ref_name]['insertion_pct_vector_filename'] = os.path.basename(ins_pct_vector_filename)
@@ -6022,7 +6021,7 @@ def main():
                         crispresso2_info['results']['refs'][ref_name]['plot_10g_roots'].append(os.path.basename(fig_filename_root))
                         crispresso2_info['results']['refs'][ref_name]['plot_10g_captions'].append("Figure 10g: Non-reference base counts. For target nucleotides in the plotting window, this plot shows the number of non-reference (non-" + args.conversion_nuc_from + ") bases. The number of each target base is annotated on the reference sequence at the bottom of the plot.")
                         crispresso2_info['results']['refs'][ref_name]['plot_10g_datas'].append([('Nucleotide frequencies at ' + args.conversion_nuc_from + 's', os.path.basename(quant_window_sel_nuc_freq_filename))])
-                        wt_ref_name = ref_name
+                    wt_ref_name = ref_name
                     ref_seq = refs[wt_ref_name]['sequence']
                     target_seq = get_base_edit_target_sequence(ref_seq, df_alleles, args.base_editor_target_ref_skip_allele_count)
 
@@ -6084,7 +6083,7 @@ def main():
                             crispresso2_info['results']['refs'][ref_name]['plot_10i_captions'].append(f"Figure 10i: Upset plot of Base Edits for {args.conversion_nuc_from} around cut site for {sgRNA_legend}. Each dot matrix at the bottom represents a specific combination of base edits (colored by target position), and the bar plot at the top shows the number of reads with each combination.")
                             crispresso2_info['results']['refs'][ref_name]['plot_10i_datas'].append([('Binary Allele Counts', '10i.' + ref_name + '.' + sgRNA_label + '.binary_allele_counts.txt')])
 
-            if refs[ref_name]['contains_coding_seq']:
+            if refs[ref_name]['contains_coding_seq'] and not args.suppress_plots:
                 for i, coding_seq in enumerate(coding_seqs):
                     fig_filename_root = _jp('9a.' + ref_plot_name + 'amino_acid_table_around_' + coding_seq)
                     coding_seq_amino_acids = CRISPRessoShared.get_amino_acids_from_nucs(coding_seq)
