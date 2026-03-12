@@ -370,6 +370,8 @@ def main():
 
             # create merged heatmaps for each cut site
             matching_allele_files = get_matching_allele_files(run_info_1, run_info_2)
+            # sort so regular allele files come before base edit files in the report
+            matching_allele_files.sort(key=lambda pair: 'base_edit' in pair[0])
             for allele_file_1, allele_file_2 in matching_allele_files:
                 df1 = pd.read_csv(os.path.join(args.crispresso_output_folder_1, allele_file_1), sep="\t")
                 df2 = pd.read_csv(os.path.join(args.crispresso_output_folder_2, allele_file_2), sep="\t")
@@ -396,28 +398,36 @@ def main():
                 merged[quant_cols] = merged[quant_cols].fillna(0)
                 lfc_error = 0.1
                 merged['each_LFC'] = np.log2(((merged['%Reads_' + sample_1_name] + lfc_error) / (merged['%Reads_' + sample_2_name] + lfc_error)).astype(float)).replace([np.inf, np.nan], 0)
-                merged = merged.sort_values(['%Reads_' + sample_1_name, 'Reference_Sequence', 'n_deleted', 'n_inserted', 'n_mutated'], ascending=False)
+                merged = merged.sort_values(['%Reads_' + sample_1_name, 'Aligned_Sequence', 'Reference_Sequence'], ascending=[False, True, True])
                 merged = merged.reset_index(drop=True).set_index('Aligned_Sequence')
-                args.crispresso_output_folder_root = os.path.split(allele_file_1)[1].replace(".txt", "")
-                allele_comparison_file = _jp(args.crispresso_output_folder_root + '.txt')
+                folder_root = os.path.split(allele_file_1)[1].replace(".txt", "")
+                allele_comparison_file = _jp(folder_root + '.txt')
                 merged.to_csv(allele_comparison_file, sep="\t", index=None)
 
-                plot_name = '3.' + args.crispresso_output_folder_root + '_top'
-                CRISPRessoPlot.plot_alleles_table_compare(ref_seq_around_cut, merged.sort_values(['each_LFC'], ascending=True), sample_1_name, sample_2_name, _jp(plot_name),
+                is_base_edit = 'base_edit' in allele_file_1
+                if is_base_edit:
+                    title_prefix = 'Base edit comparison enriched in '
+                    label_prefix = 'Base editing target nucleotide composition alleles.'
+                else:
+                    title_prefix = 'Alleles enriched in '
+                    label_prefix = 'Distribution comparison of alleles.'
+                label_suffix = ' Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site. ' + \
+                'The proportion and number of reads is shown for each sample on the right, with the values for ' + sample_1_name + ' followed by the values for ' + sample_2_name + '.'
+
+                plot_name = '3.' + folder_root + '_top'
+                CRISPRessoPlot.plot_alleles_table_compare(ref_seq_around_cut, merged.sort_values(['each_LFC', 'Aligned_Sequence', 'Reference_Sequence'], ascending=[False, True, True]), sample_1_name, sample_2_name, _jp(plot_name),
                             MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot, MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot, SAVE_ALSO_PNG=save_png)
                 crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
-                crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'Alleles enriched in ' + sample_1_name
-                crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Distribution comparison of alleles. Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site. ' + \
-                'The proportion and number of reads is shown for each sample on the right, with the values for ' + sample_1_name + ' followed by the values for ' + sample_2_name + '. Alleles are sorted for enrichment in ' + sample_1_name + '.'
+                crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = title_prefix + sample_1_name
+                crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = label_prefix + label_suffix + ' Alleles are sorted for enrichment in ' + sample_1_name + '.'
                 crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Allele comparison table', os.path.basename(allele_comparison_file))]
 
-                plot_name = '3.' + args.crispresso_output_folder_root + '_bottom'
-                CRISPRessoPlot.plot_alleles_table_compare(ref_seq_around_cut, merged.sort_values(['each_LFC'], ascending=False), sample_1_name, sample_2_name, _jp(plot_name),
+                plot_name = '3.' + folder_root + '_bottom'
+                CRISPRessoPlot.plot_alleles_table_compare(ref_seq_around_cut, merged.sort_values(['each_LFC', 'Aligned_Sequence', 'Reference_Sequence'], ascending=[True, True, True]), sample_1_name, sample_2_name, _jp(plot_name),
                             MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot, MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot, SAVE_ALSO_PNG=save_png)
                 crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
-                crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'Alleles enriched in ' + sample_2_name
-                crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Distribution comparison of alleles. Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site. ' + \
-                'The proportion and number of reads is shown for each sample on the right, with the values for ' + sample_1_name + ' followed by the values for ' + sample_2_name + '. Alleles are sorted for enrichment in ' + sample_2_name + '.'
+                crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = title_prefix + sample_2_name
+                crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = label_prefix + label_suffix + ' Alleles are sorted for enrichment in ' + sample_2_name + '.'
                 crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Allele comparison table', os.path.basename(allele_comparison_file))]
 
         debug('Calculating significant base counts...', {'percent_complete': 95})
