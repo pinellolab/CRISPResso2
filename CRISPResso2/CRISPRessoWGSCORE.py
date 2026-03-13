@@ -466,14 +466,14 @@ def main():
         # Load and validate the REGION FILE
         df_regions = pd.read_csv(args.region_file, names=[
                 'chr_id', 'bpstart', 'bpend', 'Name', 'sgRNA',
-                'Expected_HDR', 'Coding_sequence'], comment='#', sep='\t', dtype={'Name': str, 'chr_id': str})
+                'Expected_HDR', 'Coding_seq', 'Coding_seq_name'], comment='#', sep='\t', dtype={'Name': str, 'chr_id': str})
 
         # remove empty amplicons/lines
         df_regions.dropna(subset=['chr_id', 'bpstart', 'bpend'], inplace=True)
 
         df_regions.Expected_HDR = df_regions.Expected_HDR.apply(capitalize_sequence)
         df_regions.sgRNA = df_regions.sgRNA.apply(capitalize_sequence)
-        df_regions.Coding_sequence = df_regions.Coding_sequence.apply(capitalize_sequence)
+        df_regions.Coding_seq = df_regions.Coding_seq.apply(capitalize_sequence)
 
         # check or create names
         for idx, row in df_regions.iterrows():
@@ -573,6 +573,8 @@ def main():
         if can_finish_incomplete_run and num_rows_without_fastq == 0 and os.path.isfile(report_reads_aligned_filename) and 'generation_of_fastq_files_for_each_amplicon' in crispresso2_info['running_info']['finished_steps']:
             info('Skipping generation of fastq files for each amplicon.')
             df_regions = pd.read_csv(report_reads_aligned_filename, comment='#', sep='\t', dtype={'Name': str, 'chr_id': str})
+            # backward compatibility: rename columns from old output files
+            df_regions.rename(columns={'Coding_sequence': 'Coding_seq'}, inplace=True)
             df_regions.set_index('Name', inplace=True)
 
         else:
@@ -584,7 +586,7 @@ def main():
                 n_processes_for_wgs
             )
             df_regions.sort_values('region_number', inplace=True)
-            cols_to_print = ["chr_id", "bpstart", "bpend", "sgRNA", "Expected_HDR", "Coding_sequence", "sequence", "n_reads", "bam_file_with_reads_in_region", "fastq_file_trimmed_reads_in_region", "run_name"]
+            cols_to_print = ["chr_id", "bpstart", "bpend", "sgRNA", "Expected_HDR", "Coding_seq", "Coding_seq_name", "sequence", "n_reads", "bam_file_with_reads_in_region", "fastq_file_trimmed_reads_in_region", "run_name"]
             if args.gene_annotations:
                 cols_to_print.append('gene_overlapping')
             df_regions.infer_objects(copy=False).fillna('NA').to_csv(report_reads_aligned_filename, sep='\t', columns=cols_to_print, index_label="Name")
@@ -611,8 +613,11 @@ def main():
                 if row['Expected_HDR'] and not pd.isnull(row['Expected_HDR']):
                     crispresso_cmd += ' -e %s' % row['Expected_HDR']
 
-                if row['Coding_sequence'] and not pd.isnull(row['Coding_sequence']):
-                    crispresso_cmd += ' -c %s' % row['Coding_sequence']
+                if row['Coding_seq'] and not pd.isnull(row['Coding_seq']):
+                    crispresso_cmd += ' -c %s' % row['Coding_seq']
+
+                if row['Coding_seq_name'] and not pd.isnull(row['Coding_seq_name']):
+                    crispresso_cmd += ' --coding_seq_name %s' % row['Coding_seq_name']
 
                 crispresso_cmd = CRISPRessoShared.overwrite_crispresso_options(cmd=crispresso_cmd, option_names_to_overwrite=crispresso_options_for_wgs, option_values=args)
 

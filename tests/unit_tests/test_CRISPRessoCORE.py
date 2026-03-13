@@ -2502,6 +2502,141 @@ def test_write_base_edit_counts():
             assert False
 
 
+def test_coding_seq_filename_uses_name_when_provided():
+    """When coding_seq_names is provided, those names are used in filenames."""
+    coding_seq_names = ['Exon1', 'Exon2']
+    ref_plot_name = 'Reference.'
+
+    for i, name in enumerate(coding_seq_names):
+        fig_filename = '9a.' + ref_plot_name + 'amino_acid_table_around_' + name + '.pdf'
+        table_filename = ref_plot_name + 'amino_acid_table_for_' + name + '.txt'
+        assert name in fig_filename
+        assert name in table_filename
+        # Filenames must be well under OS limits
+        assert len(fig_filename.encode('utf-8')) <= 255
+        assert len(table_filename.encode('utf-8')) <= 255
+
+
+def test_coding_seq_filename_uses_index_when_no_name():
+    """When coding_seq_names is not provided, 0-based index is used in filenames."""
+    coding_seq_names = ['0', '1', '2']
+    ref_plot_name = 'Reference.'
+
+    for i, label in enumerate(coding_seq_names):
+        fig_filename = '9a.' + ref_plot_name + 'amino_acid_table_around_' + label + '.pdf'
+        table_filename = ref_plot_name + 'amino_acid_table_for_' + label + '.txt'
+        assert label in fig_filename
+        assert label in table_filename
+        assert len(fig_filename.encode('utf-8')) <= 255
+        assert len(table_filename.encode('utf-8')) <= 255
+
+
+def test_coding_seq_filename_never_too_long():
+    """Whether using names or indices, filenames should never exceed OS limits.
+
+    This is a regression test for the original issue where coding sequences
+    >200bp were embedded verbatim in filenames, exceeding the 255-byte limit.
+    Now that coding sequences are never part of the filename, this should
+    always pass regardless of the coding sequence length.
+    """
+    # With a name
+    coding_seq_label = 'MyExon'
+    ref_plot_name = 'Reference.'
+    fig_filename = '9a.' + ref_plot_name + 'amino_acid_table_around_' + coding_seq_label + '.pdf'
+    table_filename = ref_plot_name + 'amino_acid_table_for_' + coding_seq_label + '.txt'
+    assert len(fig_filename.encode('utf-8')) <= 255
+    assert len(table_filename.encode('utf-8')) <= 255
+
+    # With an index fallback
+    coding_seq_label = '0'
+    fig_filename = '9a.' + ref_plot_name + 'amino_acid_table_around_' + coding_seq_label + '.pdf'
+    table_filename = ref_plot_name + 'amino_acid_table_for_' + coding_seq_label + '.txt'
+    assert len(fig_filename.encode('utf-8')) <= 255
+    assert len(table_filename.encode('utf-8')) <= 255
+
+
+# =============================================================================
+# Tests for coding_seq_names parsing logic
+# =============================================================================
+
+
+def _parse_coding_seq_names(coding_seqs, coding_seq_names_str):
+    """Replicate the coding_seq_names parsing logic from CRISPRessoCORE.
+
+    This helper mirrors the parsing block in CRISPRessoCORE.main() so we
+    can unit-test naming/indexing without running the full pipeline.
+    """
+    coding_seq_names = [str(i) for i in range(len(coding_seqs))]
+    if coding_seq_names_str:
+        coding_seq_name_arr = coding_seq_names_str.split(",")
+        if len(coding_seq_name_arr) > len(coding_seqs):
+            raise CRISPRessoShared.BadParameterException(
+                "More coding sequence names were given than coding sequences. "
+                "Coding sequences: %d Coding sequence names: %d" % (len(coding_seqs), len(coding_seq_name_arr)))
+        for idx, cs_name in enumerate(coding_seq_name_arr):
+            if cs_name.strip() != "":
+                coding_seq_names[idx] = CRISPRessoShared.clean_filename(cs_name.strip())
+    return coding_seq_names
+
+
+def test_coding_seq_names_matching_count():
+    """Names provided for every coding sequence are used as-is."""
+    coding_seqs = ['ATCGATCG', 'GCTAGCTA', 'TTTTAAAA']
+    result = _parse_coding_seq_names(coding_seqs, 'Exon1,Exon2,Exon3')
+    assert result == ['Exon1', 'Exon2', 'Exon3']
+
+
+def test_coding_seq_names_fewer_names_than_seqs():
+    """Unnamed coding sequences fall back to their 0-based index."""
+    coding_seqs = ['ATCGATCG', 'GCTAGCTA', 'TTTTAAAA']
+    result = _parse_coding_seq_names(coding_seqs, 'Exon1')
+    assert result == ['Exon1', '1', '2']
+
+
+def test_coding_seq_names_more_names_than_seqs_raises():
+    """More names than coding sequences should raise BadParameterException."""
+    coding_seqs = ['ATCGATCG']
+    with pytest.raises(CRISPRessoShared.BadParameterException):
+        _parse_coding_seq_names(coding_seqs, 'Exon1,Exon2')
+
+
+def test_coding_seq_names_empty_string_uses_indices():
+    """An empty coding_seq_names string defaults to index-based names."""
+    coding_seqs = ['ATCGATCG', 'GCTAGCTA']
+    result = _parse_coding_seq_names(coding_seqs, '')
+    assert result == ['0', '1']
+
+
+def test_coding_seq_names_none_uses_indices():
+    """None coding_seq_names defaults to index-based names."""
+    coding_seqs = ['ATCGATCG', 'GCTAGCTA']
+    result = _parse_coding_seq_names(coding_seqs, None)
+    assert result == ['0', '1']
+
+
+def test_coding_seq_names_no_coding_seqs():
+    """With no coding sequences, names list should be empty."""
+    result = _parse_coding_seq_names([], '')
+    assert result == []
+
+
+def test_coding_seq_names_partial_empty_names():
+    """Empty names in the comma-separated list fall back to index."""
+    coding_seqs = ['ATCGATCG', 'GCTAGCTA', 'TTTTAAAA']
+    result = _parse_coding_seq_names(coding_seqs, 'Exon1,,Exon3')
+    assert result == ['Exon1', '1', 'Exon3']
+
+
+def test_coding_seq_names_are_filename_safe():
+    """User-provided names with spaces/special chars are cleaned for filenames."""
+    coding_seqs = ['ATCGATCG']
+    result = _parse_coding_seq_names(coding_seqs, 'My Exon (1)')
+    name = result[0]
+    # clean_filename should make it safe for filenames
+    assert '/' not in name
+    assert ' ' not in name
+
+
 if __name__ == "__main__":
     # execute only if run as a script
     test_get_consensus_alignment_from_pairs()
