@@ -20,9 +20,9 @@ jobs:
         pro: [false, true]
         group:
           - name: "Basic, Params, NHEJ"
-            filter: "basic or params or nhej_native_merge"
+            filter: "core"
           - name: "Editors"
-            filter: "prime_editor or base_editor"
+            filter: "editor"
           - name: "BAM"
             filter: "bam"
           - name: "Batch, Compare, Aggregate"
@@ -53,11 +53,32 @@ jobs:
           path: .pixi
           key: pixi-${{ runner.os }}-${{ runner.arch }}-test-${{ hashFiles('pixi.toml') }}
 
+      - name: Install MS core fonts
+        run: |
+          if [ -d ".pixi/msttcorefonts" ]; then
+            echo "Using cached fonts"
+            sudo mkdir -p /usr/share/fonts/truetype/msttcorefonts
+            sudo cp .pixi/msttcorefonts/* /usr/share/fonts/truetype/msttcorefonts/
+          else
+            echo "Installing fonts from scratch"
+            echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | sudo debconf-set-selections
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends ttf-mscorefonts-installer
+            mkdir -p .pixi/msttcorefonts
+            cp /usr/share/fonts/truetype/msttcorefonts/*.ttf .pixi/msttcorefonts/
+          fi
+          sudo fc-cache -f
+
       - name: Install environment
         run: pixi install -e test
 
       - name: Install CRISPResso
         run: pixi run -e test install
+
+      - name: Rebuild pixi fontconfig cache and clear matplotlib font cache
+        run: |
+          pixi run -e test -- fc-cache -f
+          pixi run -e test -- python -c "import matplotlib; import shutil; shutil.rmtree(matplotlib.get_cachedir(), ignore_errors=True); print('Cleared', matplotlib.get_cachedir())"
 
       - name: Checkout CRISPResso2_tests
         uses: actions/checkout@v4
@@ -80,4 +101,4 @@ jobs:
       - name: Run Tests
         run: |
           pixi run -e test -- pytest CRISPResso2_tests/test_cli.py \
-            -k "${{ matrix.group.filter }}" -v ${{ matrix.pro && '--pro' || '' }} --test --print
+            -m "${{ matrix.group.filter }}" -v ${{ matrix.pro && '--pro' || '' }} ${{ !matrix.pro && '--diff-plots' || '' }} --test --print

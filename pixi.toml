@@ -29,6 +29,7 @@ gxx_linux-64 = "*"
 pytest = "*"
 pytest-cov = "*"
 pytest-check = "*"
+pillow = "*"
 
 [feature.test.pypi-dependencies]
 ydiff = "*"
