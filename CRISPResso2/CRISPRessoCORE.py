@@ -2873,6 +2873,20 @@ def main():
         if len(coding_seqs) > 0:
             crispresso2_info['running_info']['coding_seqs'] = coding_seqs
 
+        # Parse coding sequence names (parallel to guide_names parsing)
+        coding_seq_names = [str(i) for i in range(len(coding_seqs))]
+        if args.coding_seq_name:
+            coding_seq_name_arr = args.coding_seq_name.split(",")
+            if len(coding_seq_name_arr) > len(coding_seqs):
+                raise CRISPRessoShared.BadParameterException(
+                    "More coding sequence names were given than coding sequences. "
+                    "Coding sequences: %d Coding sequence names: %d" % (len(coding_seqs), len(coding_seq_name_arr)))
+            for idx, cs_name in enumerate(coding_seq_name_arr):
+                if cs_name.strip() != "":
+                    coding_seq_names[idx] = CRISPRessoShared.clean_filename(cs_name.strip())
+        if len(coding_seqs) > 0:
+            crispresso2_info['running_info']['coding_seq_names'] = coding_seq_names
+
         # SET REFERENCES TO COMPARE###
         ref_names = []  # ordered list of names
         refs = {}  # dict of ref_name > ref object
@@ -6085,7 +6099,8 @@ def main():
 
             if refs[ref_name]['contains_coding_seq'] and not args.suppress_plots:
                 for i, coding_seq in enumerate(coding_seqs):
-                    fig_filename_root = _jp('9a.' + ref_plot_name + 'amino_acid_table_around_' + coding_seq)
+                    coding_seq_label = coding_seq_names[i]
+                    fig_filename_root = _jp('9a.' + ref_plot_name + 'amino_acid_table_around_' + coding_seq_label)
                     coding_seq_amino_acids = CRISPRessoShared.get_amino_acids_from_nucs(coding_seq)
                     amino_acid_cut_point = (cut_point - refs[ref_name]['exon_positions'][0] + 1) // 3
                     df_to_plot = CRISPRessoShared.get_amino_acid_dataframe(
@@ -6111,14 +6126,14 @@ def main():
                         'cut_point': amino_acid_cut_point,
                     }
 
-                    amino_acid_filename = _jp(ref_plot_name + 'amino_acid_table_for_' + coding_seq + '.txt')
+                    amino_acid_filename = _jp(ref_plot_name + 'amino_acid_table_for_' + coding_seq_label + '.txt')
                     df_to_plot.to_csv(amino_acid_filename, sep='\t', header=True, index=True)
 
                     debug('Plotting amino acids for {0}'.format(ref_name))
                     plot(CRISPRessoPlot.plot_amino_acid_table, plot_9a_input)
                     crispresso2_info['results']['refs'][ref_name]['plot_9a_roots'].append(os.path.basename(fig_filename_root))
                     crispresso2_info['results']['refs'][ref_name]['plot_9a_captions'].append(
-                        "Figure 9a: Visualization of the distribution of identified amino acids based on the coding sequence (" + coding_seq + "). The vertical dashed line indicates the predicted cleavage site.")
+                        "Figure 9a: Visualization of the distribution of identified amino acids based on the coding sequence " + coding_seq_label + " (" + coding_seq + "). The vertical dashed line indicates the predicted cleavage site.")
                     crispresso2_info['results']['refs'][ref_name]['plot_9a_datas'].append([('Amino Acid table', os.path.basename(amino_acid_filename))])
 
             info('Done!')

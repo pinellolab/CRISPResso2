@@ -352,7 +352,7 @@ def test_get_silent_edits_middle_insertion():
     seq_codons = [("A", "GCT"), ("G", "GGT"), ("T", "ACT"), ("S", "AGC")]
 
     silent_edits = CRISPRessoShared.get_silent_edits(ref_seq, ref_codons, seq, seq_codons)
-    assert silent_edits == "AGTs"
+    assert silent_edits == 'AGTs'
 
 
 # =============================================================================
