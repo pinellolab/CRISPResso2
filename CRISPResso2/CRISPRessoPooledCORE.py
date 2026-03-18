@@ -614,6 +614,7 @@ def main():
 
         # possible column names accepted in amplicon input file
         default_input_amplicon_headers = ['amplicon_name', 'amplicon_seq', 'guide_seq', 'expected_hdr_amplicon_seq', 'coding_seq',
+                     'coding_seq_name',
                      'prime_editing_pegRNA_spacer_seq', 'prime_editing_nicking_guide_seq',
                      'prime_editing_pegRNA_extension_seq', 'prime_editing_pegRNA_scaffold_seq',
                      'prime_editing_pegRNA_scaffold_min_match_length', 'prime_editing_override_prime_edited_ref_seq',
@@ -640,6 +641,8 @@ def main():
             head_lookup['sgrna_sequence'] = 'guide_seq'
             head_lookup['expected_amplicon_after_hdr'] = 'expected_hdr_amplicon_seq'
             head_lookup['coding_sequence'] = 'coding_seq'
+            head_lookup['coding_sequence_names'] = 'coding_seq_name'
+            head_lookup['coding_sequence_name'] = 'coding_seq_name'
 
             lowercase_default_amplicon_headers = {h.lower(): h for h in default_input_amplicon_headers}
 
