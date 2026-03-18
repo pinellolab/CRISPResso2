@@ -26,7 +26,7 @@
         {% set width = '35%' %}
     {%- elif fig_name in ['plot_10a'] -%}
         {% set width = '70%' %}
-    {%- elif fig_name in [('plot_10i_' ~ amplicon_name)] -%}
+    {%- elif amplicon_name is defined and fig_name in [('plot_10i_' ~ amplicon_name)] -%}
         {% set width = '70%' %}
     {%- else -%}
         {% set width = '100%' %}
