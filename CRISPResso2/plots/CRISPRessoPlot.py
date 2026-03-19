@@ -3074,9 +3074,6 @@ def plot_amino_acid_heatmap(
         custom_colors,
         SAVE_ALSO_PNG=False,
         plot_cut_point=True,
-        sgRNA_intervals=None,
-        sgRNA_names=None,
-        sgRNA_mismatches=None,
         amino_acid_cut_point=None,
         **kwargs):
     """Plots alleles in a heatmap (nucleotides color-coded for easy visualization)
@@ -3125,9 +3122,6 @@ def plot_amino_acid_heatmap(
             fig.savefig(fig_filename_root + '.png', bbox_inches='tight')
         plt.close(fig)
         return
-
-    sgRNA_rows = []
-    num_sgRNA_rows = 0
 
     fig = plt.figure(figsize=(plot_aa_len * 0.3, (N_ROWS + 1) * 0.6))
     gs1 = gridspec.GridSpec(N_ROWS + 1, N_COLUMNS)
@@ -4043,7 +4037,7 @@ def plot_amino_acid_table(reference_seq, df_alleles, fig_filename_root, custom_c
             if is_ref:
                 y_labels[ix] += annotate_wildtype_allele
 
-    plot_amino_acid_heatmap(ref_sequence_amino_acids, fig_filename_root, X, annot, y_labels, insertion_dict, silent_edit_dict, per_element_annot_kws, custom_colors, SAVE_ALSO_PNG, plot_cut_point, sgRNA_intervals, sgRNA_names, sgRNA_mismatches, amino_acid_cut_point)
+    plot_amino_acid_heatmap(ref_sequence_amino_acids, fig_filename_root, X, annot, y_labels, insertion_dict, silent_edit_dict, per_element_annot_kws, custom_colors, SAVE_ALSO_PNG, plot_cut_point, amino_acid_cut_point)
 
 
 def plot_unmod_mod_pcts(df_summary_quantification, fig_filename_root=None, save_png=False, cutoff=None, max_samples_to_include_unprocessed=20, **kwargs):

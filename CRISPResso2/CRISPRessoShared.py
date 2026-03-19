@@ -1541,7 +1541,18 @@ def get_dataframe_around_cut_debug(df_alleles, cut_point, offset):
 
 
 def get_amino_acid_row(row, plot_left_idx, sequence_length, matrix_path, amino_acid_cut_point):
-    cut_idx = row['ref_positions'].index(amino_acid_cut_point)
+    try:
+        cut_idx = row['ref_positions'].index(amino_acid_cut_point)
+    except ValueError:
+        # amino_acid_cut_point not in ref_positions (e.g. large deletion removed that position)
+        # Find the closest available position
+        ref_positions = row['ref_positions']
+        valid_positions = [p for p in ref_positions if p >= 0]
+        if valid_positions:
+            closest = min(valid_positions, key=lambda p: abs(p - amino_acid_cut_point))
+            cut_idx = ref_positions.index(closest)
+        else:
+            cut_idx = 0
     left_idx = row['ref_positions'].index(plot_left_idx)
     seq_acids_and_codons = get_amino_acids_and_codons(row['Aligned_Sequence'][left_idx::].replace('-', ''))
     ref_acids_and_codons = get_amino_acids_and_codons(row['Reference_Sequence'][left_idx::].replace('-', ''))
@@ -1551,7 +1562,7 @@ def get_amino_acid_row(row, plot_left_idx, sequence_length, matrix_path, amino_a
     gap_incentive = np.zeros(len(reference_seq) + 1, dtype=int)
     try:
         gap_incentive[cut_idx] = 1
-    except:
+    except IndexError:
         pass
     aligned_seq, reference_seq, score = CRISPResso2Align.global_align(
         aligned_seq,
