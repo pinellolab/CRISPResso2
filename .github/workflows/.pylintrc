@@ -1,7 +1,0 @@
-[FORMAT]
-max-line-length=150
-max-args=15
-max-locals=40
-
-[MESSAGES CONTROL]
-disable = E0401, W0719

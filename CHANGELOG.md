@@ -44,6 +44,8 @@
 
 - Update the base Docker image to `mambaorg/micromamba:2.3.3` and remove dependency on Anaconda `defaults` channel by [@Colelyman](https://github.com/Colelyman) in [#575](https://github.com/pinellolab/CRISPResso2/pull/575)
 
+    - Change the guardrails interface to a dropdown that is a more minimal design by [@Snicker7](https://github.com/Snicker7) in [#619](https://github.com/pinellolab/CRISPResso2/pull/619)
+
 ### REMOVED
 
 

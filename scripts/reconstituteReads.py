@@ -3,8 +3,8 @@ import os
 import pandas as pd
 import zipfile
 
-from collections import defaultdict
 from CRISPResso2 import CRISPRessoShared
+
 
 def reconstitute_reads(crispresso_output_folder, fastq_output_file):
     print('Processing ' + crispresso_output_folder)
@@ -14,7 +14,7 @@ def reconstitute_reads(crispresso_output_folder, fastq_output_file):
 
     z = zipfile.ZipFile(os.path.join(crispresso_output_folder, crispresso2_info['running_info']['allele_frequency_table_zip_filename']))
     zf = z.open(crispresso2_info['running_info']['allele_frequency_table_filename'])
-    df_alleles = pd.read_csv(zf,sep="\t") # use pandas to open because sometimes there's a quoted newline for long lines in the file that pandas writes??
+    df_alleles = pd.read_csv(zf, sep="\t")  # use pandas to open because sometimes there's a quoted newline for long lines in the file that pandas writes??
 
     if df_alleles.shape[0] == 0:
         raise Exception('No alleles found in allele frequency table.')
