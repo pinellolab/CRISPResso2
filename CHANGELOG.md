@@ -3,6 +3,8 @@
 ## Unreleased
 ### ADDED
 
+- Add `--coding_seq_name` parameter to provide custom names for coding sequences, fixing an issue where using the full coding sequence in filenames produced paths that were too long by [@mbowcut2](https://github.com/mbowcut2) in [#627](https://github.com/pinellolab/CRISPResso2/pull/627)
+
 - Add an amino acid nucleotide quilt plot by [@mbowcut2](https://github.com/mbowcut2) in [#552](https://github.com/pinellolab/CRISPResso2/pull/552)
 
 - Add `scripts/reconstituteReads.py` to generate FASTQ from CRISPResso2 output by [@kclem](https://github.com/kclem) in [`a800762`](https://github.com/pinellolab/CRISPResso2/commit/a800762712e692a9fc7005b3510d013924c843a5) and [`cd79dcc`](https://github.com/pinellolab/CRISPResso2/commit/cd79dcc3ca9c06736dc6cd409d43dee8e4d1ae69)
@@ -19,6 +21,18 @@
 - Add support for [`pixi`](https://pixi.prefix.dev/latest/) for dependency management and installation by [@Colelyman](https://github.com/Colelyman) in [#618](https://github.com/pinellolab/CRISPResso2/pull/618)
 
 ### FIXED
+
+- Fix `amplicon_name` check in Jinja template to avoid undefined variable errors by [@mbowcut2](https://github.com/mbowcut2) in [#627](https://github.com/pinellolab/CRISPResso2/pull/627)
+
+- Fix enrichment ordering and allele sorting in CRISPRessoCompare plots by [@Colelyman](https://github.com/Colelyman) in [#626](https://github.com/pinellolab/CRISPResso2/pull/626)
+
+- Fix a crash when `--suppress_plots` is used with amino acid plots by [@mbowcut2](https://github.com/mbowcut2) in [#624](https://github.com/pinellolab/CRISPResso2/pull/624)
+
+- Fix fastp options to respect user-provided `--fastp_options_string` and fix fastp read merge flags for unmerged reads by [@kclem](https://github.com/kclem) in [#591](https://github.com/pinellolab/CRISPResso2/pull/591) and [#608](https://github.com/pinellolab/CRISPResso2/pull/608)
+
+- Fix Python package discovery in `setup.py` and `pyproject.toml` by [@Colelyman](https://github.com/Colelyman) in [#616](https://github.com/pinellolab/CRISPResso2/pull/616)
+
+- Fix base editing plot naming by [@mbowcut2](https://github.com/mbowcut2) in [#564](https://github.com/pinellolab/CRISPResso2/pull/564)
 
 - Fix the `x_lim` settings on plot 3b by [@kclem](https://github.com/kclem) in [`56bd430`](https://github.com/pinellolab/CRISPResso2/commit/56bd4306292136ed95d7032b0582c6ad370dd79b)
 
@@ -40,11 +54,25 @@
 
 - Fix a bug during `--bam_output` when there is an unaligned read, the remainder of the reads will not be output by [@Colelyman](https://github.com/Colelyman) in [#602](https://github.com/pinellolab/CRISPResso2/pull/602)
 
+- Fix a bug when an sgRNA aligns before the start of an exon by [@mbowcut2](https://github.com/mbowcut2) in [#628](https://github.com/pinellolab/CRISPResso2/pull/628)
+
 ### CHANGED
+
+- Vendor the UpSet plot implementation, removing the external `upsetplot` dependency by [@mbowcut2](https://github.com/mbowcut2) in [#623](https://github.com/pinellolab/CRISPResso2/pull/623)
+
+- Improve the sizing and display of the Base Editing UpSet plot and add percentages by [@mbowcut2](https://github.com/mbowcut2) in [#586](https://github.com/pinellolab/CRISPResso2/pull/586)
+
+- Add plot diff comparisons and integration tests via pixi by [@Snicker7](https://github.com/Snicker7) and [@Colelyman](https://github.com/Colelyman) in [#622](https://github.com/pinellolab/CRISPResso2/pull/622) and [#626](https://github.com/pinellolab/CRISPResso2/pull/626)
+
+- Add expanded unit tests by [@Snicker7](https://github.com/Snicker7) in [#620](https://github.com/pinellolab/CRISPResso2/pull/620)
+
+- Apply safe ruff linting fixes by [@Snicker7](https://github.com/Snicker7) in [#621](https://github.com/pinellolab/CRISPResso2/pull/621)
+
+- Extract `get_prime_editing_guides` into a separate function for improved code organization by [@kclem](https://github.com/kclem) in [#592](https://github.com/pinellolab/CRISPResso2/pull/592)
 
 - Update the base Docker image to `mambaorg/micromamba:2.3.3` and remove dependency on Anaconda `defaults` channel by [@Colelyman](https://github.com/Colelyman) in [#575](https://github.com/pinellolab/CRISPResso2/pull/575)
 
-    - Change the guardrails interface to a dropdown that is a more minimal design by [@Snicker7](https://github.com/Snicker7) in [#619](https://github.com/pinellolab/CRISPResso2/pull/619)
+- Change the guardrails interface to a dropdown that is a more minimal design by [@Snicker7](https://github.com/Snicker7) in [#619](https://github.com/pinellolab/CRISPResso2/pull/619)
 
 ### REMOVED
 
