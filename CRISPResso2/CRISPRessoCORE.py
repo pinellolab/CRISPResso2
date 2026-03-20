@@ -584,9 +584,9 @@ def get_prime_editing_guides(this_amp_seq, ref0_seq, prime_editing_edited_amp_se
         match = re.search(best_aln_seq, prime_editing_edited_amp_seq)
         pe_start_loc = match.start()
         pe_end_loc = match.end()
-        coords_l, coords_r = CRISPRessoShared.get_alignment_coordinates(to_sequence=this_amp_seq, from_sequence=prime_editing_edited_amp_seq,aln_matrix=aln_matrix,needleman_wunsch_gap_open=needleman_wunsch_gap_open,needleman_wunsch_gap_extend=needleman_wunsch_gap_extend)
+        coords_l, coords_r = CRISPRessoShared.get_alignment_coordinates(to_sequence=this_amp_seq, from_sequence=prime_editing_edited_amp_seq, aln_matrix=aln_matrix, needleman_wunsch_gap_open=needleman_wunsch_gap_open, needleman_wunsch_gap_extend=needleman_wunsch_gap_extend)
         if pe_end_loc >= len(coords_r):
-            new_seq = this_amp_seq[coords_l[pe_start_loc]:] #if regex matches at the end coords_r will be too short
+            new_seq = this_amp_seq[coords_l[pe_start_loc]:]  # if regex matches at the end coords_r will be too short
         else:
             new_seq = this_amp_seq[coords_l[pe_start_loc]:coords_r[pe_end_loc]]
         pe_guides.append(new_seq)
@@ -629,10 +629,10 @@ def get_prime_editing_guides(this_amp_seq, ref0_seq, prime_editing_edited_amp_se
         match = re.search(best_aln_seq, ref0_seq)
         r0_start_loc = match.start()
         r0_end_loc = match.end()
-        coords_l, coords_r = CRISPRessoShared.get_alignment_coordinates(to_sequence=this_amp_seq, from_sequence=ref0_seq,aln_matrix=aln_matrix,needleman_wunsch_gap_open=needleman_wunsch_gap_open,needleman_wunsch_gap_extend=needleman_wunsch_gap_extend)
+        coords_l, coords_r = CRISPRessoShared.get_alignment_coordinates(to_sequence=this_amp_seq, from_sequence=ref0_seq, aln_matrix=aln_matrix, needleman_wunsch_gap_open=needleman_wunsch_gap_open, needleman_wunsch_gap_extend=needleman_wunsch_gap_extend)
         if r0_end_loc >= len(coords_r):
-            new_seq = this_amp_seq[coords_l[r0_start_loc]:] #if regex matches at the end coords_r will be too short
-            r0_end_loc_adjusted = len(coords_r) - 1 #adjust for downstream coords_r indexing
+            new_seq = this_amp_seq[coords_l[r0_start_loc]:]  # if regex matches at the end coords_r will be too short
+            r0_end_loc_adjusted = len(coords_r) - 1  # adjust for downstream coords_r indexing
         else:
             new_seq = this_amp_seq[coords_l[r0_start_loc]:coords_r[r0_end_loc]]
             r0_end_loc_adjusted = r0_end_loc
@@ -644,7 +644,7 @@ def get_prime_editing_guides(this_amp_seq, ref0_seq, prime_editing_edited_amp_se
         pe_guide_mismatches.append(this_mismatches)
 
         pe_guide_names.append('PE spacer sgRNA')
-        nicking_center_ref0 = r0_end_loc_adjusted + nicking_qw_center #if there are indels in this amplicon between the end of the guide and the nicking center, adjust the center
+        nicking_center_ref0 = r0_end_loc_adjusted + nicking_qw_center  # if there are indels in this amplicon between the end of the guide and the nicking center, adjust the center
         nicking_center_this_amp_seq = rev_coords_r[nicking_center_ref0] - coords_r[r0_end_loc_adjusted]
         pe_guide_qw_centers.append(nicking_center_this_amp_seq)
         pe_guide_qw_sizes.append(nicking_qw_size)
@@ -678,10 +678,10 @@ def get_prime_editing_guides(this_amp_seq, ref0_seq, prime_editing_edited_amp_se
             match = re.search(best_aln_seq, rc_ref0_seq)
             r0_start_loc = match.start()
             r0_end_loc = match.end()
-            coords_l, coords_r = CRISPRessoShared.get_alignment_coordinates(to_sequence=rc_this_amp_seq, from_sequence=rc_ref0_seq,aln_matrix=aln_matrix,needleman_wunsch_gap_open=needleman_wunsch_gap_open,needleman_wunsch_gap_extend=needleman_wunsch_gap_extend)
+            coords_l, coords_r = CRISPRessoShared.get_alignment_coordinates(to_sequence=rc_this_amp_seq, from_sequence=rc_ref0_seq, aln_matrix=aln_matrix, needleman_wunsch_gap_open=needleman_wunsch_gap_open, needleman_wunsch_gap_extend=needleman_wunsch_gap_extend)
             if r0_end_loc >= len(coords_r):
-                new_seq = rc_this_amp_seq[coords_l[r0_start_loc]:] #if regex matches at the end coords_r will be too short
-                r0_end_loc_adjusted = len(coords_r) - 1 #adjust for downstream coords_r indexing
+                new_seq = rc_this_amp_seq[coords_l[r0_start_loc]:]  # if regex matches at the end coords_r will be too short
+                r0_end_loc_adjusted = len(coords_r) - 1  # adjust for downstream coords_r indexing
             else:
                 new_seq = rc_this_amp_seq[coords_l[r0_start_loc]:coords_r[r0_end_loc]]
                 r0_end_loc_adjusted = r0_end_loc
