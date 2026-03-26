@@ -1,0 +1,37 @@
+name: Ruff
+
+on:
+  push:
+
+  pull_request:
+    types: [opened, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Pixi
+      uses: prefix-dev/setup-pixi@v0.8.8
+      with:
+        environments: lint
+        locked: false
+        frozen: false
+        cache: false
+
+    - name: Cache Pixi environment
+      uses: actions/cache@v4
+      with:
+        path: .pixi
+        key: pixi-${{ runner.os }}-${{ runner.arch }}-lint-${{ hashFiles('pixi.toml') }}
+
+    - name: Install environment
+      run: pixi install -e lint
+
+    - name: Run Ruff
+      run: pixi run -e lint lint

@@ -7,18 +7,17 @@ platforms = ["linux-64", "linux-aarch64", "osx-64", "osx-arm64"]
 
 [dependencies]
 python = ">=3.10,<3.13"
-numpy = "<2.4.0"
+numpy = "*"
 cython = "*"
 scipy = "*"
-matplotlib = "<3.10.8"
+matplotlib = "*"
 seaborn = "*"
 pandas = "<3.0"
 jinja2 = "*"
 fastp = "*"
 bowtie2 = "*"
 samtools = "*"
-upsetplot = "*"
-plotly = "*"
+plotly = "==5.18.0"
 setuptools = "*"
 pip = "*"
 
@@ -30,12 +29,13 @@ gxx_linux-64 = "*"
 pytest = "*"
 pytest-cov = "*"
 pytest-check = "*"
+pillow = "*"
 
 [feature.test.pypi-dependencies]
 ydiff = "*"
 
 [feature.lint.dependencies]
-pylint = "*"
+ruff = "=0.14.13"
 
 [environments]
 default = { features = [], solve-group = "default" }
@@ -49,8 +49,9 @@ install = "pip install -e ."
 test = { cmd = "pytest tests --cov CRISPResso2", depends-on = ["install"] }
 
 [feature.test.tasks.integration]
-cmd = "make $TARGETS test print"
+cmd = "pytest test_cli.py"
 cwd = "../CRISPResso2_tests"
 
 [feature.lint.tasks]
-lint = { cmd = "pylint --fail-under=6.2 $(git ls-files '*.py') --rcfile=.github/workflows/.pylintrc" }
+lint = { cmd = "ruff check . --statistics" }
+fix = { cmd = "ruff check . --fix" }
