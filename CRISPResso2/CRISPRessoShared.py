@@ -503,9 +503,7 @@ def get_silent_edits(ref_seq, ref_codons, seq, seq_codons):
     ref_codons = [('A', 'GCT'), ('G', 'GGT'), ('S', 'AGT')]
     seq_codons = [('A', 'GCT'), ('G', 'GGT'),  ('T', 'ACT'), ('S', 'AGC')]
 
-    Returns
-    -------
-    'AGTs'
+    returns: 'AGTs'
 
     Parameters
     ----------
@@ -969,8 +967,7 @@ def get_command_output(command):
                  bufsize=-1)  # bufsize system default
     while True:
         retcode = p.poll()
-        line = p.stdout.readline()
-        yield line
+        yield p.stdout.readline()
         if retcode is not None:
             break
 
@@ -1541,27 +1538,55 @@ def get_dataframe_around_cut_debug(df_alleles, cut_point, offset):
 
 
 def get_amino_acid_row(row, plot_left_idx, sequence_length, matrix_path, amino_acid_cut_point):
-    cut_idx = row['ref_positions'].index(amino_acid_cut_point)
+    """Translate a single allele row into amino-acid-level aligned sequences.
+
+    Locates the exon start in the read's alignment, translates read and
+    reference to amino acids, re-aligns them with a gap incentive at the
+    cut site, and marks silent edits (same AA, different codon) as lowercase.
+
+    Parameters
+    ----------
+    row : pd.Series
+        Row from the alleles DataFrame with columns: 'ref_positions',
+        'Aligned_Sequence', 'Reference_Sequence', 'Read_Status',
+        'n_deleted', 'n_inserted', 'n_mutated', '#Reads', '%Reads'.
+    plot_left_idx : int
+        Reference-coordinate index of the exon start boundary.
+    sequence_length : int
+        Max amino acid characters to return (truncation length).
+    matrix_path : str
+        Path to the substitution scoring matrix for AA alignment.
+    amino_acid_cut_point : int
+        AA-level position where a gap incentive is applied during alignment.
+
+    Returns
+    -------
+    tuple of (str, str, bool, int, int, int, int, float)
+        (aligned_aa_seq, reference_aa_seq, is_unmodified, n_deleted,
+         n_inserted, n_mutated, n_reads, pct_reads)
+
+    """
     left_idx = row['ref_positions'].index(plot_left_idx)
+
     seq_acids_and_codons = get_amino_acids_and_codons(row['Aligned_Sequence'][left_idx::].replace('-', ''))
     ref_acids_and_codons = get_amino_acids_and_codons(row['Reference_Sequence'][left_idx::].replace('-', ''))
     aligned_seq = ''.join(tup[0] for tup in seq_acids_and_codons)
     reference_seq = ''.join(tup[0] for tup in ref_acids_and_codons)
 
     gap_incentive = np.zeros(len(reference_seq) + 1, dtype=int)
-    try:
-        gap_incentive[cut_idx] = 1
-    except:
-        pass
+    if 0 <= amino_acid_cut_point < len(gap_incentive):
+        gap_incentive[amino_acid_cut_point] = 1
+    else:
+        logging.warning(
+            'amino_acid_cut_point %d is out of range for gap_incentive '
+            '(length %d); skipping gap incentive.',
+            amino_acid_cut_point, len(gap_incentive),
+        )
     aligned_seq, reference_seq, score = CRISPResso2Align.global_align(
         aligned_seq,
         reference_seq,
         matrix=CRISPResso2Align.read_matrix(matrix_path),
         gap_incentive=gap_incentive,
-    )
-
-    aa_ref_positions = CRISPRessoCOREResources.find_indels_substitutions(
-        aligned_seq, reference_seq, range(len(reference_seq))
     )
 
     aligned_seq = get_silent_edits(
