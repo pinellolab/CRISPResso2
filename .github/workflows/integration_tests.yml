@@ -51,7 +51,23 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .pixi
-          key: pixi-${{ runner.os }}-${{ runner.arch }}-test-${{ hashFiles('pixi.toml') }}
+          key: pixi-v2-${{ runner.os }}-${{ runner.arch }}-test-${{ hashFiles('pixi.toml') }}
+
+      - name: Install MS core fonts
+        run: |
+          if [ -d ".pixi/msttcorefonts" ]; then
+            echo "Using cached fonts"
+            sudo mkdir -p /usr/share/fonts/truetype/msttcorefonts
+            sudo cp .pixi/msttcorefonts/* /usr/share/fonts/truetype/msttcorefonts/
+          else
+            echo "Installing fonts from scratch"
+            echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | sudo debconf-set-selections
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends ttf-mscorefonts-installer
+            mkdir -p .pixi/msttcorefonts
+            cp /usr/share/fonts/truetype/msttcorefonts/*.ttf .pixi/msttcorefonts/
+          fi
+          sudo fc-cache -f
 
       - name: Install MS core fonts
         run: |

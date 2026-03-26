@@ -32,7 +32,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: .pixi
-        key: pixi-${{ runner.os }}-${{ runner.arch }}-test-${{ hashFiles('pixi.toml') }}
+        key: pixi-v2-${{ runner.os }}-${{ runner.arch }}-test-${{ hashFiles('pixi.toml') }}
 
     - name: Install environment
       run: pixi install -e test
