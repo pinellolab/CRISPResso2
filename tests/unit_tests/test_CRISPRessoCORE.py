@@ -4,7 +4,12 @@ import pytest
 import pandas as pd
 from pytest_check import check
 
-from CRISPResso2 import CRISPRessoCORE, CRISPRessoShared, CRISPRessoCOREResources
+from inline_snapshot import snapshot
+
+from CRISPResso2 import CRISPResso2Align, CRISPRessoCORE, CRISPRessoShared, CRISPRessoCOREResources
+
+
+ALN_MATRIX = CRISPResso2Align.read_matrix("./CRISPResso2/EDNAFULL")
 
 def calc_score(seq, ref):
     score = 0
@@ -2635,6 +2640,167 @@ def test_coding_seq_names_are_filename_safe():
     # clean_filename should make it safe for filenames
     assert '/' not in name
     assert ' ' not in name
+
+
+# =============================================================================
+# Tests for get_prime_editing_guides
+# =============================================================================
+#
+# Regression tests for PR #615: IndexError when a guide sequence regex match
+# extends to the very end of the reference sequence.  coords_r has length
+# len(from_sequence), so coords_r[match.end()] is out-of-bounds when
+# match.end() == len(from_sequence).  Three independent code paths are affected:
+#
+# 1. pegRNA spacer matching at end of ref0_seq                      (clone path)
+# 2. PE extension matching at end of prime_editing_edited_amp_seq   (clone path)
+# 3. Nicking guide matching at end of RC(ref0_seq)                  (clone path)
+#
+# Each test constructs sequences that place the relevant guide at the very end
+# of its reference, forcing the boundary condition.  On master these raise
+# ``IndexError: list index out of range``; on the fixed branch they succeed.
+
+
+def test_spacer_at_end():
+    """Spacer at the end of ref0_seq should not raise IndexError."""
+    ref0_seq    = 'GCTGATCGTAGCTAGCTAGCTACGATCGATCGTAGCTAGT' 'GTCATCTTAGTCATTACCTG'
+    edited_amp  = 'GCTGATCGTAGCTAGCTAGCTACGAACGATCGTAGCTAGT' 'GTCATCTTAGTCATTACCTG'
+    #                                       ^ SNP pos 25 (T→A)
+    spacer      = 'GTCATCTTAGTCATTACCTG'  # last 20 bp of ref0
+    ext_dna     = edited_amp[10:30]       # extension in middle, no boundary issue
+
+    result = CRISPRessoCORE.get_prime_editing_guides(
+        this_amp_seq=edited_amp, ref0_seq=ref0_seq,
+        prime_editing_edited_amp_seq=edited_amp,
+        prime_editing_pegRNA_extension_seq=CRISPRessoShared.reverse_complement(ext_dna),
+        prime_editing_extension_seq_dna=ext_dna,
+        prime_editing_pegRNA_spacer_seq=spacer,
+        prime_editing_nicking_guide_seq='',
+        prime_editing_pegRNA_extension_quantification_window_size=5,
+        nicking_qw_center=-3, nicking_qw_size=1,
+        aln_matrix=ALN_MATRIX,
+        needleman_wunsch_gap_open=-20, needleman_wunsch_gap_extend=-2,
+        prime_editing_gap_open=-50, prime_editing_gap_extend=0,
+    )
+
+    assert result == snapshot(
+        (
+            ["GCTAGCTAGCTACGAACGAT", "GTCATCTTAGTCATTACCTG"],  # pe_guides
+            ["ATCGTTCGTAGCTAGCTAGC", "GTCATCTTAGTCATTACCTG"],  # pe_orig_guide_seqs
+            [[], []],                                           # pe_guide_mismatches
+            ["PE Extension", "PE spacer sgRNA"],                # pe_guide_names
+            [0, -3],                                            # pe_guide_qw_centers
+            [5, 1],                                             # pe_guide_qw_sizes
+            [False, True],                                      # pe_guide_plot_cut_points
+        )
+    )
+
+
+def test_extension_at_end():
+    """Extension at the end of edited_amp_seq should not raise IndexError."""
+    edited_amp = 'GCTGATCGTAGCTAGCTAGCTACGATCGATCGTAGCTAGT' 'CGATCTAGCTAGCTAGCTAG'
+    ref0_seq   = 'GCTGATCGTAGCTAGCTAGCTACGATCGATCGTAGCTAGT' 'CGATCTAGCTAGCTAGCAAG'
+    #             extension region differs here:                              ^  T→A
+    ext_dna    = 'CGATCTAGCTAGCTAGCTAG'  # last 20 bp of edited_amp
+    spacer     = ref0_seq[15:35]         # from middle of ref0
+
+    result = CRISPRessoCORE.get_prime_editing_guides(
+        this_amp_seq=ref0_seq, ref0_seq=ref0_seq,
+        prime_editing_edited_amp_seq=edited_amp,
+        prime_editing_pegRNA_extension_seq=CRISPRessoShared.reverse_complement(ext_dna),
+        prime_editing_extension_seq_dna=ext_dna,
+        prime_editing_pegRNA_spacer_seq=spacer,
+        prime_editing_nicking_guide_seq='',
+        prime_editing_pegRNA_extension_quantification_window_size=5,
+        nicking_qw_center=-3, nicking_qw_size=1,
+        aln_matrix=ALN_MATRIX,
+        needleman_wunsch_gap_open=-20, needleman_wunsch_gap_extend=-2,
+        prime_editing_gap_open=-50, prime_editing_gap_extend=0,
+    )
+
+    assert result == snapshot(
+        (
+            ["CGATCTAGCTAGCTAGCAAG", "CTAGCTACGATCGATCGTAG"],  # pe_guides
+            ["CTAGCTAGCTAGCTAGATCG", "CTAGCTACGATCGATCGTAG"],  # pe_orig_guide_seqs
+            [[17], []],                                         # pe_guide_mismatches
+            ["PE Extension", "PE spacer sgRNA"],                # pe_guide_names
+            [0, -3],                                            # pe_guide_qw_centers
+            [5, 1],                                             # pe_guide_qw_sizes
+            [False, True],                                      # pe_guide_plot_cut_points
+        )
+    )
+
+
+def test_nicking_at_end():
+    """Nicking guide at the end of RC(ref0_seq) should not raise IndexError."""
+    ref0_seq    = 'GCTGATCGTAGCTAGCTAGCTACGATCGATCGTAGCTAGT' 'CGATCTAGCTAGCTAGCTAG'
+    edited_amp  = 'GCTGATCGTAGCTAGCTAGCTACGAACGATCGTAGCTAGT' 'CGATCTAGCTAGCTAGCTAG'
+    #                                       ^ SNP pos 25 (T→A)
+    spacer      = ref0_seq[20:40]  # 'TACGATCGATCGTAGCTAGT', from middle
+    ext_dna     = edited_amp[10:30]
+    nicking     = CRISPRessoShared.reverse_complement(ref0_seq[:20])  # matches end of RC(ref0)
+
+    result = CRISPRessoCORE.get_prime_editing_guides(
+        this_amp_seq=edited_amp, ref0_seq=ref0_seq,
+        prime_editing_edited_amp_seq=edited_amp,
+        prime_editing_pegRNA_extension_seq=CRISPRessoShared.reverse_complement(ext_dna),
+        prime_editing_extension_seq_dna=ext_dna,
+        prime_editing_pegRNA_spacer_seq=spacer,
+        prime_editing_nicking_guide_seq=nicking,
+        prime_editing_pegRNA_extension_quantification_window_size=5,
+        nicking_qw_center=-3, nicking_qw_size=1,
+        aln_matrix=ALN_MATRIX,
+        needleman_wunsch_gap_open=-20, needleman_wunsch_gap_extend=-2,
+        prime_editing_gap_open=-50, prime_editing_gap_extend=0,
+    )
+
+    assert result == snapshot(
+        (
+            ["GCTAGCTAGCTACGAACGAT", "TACGAACGATCGTAGCTAGT", "GCTAGCTAGCTACGATCAGC"],  # pe_guides
+            ["ATCGTTCGTAGCTAGCTAGC", "TACGATCGATCGTAGCTAGT", "GCTAGCTAGCTACGATCAGC"],  # pe_orig_guide_seqs
+            [[], [5], []],                                                               # pe_guide_mismatches
+            ["PE Extension", "PE spacer sgRNA", "PE nicking sgRNA"],                     # pe_guide_names
+            [0, -3, -3],                                                                 # pe_guide_qw_centers
+            [5, 1, 1],                                                                   # pe_guide_qw_sizes
+            [False, True, True],                                                         # pe_guide_plot_cut_points
+        )
+    )
+
+
+def test_all_guides_in_middle():
+    """All three guide types in the interior — no boundary condition hit."""
+    ref0_seq    = 'GCTGATCGTAGCTAGCTAGCTACGATCGATCGTAGCTAGT' 'GTCATCTTAGTCATTACCTG' 'AACGTAACGTAACGTAACGT'
+    edited_amp  = 'GCTGAGCGTAGCTAGCTAGCTACGATCGATCGTAGCTAGT' 'GTCATCTTAGTCATTACCTG' 'AACGTAACGTAACGTAACGT'
+    #                   ^ SNP at pos 5 (T→G)
+    spacer      = 'GTCATCTTAGTCATTACCTG'  # middle of ref0 (pos 40-60)
+    ext_dna     = edited_amp[20:40]       # middle of edited_amp
+    rc_ref0     = CRISPRessoShared.reverse_complement(ref0_seq)
+    nicking     = rc_ref0[30:50]          # middle of RC(ref0)
+
+    result = CRISPRessoCORE.get_prime_editing_guides(
+        this_amp_seq=edited_amp, ref0_seq=ref0_seq,
+        prime_editing_edited_amp_seq=edited_amp,
+        prime_editing_pegRNA_extension_seq=CRISPRessoShared.reverse_complement(ext_dna),
+        prime_editing_extension_seq_dna=ext_dna,
+        prime_editing_pegRNA_spacer_seq=spacer,
+        prime_editing_nicking_guide_seq=nicking,
+        prime_editing_pegRNA_extension_quantification_window_size=5,
+        nicking_qw_center=-3, nicking_qw_size=1,
+        aln_matrix=ALN_MATRIX,
+        needleman_wunsch_gap_open=-20, needleman_wunsch_gap_extend=-2,
+        prime_editing_gap_open=-50, prime_editing_gap_extend=0,
+    )
+
+    assert result == snapshot(
+        (
+            ["TACGATCGATCGTAGCTAGT", "GTCATCTTAGTCATTACCTG", "CTAAGATGACACTAGCTACG"],  # pe_guides
+            ["ACTAGCTACGATCGATCGTA", "GTCATCTTAGTCATTACCTG", "CTAAGATGACACTAGCTACG"],  # pe_orig_guide_seqs
+            [[], [], []],                                                                # pe_guide_mismatches
+            ["PE Extension", "PE spacer sgRNA", "PE nicking sgRNA"],                     # pe_guide_names
+            [0, -3, -3],                                                                 # pe_guide_qw_centers
+            [5, 1, 1],                                                                   # pe_guide_qw_sizes
+            [False, True, True],                                                         # pe_guide_plot_cut_points
+        )
+    )
 
 
 if __name__ == "__main__":
