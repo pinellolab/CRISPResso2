@@ -33,6 +33,7 @@ pillow = "*"
 
 [feature.test.pypi-dependencies]
 ydiff = "*"
+inline-snapshot = "*"
 
 [feature.lint.dependencies]
 ruff = "=0.14.13"
