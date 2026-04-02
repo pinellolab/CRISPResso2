@@ -503,7 +503,9 @@ def get_silent_edits(ref_seq, ref_codons, seq, seq_codons):
     ref_codons = [('A', 'GCT'), ('G', 'GGT'), ('S', 'AGT')]
     seq_codons = [('A', 'GCT'), ('G', 'GGT'),  ('T', 'ACT'), ('S', 'AGC')]
 
-    returns: 'AGTs'
+    Returns
+    -------
+    'AGTs'
 
     Parameters
     ----------
@@ -2019,7 +2021,11 @@ def get_sgRNA_mismatch_vals(seq1, seq2, start_loc, end_loc, coords_l, coords_r, 
     this_mismatches = []
     seen_inds = {}  # detect deletions in other string
     last_mismatch_val = rev_coords_l[coords_l[start_loc]]  # detect deletions in this string
-    for i in range(coords_l[start_loc], coords_r[end_loc]):
+    if end_loc >= len(coords_r):
+        end_loop = len(seq1)  # if the match extends to the end of from_sequence, iterate to the end of seq1
+    else:
+        end_loop = coords_r[end_loc]
+    for i in range(coords_l[start_loc], end_loop):
         if seq1[i] != seq2[rev_coords_l[i]] or seq1[i] == "-":
             this_mismatches.append(i - coords_l[start_loc])
         this_last_mismatch_val = rev_coords_l[i]
