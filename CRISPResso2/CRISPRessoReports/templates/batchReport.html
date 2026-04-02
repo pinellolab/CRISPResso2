@@ -3,47 +3,6 @@
 {% if C2PRO_INSTALLED %}
 <script src="https://cdn.plot.ly/plotly-3.3.0.min.js" charset="utf-8"></script>
 {% endif %}
-<style>
-.nav-tabs.amp-header {
-  border-bottom:none !important;
-}
-
-.card-header.amp-header {
-  border-bottom:none !important;
-}
-.nav-tabs.amp-header .nav-link.active {
-  background-color:lightsteelblue;
-  border-bottom:lightsteelblue;
-}
-
-.tab-content.amp-body {
-  background-color:lightsteelblue;
-}
-
-@media print {
-   .tab-content > .tab-pane {
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-		margin-bottom: 2em !important;
-		page-break-inside: avoid;
-  }
-  .nav-tabs {
-    display:none !important;
-    visibility:hidden !important;
-  }
-  .tab-content.amp-body {
-    background-color:transparent !important;
-  	border:None !important;
-  }
-}
-@media only screen and (max-width: 600px) {
-	.jumbotron img {
-		width:100%
-	}
-}
-</style>
-
 {% endblock %}
 
 {% block content %}
@@ -51,16 +10,15 @@
 <div class="col-sm-1"></div>
 <div class="col-sm-10">
 
-	<div class="jumbotron" style="background:rgba(0,0,0,0.0); padding:0px" >
+	<div class="crispresso-report-body">
 		<div id='jumbotron_content' >
+			{{ render_partial('shared/partials/pro_banner.html') }}
 
+          <h2 id="CRISPResso2_Batch_Output" class="cr-run-name cr-section-heading">{{report_name}}</h2>
           {% if run_names|length > 0 %}
             <div class='card text-center mb-2'>
-              <div class='card-header'>
-                <h5 id="CRISPResso2_Batch_Output">{{report_name}}</h5>
-              </div>
               <div class='card-body p-0'>
-                <div class="list-group list-group-flush" style="max-height: 25vh; overflow-y: scroll;">
+                <div class="list-group list-group-flush scrollable-list">
               {% for run_name in run_names %}
 	      <a href="{{sub_html_files[run_name]}}" class="list-group-item list-group-item-action" id="{{run_name}}">{{run_name}}</a>
                 {% endfor %}
@@ -161,16 +119,16 @@
                     <div class="tab-content" id="allele-modification-{{modification_type}}-tabs">
                         <div class="tab-pane fade show active" id="{{heatmap_plot_name}}" role="tabpanel" aria-labelledby="{{modification_type}}-heatmap-tab">
                             {{allele_modification_heatmap_plot_htmls[heatmap_plot_name] | safe}}
-                            <label class="labelpadding">{{allele_modification_heatmap_plot_labels[heatmap_plot_name]}}</label>
+                            <figcaption class="labelpadding">{{allele_modification_heatmap_plot_labels[heatmap_plot_name]}}</figcaption>
                             {% for (data_label, data_path) in allele_modification_heatmap_plot_datas[heatmap_plot_name] %}
-                                <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
+                                <p class="cr-data-link">Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></p>
                             {% endfor %}
                         </div>
                         <div class="tab-pane fade" id="{{line_plot_name}}" role="tabpanel" aria-labelledby="{{modification_type}}-line-tab">
                             {{allele_modification_line_plot_htmls[line_plot_name] | safe}}
-                            <label class="labelpadding">{{allele_modification_line_plot_labels[line_plot_name]}}</label>
+                            <figcaption class="labelpadding">{{allele_modification_line_plot_labels[line_plot_name]}}</figcaption>
                             {% for (data_label, data_path) in allele_modification_line_plot_datas[line_plot_name] %}
-                                <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
+                                <p class="cr-data-link">Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></p>
                             {% endfor %}
                         </div>
                     </div>
@@ -200,8 +158,9 @@
 
 
         {{render_partial('shared/partials/report_footer_buttons.html', report_zip_filename=report_zip_filename, report_path=report_path)}}
+			{{ render_partial('shared/partials/pro_banner.html') }}
 
-	</div>
+	</div> {# report-body #}
     <div class="col-sm-1"></div>
 </div>
 {% endblock %}

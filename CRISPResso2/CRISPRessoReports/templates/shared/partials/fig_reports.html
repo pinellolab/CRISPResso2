@@ -38,9 +38,9 @@
         {%- elif fig_name in report_data['figures']['locs'][amplicon_name] -%}
             <a href="{{report_data['crispresso_data_path']}}{{report_data['figures']['locs'][amplicon_name][fig_name]}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['figures']['locs'][amplicon_name][fig_name]}}.png" width='{{width}}'></a>
         {% endif -%}
-        <label class="labelpadding">{{report_data['figures']['captions'][amplicon_name][fig_name]}}</label>
+        <figcaption class="labelpadding">{{report_data['figures']['captions'][amplicon_name][fig_name]}}</figcaption>
         {%- for (data_label,data_path) in report_data['figures']['datas'][amplicon_name][fig_name] %}
-            <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
+            <p class="cr-data-link">Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></p>
         {%- endfor -%}
     {%- else %}
         {%- if 'htmls' in report_data['figures'] and fig_name in report_data['figures']['htmls'] -%}
@@ -49,9 +49,9 @@
             <a href="{{report_data['crispresso_data_path']}}{{report_data['figures']['locs'][fig_name]}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{report_data['figures']['locs'][fig_name]}}.png" width='{{width}}'></a>
         {% endif -%}
         {% if fig_name in report_data['figures']['captions'] and fig_name in report_data['figures']['datas'] %}
-            <label class="labelpadding">{{report_data['figures']['captions'][fig_name]}}</label>
+            <figcaption class="labelpadding">{{report_data['figures']['captions'][fig_name]}}</figcaption>
             {%- for (data_label,data_path) in report_data['figures']['datas'][fig_name] %}
-                <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
+                <p class="cr-data-link">Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></p>
             {%- endfor -%}
         {%- endif %}
     {%- endif %}

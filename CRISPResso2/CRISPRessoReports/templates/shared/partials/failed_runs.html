@@ -3,13 +3,13 @@
     <div class="card-header bg-danger d-flex justify-content-center align-items-center" title="Click to expand all error messages" onclick="toggleAllDescriptions()">
     <!-- Center the title and button -->
     <h5 id="failed_runs" class="mb-0 text-white">Failed Runs</h5>
-    <button class="btn btn-danger ml-2" id="failedRunToggleAll" >
+    <button class="btn btn-danger ms-2" id="failedRunToggleAll" >
         <i class="fas fa-chevron-down" id="failedRunChevronIcon"></i>
     </button>
     </div>
 
     <div class='card-body p-0'>
-      <div class="list-group list-group-flush" style="max-height: 25vh; overflow-y: scroll;">
+      <div class="list-group list-group-flush scrollable-list">
         {% for failed_run in failed_runs %}
         {# Toggle the description visibility on click #}
         <a href="javascript:void(0)" class="list-group-item list-group-item-action failed-run-name bg-light text-dark"
@@ -18,7 +18,7 @@
         </a>
         {# Initially hide the description and add a light background with dark text for readability #}
         <div class="list-group-item text-dark failed-run-desc" id="failed_run_desc_{{loop.index0}}" style="display: none;">
-          {{failed_runs_desc[loop.index0]}}
+          <pre class="pre-scrollable">{{failed_runs_desc[loop.index0]}}</pre>
         </div>
         {% endfor %}
       </div>

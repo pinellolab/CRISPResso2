@@ -1,0 +1,519 @@
+<style>
+/* ===================================================================
+   CRISPResso2 — "Lab Instrument" Design System
+   Centralized CSS: tokens, base styles, tabs, cards, print, utilities
+   =================================================================== */
+
+/* ----- Design Tokens ----- */
+:root {
+  /* Instrument grays — cool-neutral with subtle blue undertone */
+  --cr-surface-ground:  #edf2f8;  /* page canvas — light blue */
+  --cr-surface:         #ffffff;  /* card / elevated surface */
+  --cr-surface-inset:   #dfe4ec;  /* inset panels, code blocks, card headers */
+  --cr-surface-hover:   #e8ecf2;  /* hover state for interactive surfaces */
+
+  /* Ink hierarchy — four levels of text contrast */
+  --cr-ink:             #1a2332;  /* primary text */
+  --cr-ink-secondary:   #3d4f65;  /* supporting text, sublabels */
+  --cr-ink-tertiary:    #6b7d93;  /* metadata, captions */
+  --cr-ink-muted:       #94a3b5;  /* disabled, placeholder */
+
+  /* Border progression — intensity matches boundary importance */
+  --cr-border:          rgba(26, 35, 50, 0.12);  /* standard separation */
+  --cr-border-soft:     rgba(26, 35, 50, 0.07);  /* whisper-quiet dividers */
+  --cr-border-emphasis: rgba(26, 35, 50, 0.20);  /* card edges, input borders */
+  --cr-border-focus:    rgba(37, 99, 160, 0.50);  /* focus rings */
+
+  /* Reagent accent — teal-indigo derived from electrophoresis staining */
+  --cr-reagent-50:  #eef4f9;
+  --cr-reagent-100: #d4e4f0;
+  --cr-reagent-200: #a8cae0;
+  --cr-reagent-300: #6fa8cc;
+  --cr-reagent-400: #3d8ab8;
+  --cr-reagent-500: #2563a0;  /* primary accent */
+  --cr-reagent-600: #1c4d7e;  /* hover / active */
+
+  /* Semantic: guardrails — desaturated, scientific palette */
+  --cr-pass-bg:     #ddeee5;
+  --cr-pass-border: #3a8a5c;
+  --cr-pass-text:   #1b4d33;
+  --cr-fail-bg:     #f3dada;
+  --cr-fail-border: #b84444;
+  --cr-fail-text:   #6e2525;
+
+  /* Typography scale — 4px-based */
+  --cr-font-xs:    0.75rem;   /* 12px */
+  --cr-font-sm:    0.8125rem; /* 13px */
+  --cr-font-base:  0.9375rem; /* 15px */
+  --cr-font-lg:    1.125rem;  /* 18px */
+  --cr-font-xl:    1.25rem;   /* 20px */
+  --cr-font-2xl:   1.5rem;    /* 24px */
+  --cr-font-3xl:   1.875rem;  /* 30px */
+  --cr-font-title: 3.5rem;    /* 56px */
+
+  /* Spacing — 4px base */
+  --cr-space-xs: 0.25rem;   /* 4px */
+  --cr-space-sm: 0.5rem;    /* 8px */
+  --cr-space-md: 1rem;      /* 16px */
+  --cr-space-lg: 1.5rem;    /* 24px */
+  --cr-space-xl: 2rem;      /* 32px */
+
+  /* Border radius — sharp end of the scale for a technical tool */
+  --cr-radius-sm: 3px;
+  --cr-radius-md: 5px;
+  --cr-radius-lg: 7px;
+}
+
+/* ----- Base Styles ----- */
+body {
+  font-family: 'Source Sans 3', 'Source Sans Pro', system-ui, sans-serif !important;
+  font-size: var(--cr-font-base);
+  color: var(--cr-ink);
+  background-color: var(--cr-surface-ground);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Source Sans 3', 'Source Sans Pro', system-ui, sans-serif;
+  font-weight: 700;
+  color: var(--cr-ink);
+  letter-spacing: -0.01em;
+}
+
+pre, code, .pre-scrollable {
+  font-family: 'IBM Plex Mono', 'Menlo', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+a {
+  color: var(--cr-reagent-500);
+  transition: color 0.12s ease;
+}
+a:hover {
+  color: var(--cr-reagent-600);
+}
+
+/* ----- Header ----- */
+.crispresso-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--cr-space-lg);
+  padding: var(--cr-space-lg) 0;
+}
+.crispresso-header img {
+  width: 72px;
+  height: auto;
+  flex-shrink: 0;
+}
+.crispresso-header-text {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0.75rem;
+}
+.crispresso-header-text h1 {
+  font-size: var(--cr-font-title);
+  font-weight: 700;
+  line-height: 1.05;
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+.crispresso-header-text h1 a {
+  text-decoration: none !important;
+  color: var(--cr-ink);
+}
+.crispresso-header-text h1 a:hover {
+  color: var(--cr-reagent-500);
+}
+.crispresso-header-text h3 {
+  font-size: var(--cr-font-base);
+  font-weight: 400;
+  color: var(--cr-ink-tertiary);
+  margin: var(--cr-space-xs) 0 0 0;
+  letter-spacing: 0.005em;
+}
+
+/* ----- Report Body (replaces jumbotron) ----- */
+.crispresso-report-body {
+  background: transparent;
+  padding: 0;
+}
+
+/* ----- Cards: 3-level hierarchy ----- */
+
+/* Level 1: Primary section cards — subtle top accent border */
+.card {
+  border: 1px solid var(--cr-border);
+  border-radius: var(--cr-radius-md);
+  overflow: hidden;
+  background: var(--cr-surface);
+}
+.card-header {
+  background-color: var(--cr-surface-inset);
+  border-bottom: 1px solid var(--cr-border);
+  font-weight: 600;
+  padding: var(--cr-space-sm) var(--cr-space-md);
+}
+.card-header h5 {
+  font-size: var(--cr-font-2xl);
+  font-weight: 700;
+  margin-bottom: 0;
+  color: var(--cr-ink);
+}
+h2.cr-run-name {
+  font-size: var(--cr-font-3xl);
+  text-align: center;
+  margin-bottom: var(--cr-space-xl);
+}
+h2.cr-run-name.cr-section-heading::before {
+  display: none;
+}
+h2.cr-run-name.cr-section-heading::after {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 14px;
+  margin: 0.75rem auto 0;
+  background:
+    linear-gradient(var(--cr-border-emphasis, rgba(26,35,50,0.20)), var(--cr-border-emphasis, rgba(26,35,50,0.20))) left center / calc(50% - 70px) 1px no-repeat,
+    linear-gradient(var(--cr-border-emphasis, rgba(26,35,50,0.20)), var(--cr-border-emphasis, rgba(26,35,50,0.20))) right center / calc(50% - 70px) 1px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='14' viewBox='0 0 80 14'%3E%3Cpath d='M0,4 Q20,0 40,7 Q60,14 80,10' stroke='%232563a0' stroke-width='1.5' fill='none' opacity='0.7'/%3E%3Cpath d='M0,10 Q20,14 40,7 Q60,0 80,4' stroke='%232563a0' stroke-width='1.5' fill='none' opacity='0.7'/%3E%3Cline x1='10' y1='2.7' x2='10' y2='11.3' stroke='%232563a0' stroke-width='1' opacity='0.4'/%3E%3Cline x1='20' y1='2.8' x2='20' y2='11.2' stroke='%232563a0' stroke-width='1' opacity='0.4'/%3E%3Cline x1='30' y1='4.2' x2='30' y2='9.8' stroke='%232563a0' stroke-width='1' opacity='0.4'/%3E%3Cline x1='50' y1='4.2' x2='50' y2='9.8' stroke='%232563a0' stroke-width='1' opacity='0.4'/%3E%3Cline x1='60' y1='2.8' x2='60' y2='11.2' stroke='%232563a0' stroke-width='1' opacity='0.4'/%3E%3Cline x1='70' y1='2.7' x2='70' y2='11.3' stroke='%232563a0' stroke-width='1' opacity='0.4'/%3E%3C/svg%3E") center center / 140px 14px no-repeat;
+}
+
+/* Level 2: Amplicon container — the prominent container */
+#amplicons-card {
+  border: 1px solid var(--cr-reagent-200);
+  border-top: 3px solid var(--cr-reagent-400);
+}
+#amplicons-card > .card-header.amp-header {
+  background-color: var(--cr-reagent-50);
+  border-bottom: 1px solid var(--cr-reagent-200);
+}
+
+/* Level 3: Nested cards inside tab panes — recede quietly */
+.tab-pane .card {
+  border-color: var(--cr-border-soft);
+}
+.tab-pane .card > .card-header {
+  background-color: var(--cr-surface);
+  border-bottom-color: var(--cr-border-soft);
+}
+
+/* ----- Tabs: underline style ----- */
+
+.nav-tabs {
+  border-bottom: 2px solid var(--cr-border);
+}
+.nav-tabs .nav-link {
+  font-size: var(--cr-font-lg);
+  font-weight: 600;
+  color: var(--cr-ink-muted);
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  padding: var(--cr-space-sm) var(--cr-space-md);
+  background: transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  letter-spacing: 0.01em;
+}
+.nav-tabs .nav-link:hover {
+  color: var(--cr-reagent-400);
+  border-bottom-color: var(--cr-reagent-200);
+  background: transparent;
+}
+.nav-tabs .nav-link.active {
+  color: var(--cr-reagent-600);
+  font-weight: 700;
+  border-bottom: 2px solid var(--cr-reagent-500);
+  background: transparent;
+}
+
+/* Amplicon tabs — bolder indicator, tighter feel */
+.nav-tabs.amp-header {
+  border-bottom: 3px solid var(--cr-reagent-100);
+}
+.nav-tabs.amp-header .nav-link {
+  font-weight: 700;
+  margin-bottom: -3px;
+}
+.nav-tabs.amp-header .nav-link.active {
+  border-bottom: 3px solid var(--cr-reagent-500);
+  background: transparent;
+}
+
+.card-header.amp-header {
+  border-bottom: none !important;
+}
+
+/* Tab content body */
+.tab-content.amp-body {
+  background-color: var(--cr-reagent-50);
+  border: 1px solid var(--cr-reagent-100);
+  border-top: none;
+}
+
+/* ----- Scrollable containers ----- */
+.pre-scrollable {
+  max-height: 340px;
+  overflow-y: auto;
+  background-color: var(--cr-surface-inset);
+  text-align: left;
+  font-size: var(--cr-font-sm);
+  padding: var(--cr-space-sm) var(--cr-space-md);
+  border: 1px solid var(--cr-border);
+  border-radius: var(--cr-radius-sm);
+}
+
+.scrollable-list,
+.scrollable-list-tall {
+  overflow-y: auto;
+  --scroll-fade: var(--cr-surface, #ffffff);
+  mask-image:
+    linear-gradient(to bottom, transparent, black 8px, black calc(100% - 12px), transparent);
+  -webkit-mask-image:
+    linear-gradient(to bottom, transparent, black 8px, black calc(100% - 12px), transparent);
+}
+.scrollable-list {
+  max-height: 25vh;
+}
+.scrollable-list-tall {
+  max-height: 80vh;
+}
+
+/* ----- Zoom viewer (nucleotide composition) ----- */
+.div_zoom_outer {
+  height: 100px;
+  border: 1px solid var(--cr-border-emphasis) !important;
+  position: relative;
+}
+
+/* ----- Figure containers ----- */
+.cr-figure {
+  padding-bottom: var(--cr-space-md);
+  margin-bottom: var(--cr-space-md);
+  border-bottom: 1px solid var(--cr-border-soft);
+}
+.cr-figure:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* ----- Figure labels / captions ----- */
+.labelpadding,
+figcaption.labelpadding {
+  display: block;
+  font-size: var(--cr-font-lg);
+  color: var(--cr-ink);
+  padding: var(--cr-space-sm) var(--cr-space-md);
+  line-height: 1.5;
+}
+
+/* ----- Data download links ----- */
+.cr-data-link {
+  font-size: var(--cr-font-xs);
+  color: var(--cr-ink-muted);
+  margin: var(--cr-space-xs) 0 0 0;
+  padding: 0 var(--cr-space-md);
+}
+.cr-data-link a {
+  color: var(--cr-ink-tertiary);
+  text-decoration: none;
+  border-bottom: 1px solid var(--cr-border-soft);
+}
+.cr-data-link a:hover {
+  color: var(--cr-reagent-500);
+  border-bottom-color: var(--cr-reagent-300);
+}
+
+/* ----- Secondary button variant ----- */
+.btn-outline-secondary {
+  color: var(--cr-ink-secondary);
+  border-color: var(--cr-border-emphasis);
+}
+.btn-outline-secondary:hover {
+  background-color: var(--cr-surface-inset);
+  color: var(--cr-ink);
+  border-color: var(--cr-border-emphasis);
+}
+
+/* ----- Guardrail warnings ----- */
+.guardrail-toggle {
+  transition: transform 0.2s ease;
+}
+details[open] > summary .guardrail-toggle {
+  transform: rotate(180deg);
+}
+.guardrail-summary {
+  list-style: none;
+}
+.guardrail-summary::-webkit-details-marker {
+  display: none;
+}
+
+.guardrail-outer {
+  margin-bottom: var(--cr-space-sm);
+  text-align: center;
+  border-radius: var(--cr-radius-md);
+}
+.guardrail-banner {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1.05em;
+  padding: var(--cr-space-sm) var(--cr-space-md);
+  border-radius: var(--cr-radius-md);
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.guardrail-banner-fail {
+  background-color: var(--cr-fail-bg);
+  border: 2px solid var(--cr-fail-border);
+}
+.guardrail-banner-pass {
+  background-color: var(--cr-pass-bg);
+  border: 2px solid var(--cr-pass-border);
+}
+.guardrail-body {
+  padding: var(--cr-space-md);
+  background-color: var(--cr-surface);
+}
+.guardrail-section {
+  margin-left: var(--cr-space-xl);
+  margin-top: var(--cr-space-xs);
+  text-align: left;
+}
+.guardrail-section-fail > summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--cr-fail-text);
+}
+.guardrail-section-pass > summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--cr-pass-text);
+}
+.guardrail-chevron {
+  margin-right: var(--cr-space-xs);
+}
+.guardrail-banner-chevron {
+  margin-left: auto;
+}
+
+/* ----- CRISPRessoPro Report Banner ----- */
+.cr-report-promo-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background: linear-gradient(135deg, var(--cr-reagent-50), var(--cr-surface));
+  border: 1px solid var(--cr-reagent-200);
+  border-radius: var(--cr-radius-md);
+  padding: 0.625rem 1rem;
+  margin-bottom: 1.25rem;
+  font-size: var(--cr-font-sm);
+  color: var(--cr-ink-secondary);
+  text-decoration: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.cr-report-promo-banner:hover {
+  border-color: var(--cr-reagent-400);
+  box-shadow: 0 2px 8px rgba(37, 99, 160, 0.12);
+  color: var(--cr-ink-secondary);
+  text-decoration: none;
+}
+.cr-report-promo-banner strong {
+  color: var(--cr-ink);
+}
+.cr-report-promo-icon {
+  font-size: 1rem;
+  color: var(--cr-reagent-500);
+  flex-shrink: 0;
+}
+
+/* ----- Buttons ----- */
+.btn-primary {
+  background-color: var(--cr-reagent-500);
+  border-color: var(--cr-reagent-500);
+  font-weight: 600;
+}
+.btn-primary:hover {
+  background-color: var(--cr-reagent-600);
+  border-color: var(--cr-reagent-600);
+}
+.btn-primary:focus {
+  box-shadow: 0 0 0 3px var(--cr-border-focus);
+}
+
+/* ----- Tables ----- */
+.table thead th {
+  background-color: var(--cr-surface-inset);
+  font-weight: 700;
+  font-size: var(--cr-font-sm);
+  color: var(--cr-ink-secondary);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--cr-border-emphasis);
+}
+
+/* ----- Responsive ----- */
+@media only screen and (max-width: 600px) {
+  .crispresso-report-body img {
+    width: 100%;
+  }
+  .print-only {
+    display: none !important;
+  }
+  .screen-only {
+    display: block;
+  }
+  .crispresso-header-text h1 {
+    font-size: var(--cr-font-2xl);
+  }
+  .crispresso-header-text h3 {
+    font-size: var(--cr-font-sm);
+  }
+}
+
+/* ----- Print ----- */
+@media print {
+  .tab-content > .tab-pane {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    margin-bottom: 0.5em !important;
+  }
+  .nav-tabs {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  .tab-content.amp-body {
+    background-color: transparent !important;
+    border: none !important;
+  }
+  .col-sm-10 {
+    margin-left: -15%;
+    width: 130% !important;
+  }
+  .breakinpage {
+    clear: both;
+    page-break-before: always !important;
+    display: block;
+  }
+  .print-only, .print-only * {
+    display: block;
+  }
+  .screen-only, .screen-only * {
+    display: none !important;
+  }
+  div {
+    border: none !important;
+  }
+  body {
+    background-color: #ffffff;
+  }
+}
+</style>

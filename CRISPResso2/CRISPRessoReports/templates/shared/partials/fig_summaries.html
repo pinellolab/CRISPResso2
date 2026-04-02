@@ -1,4 +1,4 @@
-<div id="fig_summary_{{plot_name}}">
+<div id="fig_summary_{{plot_name}}" class="cr-figure">
     {% if 'htmls' in report_data and plot_name in report_data['htmls']%}
         {{report_data['htmls'][plot_name]|safe}}
     {% else %}
@@ -8,9 +8,8 @@
             <a href="{{report_data['crispresso_data_path']}}{{plot_name}}.pdf"><img src="{{report_data['crispresso_data_path']}}{{plot_name}}.png" width='70%'></a>
         {% endif %}
     {% endif %}
-    <label class="labelpadding">{{report_data['labels'][plot_name]}}</label>
+    <figcaption class="labelpadding">{{report_data['labels'][plot_name]}}</figcaption>
     {% for (data_label,data_path) in report_data['datas'][plot_name] %}
-        <p class="m-0"><small>Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></small></p>
+        <p class="cr-data-link">Data: <a href="{{report_data['crispresso_data_path']}}{{data_path}}">{{data_label}}</a></p>
     {% endfor %}
-    <br>
 </div>
