@@ -2658,7 +2658,17 @@ def test_coding_seq_names_are_filename_safe():
 # Each test constructs sequences that place the relevant guide at the very end
 # of its reference, forcing the boundary condition.  On master these raise
 # ``IndexError: list index out of range``; on the fixed branch they succeed.
-
+# These tests will test the generation of the guide sequences by checking if the 
+# function can complete. If there are indexing errors, the functions will error out 
+# (trying to access indices beyond the bounds of the amplicon lookup coords (i.e. coords_r).
+#
+# In other words, the return values of these tests are not particularly interesting - 
+# just the fact that the function returns. The 'pe_guide_names', 'pe_guide_qw_centers', 
+# 'pe_guide_qw_sizes', and 'pe_guide_plot_cut_points' are trivially set so they are 
+# not part of the test. the 'pe_orig_guide_seqs' reflects input to the function call 
+# (so these results aren't being tested directly) and the 'pe_guides' contain the reverse 
+# complement of the extension sequence and the fw sequence for the other two guides - 
+# so these values are not being specifically evaluated.
 
 def test_spacer_at_end():
     """Spacer at the end of ref0_seq should not raise IndexError."""
@@ -2682,6 +2692,10 @@ def test_spacer_at_end():
         prime_editing_gap_open=-50, prime_editing_gap_extend=0,
     )
 
+    # This tests gets the prime editing guides with reference to the prime edited 
+    # reference (this_amp_seq=edited_amp (the prime-edited seq))
+    # Thus, there are no mismatches ([], [])
+    
     assert result == snapshot(
         (
             ["GCTAGCTAGCTACGAACGAT", "GTCATCTTAGTCATTACCTG"],  # pe_guides
@@ -2716,6 +2730,8 @@ def test_extension_at_end():
         needleman_wunsch_gap_open=-20, needleman_wunsch_gap_extend=-2,
         prime_editing_gap_open=-50, prime_editing_gap_extend=0,
     )
+    # This test tests guide creation against the WT seq (this_amp_seq=ref0_seq) 
+    # so there is a mismatch in the guide sequence created for the extension sequence. ([17], [])
 
     assert result == snapshot(
         (
@@ -2752,6 +2768,8 @@ def test_nicking_at_end():
         needleman_wunsch_gap_open=-20, needleman_wunsch_gap_extend=-2,
         prime_editing_gap_open=-50, prime_editing_gap_extend=0,
     )
+
+
 
     assert result == snapshot(
         (
