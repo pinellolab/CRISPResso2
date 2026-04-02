@@ -1,0 +1,7 @@
+{# CRISPRessoPro promotional banner — only shown when Pro is not installed #}
+{% if not C2PRO_INSTALLED %}
+<a href="https://crispresso.com/pro" class="cr-report-promo-banner screen-only" target="_blank" rel="noopener">
+  <span class="cr-report-promo-icon"><i class="fas fa-flask"></i></span>
+  <span><strong>CRISPRessoPro</strong> — faster compute, priority queues, long-term storage, and advanced reporting. <span style="text-decoration:underline">Learn more</span>.</span>
+</a>
+{% endif %}

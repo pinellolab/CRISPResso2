@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 114" width="80" height="114">
+  <style>
+    text {
+      font-family: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      fill: #3b82f6;
+      white-space: pre;
+    }
+  </style>
+  <text xml:space="preserve" x="3" y="14">     _</text>
+  <text xml:space="preserve" x="3" y="30">    ' )</text>
+  <text xml:space="preserve" x="3" y="46">   .-'</text>
+  <text xml:space="preserve" x="3" y="62">  (_____</text>
+  <text xml:space="preserve" x="3" y="78">C)/     \</text>
+  <text xml:space="preserve" x="3" y="94">  \     /</text>
+  <text xml:space="preserve" x="3" y="110">   \___/</text>
+</svg>
