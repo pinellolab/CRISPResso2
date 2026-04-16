@@ -12,6 +12,15 @@
 		<div id='jumbotron_content' >
 			{{ render_partial('shared/partials/pro_banner.html') }}
 			{{ render_partial('shared/partials/guardrail_warnings.html', report_data=report_data) | safe}}
+			{% if is_web and report_data.get('folder_id') and not is_default_user%}
+			<div class="text-end mb-2">
+				<a href="/plot-assistant/{{ report_data['folder_id'] }}"
+				   class="btn btn-outline-primary btn-sm"
+				   title="Create custom plots with AI">
+				  <i class="fas fa-magic"></i> AI Plot Assistant
+				</a>
+			</div>
+			{% endif %}
 			{% if report_data['report_display_name'] != '' %}
 			<h2 class="cr-run-name cr-section-heading">{{report_data['report_display_name']}}</h2>
 			{% endif %}
