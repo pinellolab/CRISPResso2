@@ -1222,7 +1222,7 @@ def main():
                                 chr_output_filenames.append(chr_output_filename)
                                 curr_pos = curr_end
                                 curr_end = curr_pos + chr_step_size
-                            if curr_end < chr_len:
+                            if curr_pos < chr_len:
                                 chr_output_filename = _jp('MAPPED_REGIONS/%s_%s_%s.info' % (chr_str, curr_pos, chr_len))
                                 sub_chr_command = chr_cmd.replace("__REGION__", ":%d-%d " % (curr_pos, chr_len)).replace("__DEMUX_CHR_LOGFILENAME__", chr_output_filename)
                                 chr_commands.append(sub_chr_command)
