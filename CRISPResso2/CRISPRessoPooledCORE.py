@@ -186,7 +186,7 @@ def get_n_aligned_bam_region(bam_filename, chr_name, chr_start, chr_end, samtool
 
 
 def find_overlapping_genes(row, df_genes):
-    df_genes_overlapping = df_genes.loc[(df_genes.chrom == row.chr_id) &
+    df_genes_overlapping = df_genes.loc[(df_genes.chrom.astype(str) == str(row.chr_id)) &
                                      (df_genes.txStart <= row.bpend) &
                                      (row.bpstart <= df_genes.txEnd)]
     genes_overlapping = []
@@ -1300,7 +1300,7 @@ def main():
                     info('Processing amplicon: %s' % idx)
 
                     # check if we have reads
-                    demux_key = row['chr_id'] + ' ' + str(row['bpstart']) + ' ' + str(row['bpend'])
+                    demux_key = str(row['chr_id']) + ' ' + str(row['bpstart']) + ' ' + str(row['bpend'])
                     if demux_key in df_all_demux.index:
                         demux_row = df_all_demux.loc[demux_key]
                         N_READS = demux_row['number of reads']
