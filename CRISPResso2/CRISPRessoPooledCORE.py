@@ -1256,7 +1256,7 @@ def main():
                 sum_aligned_reads = df_all_demux["number of reads"].sum()
                 # write the sorted file
                 df_all_demux.to_csv(REPORT_ALL_DEPTH, sep="\t", index=False, na_rep="NA")
-                df_all_demux['loc'] = df_all_demux['chr_id'] + ' ' + df_all_demux['start'].apply(str) + ' ' + df_all_demux['end'].apply(str)
+                df_all_demux['loc'] = df_all_demux['chr_id'].apply(str) + ' ' + df_all_demux['start'].apply(str) + ' ' + df_all_demux['end'].apply(str)
                 df_all_demux.set_index(['loc'], inplace=True)
 
                 if sum_aligned_reads == 0:
