@@ -22,15 +22,13 @@ git remote add reports https://github.com/edilytics/CRISPRessoReports.git
 git fetch reports
 ```
 
-3. Checkout a `CRISPRessoReports` branch.
+3. At this point, your current directory will only include CRISPRessoReports files. That's ok. At this point, follow the instructions below to:
+- Pull changes from CRISPRessoReports into your parent repo (e.g. CRISPResso or CRISPRessoWeb)
+- Make changes in CRISPRessoReports and commit them
 
-``` shell
-git checkout -b master-reports reports/master
-```
+## How did Cole set this up in the first place?
 
-*Note:* you can obviously change the names of these branches (or select a branch other than `master`). I would recommend naming all branches from `CRISPRessoReports` with the same prefix or suffix (i.e. `*-reports`) because it can get confusing to keep all of the branches straight...
-
-4. Read `CRISPRessoReports` into the parent repo as a subtree. This is when the code in `CRISPRessoReports` will finally be added to the parent repo.
+This will read `CRISPRessoReports` into the parent repo as a subtree. This is when the code in `CRISPRessoReports` will finally be added to the parent repo.
 
 **Very important**, switch to the branch in the parent repo where you want the code to be added! For example:
 
@@ -45,8 +43,6 @@ git read-tree --prefix=CRISPResso2/CRISPRessoReports -u master-reports
 ```
 
 Run `git status` and you should see the files added!
-
-5. Stage and commit your files as you normally would.
 
 ### How do I pull commits that are in `CRISPRessoReports` into the parent repo?
 
@@ -70,19 +66,21 @@ You should see the updates that you are looking for.
 git checkout <feature-branch>
 ```
 
-4. Merge the changes in and resolve any merge conflicts.
+4. Merge the changes from CRISPRessoReports into the parent repo and resolve any merge conflicts.
 
 ``` shell
 git merge --squash -Xsubtree="CRISPResso2/CRISPRessoReports" --no-commit --allow-unrelated-histories <feature-branch>-reports
 ```
 
-*Note:* You may need to change the value of the `-Xsubtree` parameter to match where `CRISPRessoReports` is located in the parent repo.
+*Note:* You may need to change the value of the `-Xsubtree` parameter to match where `CRISPRessoReports` is located in the parent repo (e.g., CRISPRessoWEB/CRISPRessoReports).
 
-5. Commit your changes and resolve merge conflicts.
+5. Resolve merge conflicts and commit changes to the parent repo.
 
 Also, note that the default commit message may have a summary of all commits, please shorten it to be descriptive of the most recent changes.
 
 ### How do I push commits that are in my parent repo's `CRISPRessoReports` into the shared `CRISPRessoReports` repo?
+
+This is used when you already have made changes in your parent repo's `CRISPRessoReports` folder.
 
 1. In the parent repo, switch to (or create) the branch on `CRISPRessoReports` that will have the changes you push.
 
@@ -92,7 +90,7 @@ If you are creating a new branch based off of `CRISPRessoReports` master, run th
 git checkout reports/master
 ```
 
-Then, run to actually create (and switch to) the branch that you will be working with:
+Then, to create (and switch to) the CRISPRessoReports branch that you will be working with, run:
 
 ``` shell
 git checkout -b <feature-branch>-reports
@@ -104,7 +102,7 @@ Or if you would like to push to an existing branch on `CRISPRessoReports`, run t
 git checkout <feature-branch>-reports
 ```
 
-2. Merge the changes in and resove any merge conflicts.
+2. Merge the changes from the parent repo <feature-branch> into the CRISPRessoReports <feature-branch>-reports branch and resove any merge conflicts.
 
 ``` shell
 git merge --squash -Xsubtree="CRISPResso2/CRISPRessoReports" --no-commit --allow-unrelated-histories <feature-branch>
@@ -115,7 +113,7 @@ git merge --squash -Xsubtree="CRISPResso2/CRISPRessoReports" --no-commit --allow
 3. Push to `CRISPRessoReports`.
 
 ``` shell
-git push
+git push reports
 ```
 
 4. Switch back to your branch on `CRISPResso` or `C2Web`.
@@ -133,6 +131,9 @@ If a feature that you are working on requires changes to CRISPRessoReports, you 
 ``` shell
 git checkout -b <feature-branch> origin/master
 ```
+
+*Note:* you can obviously change the names of these branches (or select a branch other than `master`). I would recommend naming all branches from `CRISPRessoReports` with the same prefix or suffix (i.e. `*-reports`) because it can get confusing to keep all of the branches straight...
+
 
 2. Create a feature branch on `CRISPRessoReports`.
 

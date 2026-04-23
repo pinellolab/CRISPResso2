@@ -68,7 +68,7 @@ def render_template(template_name, jinja2_env, **data):
     )
 
 
-def make_report_from_folder(crispresso_report_file, crispresso_folder, _root):
+def make_report_from_folder(crispresso_report_file, crispresso_folder, _root, logger, use_matplotlib=False):
     """Makes an html report for a crispresso run
 
     Parameters
@@ -83,7 +83,7 @@ def make_report_from_folder(crispresso_report_file, crispresso_folder, _root):
 
     """
     run_data = CRISPRessoShared.load_crispresso_info(crispresso_folder)
-    make_report(run_data, crispresso_report_file, crispresso_folder, _root)
+    make_report(run_data, crispresso_report_file, crispresso_folder, _root, logger, use_matplotlib=use_matplotlib)
 
 
 def add_fig_if_exists(fig, fig_name, fig_root, fig_title, fig_caption, fig_data,
@@ -189,13 +189,15 @@ def assemble_figs(run_data, crispresso_folder):
     return data
 
 
-def make_report(run_data, crispresso_report_file, crispresso_folder, _root, logger):
+def make_report(run_data, crispresso_report_file, crispresso_folder, _root, logger, use_matplotlib=False):
     """Writes an HMTL report for a CRISPResso run
     """
     data = assemble_figs(run_data, crispresso_folder)
 
     report_display_name = ""
-    if run_data['running_info']['args'].name != "":
+    if 'display_name' in run_data['running_info']['args'] and run_data['running_info']['args'].display_name != "" and str(run_data['running_info']['args'].display_name) != 'None':
+        report_display_name = run_data['running_info']['args'].display_name
+    elif run_data['running_info']['args'].name != "":
         report_display_name = run_data['running_info']['args'].name
 
     # find path between the report and the data (if the report is in another directory vs in the same directory as the data)
@@ -379,10 +381,13 @@ def make_pooled_report_from_folder(crispresso_report_file, crispresso2_info, fol
     """Makes a report for a CRISPRessoPooled run
     """
     names_arr = crispresso2_info['results']['good_region_names']
+    display_names = None
+    if 'all_region_display_names' in crispresso2_info['results']:
+        display_names = crispresso2_info['results']['all_region_display_names']
     output_title = 'CRISPResso Pooled Output'
     if crispresso2_info['running_info']['args'].name != '':
         output_title += f"<br/>{crispresso2_info['running_info']['args'].name}"
-    make_multi_report_from_folder(crispresso2_info, names_arr, output_title, crispresso_report_file, folder, _root, 'pooled', logger)
+    make_multi_report_from_folder(crispresso2_info, names_arr, output_title, crispresso_report_file, folder, _root, 'pooled', logger, display_names=display_names)
 
 
 def make_compare_report_from_folder(crispresso_report_file, crispresso2_info, folder, _root, logger):
