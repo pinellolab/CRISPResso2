@@ -38,7 +38,7 @@ def render_partial(template_name, renderer=None, markup=True, **data):
     """
     if renderer is None:
         if flask is None:
-            raise PartialsException('No renderer specified')
+            raise Exception('No renderer specified')
         renderer = flask.render_template
 
     if markup:

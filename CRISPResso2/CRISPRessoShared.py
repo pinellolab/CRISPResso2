@@ -9,6 +9,8 @@ import errno
 import gzip
 import importlib.metadata
 import importlib.util
+from pathlib import Path
+
 import io
 import json
 import logging
@@ -25,7 +27,6 @@ import textwrap
 import unicodedata
 
 from inspect import getmodule, stack
-from pathlib import Path
 
 from CRISPResso2 import CRISPResso2Align
 from CRISPResso2 import CRISPRessoCOREResources
@@ -503,8 +504,7 @@ def get_silent_edits(ref_seq, ref_codons, seq, seq_codons):
     ref_codons = [('A', 'GCT'), ('G', 'GGT'), ('S', 'AGT')]
     seq_codons = [('A', 'GCT'), ('G', 'GGT'),  ('T', 'ACT'), ('S', 'AGC')]
 
-    Returns
-    -------
+    result:
     'AGTs'
 
     Parameters
