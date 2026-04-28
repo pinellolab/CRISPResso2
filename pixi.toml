@@ -65,18 +65,13 @@ cmd = "make $ARGS"
 cwd = "../CRISPResso2_tests"
 depends-on = ["install"]
 
-[feature.pro.tasks.integration]
-cmd = "pytest test_cli.py"
-cwd = "../CRISPResso2_tests"
-depends-on = ["install", "install-pro"]
-
 [feature.pro.tasks]
-install = "pip install -e . && pip install -e ../CRISPRessoPro"
+install-pro = "pip install -e . && pip install -e ../CRISPRessoPro"
 
 [feature.pro.tasks.pro-unit-test]
 cmd = "pytest tests --cov CRISPRessoPro"
 cwd = "../CRISPRessoPro"
-depends-on = ["install"]
+depends-on = ["install-pro"]
 
 [feature.lint.tasks]
 lint = { cmd = "ruff check . --statistics" }

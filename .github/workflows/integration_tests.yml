@@ -38,11 +38,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: CRISPResso2
 
       - name: Set up Pixi
         uses: prefix-dev/setup-pixi@v0.8.8
         with:
-          environments: test
+          manifest-path: CRISPResso2/pixi.toml
+          environments: ${{ matrix.pro && 'test-pro' || 'test' }}
           locked: false
           frozen: false
           cache: false
@@ -50,8 +53,8 @@ jobs:
       - name: Cache Pixi environment
         uses: actions/cache@v4
         with:
-          path: .pixi
-          key: pixi-v2-${{ runner.os }}-${{ runner.arch }}-test-${{ hashFiles('pixi.toml') }}
+          path: CRISPResso2/.pixi
+          key: pixi-v2-${{ runner.os }}-${{ runner.arch }}-${{ matrix.pro && 'test-pro' || 'test' }}-${{ hashFiles('CRISPResso2/pixi.toml') }}
 
       - name: Install MS core fonts
         run: |
@@ -68,17 +71,10 @@ jobs:
             cp /usr/share/fonts/truetype/msttcorefonts/*.ttf .pixi/msttcorefonts/
           fi
           sudo fc-cache -f
+        working-directory: CRISPResso2
 
-      - name: Install environment
-        run: pixi install -e test
-
-      - name: Install CRISPResso
-        run: pixi run -e test install
-
-      - name: Rebuild pixi fontconfig cache and clear matplotlib font cache
-        run: |
-          pixi run -e test -- fc-cache -f
-          pixi run -e test -- python -c "import matplotlib; import shutil; shutil.rmtree(matplotlib.get_cachedir(), ignore_errors=True); print('Cleared', matplotlib.get_cachedir())"
+      - name: Select Pixi environment
+        run: echo "PIXI_ENV=${{ matrix.pro && 'test-pro' || 'test' }}" >> $GITHUB_ENV
 
       - name: Checkout CRISPResso2_tests
         uses: actions/checkout@v4
@@ -95,11 +91,26 @@ jobs:
           token: ${{ secrets.CRISPRESSOPRO_PAT }}
           path: CRISPRessoPro
 
-      - name: Install CRISPRessoPro
-        if: matrix.pro
-        run: pixi run -e test -- pip install -e CRISPRessoPro && pixi run -e test -- pip install kaleido==0.2.1
+      - name: Install environment
+        run: cd CRISPResso2 && pixi install -e $PIXI_ENV
+
+      - name: Install CRISPResso packages
+        run: |
+          cd CRISPResso2
+          if [ "$PIXI_ENV" = "test-pro" ]; then
+            pixi run -e test-pro install-pro
+          else
+            pixi run -e test install
+          fi
+
+      - name: Rebuild pixi fontconfig cache and clear matplotlib font cache
+        run: |
+          cd CRISPResso2
+          pixi run -e $PIXI_ENV -- fc-cache -f
+          pixi run -e $PIXI_ENV -- python -c "import matplotlib; import shutil; shutil.rmtree(matplotlib.get_cachedir(), ignore_errors=True); print('Cleared', matplotlib.get_cachedir())"
 
       - name: Run Tests
         run: |
-          pixi run -e test -- pytest CRISPResso2_tests/test_cli.py \
-            -m "${{ matrix.group.filter }}" -v ${{ matrix.pro && '--pro' || '' }} ${{ !matrix.pro && '--diff-plots' || '' }} --test --print
+          cd CRISPResso2
+          pixi run -e $PIXI_ENV -- pytest ../CRISPResso2_tests/test_cli.py \
+            -m "${{ matrix.group.filter }}" -v ${{ !matrix.pro && '--diff-plots' || '' }} --test --print

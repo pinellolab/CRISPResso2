@@ -16,7 +16,7 @@ COPY pixi.toml pyproject.toml ./
 RUN pixi install
 
 COPY . .
-RUN pixi run install
+RUN pixi run -e default install
 
 # --- Runtime stage: slim image with just the environment ---
 FROM ubuntu:24.04
@@ -43,10 +43,10 @@ COPY --from=build /CRISPResso2 /CRISPResso2
 WORKDIR /CRISPResso2
 
 # Verify
-RUN pixi run -- CRISPResso -h \
-  && pixi run -- CRISPRessoBatch -h \
-  && pixi run -- CRISPRessoPooled -h \
-  && pixi run -- CRISPRessoWGS -h \
-  && pixi run -- CRISPRessoCompare -h
+RUN pixi run -e default -- CRISPResso -h \
+  && pixi run -e default -- CRISPRessoBatch -h \
+  && pixi run -e default -- CRISPRessoPooled -h \
+  && pixi run -e default -- CRISPRessoWGS -h \
+  && pixi run -e default -- CRISPRessoCompare -h
 
-ENTRYPOINT ["pixi", "run", "--", "python", "/CRISPResso2/CRISPResso2_router.py"]
+ENTRYPOINT ["pixi", "run", "-e", "default", "--", "python", "/CRISPResso2/CRISPResso2_router.py"]
