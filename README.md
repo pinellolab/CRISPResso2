@@ -33,29 +33,6 @@ CRISPResso2 can be [installed](https://docs.crispresso.com/installation.html) in
   - [Bioconda on Apple Silicon](https://docs.crispresso.com/installation.html#bioconda-for-apple-silicon)
 - [Docker](https://docs.crispresso.com/installation.html#docker)
 
-## Development (Pixi)
-
-For local development and CI parity, use explicit Pixi environments:
-
-```bash
-# Core/runtime lane (default)
-pixi install -e default
-pixi run install
-
-# CRISPResso2 unit tests
-pixi install -e test
-pixi run -e test test
-
-# CRISPRessoPro runtime/dev lane (run Pro code, not necessarily tests)
-pixi install -e pro
-pixi run -e pro install-pro
-
-# CRISPRessoPro testing lane (includes test dependencies)
-pixi install -e test-pro
-pixi run -e test-pro install-pro
-pixi run -e test-pro pro-unit-test
-```
-
 ## Examples
 
 - [CRISPResso example runs](https://docs.crispresso.com/suite/core/examples.html)
