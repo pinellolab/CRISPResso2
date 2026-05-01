@@ -10,20 +10,15 @@ python = ">=3.10,<3.13"
 numpy = "*"
 cython = "*"
 scipy = "*"
-matplotlib = "*"
+matplotlib-base = "*"
 seaborn = "*"
 pandas = "<3.0"
 jinja2 = "*"
 fastp = "*"
 bowtie2 = "*"
 samtools = "*"
-plotly = "==5.18.0"
 setuptools = "*"
 pip = "*"
-
-[target.linux-64.dependencies]
-gcc_linux-64 = "*"
-gxx_linux-64 = "*"
 
 [feature.test.dependencies]
 pytest = "*"
@@ -37,6 +32,7 @@ ydiff = "*"
 inline-snapshot = "*"
 
 [feature.pro.dependencies]
+plotly = "==5.18.0"
 python-kaleido = "<=0.2.1"
 
 [feature.lint.dependencies]
