@@ -71,11 +71,10 @@ WORKDIR /CRISPResso2
 
 ENV PATH="/CRISPResso2/.pixi/envs/default/bin:${PATH}"
 
-# Verify (disable .pyc generation to avoid adding cache files in this layer)
-RUN PYTHONDONTWRITEBYTECODE=1 CRISPResso -h \
-  && PYTHONDONTWRITEBYTECODE=1 CRISPRessoBatch -h \
-  && PYTHONDONTWRITEBYTECODE=1 CRISPRessoPooled -h \
-  && PYTHONDONTWRITEBYTECODE=1 CRISPRessoWGS -h \
-  && PYTHONDONTWRITEBYTECODE=1 CRISPRessoCompare -h
+RUN CRISPResso -h \
+  && CRISPRessoBatch -h \
+  && CRISPRessoPooled -h \
+  && CRISPRessoWGS -h \
+  && CRISPRessoCompare -h
 
 ENTRYPOINT ["python", "/CRISPResso2/CRISPResso2_router.py"]
