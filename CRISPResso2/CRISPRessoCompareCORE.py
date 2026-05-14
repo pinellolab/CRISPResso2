@@ -402,7 +402,7 @@ def main():
                 merged = merged.reset_index(drop=True).set_index('Aligned_Sequence')
                 folder_root = os.path.split(allele_file_1)[1].replace(".txt", "")
                 allele_comparison_file = _jp(folder_root + '.txt')
-                merged.to_csv(allele_comparison_file, sep="\t", index=None)
+                merged.to_csv(allele_comparison_file, sep="\t")
 
                 is_base_edit = 'base_edit' in allele_file_1
                 if is_base_edit:

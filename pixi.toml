@@ -22,7 +22,6 @@ pip = "*"
 
 [feature.test.dependencies]
 pytest = "*"
-pytest-cov = "*"
 pytest-check = "*"
 pytest-xdist = "*"
 pillow = "*"
@@ -54,7 +53,7 @@ test-pro = { features = ["test", "pro"], solve-group = "default" }
 install = "pip install -e ."
 
 [feature.test.tasks]
-test = { cmd = "pytest tests --cov CRISPResso2", depends-on = ["install"] }
+test = { cmd = "pytest tests CRISPResso2", depends-on = ["install"] }
 
 [feature.test.tasks.integration]
 cmd = "make $ARGS"
@@ -65,7 +64,7 @@ depends-on = ["install"]
 install-pro = "pip install -e . && pip install -e ../CRISPRessoPro"
 
 [feature.pro.tasks.pro-unit-test]
-cmd = "pytest tests --cov CRISPRessoPro"
+cmd = "pytest tests CRISPRessoPro"
 cwd = "../CRISPRessoPro"
 depends-on = ["install-pro"]
 
