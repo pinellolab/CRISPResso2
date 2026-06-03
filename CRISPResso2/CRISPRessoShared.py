@@ -272,7 +272,7 @@ def overwrite_crispresso_options(cmd, option_names_to_overwrite, option_values, 
         if option:
             if option in option_values:
                 if paramInd is None:
-                    if type(option_values) == dict:
+                    if type(option_values) is dict:
                         val = option_values[option]
                     else:
                         val = getattr(option_values, option)
