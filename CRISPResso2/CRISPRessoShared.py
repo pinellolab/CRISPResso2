@@ -316,7 +316,7 @@ def overwrite_crispresso_options(cmd, option_names_to_overwrite, option_values, 
                         new_cmd += ' --%s %s' % (action.dest, val)
                     else:
                         new_cmd += ' --%s "%s"' % (action.dest, val)
-            elif action.type == int:
+            elif action.type is int:
                 new_cmd += ' --%s %s' % (action.dest, val)
 
     return new_cmd
