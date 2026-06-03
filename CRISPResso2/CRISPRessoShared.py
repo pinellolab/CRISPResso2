@@ -305,10 +305,10 @@ def overwrite_crispresso_options(cmd, option_names_to_overwrite, option_values, 
             if action.nargs == 0:
                 if val:  # if value is true
                     new_cmd += ' --%s' % action.dest
-            elif action.type == bool:  # but just in case...
+            elif action.type is bool:  # but just in case...
                 if val:
                     new_cmd += ' --%s' % action.dest
-            elif action.type == str:
+            elif action.type is str:
                 if val != "":
                     if re.fullmatch(r"[a-zA-Z0-9\._]*", val):  # if the value is alphanumeric, don't have to quote it
                         new_cmd += ' --%s %s' % (action.dest, val)
