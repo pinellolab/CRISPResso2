@@ -275,6 +275,57 @@ def test_get_quant_window_ranges_from_include_idxs_multiple_gaps():
 
 
 # =============================================================================
+# Tests for get_amplicon_info_for_guides function
+# =============================================================================
+
+
+def test_get_amplicon_info_for_guides_fw_include_idxs_include_right_edge():
+    """A forward guide window ending at the reference edge includes the terminal base."""
+    ref_seq = "AAAAACCCCCGACGTTTTTT"
+    result = CRISPRessoShared.get_amplicon_info_for_guides(
+        ref_seq=ref_seq,
+        guides=["GACGT"],
+        guide_mismatches=[[]],
+        guide_names=[""],
+        quantification_window_centers=[0],
+        quantification_window_sizes=[5],
+        quantification_window_coordinates=None,
+        exclude_bp_from_left=0,
+        exclude_bp_from_right=0,
+        plot_window_size=10,
+        guide_plot_cut_points=[True],
+    )
+
+    sgRNA_include_idxs = list(result[7][0])
+    include_idxs = list(result[8])
+    assert sgRNA_include_idxs[-1] == len(ref_seq) - 1
+    assert include_idxs[-1] == len(ref_seq) - 1
+
+
+def test_get_amplicon_info_for_guides_rv_include_idxs_include_right_edge():
+    """A reverse-complement guide window ending at the reference edge includes the terminal base."""
+    ref_seq = "AAAAACCCCCGACGTTTTTT"
+    result = CRISPRessoShared.get_amplicon_info_for_guides(
+        ref_seq=ref_seq,
+        guides=["ACGTC"],
+        guide_mismatches=[[]],
+        guide_names=[""],
+        quantification_window_centers=[-5],
+        quantification_window_sizes=[5],
+        quantification_window_coordinates=None,
+        exclude_bp_from_left=0,
+        exclude_bp_from_right=0,
+        plot_window_size=10,
+        guide_plot_cut_points=[True],
+    )
+
+    sgRNA_include_idxs = list(result[7][0])
+    include_idxs = list(result[8])
+    assert sgRNA_include_idxs[-1] == len(ref_seq) - 1
+    assert include_idxs[-1] == len(ref_seq) - 1
+
+
+# =============================================================================
 # Tests for get_silent_edits function
 # =============================================================================
 

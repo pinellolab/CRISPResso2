@@ -1726,7 +1726,7 @@ def get_amplicon_info_for_guides(ref_seq, guides, guide_mismatches, guide_names,
 
             if quantification_window_sizes[guide_idx] > 0:
                 st = max(0, cut_p - quantification_window_sizes[guide_idx] + 1)
-                en = min(ref_seq_length - 1, cut_p + quantification_window_sizes[guide_idx] + 1)
+                en = min(ref_seq_length, cut_p + quantification_window_sizes[guide_idx] + 1)
                 this_include_idxs.extend(range(st, en))
                 this_sgRNA_include_idxs.append(list(range(st, en)))
             else:
@@ -1758,7 +1758,7 @@ def get_amplicon_info_for_guides(ref_seq, guides, guide_mismatches, guide_names,
 
             if quantification_window_sizes[guide_idx] > 0:
                 st = max(0, cut_p - quantification_window_sizes[guide_idx] + 1)
-                en = min(ref_seq_length - 1, cut_p + quantification_window_sizes[guide_idx] + 1)
+                en = min(ref_seq_length, cut_p + quantification_window_sizes[guide_idx] + 1)
                 this_include_idxs.extend(range(st, en))
                 this_sgRNA_include_idxs.append(list(range(st, en)))
             else:
