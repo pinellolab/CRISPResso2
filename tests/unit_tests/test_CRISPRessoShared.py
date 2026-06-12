@@ -1,4 +1,5 @@
 from CRISPResso2 import CRISPResso2Align, CRISPRessoShared
+import argparse
 import re
 import tempfile
 import os
@@ -2031,3 +2032,132 @@ def test_check_custom_config_returns_default_colors():
         "-": "#1E1E1E",
         "amino_acid_scheme": "unique",
     }
+
+
+def _config_args(config_file="None", config_json="None"):
+    return argparse.Namespace(config_file=config_file, config_json=config_json)
+
+
+def test_check_custom_config_pro_gate_ignores_explicit_inputs(monkeypatch):
+    """When Pro is not installed, explicit config inputs are ignored by policy."""
+    monkeypatch.setattr(CRISPRessoShared, "is_C2Pro_installed", lambda: False)
+    args = _config_args(config_file="/definitely/missing/config.json")
+
+    result = CRISPRessoShared.check_custom_config(args)
+
+    assert result["colors"]["Deletion"] == "#FF0000"
+    assert result["guardrails"]["min_total_reads"] == 10000
+
+
+def test_check_custom_config_reads_file_path(monkeypatch):
+    """Valid --config_file JSON should be parsed and merged with defaults."""
+    monkeypatch.setattr(CRISPRessoShared, "is_C2Pro_installed", lambda: True)
+
+    with tempfile.NamedTemporaryFile(encoding="utf-8", mode="w", delete=False, suffix=".json") as fh:
+        fh.write(
+            '{"colors": {"Deletion": "#ABCDEF"}, '
+            '"guardrails": {"min_total_reads": 15000, "aligned_cutoff": 1}}',
+        )
+        config_path = fh.name
+
+    args = _config_args(config_file=config_path)
+    result = CRISPRessoShared.check_custom_config(args)
+
+    assert result["colors"]["Deletion"] == "#ABCDEF"
+    # float guardrail accepts ints and normalizes to float
+    assert result["guardrails"]["aligned_cutoff"] == 1.0
+    # unspecified values are defaulted
+    assert result["guardrails"]["guide_len"] == 19
+
+    os.remove(config_path)
+
+
+def test_check_custom_config_reads_inline_json(monkeypatch):
+    """Valid --config_json should be parsed and merged with defaults."""
+    monkeypatch.setattr(CRISPRessoShared, "is_C2Pro_installed", lambda: True)
+
+    args = _config_args(
+        config_json='{"colors": {"Insertion": "#123456"}, "guardrails": {"guide_len": 21}}',
+    )
+
+    result = CRISPRessoShared.check_custom_config(args)
+
+    assert result["colors"]["Insertion"] == "#123456"
+    assert result["guardrails"]["guide_len"] == 21
+    assert result["guardrails"]["max_rate_of_subs"] == 0.3
+
+
+def test_check_custom_config_inline_json_without_config_file_attr(monkeypatch):
+    """Inline JSON mode also works for tools that do not expose --config_file."""
+    monkeypatch.setattr(CRISPRessoShared, "is_C2Pro_installed", lambda: True)
+
+    args = argparse.Namespace(config_json='{"guardrails": {"guide_len": 22}}')
+    result = CRISPRessoShared.check_custom_config(args)
+
+    assert result["guardrails"]["guide_len"] == 22
+
+
+def test_check_custom_config_rejects_dual_sources(monkeypatch):
+    """--config_file and --config_json are mutually exclusive."""
+    monkeypatch.setattr(CRISPRessoShared, "is_C2Pro_installed", lambda: True)
+
+    args = _config_args(config_file="/tmp/config.json", config_json='{"colors": {}}')
+
+    with pytest.raises(CRISPRessoShared.BadParameterException, match="mutually exclusive"):
+        CRISPRessoShared.check_custom_config(args)
+
+
+def test_check_custom_config_rejects_missing_config_file(monkeypatch):
+    """Missing --config_file path should raise a parameter error."""
+    monkeypatch.setattr(CRISPRessoShared, "is_C2Pro_installed", lambda: True)
+
+    args = _config_args(config_file="/definitely/missing/config.json")
+
+    with pytest.raises(CRISPRessoShared.BadParameterException, match="Cannot read config file"):
+        CRISPRessoShared.check_custom_config(args)
+
+
+def test_check_custom_config_rejects_malformed_file_json(monkeypatch):
+    """Malformed JSON in --config_file should raise a parameter error."""
+    monkeypatch.setattr(CRISPRessoShared, "is_C2Pro_installed", lambda: True)
+
+    with tempfile.NamedTemporaryFile(encoding="utf-8", mode="w", delete=False, suffix=".json") as fh:
+        fh.write('{"colors": {"Deletion": "#000000", }')
+        config_path = fh.name
+
+    args = _config_args(config_file=config_path)
+
+    with pytest.raises(CRISPRessoShared.BadParameterException, match="Cannot parse config file"):
+        CRISPRessoShared.check_custom_config(args)
+
+    os.remove(config_path)
+
+
+def test_check_custom_config_rejects_malformed_inline_json(monkeypatch):
+    """Malformed JSON in --config_json should raise a parameter error."""
+    monkeypatch.setattr(CRISPRessoShared, "is_C2Pro_installed", lambda: True)
+
+    args = _config_args(config_json='{"colors":')
+
+    with pytest.raises(CRISPRessoShared.BadParameterException, match="Cannot parse inline config JSON"):
+        CRISPRessoShared.check_custom_config(args)
+
+
+def test_check_custom_config_rejects_non_object_inline_json(monkeypatch):
+    """Config JSON must be a top-level object."""
+    monkeypatch.setattr(CRISPRessoShared, "is_C2Pro_installed", lambda: True)
+
+    args = _config_args(config_json='["not", "an", "object"]')
+
+    with pytest.raises(CRISPRessoShared.BadParameterException, match="must be a JSON object"):
+        CRISPRessoShared.check_custom_config(args)
+
+
+def test_check_custom_config_enforces_guardrail_types(monkeypatch):
+    """Known guardrails must have strict expected numeric types."""
+    monkeypatch.setattr(CRISPRessoShared, "is_C2Pro_installed", lambda: True)
+
+    args = _config_args(config_json='{"guardrails": {"guide_len": "nineteen"}}')
+
+    with pytest.raises(CRISPRessoShared.BadParameterException, match="guide_len"):
+        CRISPRessoShared.check_custom_config(args)
