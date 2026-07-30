@@ -216,6 +216,9 @@
     </div>
     {% endif %}
     </div>
+    {%- if is_web %}{% include 'shared/partials/legal_footer.html' %}{% endif %}
+    {%- if is_web %}{% include 'shared/partials/cookie_banner.html' %}{% endif %}
+    {%- if is_web %}{% include 'shared/partials/eula_gate.html' %}{% endif %}
     {% block foot %}{% endblock %}
   </body>
 
