@@ -3,9 +3,22 @@
 ## Unreleased
 ### ADDED
 
+- Add a plot plugin architecture that enables CRISPRessoPro and external plugins to generate custom plots and reports by [@mbowcut2](https://github.com/mbowcut2), [@Snicker7](https://github.com/Snicker7) and [@Colelyman](https://github.com/Colelyman) in [#175](https://github.com/edilytics/CRISPResso2/pull/175)
+  - Introduces per-mode `PlotContext` objects (`CorePlotContext`, `PooledPlotContext`, `WGSPlotContext`, `ComparePlotContext`, `BatchPlotContext`, `AggregatePlotContext`) that provide a view into CORE's computed data, plus `pro_hooks` integration points that CRISPRessoPro consumes when installed. Plot data-preparation logic was also extracted into a dedicated `plots/data_prep.py` module.
+
 ### FIXED
 
+- Fix the `Aligned_Sequence` column being dropped from the CRISPRessoCompare output table (the index was set to `None` when writing the file) by [@Colelyman](https://github.com/Colelyman) in [#646](https://github.com/pinellolab/CRISPResso2/pull/646)
+
+- Fix an off-by-one error that clipped the quantification window one base short when it extended to the end of the reference sequence by [@Colelyman](https://github.com/Colelyman) in [#651](https://github.com/pinellolab/CRISPResso2/pull/651)
+
+- Fix amplicon figure names in `assemble_figs` and fix hovering over plot 2a in the matplotlib version by [@Colelyman](https://github.com/Colelyman) in [#177](https://github.com/edilytics/CRISPResso2/pull/177)
+
 ### CHANGED
+
+- Fix how pixi manages environments and clean up the delineation between CRISPResso2, CRISPRessoPro, and testing by [@Colelyman](https://github.com/Colelyman) in [#643](https://github.com/pinellolab/CRISPResso2/pull/643)
+
+- Reduce the Docker image size by pruning the pixi runtime environment, switching to `matplotlib-base`, and moving `plotly` to the Pro feature by [@Colelyman](https://github.com/Colelyman) in [#644](https://github.com/pinellolab/CRISPResso2/pull/644)
 
 ### REMOVED
 
