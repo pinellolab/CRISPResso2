@@ -151,7 +151,7 @@ def assemble_figs(run_data, crispresso_folder):
                                   'Figure ' + fig_name,
                                   run_data['results']['refs'][amplicon_name][fig_name + '_caption'],
                                   run_data['results']['refs'][amplicon_name][fig_name + '_data'],
-                                  global_fig_names, amplicon_figures, crispresso_folder, d3_nuc_quilt_names)
+                                  amplicon_figures['names'], amplicon_figures, crispresso_folder, d3_nuc_quilt_names)
 
         this_sgRNA_based_fig_names = {}
         for fig in ['2b', '9', '9a', '10d', '10e', '10f', '10g', '11b']:

@@ -620,7 +620,6 @@
 
 {% block foot %}
 <script>
-{% if not C2PRO_INSTALLED or use_matplot_lib %}
 function updateZoom(e) {
   /*prevent any other actions that may occur when moving over the image:*/
 //  e.preventDefault();
@@ -716,7 +715,6 @@ try {
 
 		{% endif %}
 	{% endfor %}
-  {% endif %}
 </script>
 
 
