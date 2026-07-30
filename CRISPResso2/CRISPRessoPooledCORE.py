@@ -276,6 +276,8 @@ def main():
         args = parser.parse_args()
 
         CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
+        # Validate Pro-only config inputs early (file or inline JSON).
+        CRISPRessoShared.check_custom_config(args)
 
         description = ['~~~CRISPRessoPooled~~~', '-Analysis of CRISPR/Cas9 outcomes from POOLED deep sequencing data-']
         pooled_string = r'''
@@ -287,10 +289,7 @@ def main():
         '''
         info(CRISPRessoShared.get_crispresso_header(description, pooled_string))
 
-        if args.use_matplotlib or not CRISPRessoShared.is_C2Pro_installed():
-            from CRISPResso2.plots import CRISPRessoPlot
-        else:
-            from CRISPRessoPro import plot as CRISPRessoPlot
+        from CRISPResso2.plots import CRISPRessoPlot
 
         crispresso_options = CRISPRessoShared.get_core_crispresso_options()
         options_to_ignore = {'fastq_r1', 'fastq_r2', 'amplicon_seq', 'amplicon_name', 'output_folder', 'name',
@@ -1613,22 +1612,37 @@ def main():
         if args.suppress_report:
             save_png = False
 
-        if not args.suppress_plots:
-            plot_root = _jp("CRISPRessoPooled_reads_summary")
+        # --- Build PooledPlotContext ---
+        from CRISPResso2.plots.plot_context import PooledPlotContext
+        from CRISPResso2.plots.data_prep import prep_reads_total, prep_unmod_mod_pcts
 
+        plot_context = PooledPlotContext(
+            args=args,
+            run_data=crispresso2_info,
+            output_directory=OUTPUT_DIRECTORY,
+            save_png=save_png,
+            _jp=_jp,
+            custom_config={},
+            df_summary_quantification=df_summary_quantification,
+        )
+
+        C2PRO_INSTALLED = CRISPRessoShared.is_C2Pro_installed()
+        pro_plots_ran = C2PRO_INSTALLED and CRISPRessoShared.run_C2Pro_hook('on_pooled_plots_complete', plot_context, logger)
+        if not pro_plots_ran and not args.suppress_plots:
+            reads_total_input = prep_reads_total(plot_context, prefix='CRISPRessoPooled')
             debug('Plotting reads summary', {'percent_complete': 90})
-            CRISPRessoPlot.plot_reads_total(df_summary_quantification=df_summary_quantification, fig_filename_root=plot_root, save_png=save_png, cutoff=args.min_reads_to_use_region)
-            plot_name = os.path.basename(plot_root)
+            CRISPRessoPlot.plot_reads_total(**reads_total_input)
+            plot_name = os.path.basename(reads_total_input['fig_filename_root'])
             crispresso2_info['results']['general_plots']['summary_plot_root'] = plot_name
             crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
             crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'CRISPRessoPooled Read Allocation Summary'
             crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Each bar shows the total number of reads allocated to each amplicon. The vertical line shows the cutoff for analysis, set using the --min_reads_to_use_region parameter.'
             crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('CRISPRessoPooled summary', os.path.basename(samples_quantification_summary_filename))]
 
-            plot_root = _jp("CRISPRessoPooled_modification_summary")
+            unmod_mod_input = prep_unmod_mod_pcts(plot_context, prefix='CRISPRessoPooled')
             debug('Plotting modification summary', {'percent_complete': 95})
-            CRISPRessoPlot.plot_unmod_mod_pcts(df_summary_quantification=df_summary_quantification, fig_filename_root=plot_root, save_png=save_png, cutoff=args.min_reads_to_use_region)
-            plot_name = os.path.basename(plot_root)
+            CRISPRessoPlot.plot_unmod_mod_pcts(**unmod_mod_input)
+            plot_name = os.path.basename(unmod_mod_input['fig_filename_root'])
             crispresso2_info['results']['general_plots']['summary_plot_root'] = plot_name
             crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
             crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'CRISPRessoPooled Modification Summary'
@@ -1698,7 +1712,11 @@ def main():
                 report_name = _jp("CRISPResso2Pooled_report.html")
             else:
                 report_name = OUTPUT_DIRECTORY + '.html'
-            CRISPRessoReport.make_pooled_report_from_folder(report_name, crispresso2_info, OUTPUT_DIRECTORY, _ROOT, logger)
+            pro_report = CRISPRessoShared.get_C2Pro_hook('make_pooled_report') if C2PRO_INSTALLED else None
+            if pro_report:
+                pro_report(crispresso2_info, report_name, OUTPUT_DIRECTORY, _ROOT, logger, plot_context)
+            else:
+                CRISPRessoReport.make_pooled_report_from_folder(report_name, crispresso2_info, OUTPUT_DIRECTORY, _ROOT, logger)
             crispresso2_info['running_info']['report_location'] = report_name
             crispresso2_info['running_info']['report_filename'] = os.path.basename(report_name)
 

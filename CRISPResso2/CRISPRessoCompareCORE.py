@@ -9,6 +9,11 @@ import sys
 import traceback
 from CRISPResso2 import CRISPRessoShared
 from CRISPResso2.CRISPRessoReports import CRISPRessoReport
+from CRISPResso2.plots.data_prep import (
+    prep_compare_allele_table,
+    prep_compare_editing_barchart,
+    prep_compare_modification_positions,
+)
 
 import logging
 
@@ -47,7 +52,6 @@ class DifferentAmpliconLengthException(Exception):
 
 np = check_library('numpy')
 pd = check_library('pandas')
-from scipy import stats
 
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -100,6 +104,8 @@ def main():
         args = parser.parse_args()
 
         CRISPRessoShared.set_console_log_level(logger, args.verbosity, args.debug)
+        # Validate Pro-only inline config input early.
+        CRISPRessoShared.check_custom_config(args)
 
         description = ['~~~CRISPRessoCompare~~~', '-Comparison of two CRISPResso analyses-']
         compare_header = r'''
@@ -112,10 +118,9 @@ def main():
         compare_header = CRISPRessoShared.get_crispresso_header(description, compare_header)
         info(compare_header)
 
-        if args.use_matplotlib or not CRISPRessoShared.is_C2Pro_installed():
-            from CRISPResso2.plots import CRISPRessoPlot
-        else:
-            from CRISPRessoPro import plot as CRISPRessoPlot
+        # CORE always uses matplotlib; when Pro is installed the hook
+        # below skips this path entirely and Pro owns plotting decisions.
+        from CRISPResso2.plots import CRISPRessoPlot
 
         if args.zip_output and not args.place_report_in_output_folder:
             warn('Invalid argument combination: If zip_output is True then place_report_in_output_folder must also be True. Setting place_report_in_output_folder to True.')
@@ -185,250 +190,248 @@ def main():
 
         # LOAD DATA
         amplicon_names_in_both = [amplicon_name for amplicon_name in amplicon_names_1 if amplicon_name in amplicon_names_2]
-        n_refs = len(amplicon_names_in_both)
 
-        def get_plot_title_with_ref_name(plotTitle, refName):
-            if n_refs > 1:
-                return (plotTitle + ": " + refName)
-            return plotTitle
+        # --- Build ComparePlotContext ---
+        from CRISPResso2.plots.plot_context import ComparePlotContext
 
-        sig_counts = {}  # number of bp significantly modified (bonferonni corrected fisher pvalue)
-        sig_counts_quant_window = {}
-        percent_complete_start, percent_complete_end = 10, 90
-        if amplicon_names_in_both:
-            percent_complete_step = (percent_complete_end - percent_complete_start) / len(amplicon_names_in_both)
-        for amplicon_name in amplicon_names_in_both:
-            percent_complete = percent_complete_start + percent_complete_step * amplicon_names_in_both.index(amplicon_name)
-            info('Loading data for amplicon %s' % amplicon_name, {'percent_complete': percent_complete})
-            profile_1 = parse_profile(amplicon_info_1[amplicon_name]['quantification_file'])
-            profile_2 = parse_profile(amplicon_info_2[amplicon_name]['quantification_file'])
+        plot_context = ComparePlotContext(
+            args=args,
+            run_data=crispresso2_info,
+            output_directory=OUTPUT_DIRECTORY,
+            save_png=save_png,
+            _jp=_jp,
+            custom_config={},
+            amplicon_names=amplicon_names_in_both,
+            sample_1_name=sample_1_name,
+            sample_2_name=sample_2_name,
+            run_info_1=run_info_1,
+            run_info_2=run_info_2,
+            amplicon_info_1=amplicon_info_1,
+            amplicon_info_2=amplicon_info_2,
+        )
 
-            sig_counts[amplicon_name] = {}
-            sig_counts_quant_window[amplicon_name] = {}
+        C2PRO_INSTALLED = CRISPRessoShared.is_C2Pro_installed()
+        pro_plots_ran = C2PRO_INSTALLED and CRISPRessoShared.run_C2Pro_hook('on_compare_plots_complete', plot_context, logger)
+        if not pro_plots_ran:
+            # Built-in matplotlib plot iteration for the non-Pro path.
+            general_plots = crispresso2_info['results']['general_plots']
+            general_plots.setdefault('summary_plot_names', [])
+            general_plots.setdefault('summary_plot_titles', {})
+            general_plots.setdefault('summary_plot_labels', {})
+            general_plots.setdefault('summary_plot_datas', {})
 
-            amplicon_plot_name = amplicon_name + "."
-            if len(amplicon_names_in_both) == 1 and amplicon_name == "Reference":
-                amplicon_plot_name = ""
+            sig_counts = {}
+            sig_counts_quant_window = {}
 
-            try:
-                assert np.all(profile_1[:, 0] == profile_2[:, 0])
-            except:
-                raise DifferentAmpliconLengthException('Different amplicon lengths for the two amplicons.')
-            len_amplicon = profile_1.shape[0]
-            effect_vector_any_1 = profile_1[:, 1]
-            effect_vector_any_2 = profile_2[:, 1]
-
-            cut_points = run_info_1['results']['refs'][amplicon_name]['sgRNA_cut_points']
-            sgRNA_intervals = run_info_1['results']['refs'][amplicon_name]['sgRNA_intervals']
-
-            # Quantification comparison barchart
-            N_TOTAL_1 = float(amplicon_info_1[amplicon_name]['Reads_aligned'])
-            N_UNMODIFIED_1 = float(amplicon_info_1[amplicon_name]['Unmodified'])
-            N_MODIFIED_1 = float(amplicon_info_1[amplicon_name]['Modified'])
-
-            N_TOTAL_2 = float(amplicon_info_2[amplicon_name]['Reads_aligned'])
-            N_UNMODIFIED_2 = float(amplicon_info_2[amplicon_name]['Unmodified'])
-            N_MODIFIED_2 = float(amplicon_info_2[amplicon_name]['Modified'])
-            plot_titles = {
-                'vs': get_plot_title_with_ref_name(
-                    '%s VS %s' % (sample_1_name, sample_2_name),
-                    amplicon_name,
-                ),
-                'diff': get_plot_title_with_ref_name(
-                    '%s - %s' % (sample_1_name, sample_2_name),
-                    amplicon_name,
-                ),
-            }
-            plot_name = '1.' + amplicon_plot_name + 'Editing_comparison'
-
-            CRISPRessoPlot.plot_quantification_comparison_barchart(
-                N_TOTAL_1,
-                N_UNMODIFIED_1,
-                N_MODIFIED_1,
-                N_TOTAL_2,
-                N_UNMODIFIED_2,
-                N_MODIFIED_2,
-                sample_1_name,
-                sample_2_name,
-                plot_titles,
-                _jp(plot_name),
-                save_png,
-            )
-
-            crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
-            crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = 'Editing efficiency comparison'
-            crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = 'Figure 1: Comparison for amplicon ' + amplicon_name + '; Left: Percentage of modified and unmodified reads in each sample; Right: relative percentage of modified and unmodified reads'
-            output_1 = os.path.join(args.crispresso_output_folder_1, run_info_1['running_info']['report_filename'])
-            output_2 = os.path.join(args.crispresso_output_folder_2, run_info_2['running_info']['report_filename'])
-            crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = []
-            if os.path.isfile(output_1):
-                crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name].append((sample_1_name + ' output', os.path.relpath(output_1, OUTPUT_DIRECTORY)))
-            if os.path.isfile(output_2):
-                crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name].append((sample_2_name + ' output', os.path.relpath(output_2, OUTPUT_DIRECTORY)))
-
-            mod_file_1 = amplicon_info_1[amplicon_name]['modification_count_file']
-            amp_seq_1, mod_freqs_1 = CRISPRessoShared.parse_count_file(mod_file_1)
-            mod_file_2 = amplicon_info_2[amplicon_name]['modification_count_file']
-            amp_seq_2, mod_freqs_2 = CRISPRessoShared.parse_count_file(mod_file_2)
-            consensus_sequence = amp_seq_1
-            if amp_seq_2 != consensus_sequence:
-                raise DifferentAmpliconLengthException('Different amplicon lengths for the two amplicons.')
-
-            quant_windows_1 = run_info_1['results']['refs'][amplicon_name]['include_idxs']
-            quant_windows_2 = run_info_2['results']['refs'][amplicon_name]['include_idxs']
-            quant_windows_are_equal = np.array_equal(quant_windows_1, quant_windows_2)
-
-            for mod in ['Insertions', 'Deletions', 'Substitutions', 'All_modifications']:
-                mod_name = mod
-                if mod == "All_modifications":
-                    mod_name = "Combined modifications (insertions, deletions and substitutions)"
-
-                mod_counts_1 = np.array(mod_freqs_1[mod], dtype=float)
-                tot_counts_1 = np.array(mod_freqs_1['Total'], dtype=float)
-                unmod_counts_1 = tot_counts_1 - mod_counts_1
-
-                mod_counts_2 = np.array(mod_freqs_2[mod], dtype=float)
-                tot_counts_2 = np.array(mod_freqs_2['Total'], dtype=float)
-                unmod_counts_2 = tot_counts_2 - mod_counts_2
-
-                fisher_results = [stats.fisher_exact([[z[0], z[1]], [z[2], z[3]]]) if max(z) > 0 else [np.nan, 1.0] for z in zip(mod_counts_1, unmod_counts_1, mod_counts_2, unmod_counts_2)]
-                oddsratios, pvalues = [a for a, b in fisher_results], [b for a, b in fisher_results]
-
-                mod_df = []
-                row = [sample_1_name + '_' + mod]
-                row.extend(mod_counts_1)
-                mod_df.append(row)
-
-                row = [sample_1_name + '_total']
-                row.extend(tot_counts_1)
-                mod_df.append(row)
-
-                row = [sample_2_name + '_' + mod]
-                row.extend(mod_counts_2)
-                mod_df.append(row)
-
-                row = [sample_2_name + '_total']
-                row.extend(tot_counts_2)
-                mod_df.append(row)
-
-                row = ['odds_ratios']
-                row.extend(oddsratios)
-                mod_df.append(row)
-
-                row = ['pvalues']
-                row.extend(pvalues)
-                mod_df.append(row)
-
-                m, pvals = len(pvalues), np.asarray(pvalues)
-                qval_bonferroni = pvals * float(m)
-                qval_bonferroni[np.where(qval_bonferroni > 1)] = 1
-                row = ['qval_bonferroni']
-                row.extend(qval_bonferroni)
-                mod_df.append(row)
-
-                sig_count = len(np.where(qval_bonferroni <= args.reported_qvalue_cutoff)[0])
-                sig_counts[amplicon_name][mod] = sig_count
-
-                sig_count_quant_window = np.nan
-                if quant_windows_are_equal:
-                    qvals_in_quant = np.take(qval_bonferroni, quant_windows_1)  # quant_windows_1 are the same as quant_windows_2
-                    sig_count_quant_window = len(np.where(qvals_in_quant <= args.reported_qvalue_cutoff)[0])
-                sig_counts_quant_window[amplicon_name][mod] = sig_count_quant_window
-
-                colnames = ['Reference']
-                colnames.extend(list(consensus_sequence))
-                mod_df = pd.DataFrame(mod_df, columns=colnames)
-#                mod_df = pd.concat([mod_df.iloc[:,0:2], mod_df.iloc[:,2:].apply(pd.to_numeric)],axis=1)
-                # write to file
-                mod_filename = _jp(amplicon_plot_name + mod + "_quantification.txt")
-                mod_df.to_csv(mod_filename, sep='\t', index=None)
-
-                # plot
-                plot_title = get_plot_title_with_ref_name(
-                    '%s: %s - %s' % (mod, sample_1_name, sample_2_name),
-                    amplicon_name,
+            percent_complete_start, percent_complete_end = 10, 90
+            if amplicon_names_in_both:
+                percent_complete_step = (
+                    (percent_complete_end - percent_complete_start)
+                    / len(amplicon_names_in_both)
                 )
-                plot_name = '2.' + amplicon_plot_name + mod + '_quantification'
-                CRISPRessoPlot.plot_quantification_positions(
-                    mod_counts_1,
-                    tot_counts_1,
-                    mod_counts_2,
-                    tot_counts_2,
-                    len_amplicon,
-                    pvalues,
-                    len(consensus_sequence),
-                    cut_points,
-                    sgRNA_intervals,
-                    plot_title,
-                    _jp(plot_name),
-                    save_png,
+            else:
+                percent_complete_step = 0
+
+            for amplicon_name in amplicon_names_in_both:
+                percent_complete = (
+                    percent_complete_start
+                    + percent_complete_step * amplicon_names_in_both.index(amplicon_name)
                 )
-                crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
-                crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = mod_name + ' locations'
-                crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = mod_name + ' location comparison for amplicon ' + amplicon_name + '; Top: percent difference; Bottom: p-value.'
-                crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [(mod_name + ' quantification', os.path.basename(mod_filename))]
+                info(
+                    f'Loading data for amplicon {amplicon_name}',
+                    extra={'percent_complete': percent_complete},
+                )
 
-            # create merged heatmaps for each cut site
-            matching_allele_files = get_matching_allele_files(run_info_1, run_info_2)
-            # sort so regular allele files come before base edit files in the report
-            matching_allele_files.sort(key=lambda pair: 'base_edit' in pair[0])
-            for allele_file_1, allele_file_2 in matching_allele_files:
-                df1 = pd.read_csv(os.path.join(args.crispresso_output_folder_1, allele_file_1), sep="\t")
-                df2 = pd.read_csv(os.path.join(args.crispresso_output_folder_2, allele_file_2), sep="\t")
+                plot_context.amplicon_name = amplicon_name
+                plot_context.profile_1 = parse_profile(
+                    amplicon_info_1[amplicon_name]['quantification_file']
+                )
+                plot_context.profile_2 = parse_profile(
+                    amplicon_info_2[amplicon_name]['quantification_file']
+                )
 
-                # find unmodified reference for comparison (if it exists)
-                ref_seq_around_cut = ""
-                if len(df1.loc[df1['Reference_Sequence'].str.contains('-') == False]) > 0:
-                    ref_seq_around_cut = df1.loc[df1['Reference_Sequence'].str.contains('-') == False]['Reference_Sequence'].iloc[0]
-                # otherwise figure out which sgRNA was used for this comparison
-                elif len(df2.loc[df2['Reference_Sequence'].str.contains('-') == False]) > 0:
-                    ref_seq_around_cut = df2.loc[df2['Reference_Sequence'].str.contains('-') == False]['Reference_Sequence'].iloc[0]
-                else:
-                    seq_len = df2[df2['Unedited'] == True]['Reference_Sequence'].iloc[0]
-                    for sgRNA_interval, cut_point in zip(sgRNA_intervals, cut_points):
-                        sgRNA_seq = consensus_sequence[sgRNA_interval[0]:sgRNA_interval[1]]
-                        if sgRNA_seq in allele_file_1:
-                            this_sgRNA_seq = sgRNA_seq
-                            this_cut_point = cut_point
-                            ref_seq_around_cut = consensus_sequence[max(0, this_cut_point - args.offset_around_cut_to_plot + 1):min(seq_len, cut_point + args.offset_around_cut_to_plot + 1)]
-                            break
+                sig_counts[amplicon_name] = {}
+                sig_counts_quant_window[amplicon_name] = {}
 
-                merged = pd.merge(df1, df2, on=['Aligned_Sequence', 'Reference_Sequence', 'Unedited', 'n_deleted', 'n_inserted', 'n_mutated'], suffixes=('_' + sample_1_name, '_' + sample_2_name), how='outer')
-                quant_cols = ['#Reads_' + sample_1_name, '%Reads_' + sample_1_name, '#Reads_' + sample_2_name, '%Reads_' + sample_2_name]
-                merged[quant_cols] = merged[quant_cols].fillna(0)
-                lfc_error = 0.1
-                merged['each_LFC'] = np.log2(((merged['%Reads_' + sample_1_name] + lfc_error) / (merged['%Reads_' + sample_2_name] + lfc_error)).astype(float)).replace([np.inf, np.nan], 0)
-                merged = merged.sort_values(['%Reads_' + sample_1_name, 'Aligned_Sequence', 'Reference_Sequence'], ascending=[False, True, True])
-                merged = merged.reset_index(drop=True).set_index('Aligned_Sequence')
-                folder_root = os.path.split(allele_file_1)[1].replace(".txt", "")
-                allele_comparison_file = _jp(folder_root + '.txt')
-                merged.to_csv(allele_comparison_file, sep="\t", index=None)
+                try:
+                    assert np.all(
+                        plot_context.profile_1[:, 0]
+                        == plot_context.profile_2[:, 0]
+                    )
+                except AssertionError:
+                    raise DifferentAmpliconLengthException(
+                        'Different amplicon lengths for the two amplicons.'
+                    )
 
-                is_base_edit = 'base_edit' in allele_file_1
-                if is_base_edit:
-                    title_prefix = 'Base edit comparison enriched in '
-                    label_prefix = 'Base editing target nucleotide composition alleles.'
-                else:
-                    title_prefix = 'Alleles enriched in '
-                    label_prefix = 'Distribution comparison of alleles.'
-                label_suffix = ' Nucleotides are indicated by unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines indicate deleted sequences. The vertical dashed line indicates the predicted cleavage site. ' + \
-                'The proportion and number of reads is shown for each sample on the right, with the values for ' + sample_1_name + ' followed by the values for ' + sample_2_name + '.'
+                plot_context.cut_points = (
+                    run_info_1['results']['refs'][amplicon_name]['sgRNA_cut_points']
+                )
+                plot_context.sgRNA_intervals = (
+                    run_info_1['results']['refs'][amplicon_name]['sgRNA_intervals']
+                )
 
-                plot_name = '3.' + folder_root + '_top'
-                CRISPRessoPlot.plot_alleles_table_compare(ref_seq_around_cut, merged.sort_values(['each_LFC', 'Aligned_Sequence', 'Reference_Sequence'], ascending=[False, True, True]), sample_1_name, sample_2_name, _jp(plot_name),
-                            MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot, MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot, SAVE_ALSO_PNG=save_png)
-                crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
-                crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = title_prefix + sample_1_name
-                crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = label_prefix + label_suffix + ' Alleles are sorted for enrichment in ' + sample_1_name + '.'
-                crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Allele comparison table', os.path.basename(allele_comparison_file))]
+                # Plot 1: Editing comparison barchart
+                barchart_input = prep_compare_editing_barchart(plot_context)
+                CRISPRessoPlot.plot_quantification_comparison_barchart(**barchart_input)
+                plot_name = os.path.basename(barchart_input['plot_path'])
+                general_plots['summary_plot_names'].append(plot_name)
+                general_plots['summary_plot_titles'][plot_name] = 'Editing efficiency comparison'
+                general_plots['summary_plot_labels'][plot_name] = (
+                    f'Figure 1: Comparison for amplicon {amplicon_name}; '
+                    'Left: Percentage of modified and unmodified reads in each sample; '
+                    'Right: relative percentage of modified and unmodified reads'
+                )
+                output_1 = os.path.join(
+                    args.crispresso_output_folder_1,
+                    run_info_1['running_info']['report_filename'],
+                )
+                output_2 = os.path.join(
+                    args.crispresso_output_folder_2,
+                    run_info_2['running_info']['report_filename'],
+                )
+                general_plots['summary_plot_datas'][plot_name] = []
+                if os.path.isfile(output_1):
+                    general_plots['summary_plot_datas'][plot_name].append(
+                        (f'{sample_1_name} output', os.path.relpath(output_1, OUTPUT_DIRECTORY))
+                    )
+                if os.path.isfile(output_2):
+                    general_plots['summary_plot_datas'][plot_name].append(
+                        (f'{sample_2_name} output', os.path.relpath(output_2, OUTPUT_DIRECTORY))
+                    )
 
-                plot_name = '3.' + folder_root + '_bottom'
-                CRISPRessoPlot.plot_alleles_table_compare(ref_seq_around_cut, merged.sort_values(['each_LFC', 'Aligned_Sequence', 'Reference_Sequence'], ascending=[True, True, True]), sample_1_name, sample_2_name, _jp(plot_name),
-                            MIN_FREQUENCY=args.min_frequency_alleles_around_cut_to_plot, MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot, SAVE_ALSO_PNG=save_png)
-                crispresso2_info['results']['general_plots']['summary_plot_names'].append(plot_name)
-                crispresso2_info['results']['general_plots']['summary_plot_titles'][plot_name] = title_prefix + sample_2_name
-                crispresso2_info['results']['general_plots']['summary_plot_labels'][plot_name] = label_prefix + label_suffix + ' Alleles are sorted for enrichment in ' + sample_2_name + '.'
-                crispresso2_info['results']['general_plots']['summary_plot_datas'][plot_name] = [('Allele comparison table', os.path.basename(allele_comparison_file))]
+                # Load modification count data
+                mod_file_1 = amplicon_info_1[amplicon_name]['modification_count_file']
+                amp_seq_1, mod_freqs_1 = CRISPRessoShared.parse_count_file(mod_file_1)
+                mod_file_2 = amplicon_info_2[amplicon_name]['modification_count_file']
+                amp_seq_2, mod_freqs_2 = CRISPRessoShared.parse_count_file(mod_file_2)
+                if amp_seq_2 != amp_seq_1:
+                    raise DifferentAmpliconLengthException(
+                        'Different amplicon lengths for the two amplicons.'
+                    )
+
+                plot_context.mod_freqs_1 = mod_freqs_1
+                plot_context.mod_freqs_2 = mod_freqs_2
+                plot_context.consensus_sequence = amp_seq_1
+                plot_context.quant_windows_1 = (
+                    run_info_1['results']['refs'][amplicon_name]['include_idxs']
+                )
+                plot_context.quant_windows_2 = (
+                    run_info_2['results']['refs'][amplicon_name]['include_idxs']
+                )
+
+                amplicon_plot_name = f'{amplicon_name}.'
+                if len(amplicon_names_in_both) == 1 and amplicon_name == 'Reference':
+                    amplicon_plot_name = ''
+
+                # Plot 2: Modification positions (x4 mod types)
+                for mod in ['Insertions', 'Deletions', 'Substitutions', 'All_modifications']:
+                    plot_context.mod_type = mod
+                    positions_data = prep_compare_modification_positions(plot_context)
+
+                    mod_filename = _jp(f'{amplicon_plot_name}{mod}_quantification.txt')
+                    positions_data['mod_df'].to_csv(mod_filename, sep='\t', index=None)
+
+                    CRISPRessoPlot.plot_quantification_positions(**positions_data['plot_kwargs'])
+                    plot_name = os.path.basename(positions_data['plot_kwargs']['plot_path'])
+                    general_plots['summary_plot_names'].append(plot_name)
+                    general_plots['summary_plot_titles'][plot_name] = (
+                        f"{positions_data['mod_name']} locations"
+                    )
+                    general_plots['summary_plot_labels'][plot_name] = (
+                        f"{positions_data['mod_name']} location comparison for amplicon "
+                        f'{amplicon_name}; Top: percent difference; Bottom: p-value.'
+                    )
+                    general_plots['summary_plot_datas'][plot_name] = [
+                        (f"{positions_data['mod_name']} quantification",
+                         os.path.basename(mod_filename)),
+                    ]
+
+                    sig_counts[amplicon_name][mod] = positions_data['sig_count']
+                    sig_counts_quant_window[amplicon_name][mod] = (
+                        positions_data['sig_count_quant_window']
+                    )
+
+                # Plot 3: Allele table comparisons
+                matching_allele_files = get_matching_allele_files(run_info_1, run_info_2)
+                matching_allele_files.sort(key=lambda pair: 'base_edit' in pair[0])
+
+                plot_context.allele_pairs = []
+                for allele_file_1, allele_file_2 in matching_allele_files:
+                    df1 = pd.read_csv(
+                        os.path.join(args.crispresso_output_folder_1, allele_file_1),
+                        sep='\t',
+                    )
+                    df2 = pd.read_csv(
+                        os.path.join(args.crispresso_output_folder_2, allele_file_2),
+                        sep='\t',
+                    )
+                    plot_context.allele_pairs.append(
+                        (allele_file_1, allele_file_2, df1, df2)
+                    )
+
+                for pair_idx in range(len(plot_context.allele_pairs)):
+                    allele_data = prep_compare_allele_table(plot_context, pair_idx)
+
+                    allele_comparison_file = _jp(allele_data['file_root'] + '.txt')
+                    allele_data['merged_df'].to_csv(
+                        allele_comparison_file, sep='\t',
+                    )
+
+                    is_base_edit = allele_data['is_base_edit']
+                    if is_base_edit:
+                        title_prefix = 'Base edit comparison enriched in '
+                        label_prefix = 'Base editing target nucleotide composition alleles.'
+                    else:
+                        title_prefix = 'Alleles enriched in '
+                        label_prefix = 'Distribution comparison of alleles.'
+                    label_suffix = (
+                        ' Nucleotides are indicated by unique colors (A = green; '
+                        'C = red; G = yellow; T = purple). Substitutions are shown in '
+                        'bold font. Red rectangles highlight inserted sequences. '
+                        'Horizontal dashed lines indicate deleted sequences. The '
+                        'vertical dashed line indicates the predicted cleavage site. '
+                        'The proportion and number of reads is shown for each sample '
+                        f'on the right, with the values for {sample_1_name} followed '
+                        f'by the values for {sample_2_name}.'
+                    )
+
+                    CRISPRessoPlot.plot_alleles_table_compare(**allele_data['plot_top_kwargs'])
+                    plot_name = os.path.basename(allele_data['plot_top_kwargs']['fig_filename_root'])
+                    general_plots['summary_plot_names'].append(plot_name)
+                    general_plots['summary_plot_titles'][plot_name] = (
+                        title_prefix + sample_1_name
+                    )
+                    general_plots['summary_plot_labels'][plot_name] = (
+                        label_prefix + label_suffix
+                        + f' Alleles are sorted for enrichment in {sample_1_name}.'
+                    )
+                    general_plots['summary_plot_datas'][plot_name] = [
+                        ('Allele comparison table', os.path.basename(allele_comparison_file)),
+                    ]
+
+                    CRISPRessoPlot.plot_alleles_table_compare(**allele_data['plot_bottom_kwargs'])
+                    plot_name = os.path.basename(allele_data['plot_bottom_kwargs']['fig_filename_root'])
+                    general_plots['summary_plot_names'].append(plot_name)
+                    general_plots['summary_plot_titles'][plot_name] = (
+                        title_prefix + sample_2_name
+                    )
+                    general_plots['summary_plot_labels'][plot_name] = (
+                        label_prefix + label_suffix
+                        + f' Alleles are sorted for enrichment in {sample_2_name}.'
+                    )
+                    general_plots['summary_plot_datas'][plot_name] = [
+                        ('Allele comparison table', os.path.basename(allele_comparison_file)),
+                    ]
+
+        # Pro's hook publishes Fisher/Bonferroni counts via
+        # crispresso2_info['_sig_counts'] so the summary CSV below
+        # can read them.  CORE's inline path sets local variables
+        # directly (sig_counts / sig_counts_quant_window) in the
+        # else-branch above; reuse them when available, otherwise
+        # fall back to the Pro-published keys.
+        if pro_plots_ran:
+            sig_counts = crispresso2_info.get('_sig_counts', {})
+            sig_counts_quant_window = crispresso2_info.get('_sig_counts_quant_window', {})
 
         debug('Calculating significant base counts...', {'percent_complete': 95})
         sig_counts_filename = _jp('CRISPRessoCompare_significant_base_counts.txt')
@@ -452,7 +455,11 @@ def main():
                 report_name = _jp("CRISPResso2Compare_report.html")
             else:
                 report_name = OUTPUT_DIRECTORY + '.html'
-            CRISPRessoReport.make_compare_report_from_folder(report_name, crispresso2_info, OUTPUT_DIRECTORY, _ROOT, logger)
+            pro_report = CRISPRessoShared.get_C2Pro_hook('make_compare_report') if C2PRO_INSTALLED else None
+            if pro_report:
+                pro_report(crispresso2_info, report_name, OUTPUT_DIRECTORY, _ROOT, logger, plot_context)
+            else:
+                CRISPRessoReport.make_compare_report_from_folder(report_name, crispresso2_info, OUTPUT_DIRECTORY, _ROOT, logger)
             crispresso2_info['running_info']['report_location'] = report_name
             crispresso2_info['running_info']['report_filename'] = os.path.basename(report_name)
 

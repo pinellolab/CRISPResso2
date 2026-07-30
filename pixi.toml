@@ -10,24 +10,18 @@ python = ">=3.10,<3.13"
 numpy = "*"
 cython = "*"
 scipy = "*"
-matplotlib = "*"
+matplotlib-base = "*"
 seaborn = "*"
 pandas = "<3.0"
 jinja2 = "*"
 fastp = "*"
 bowtie2 = "*"
 samtools = "*"
-plotly = "==5.18.0"
 setuptools = "*"
 pip = "*"
 
-[target.linux-64.dependencies]
-gcc_linux-64 = "*"
-gxx_linux-64 = "*"
-
 [feature.test.dependencies]
 pytest = "*"
-pytest-cov = "*"
 pytest-check = "*"
 pytest-xdist = "*"
 pillow = "*"
@@ -37,6 +31,7 @@ ydiff = "*"
 inline-snapshot = "*"
 
 [feature.pro.dependencies]
+plotly = "==5.18.0"
 python-kaleido = "<=0.2.1"
 
 [feature.lint.dependencies]
@@ -58,25 +53,20 @@ test-pro = { features = ["test", "pro"], solve-group = "default" }
 install = "pip install -e ."
 
 [feature.test.tasks]
-test = { cmd = "pytest tests --cov CRISPResso2", depends-on = ["install"] }
+test = { cmd = "pytest tests CRISPResso2", depends-on = ["install"] }
 
 [feature.test.tasks.integration]
 cmd = "make $ARGS"
 cwd = "../CRISPResso2_tests"
 depends-on = ["install"]
 
-[feature.pro.tasks.integration]
-cmd = "pytest test_cli.py"
-cwd = "../CRISPResso2_tests"
-depends-on = ["install", "install-pro"]
-
 [feature.pro.tasks]
-install = "pip install -e . && pip install -e ../CRISPRessoPro"
+install-pro = "pip install -e . && pip install -e ../CRISPRessoPro"
 
 [feature.pro.tasks.pro-unit-test]
-cmd = "pytest tests --cov CRISPRessoPro"
+cmd = "pytest tests CRISPRessoPro"
 cwd = "../CRISPRessoPro"
-depends-on = ["install"]
+depends-on = ["install-pro"]
 
 [feature.lint.tasks]
 lint = { cmd = "ruff check . --statistics" }

@@ -12,6 +12,11 @@ CRISPResso2 is a bioinformatics pipeline for analyzing CRISPR/Cas9 genome editin
 
 ### Installation (Development)
 ```bash
+# Preferred (matches CI/task contract)
+pixi install -e default
+pixi run install
+
+# Alternative
 pip install -e .
 ```
 
@@ -19,6 +24,11 @@ pip install -e .
 
 Unit tests (pytest):
 ```bash
+# Preferred (explicit test lane)
+pixi install -e test
+pixi run -e test test
+
+# Direct pytest alternatives
 pytest tests/unit_tests/
 
 # With coverage
@@ -55,6 +65,18 @@ Individual integration test targets:
 - `make base_editor` - Base editing analysis
 
 Add `test` target to diff results against expected: `make basic test`
+
+CRISPRessoPro lanes:
+```bash
+# Runtime/dev lane (run Pro code)
+pixi install -e pro
+pixi run -e pro install-pro
+
+# Testing lane (Pro + test deps)
+pixi install -e test-pro
+pixi run -e test-pro install-pro
+pixi run -e test-pro pro-unit-test
+```
 
 ### Running CRISPResso Tools
 
