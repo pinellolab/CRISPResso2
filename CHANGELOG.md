@@ -3,6 +3,28 @@
 ## Unreleased
 ### ADDED
 
+- Add a plot plugin architecture that enables CRISPRessoPro and external plugins to generate custom plots and reports by [@mbowcut2](https://github.com/mbowcut2), [@Snicker7](https://github.com/Snicker7) and [@Colelyman](https://github.com/Colelyman) in [#175](https://github.com/edilytics/CRISPResso2/pull/175)
+  - Introduces per-mode `PlotContext` objects (`CorePlotContext`, `PooledPlotContext`, `WGSPlotContext`, `ComparePlotContext`, `BatchPlotContext`, `AggregatePlotContext`) that provide a view into CORE's computed data, plus `pro_hooks` integration points that CRISPRessoPro consumes when installed. Plot data-preparation logic was also extracted into a dedicated `plots/data_prep.py` module.
+
+### FIXED
+
+- Fix the `Aligned_Sequence` column being dropped from the CRISPRessoCompare output table (the index was set to `None` when writing the file) by [@Colelyman](https://github.com/Colelyman) in [#646](https://github.com/pinellolab/CRISPResso2/pull/646)
+
+- Fix an off-by-one error that clipped the quantification window one base short when it extended to the end of the reference sequence by [@Colelyman](https://github.com/Colelyman) in [#651](https://github.com/pinellolab/CRISPResso2/pull/651)
+
+- Fix amplicon figure names in `assemble_figs` and fix hovering over plot 2a in the matplotlib version by [@Colelyman](https://github.com/Colelyman) in [#177](https://github.com/edilytics/CRISPResso2/pull/177)
+
+### CHANGED
+
+- Fix how pixi manages environments and clean up the delineation between CRISPResso2, CRISPRessoPro, and testing by [@Colelyman](https://github.com/Colelyman) in [#643](https://github.com/pinellolab/CRISPResso2/pull/643)
+
+- Reduce the Docker image size by pruning the pixi runtime environment, switching to `matplotlib-base`, and moving `plotly` to the Pro feature by [@Colelyman](https://github.com/Colelyman) in [#644](https://github.com/pinellolab/CRISPResso2/pull/644)
+
+### REMOVED
+
+## v2.3.4 - Amplicon Upolu - 04/23/2026
+### ADDED
+
 - Add `--coding_seq_name` parameter to provide custom names for coding sequences, fixing an issue where using the full coding sequence in filenames produced paths that were too long by [@mbowcut2](https://github.com/mbowcut2) in [#627](https://github.com/pinellolab/CRISPResso2/pull/627)
 
 - Add an amino acid nucleotide quilt plot by [@mbowcut2](https://github.com/mbowcut2) in [#552](https://github.com/pinellolab/CRISPResso2/pull/552)
@@ -56,6 +78,10 @@
 
 - Fix a bug when an sgRNA aligns before the start of an exon by [@mbowcut2](https://github.com/mbowcut2) in [#628](https://github.com/pinellolab/CRISPResso2/pull/628)
 
+- Fix CRISPRessoPooled handling for non-string chromosome IDs and gene annotation with integer `chr_id`, and fix a missing-last-chunk bug in pooled processing by [@kclem](https://github.com/kclem) and [@Colelyman](https://github.com/Colelyman) in [#635](https://github.com/pinellolab/CRISPResso2/pull/635), [`c2d0c5c`](https://github.com/pinellolab/CRISPResso2/commit/c2d0c5cd732f29f06fe8a8b00a9aacad90f79ce7), and [`85e4763`](https://github.com/pinellolab/CRISPResso2/commit/85e47632bf73f0cef5acef50a4d6f2ef70764f6f)
+
+- Fix `coords_r` handling for prime editing extension sequences that end at the end of the reference by [@Colelyman](https://github.com/Colelyman) in [#615](https://github.com/pinellolab/CRISPResso2/pull/615)
+
 ### CHANGED
 
 - Vendor the UpSet plot implementation, removing the external `upsetplot` dependency by [@mbowcut2](https://github.com/mbowcut2) in [#623](https://github.com/pinellolab/CRISPResso2/pull/623)
@@ -73,6 +99,8 @@
 - Update the base Docker image to `mambaorg/micromamba:2.3.3` and remove dependency on Anaconda `defaults` channel by [@Colelyman](https://github.com/Colelyman) in [#575](https://github.com/pinellolab/CRISPResso2/pull/575)
 
 - Change the guardrails interface to a dropdown that is a more minimal design by [@Snicker7](https://github.com/Snicker7) in [#619](https://github.com/pinellolab/CRISPResso2/pull/619)
+
+- Add explicit tool name handling for CRISPRessoPooledWGSCompare report generation by [@Colelyman](https://github.com/Colelyman) in [#630](https://github.com/pinellolab/CRISPResso2/pull/630)
 
 ### REMOVED
 

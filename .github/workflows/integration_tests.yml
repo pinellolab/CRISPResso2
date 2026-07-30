@@ -33,6 +33,11 @@ jobs:
             filter: "wgs or asym"
           - name: "VCF"
             filter: "vcf"
+        include:
+          - pro: true
+            group:
+              name: "Pro-only"
+              filter: "pro_only"
 
     name: "${{ matrix.group.name }} (Pro: ${{ matrix.pro }})"
 
