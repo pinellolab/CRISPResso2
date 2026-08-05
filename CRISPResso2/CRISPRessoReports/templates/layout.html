@@ -216,9 +216,13 @@
     </div>
     {% endif %}
     </div>
-    {%- if is_web %}{% include 'shared/partials/legal_footer.html' %}{% endif %}
-    {%- if is_web %}{% include 'shared/partials/cookie_banner.html' %}{% endif %}
-    {%- if is_web %}{% include 'shared/partials/eula_gate.html' %}{% endif %}
+    {#- 'ignore missing': the web app supplies these, so a C2Web version that predates
+        them must still render rather than 500 on a template it never shipped.
+        Keep this comment whitespace-stripping: a non-stripping comment adds bytes to
+        every generated report and fails the CRISPResso2_tests HTML diffs. -#}
+    {%- if is_web %}{% include 'shared/partials/legal_footer.html' ignore missing %}{% endif %}
+    {%- if is_web %}{% include 'shared/partials/cookie_banner.html' ignore missing %}{% endif %}
+    {%- if is_web %}{% include 'shared/partials/eula_gate.html' ignore missing %}{% endif %}
     {% block foot %}{% endblock %}
   </body>
 
