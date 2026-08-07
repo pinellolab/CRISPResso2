@@ -3,6 +3,7 @@ Software pipeline for the analysis of genome editing outcomes from deep sequenci
 (c) 2020 The General Hospital Corporation. All Rights Reserved.
 """
 
+import json
 import os
 from jinja2 import Environment, FileSystemLoader, ChoiceLoader, make_logging_undefined
 from CRISPResso2.CRISPRessoReports.jinja_partials import generate_render_partial, render_partial
@@ -86,8 +87,47 @@ def make_report_from_folder(crispresso_report_file, crispresso_folder, _root, lo
     make_report(run_data, crispresso_report_file, crispresso_folder, _root, logger, use_matplotlib=use_matplotlib)
 
 
+def embed_plot_json(crispresso_folder, fig_root):
+    """Embed a Pro-written ``plot_<root>.json`` payload as the D3 widget it names.
+
+    Returns ``(html, nuc_quilt_slugs, allele_table_slugs)``, or ``(None, [], [])``
+    when there is no JSON for this figure. ``plot_type`` selects the widget;
+    anything else -- including a truncated or non-object payload -- falls back to
+    the nucleotide quilt, which was the only behavior before the allele table
+    existed, so a bad payload degrades one figure instead of breaking the report.
+    """
+    json_path = os.path.join(crispresso_folder, f'plot_{fig_root}.json')
+    if not os.path.exists(json_path):
+        return None, [], []
+
+    with open(json_path, encoding='utf-8') as fig_json_fh:
+        payload = fig_json_fh.read().strip()
+
+    try:
+        plot_type = json.loads(payload).get('plot_type')
+    except (ValueError, AttributeError):  # truncated JSON, or a non-object payload
+        plot_type = None
+
+    # must match the slug in CRISPRessoPro's partials/allele_figure.html
+    root_name = fig_root.replace('.', '_').replace('-', '_').replace(' ', '_')
+
+    if plot_type == 'allele_table':
+        slug = f'allele_table_{root_name}'
+        return f"""
+                <div class="w-100" id="{slug}"></div>
+                <script type="text/javascript">const {slug} = {payload}</script>
+                    """, [], [slug]
+
+    slug = f'nuc_quilt_{root_name}'
+    return f"""
+                <div class="d-flex justify-content-between" style="max-height: 80vh; overflow-y: auto;" id="{slug}"></div>
+                <script type="text/javascript">const {slug} = {payload}</script>
+                    """, [slug], []
+
+
 def add_fig_if_exists(fig, fig_name, fig_root, fig_title, fig_caption, fig_data,
-                      amplicon_fig_names, amplicon_figures, crispresso_folder, d3_nuc_quilt_names):
+                      amplicon_fig_names, amplicon_figures, crispresso_folder, d3_nuc_quilt_names,
+                      d3_allele_table_names):
     """Helper function to add figure if the file exists
     if fig at filename exists,
     amplicon_figs[figname] is set to that file
@@ -114,13 +154,11 @@ def add_fig_if_exists(fig, fig_name, fig_root, fig_title, fig_caption, fig_data,
                 html_string += "</div>"
             amplicon_figures['htmls'][fig_name] = html_string
         elif os.path.exists(jsonfullpath) and C2PRO_INSTALLED:
-            root_name = fig_root.replace('.', '_').replace('-', '_')
-            d3_nuc_quilt_names.append(f"nuc_quilt_{root_name}")
-            with open(jsonfullpath, encoding='utf-8') as fig_json_fh:
-                amplicon_figures['htmls'][fig_name] = f"""
-                <div class="d-flex justify-content-between" style="max-height: 80vh; overflow-y: auto;" id="{f"nuc_quilt_{root_name}"}"></div>
-                <script type="text/javascript">const {f"nuc_quilt_{root_name}"} = {fig_json_fh.read().strip()}</script>
-                    """
+            json_html, nuc_slugs, allele_slugs = embed_plot_json(crispresso_folder, fig_root)
+            if json_html is not None:
+                d3_nuc_quilt_names.extend(nuc_slugs)
+                d3_allele_table_names.extend(allele_slugs)
+                amplicon_figures['htmls'][fig_name] = json_html
 
 
 def assemble_figs(run_data, crispresso_folder):
@@ -128,6 +166,7 @@ def assemble_figs(run_data, crispresso_folder):
     """
     figures = {'names': {}, 'locs': {}, 'titles': {}, 'captions': {}, 'datas': {}, 'htmls': {}, 'sgRNA_based_names': {}}
     d3_nuc_quilt_names = []
+    d3_allele_table_names = []
 
     global_fig_names = []
     for fig in ['1a', '1b', '1c', '1d', '1e', '5a', '6a', '8a', '11c']:
@@ -136,7 +175,8 @@ def assemble_figs(run_data, crispresso_folder):
             add_fig_if_exists(fig, fig_name, run_data['results']['general_plots'][fig_name + '_root'], 'Figure ' + fig,
                               run_data['results']['general_plots'][fig_name + '_caption'],
                               run_data['results']['general_plots'][fig_name + '_data'],
-                              global_fig_names, figures, crispresso_folder, d3_nuc_quilt_names)
+                              global_fig_names, figures, crispresso_folder, d3_nuc_quilt_names,
+                              d3_allele_table_names)
 
     amplicons = []
     for amplicon_name in run_data['results']['ref_names']:
@@ -151,7 +191,8 @@ def assemble_figs(run_data, crispresso_folder):
                                   'Figure ' + fig_name,
                                   run_data['results']['refs'][amplicon_name][fig_name + '_caption'],
                                   run_data['results']['refs'][amplicon_name][fig_name + '_data'],
-                                  amplicon_figures['names'], amplicon_figures, crispresso_folder, d3_nuc_quilt_names)
+                                  amplicon_figures['names'], amplicon_figures, crispresso_folder, d3_nuc_quilt_names,
+                                  d3_allele_table_names)
 
         this_sgRNA_based_fig_names = {}
         for fig in ['2b', '9', '9a', '10d', '10e', '10f', '10g', '11b']:
@@ -163,7 +204,8 @@ def assemble_figs(run_data, crispresso_folder):
                     add_fig_if_exists(fig, fig_name, plot_root, 'Figure ' + fig_name + ' sgRNA ' + str(idx + 1),
                                       run_data['results']['refs'][amplicon_name]['plot_' + fig + '_captions'][idx],
                                       run_data['results']['refs'][amplicon_name]['plot_' + fig + '_datas'][idx],
-                                      this_fig_names, amplicon_figures, crispresso_folder, d3_nuc_quilt_names)
+                                      this_fig_names, amplicon_figures, crispresso_folder, d3_nuc_quilt_names,
+                                      d3_allele_table_names)
             this_sgRNA_based_fig_names[fig] = this_fig_names
 
         for fig in ['10i']:
@@ -174,7 +216,8 @@ def assemble_figs(run_data, crispresso_folder):
                     add_fig_if_exists(fig, fig_name, plot_root, 'Figure ' + fig_name,
                                       run_data['results']['refs'][amplicon_name]['plot_' + fig + '_captions'][idx],
                                       run_data['results']['refs'][amplicon_name]['plot_' + fig + '_datas'][idx],
-                                      this_fig_names, amplicon_figures, crispresso_folder, d3_nuc_quilt_names)
+                                      this_fig_names, amplicon_figures, crispresso_folder, d3_nuc_quilt_names,
+                                      d3_allele_table_names)
             this_sgRNA_based_fig_names[fig] = this_fig_names
 
         figures['names'][amplicon_name] = amplicon_figures['names']
@@ -185,7 +228,8 @@ def assemble_figs(run_data, crispresso_folder):
         figures['captions'][amplicon_name] = amplicon_figures['captions']
         figures['datas'][amplicon_name] = amplicon_figures['datas']
         figures['htmls'][amplicon_name] = amplicon_figures['htmls']
-    data = {'amplicons': amplicons, 'figures': figures, 'nuc_quilt_names': d3_nuc_quilt_names}
+    data = {'amplicons': amplicons, 'figures': figures, 'nuc_quilt_names': d3_nuc_quilt_names,
+            'allele_table_names': d3_allele_table_names}
     return data
 
 
@@ -214,6 +258,7 @@ def make_report(run_data, crispresso_report_file, crispresso_folder, _root, logg
         'report_display_name': report_display_name,
         'crispresso_data_path': crispresso_data_path,
         'nuc_quilt_names': data['nuc_quilt_names'],
+        'allele_table_names': data['allele_table_names'],
     }
 
     j2_env = get_jinja_loader(_root, logger)

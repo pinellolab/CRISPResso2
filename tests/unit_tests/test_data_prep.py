@@ -1220,6 +1220,101 @@ class TestPrepAllelesAroundCut:
         # Window of size 3 around cut_point=4 → positions 2..7 → 6 chars
         assert len(result['ref_seq_around_cut']) <= 7
 
+    def test_returns_sgRNA_legend_for_downstream_captions(self):
+        """CRISPRessoPro writes its own caption for the interactive table and
+        needs the same legend string, rather than re-deriving the format rule."""
+        ref_sequence = 'AACCGGTTAA'
+        df = _make_df_alleles(
+            'r',
+            aligned_seqs=[ref_sequence],
+            ref_seq=ref_sequence,
+            reads=[100],
+            read_status=['UNMODIFIED'],
+        )
+        ctx = _make_ctx(
+            ref_names=['r'],
+            refs={'r': _ref_dict(
+                sequence=ref_sequence,
+                sequence_length=len(ref_sequence),
+                sgRNA_cut_points=[4],
+                sgRNA_plot_cut_points=[4],
+                sgRNA_intervals=[(2, 6)],
+                sgRNA_names=['guide_a'],
+                sgRNA_orig_sequences=['ACGT'],
+                sgRNA_mismatches=[],
+            )},
+            counts_total={'r': 100},
+            df_alleles=df,
+            args=SimpleNamespace(
+                plot_window_size=3,
+                min_frequency_alleles_around_cut_to_plot=0,
+                max_rows_alleles_around_cut_to_plot=10,
+                allele_plot_pcts_only_for_assigned_reference=False,
+                expand_allele_plots_by_quantification=True,
+                annotate_wildtype_allele='',
+            ),
+        )
+        ctx.ref_name = 'r'
+        ctx.sgRNA_ind = 0
+
+        result = prep_alleles_around_cut(ctx)
+
+        assert result['sgRNA_legend'] == 'guide_a (ACGT)'
+        # and the shared caption is built from the same string
+        assert 'guide_a (ACGT)' in result['caption']
+
+    def test_quantification_window_idxs_are_remapped_to_window_coordinates(self):
+        """The window is a slice of the amplicon, so the quantification window
+        indices must be rebased onto it -- the same remapping new_sgRNA_intervals
+        gets. Without it the widget would draw the band at amplicon coordinates."""
+        ref_sequence = 'AACCGGTTAA'
+        df = _make_df_alleles(
+            'r',
+            aligned_seqs=[ref_sequence],
+            ref_seq=ref_sequence,
+            reads=[100],
+            read_status=['UNMODIFIED'],
+        )
+        ctx = _make_ctx(
+            ref_names=['r'],
+            refs={'r': _ref_dict(
+                sequence=ref_sequence,
+                sequence_length=len(ref_sequence),
+                sgRNA_cut_points=[4],
+                sgRNA_plot_cut_points=[4],
+                sgRNA_intervals=[(2, 6)],
+                sgRNA_names=['sgRNA1'],
+                sgRNA_mismatches=[],
+                include_idxs=[3, 4, 5],
+            )},
+            counts_total={'r': 100},
+            df_alleles=df,
+            args=SimpleNamespace(
+                plot_window_size=3,
+                min_frequency_alleles_around_cut_to_plot=0,
+                max_rows_alleles_around_cut_to_plot=10,
+                allele_plot_pcts_only_for_assigned_reference=False,
+                expand_allele_plots_by_quantification=True,
+                annotate_wildtype_allele='',
+            ),
+        )
+        ctx.ref_name = 'r'
+        ctx.sgRNA_ind = 0
+
+        result = prep_alleles_around_cut(ctx)
+
+        # new_sel_cols_start = cut_point(4) - window_left(3) = 1, and this path
+        # carries an extra -1 (see new_cut_point), so the shift is 2
+        assert result['quantification_window_idxs'] == [1, 2, 3]
+
+        # the invariant that actually matters: the quantification window and the
+        # sgRNA intervals must be rebased identically, or the band and the guide
+        # would disagree about where they are
+        shift = 2 - result['new_sgRNA_intervals'][0][0]  # sgRNA_intervals=[(2, 6)]
+        assert result['quantification_window_idxs'] == [
+            x - shift for x in [3, 4, 5]
+        ]
+
     def test_with_substitution(self):
         """Allele with a substitution produces plot_input with expected content."""
         ref_sequence = 'AACCGGTTAA'
