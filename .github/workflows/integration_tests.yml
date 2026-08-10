@@ -51,7 +51,7 @@ jobs:
         with:
           manifest-path: CRISPResso2/pixi.toml
           environments: ${{ matrix.pro && 'test-pro' || 'test' }}
-          locked: false
+          locked: true
           frozen: false
           cache: false
 
@@ -59,7 +59,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: CRISPResso2/.pixi
-          key: pixi-v2-${{ runner.os }}-${{ runner.arch }}-${{ matrix.pro && 'test-pro' || 'test' }}-${{ hashFiles('CRISPResso2/pixi.toml') }}
+          key: pixi-v2-${{ runner.os }}-${{ runner.arch }}-${{ matrix.pro && 'test-pro' || 'test' }}-${{ hashFiles('CRISPResso2/pixi.lock') }}
 
       - name: Install MS core fonts
         run: |
