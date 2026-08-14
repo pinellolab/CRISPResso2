@@ -24,7 +24,7 @@ jobs:
       uses: prefix-dev/setup-pixi@v0.8.8
       with:
         environments: test
-        locked: false
+        locked: true
         frozen: false
         cache: false
 
@@ -32,7 +32,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: .pixi
-        key: pixi-v2-${{ runner.os }}-${{ runner.arch }}-test-${{ hashFiles('pixi.toml') }}
+        key: pixi-v2-${{ runner.os }}-${{ runner.arch }}-test-${{ hashFiles('pixi.lock') }}
 
     - name: Install environment
       run: pixi install -e test

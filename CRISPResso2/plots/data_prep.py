@@ -1552,6 +1552,11 @@ def prep_alleles_around_cut(ctx: CorePlotContext):
         if int_start <= cut_point <= int_end:
             new_cut_point = cut_point - new_sel_cols_start - 1
 
+    # rebase onto the window using the SAME convention as new_sgRNA_intervals
+    # and new_cut_point above (note the extra -1); plain subtraction, as the
+    # nucleotide quilt uses, would land this one column to the right here
+    new_include_idx = [x - new_sel_cols_start - 1 for x in ref['include_idxs']]
+
     # Build serialization-friendly plot input via prep_alleles_table
     n_good = df_alleles_around_cut[
         df_alleles_around_cut['%Reads'] >= ctx.args.min_frequency_alleles_around_cut_to_plot
@@ -1595,9 +1600,17 @@ def prep_alleles_around_cut(ctx: CorePlotContext):
         'df_alleles_around_cut': df_alleles_around_cut,
         'ref_seq_around_cut': ref_seq_around_cut,
         'new_sgRNA_intervals': new_sgRNA_intervals,
+        'quantification_window_idxs': new_include_idx,
         'new_cut_point': new_cut_point,
         'window_truncated': window_truncated,
         'plot_input': plot_input,
+        # exposed so CRISPRessoPro can compose its own caption for the
+        # interactive table without re-deriving the legend format
+        'sgRNA_legend': sgRNA_legend,
+        # NOTE: this caption describes the STATIC matplotlib figure, which really
+        # does draw red insertion rectangles, bold substitutions and a dashed
+        # cleavage line. The Pro interactive table draws none of those and
+        # supplies its own caption -- see CRISPRessoPro.plots.data_funcs.
         'caption': (
             "Figure 9: Visualization of the distribution of identified alleles around the "
             "cleavage site for the " + sgRNA_legend + ". Nucleotides are indicated by unique "

@@ -77,4 +77,11 @@ RUN CRISPResso -h \
   && CRISPRessoWGS -h \
   && CRISPRessoCompare -h
 
+# Run as non-root: CRISPResso2 needs no privileged operations, and this keeps
+# output files from being owned by root on mounted host volumes. Output is
+# written to the working directory the user mounts (e.g. -v $PWD:/data -w /data),
+# so /CRISPResso2 staying root-owned (read-only app code) is fine.
+RUN useradd --create-home --uid 1000 crispresso
+USER crispresso
+
 ENTRYPOINT ["python", "/CRISPResso2/CRISPResso2_router.py"]

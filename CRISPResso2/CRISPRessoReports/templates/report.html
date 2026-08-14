@@ -721,6 +721,8 @@ try {
 {% if C2PRO_INSTALLED %}
 <script src="https://unpkg.com/d3@5"></script>
   {{ render_partial('partials/batch_d3.html', nucleotide_quilt_slugs=(report_data['nuc_quilt_names'])) }}
+  {# guarded: reports cached before allele search shipped have no such key #}
+  {{ render_partial('partials/allele_d3.html', allele_table_slugs=(report_data['allele_table_names'] if 'allele_table_names' in report_data else [])) }}
 {% endif %}
 
 {% endblock %}
