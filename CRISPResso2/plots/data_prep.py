@@ -64,11 +64,23 @@ def _get_ref_info(ctx, ref_name, key, default=''):
 
 
 def _to_numeric_ignore_columns(df, ignore_columns):
-    """Convert DataFrame columns to numeric, ignoring specified columns."""
-    for col in df.columns:
+    """Convert DataFrame columns to numeric, ignoring specified columns.
+
+    Uses positional indexing so duplicate column labels (for example the
+    repeated base letters used by nucleotide quilt DataFrames) are converted
+    exactly once per column rather than repeatedly selecting all columns with
+    the same label.
+    """
+    converted_columns = []
+    for idx, col in enumerate(df.columns):
+        series = df.iloc[:, idx]
         if col not in ignore_columns:
-            df[col] = df[col].apply(pd.to_numeric, errors='coerce')
-    return df
+            series = pd.to_numeric(series, errors='coerce')
+        converted_columns.append(series)
+
+    result = pd.concat(converted_columns, axis=1)
+    result.columns = df.columns
+    return result
 
 
 def plot_title_with_ref_name(title, ref_name, num_refs):
