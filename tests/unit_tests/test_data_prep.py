@@ -245,6 +245,22 @@ def test_to_numeric_ignore_columns_mixed_types():
     assert result["float_val"].dtype in [float, "float64"]
 
 
+def test_to_numeric_ignore_columns_duplicate_labels():
+    """Test duplicate column labels are converted positionally and preserved."""
+    df = pd.DataFrame(
+        [['Insertions', '1', '2.5', 'x']],
+        columns=['Modification', 'A', 'A', 'C'],
+    )
+
+    result = _to_numeric_ignore_columns(df, {'Modification'})
+
+    assert list(result.columns) == ['Modification', 'A', 'A', 'C']
+    assert result.iloc[0, 0] == 'Insertions'
+    assert result.iloc[0, 1] == 1.0
+    assert result.iloc[0, 2] == 2.5
+    assert pd.isna(result.iloc[0, 3])
+
+
 # =============================================================================
 # Tests: prep_amplicon_modifications (plot 4a)
 # =============================================================================
