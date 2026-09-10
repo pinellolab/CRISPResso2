@@ -14,6 +14,8 @@
 
 - Fix amplicon figure names in `assemble_figs` and fix hovering over plot 2a in the matplotlib version by [@Colelyman](https://github.com/Colelyman) in [#177](https://github.com/edilytics/CRISPResso2/pull/177)
 
+- Unify report hover-zoom (figure 2a / nucleotide quilt) into one shared implementation (`CRISPRessoReports` `shared/partials/figure_zoom.html`), fixing the blank zoom strip, the dead zoom after hovering in a hidden tab, and Pro/no-Pro drift by [@Colelyman](https://github.com/Colelyman)
+
 ### CHANGED
 
 - Fix how pixi manages environments and clean up the delineation between CRISPResso2, CRISPRessoPro, and testing by [@Colelyman](https://github.com/Colelyman) in [#643](https://github.com/pinellolab/CRISPResso2/pull/643)
