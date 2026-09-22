@@ -379,12 +379,10 @@ def propagate_crispresso_options(cmd, options, params, paramInd=None):
                     pass
                 elif isinstance(val, str):
                     if val != "":
-                        if re.match(r'-\d+$', val):
-                            cmd += ' --%s %s' % (option, str(val))
-                        elif " " in val or "-" in val:
-                            cmd += ' --%s "%s"' % (option, str(val))  # quotes for options with spaces
-                        else:
-                            cmd += ' --%s %s' % (option, str(val))
+                        # Child commands run through a shell. Quote the entire
+                        # value so JSON quotes, whitespace and shell syntax are
+                        # passed literally, rather than parsed a second time.
+                        cmd += ' --%s %s' % (option, shlex.quote(val))
                 elif isinstance(val, bool):
                     if val:
                         cmd += ' --%s' % option
