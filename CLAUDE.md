@@ -66,6 +66,18 @@ Individual integration test targets:
 
 Add `test` target to diff results against expected: `make basic test`
 
+CRISPRessoPro lanes:
+```bash
+# Runtime/dev lane (run Pro code)
+pixi install -e pro
+pixi run -e pro install-pro
+
+# Testing lane (Pro + test deps)
+pixi install -e test-pro
+pixi run -e test-pro install-pro
+pixi run -e test-pro pro-unit-test
+```
+
 ### Running CRISPResso Tools
 
 ```bash

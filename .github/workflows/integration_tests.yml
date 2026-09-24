@@ -3,7 +3,7 @@ name: Run Integration Tests
 on:
   push:
 
-  pull_request:
+  pull_request_target:
     types: [opened, reopened]
 
 concurrency:
@@ -33,6 +33,11 @@ jobs:
             filter: "wgs or asym"
           - name: "VCF"
             filter: "vcf"
+        include:
+          - pro: true
+            group:
+              name: "Pro-only"
+              filter: "pro_only"
 
     name: "${{ matrix.group.name }} (Pro: ${{ matrix.pro }})"
 
@@ -46,7 +51,7 @@ jobs:
         with:
           manifest-path: CRISPResso2/pixi.toml
           environments: ${{ matrix.pro && 'test-pro' || 'test' }}
-          locked: false
+          locked: true
           frozen: false
           cache: false
 
@@ -54,7 +59,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: CRISPResso2/.pixi
-          key: pixi-v2-${{ runner.os }}-${{ runner.arch }}-${{ matrix.pro && 'test-pro' || 'test' }}-${{ hashFiles('CRISPResso2/pixi.toml') }}
+          key: pixi-v2-${{ runner.os }}-${{ runner.arch }}-${{ matrix.pro && 'test-pro' || 'test' }}-${{ hashFiles('CRISPResso2/pixi.lock') }}
 
       - name: Install MS core fonts
         run: |
@@ -88,6 +93,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: edilytics/CRISPRessoPro
+          # ref: '<BRANCH-NAME>' # update to specific branch
           token: ${{ secrets.CRISPRESSOPRO_PAT }}
           path: CRISPRessoPro
 

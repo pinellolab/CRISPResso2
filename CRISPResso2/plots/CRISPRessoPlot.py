@@ -12,12 +12,17 @@ import matplotlib.pyplot as plt
 from matplotlib import patches
 from matplotlib import cm
 from matplotlib import gridspec
-from collections import defaultdict
 from copy import deepcopy
-import re
 from matplotlib import colors as colors_mpl
 import seaborn as sns
 from CRISPResso2.plots import upsetplot
+from CRISPResso2.plots.data_prep import (
+    amino_acids_to_numbers,
+    prep_alleles_table,
+    prep_alleles_table_compare,
+    prep_amino_acid_table_for_plot as prep_amino_acid_table,
+    prep_class_piechart_and_barplot,
+)
 
 from CRISPResso2 import CRISPRessoShared
 
@@ -75,7 +80,7 @@ def get_nuc_color(nuc, alpha):
 
 
 def get_color_lookup(nucs, alpha, custom_colors=None):
-    if custom_colors is None:
+    if not custom_colors:
         colorLookup = {}
         for nuc in nucs:
             colorLookup[nuc] = get_nuc_color(nuc, alpha)
@@ -193,15 +198,6 @@ def get_amino_acid_colors(scheme):
 
     hex_alpha = '66'
     return list(color_dict[aa] + hex_alpha for aa in amino_acids)
-
-
-def amino_acids_to_numbers(seq):
-    amino_acids = [
-        '*', 'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
-        'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y', '', '-'
-    ]
-    d = {aa: i for i, aa in enumerate(amino_acids)}
-    return [d[aa] for aa in seq]
 
 
 def hex_to_rgb(value):
@@ -448,7 +444,7 @@ def plot_indel_size_distribution(
     xmin,
     xmax,
     title,
-    plot_root,
+    fig_filename_root,
     save_also_png=False,
     **kwargs,
 ):
@@ -491,9 +487,9 @@ def plot_indel_size_distribution(
         lgd.legend_handles[1].set_height(3)
 
     ax.tick_params(left=True, bottom=True)
-    fig.savefig(plot_root + '.pdf', pad_inches=1, bbox_inches='tight')
+    fig.savefig(fig_filename_root + '.pdf', pad_inches=1, bbox_inches='tight')
     if save_also_png:
-        fig.savefig(plot_root + '.png', bbox_inches='tight')
+        fig.savefig(fig_filename_root + '.png', bbox_inches='tight')
     plt.close(fig)
 
 
@@ -501,7 +497,7 @@ def plot_frequency_deletions_insertions(
     ref,
     counts_total,
     plot_titles,
-    plot_path,
+    fig_filename_root,
     xmax_del,
     xmax_ins,
     xmax_mut,
@@ -635,9 +631,9 @@ def plot_frequency_deletions_insertions(
 
     ax.tick_params(left=True, bottom=True)
     fig.tight_layout()
-    fig.savefig(plot_path + '.pdf', pad_inches=1, bbox_inches='tight')
+    fig.savefig(fig_filename_root + '.pdf', pad_inches=1, bbox_inches='tight')
     if save_also_png:
-        fig.savefig(plot_path + '.png', bbox_inches='tight')
+        fig.savefig(fig_filename_root + '.png', bbox_inches='tight')
     plt.close(fig)
 
 
@@ -654,7 +650,7 @@ def plot_amplicon_modifications(
     ref_len,
     y_max,
     plot_titles,
-    plot_root,
+    fig_filename_root,
     custom_colors=None,
     save_also_png=False,
     **kwargs,
@@ -673,7 +669,7 @@ def plot_amplicon_modifications(
     :param ref_len: Length of the reference sequence
     :param y_max: Maximum y-axis value for the plot
     :param plot_titles: Dictionary containing titles for the plot
-    :param plot_root: Root path for saving the plot
+    :param fig_filename_root: Root path for saving the plot
     :param custom_colors: Dictionary of custom colors (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     :param save_also_png: Whether to save the plot as a PNG file in addition to PDF
     """
@@ -805,11 +801,11 @@ def plot_amplicon_modifications(
     ax.tick_params(left=True, bottom=True)
 
     fig.savefig(
-        plot_root + '.pdf', bbox_extra_artists=(lgd,), bbox_inches='tight',
+        fig_filename_root + '.pdf', bbox_extra_artists=(lgd,), bbox_inches='tight',
     )
     if save_also_png:
         fig.savefig(
-            plot_root + '.png', bbox_extra_artists=(lgd,), bbox_inches='tight',
+            fig_filename_root + '.png', bbox_extra_artists=(lgd,), bbox_inches='tight',
         )
     plt.close(fig)
 
@@ -829,7 +825,7 @@ def plot_modification_frequency(
     plot_cut_points,
     y_max,
     plot_title,
-    plot_root,
+    fig_filename_root,
     custom_colors=None,
     save_also_png=False,
     **kwargs,
@@ -850,7 +846,7 @@ def plot_modification_frequency(
     :param plot_cut_points: Boolean list indicating whether to plot each cut point
     :param y_max: Maximum y-axis value for the plot
     :param plot_title: Title for the plot
-    :param plot_root: Root path for saving the plot (without file extension)
+    :param fig_filename_root: Root path for saving the plot (without file extension)
     :param custom_colors: Dictionary of custom colors (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
     :param save_also_png: Whether to save the plot as a PNG file in addition to PDF
 
@@ -996,14 +992,14 @@ def plot_modification_frequency(
     ax.set_title(plot_title)
 
     fig.savefig(
-        plot_root + '.pdf',
+        fig_filename_root + '.pdf',
         bbox_extra_artists=(lgd,),
         pad_inches=1,
         bbox_inches='tight',
     )
     if save_also_png:
         fig.savefig(
-            plot_root + '.png',
+            fig_filename_root + '.png',
             bbox_extra_artists=(lgd,),
             bbox_inches='tight',
         )
@@ -1024,7 +1020,7 @@ def plot_quantification_window_locations(
     n_this_category,
     ref_name,
     plot_title,
-    plot_root,
+    fig_filename_root,
     custom_colors=None,
     save_also_png=False,
     **kwargs,
@@ -1045,7 +1041,7 @@ def plot_quantification_window_locations(
     :param n_this_category: Number of sequences in the current category.
     :param ref_name: Name of the reference sequence.
     :param plot_title: Title for the plot.
-    :param plot_root: Root path for saving the plot.
+    :param fig_filename_root: Root path for saving the plot.
     :param custom_colors: Dictionary of custom colors for insertions, deletions, and substitutions.
     :param save_also_png: Boolean indicating whether to save the plot as a PNG file.
     """
@@ -1196,14 +1192,14 @@ def plot_quantification_window_locations(
     ax.set_xlim(0, ref_len - 1)
     ax.set_title(plot_title)
     fig.savefig(
-        plot_root + '.pdf',
+        fig_filename_root + '.pdf',
         bbox_extra_artists=(lgd,),
         pad_inches=1,
         bbox_inches='tight',
     )
     if save_also_png:
         fig.savefig(
-            plot_root + '.png',
+            fig_filename_root + '.png',
             bbox_extra_artists=(lgd,),
             bbox_inches='tight',
         )
@@ -1217,7 +1213,7 @@ def plot_position_dependent_indels(
     plot_cut_points,
     ref_len,
     plot_titles,
-    plot_root,
+    fig_filename_root,
     save_also_png,
     **kwargs,
 ):
@@ -1229,7 +1225,7 @@ def plot_position_dependent_indels(
     :param plot_cut_points: Boolean list indicating whether to plot each cut point.
     :param ref_len: Length of the reference amplicon.
     :param plot_titles: Dictionary containing titles for the plot (one for 'ins' and one for 'del').
-    :param plot_root: Root path for saving the plot (without file extension).
+    :param fig_filename_root: Root path for saving the plot (without file extension).
     :param save_also_png: Boolean indicating whether to save the plot as a PNG file (in addition to pdf).
     """
     fig, ax = plt.subplots(1, 2, figsize=(24, 10))
@@ -1317,9 +1313,9 @@ def plot_position_dependent_indels(
     fig.tight_layout()
     ax2.tick_params(left=True, bottom=True)
 
-    fig.savefig(plot_root + '.pdf', pad_inches=1, bbox_inches='tight')
+    fig.savefig(fig_filename_root + '.pdf', pad_inches=1, bbox_inches='tight')
     if save_also_png:
-        fig.savefig(plot_root + '.png', bbox_inches='tight')
+        fig.savefig(fig_filename_root + '.png', bbox_inches='tight')
     plt.close(fig)
 
 
@@ -1333,7 +1329,7 @@ def plot_global_modifications_reference(
     ref_len,
     ref_name,
     plot_title,
-    plot_root,
+    fig_filename_root,
     custom_colors=None,
     save_also_png=False,
     **kwargs,
@@ -1349,7 +1345,7 @@ def plot_global_modifications_reference(
     :param ref_len: Length of the reference amplicon.
     :param ref_name: Name of the specified reference sequence.
     :param plot_title: Title for the plot.
-    :param plot_root: Root path for saving the plot (without file extension).
+    :param fig_filename_root: Root path for saving the plot (without file extension).
     :param custom_colors: Dictionary of custom colors for insertions, deletions, and substitutions.
     :param save_also_png: Boolean indicating whether to save the plot as a PNG file (in addition to pdf).
     """
@@ -1491,14 +1487,14 @@ def plot_global_modifications_reference(
     ax.set_xlim(0, ref_len - 1)
     ax.tick_params(left=True, bottom=True)
     fig.savefig(
-        plot_root + '.pdf',
+        fig_filename_root + '.pdf',
         bbox_extra_artists=(lgd,),
         pad_inches=1,
         bbox_inches='tight',
     )
     if save_also_png:
         fig.savefig(
-            plot_root + '.png',
+            fig_filename_root + '.png',
             bbox_extra_artists=(lgd,),
             bbox_inches='tight',
         )
@@ -1515,11 +1511,11 @@ def plot_frameshift_analysis(
     exon_intervals,
     ref_len,
     ref_name,
-    plot_root,
+    fig_filename_root,
     save_also_png=False,
     **kwargs,
 ):
-    """Plot 5: Plot a pie chart to plot_root showing classification of reads with regard to coding region for a specific reference sequence, also including a diagram of where the coding region is within the amplicon.
+    """Plot 5: Plot a pie chart to fig_filename_root showing classification of reads with regard to coding region for a specific reference sequence, also including a diagram of where the coding region is within the amplicon.
 
     Parameters
     ----------
@@ -1541,7 +1537,7 @@ def plot_frameshift_analysis(
         Length of reference sequence
     ref_name : string
         Name of this reference
-    plot_root : string
+    fig_filename_root : string
         String of output plot file (.pdf and/or .png will be appended)
     save_also_png : boolean
         Whether to plot the .png (in addition to the .pdf)
@@ -1654,9 +1650,9 @@ def plot_frameshift_analysis(
     )
     ax2.set_xlim(0, ref_len)
     ax2.set_axis_off()
-    fig.savefig(plot_root + '.pdf', pad_inches=1, bbox_inches='tight')
+    fig.savefig(fig_filename_root + '.pdf', pad_inches=1, bbox_inches='tight')
     if save_also_png:
-        fig.savefig(plot_root + '.png', bbox_inches='tight')
+        fig.savefig(fig_filename_root + '.png', bbox_inches='tight')
     plt.close(fig)
 
 
@@ -1664,7 +1660,7 @@ def plot_frameshift_frequency(
     hists_frameshift,
     hists_inframe,
     plot_titles,
-    plot_root,
+    fig_filename_root,
     save_also_png=False,
     **kwargs,
 ):
@@ -1750,9 +1746,9 @@ def plot_frameshift_frequency(
     ax2.tick_params(axis='both', which='minor', labelsize=24)
     ax2.tick_params(left=True, bottom=True)
     fig.tight_layout()
-    fig.savefig(plot_root + '.pdf', pad_inches=1, bbox_inches='tight')
+    fig.savefig(fig_filename_root + '.pdf', pad_inches=1, bbox_inches='tight')
     if save_also_png:
-        fig.savefig(plot_root + '.png', bbox_inches='tight')
+        fig.savefig(fig_filename_root + '.png', bbox_inches='tight')
     plt.close(fig)
 
 
@@ -1760,7 +1756,7 @@ def plot_global_frameshift_analysis(
     global_modified_frameshift,
     global_modified_non_frameshift,
     global_non_modified_non_frameshift,
-    plot_root,
+    fig_filename_root,
     save_also_png=False,
     **kwargs,
 ):
@@ -1788,16 +1784,16 @@ def plot_global_frameshift_analysis(
 
     ax.set_axis_off()
     ax.axis('equal')
-    fig.savefig(plot_root + '.pdf', pad_inches=1, bbox_inches='tight')
+    fig.savefig(fig_filename_root + '.pdf', pad_inches=1, bbox_inches='tight')
     if save_also_png:
-        fig.savefig(plot_root + '.png', bbox_inches='tight')
+        fig.savefig(fig_filename_root + '.png', bbox_inches='tight')
     plt.close(fig)
 
 
 def plot_global_frameshift_in_frame_mutations(
     global_hists_frameshift,
     global_hists_inframe,
-    plot_root,
+    fig_filename_root,
     save_also_png=False,
     **kwargs,
 ):
@@ -1805,7 +1801,7 @@ def plot_global_frameshift_in_frame_mutations(
 
     :param global_hists_frameshift: Dictionary showing counts of frameshifts for this reference.
     :param global_hists_inframe: Dictionary showing counts of inframe mutations for this reference.
-    :param plot_root: Root path for saving the plot (without file extension).
+    :param fig_filename_root: Root path for saving the plot (without file extension).
     :param save_also_png: Boolean indicating whether to save the plot as a PNG file (in addition to pdf).
     """
     fig, axs = plt.subplots(2, 1, figsize=(22, 10))
@@ -1892,16 +1888,16 @@ def plot_global_frameshift_in_frame_mutations(
     ax2.tick_params(axis='both', which='major', labelsize=24)
     ax2.tick_params(axis='both', which='minor', labelsize=24)
     fig.tight_layout()
-    fig.savefig(plot_root + '.pdf', pad_inches=1, bbox_inches='tight')
+    fig.savefig(fig_filename_root + '.pdf', pad_inches=1, bbox_inches='tight')
     if save_also_png:
-        fig.savefig(plot_root + '.png', bbox_inches='tight')
+        fig.savefig(fig_filename_root + '.png', bbox_inches='tight')
     plt.close(fig)
 
 
 def plot_impact_on_splice_sites(
     global_splicing_sites_modified,
     global_count_total,
-    plot_root,
+    fig_filename_root,
     save_also_png=False,
     **kwargs,
 ):
@@ -1924,9 +1920,9 @@ def plot_impact_on_splice_sites(
     )
     ax.set_axis_off()
     ax.axis('equal')
-    fig.savefig(plot_root + '.pdf', pad_inches=1, bbox_inches='tight')
+    fig.savefig(fig_filename_root + '.pdf', pad_inches=1, bbox_inches='tight')
     if save_also_png:
-        fig.savefig(plot_root + '.png', bbox_inches='tight')
+        fig.savefig(fig_filename_root + '.png', bbox_inches='tight')
     plt.close(fig)
 
 
@@ -1940,7 +1936,7 @@ def plot_non_coding_mutations(
     ref_len,
     sgRNA_intervals,
     plot_title,
-    plot_root,
+    fig_filename_root,
     custom_colors=None,
     save_also_png=False,
     **kwargs,
@@ -1956,7 +1952,7 @@ def plot_non_coding_mutations(
     :param ref_len: Length of the reference amplicon.
     :param sgRNA_intervals: List of (start, stop) coordinates for sgRNAs.
     :param plot_title: Title for the plot.
-    :param plot_root: Root path for saving the plot (without file extension).
+    :param fig_filename_root: Root path for saving the plot (without file extension).
     :param custom_colors: Dictionary of custom colors for insertions, deletions, and substitutions.
     :param save_also_png: Boolean indicating whether to save the plot as a PNG file (in addition to pdf).
     """
@@ -2084,14 +2080,14 @@ def plot_non_coding_mutations(
     ax.tick_params(left=True, bottom=True)
 
     fig.savefig(
-        plot_root + '.pdf',
+        fig_filename_root + '.pdf',
         bbox_extra_artists=(lgd,),
         pad_inches=1,
         bbox_inches='tight',
     )
     if save_also_png:
         fig.savefig(
-            plot_root + '.png',
+            fig_filename_root + '.png',
             bbox_extra_artists=(lgd,),
             bbox_inches='tight',
         )
@@ -2101,7 +2097,7 @@ def plot_non_coding_mutations(
 def plot_potential_splice_sites(
     splicing_sites_modified,
     count_total,
-    plot_root,
+    fig_filename_root,
     save_also_png=False,
     **kwargs,
 ):
@@ -2109,7 +2105,7 @@ def plot_potential_splice_sites(
 
     :param splicing_sites_modified: Number of reads modified at potential splice sites.
     :param count_total: Total number of reads considered.
-    :param plot_root: Root path for saving the plot (without file extension).
+    :param fig_filename_root: Root path for saving the plot (without file extension).
     :param save_also_png: Boolean indicating whether to save the plot as a PNG file (in addition to pdf).
     """
     fig, ax = plt.subplots(figsize=(12, 12))
@@ -2131,15 +2127,15 @@ def plot_potential_splice_sites(
     )
     ax.set_axis_off()
     ax.axis('equal')
-    fig.savefig(plot_root + '.pdf', pad_inches=1, bbox_inches='tight')
+    fig.savefig(fig_filename_root + '.pdf', pad_inches=1, bbox_inches='tight')
     if save_also_png:
-        fig.savefig(plot_root + '.png', bbox_inches='tight')
+        fig.savefig(fig_filename_root + '.png', bbox_inches='tight')
     plt.close(fig)
 
 
 def plot_scaffold_indel_lengths(
     df_scaffold_insertion_sizes,
-    plot_root,
+    fig_filename_root,
     save_also_png=False,
     **kwargs,
 ):
@@ -2174,9 +2170,9 @@ def plot_scaffold_indel_lengths(
         shadow=True,
     )
     ax.tick_params(left=True, bottom=True)
-    fig.savefig(plot_root + '.pdf', pad_inches=1, bbox_inches='tight')
+    fig.savefig(fig_filename_root + '.pdf', pad_inches=1, bbox_inches='tight')
     if save_also_png:
-        fig.savefig(plot_root + '.png', bbox_inches='tight')
+        fig.savefig(fig_filename_root + '.png', bbox_inches='tight')
     plt.close(fig)
 
 
@@ -3001,67 +2997,6 @@ def custom_heatmap(data, vmin=None, vmax=None, cmap=None, center=None, robust=Fa
     return ax
 
 
-def prep_amino_acid_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
-    """Prepares a df of alleles for Plotting
-    input:
-    -df_alleles: pandas dataframe of alleles to plot
-    -reference_seq: sequence of unmodified reference
-    -MAX_N_ROWS: max number of rows to plot
-    -MIN_FREQUENCY: min frequency for a row to be plotted
-    returns:
-    -X: list of numbers representing nucleotides of the allele
-    -annot: list of nucleotides (letters) of the allele
-    -y_labels: list of labels for each row/allele
-    -insertion_dict: locations of insertions -- red squares will be drawn around these
-    -per_element_annot_kws: annotations for each cell (e.g. bold for substitutions, etc.)
-    -is_reference: list of booleans for whether the read is equal to the reference
-    """
-    X = []
-    annot = []
-    y_labels = []
-    insertion_dict = defaultdict(list)
-    silent_edit_dict = defaultdict(list)
-    per_element_annot_kws = []
-    is_reference = []
-
-    re_find_indels = re.compile(r"(-*-)")
-    idx_row = 0
-
-    for seq, row in df_alleles[df_alleles['%Reads'] >= MIN_FREQUENCY][:MAX_N_ROWS].iterrows():
-
-        X.append(amino_acids_to_numbers(seq))
-        annot.append(list(seq))
-
-        silent_edit_dict[idx_row] = row['silent_edit_inds']
-
-        has_indels = False
-        for p in re_find_indels.finditer(row['Reference_Sequence']):
-            has_indels = True
-            insertion_dict[idx_row].append((p.start(), p.end()))
-
-        y_labels.append('%.2f%% (%d reads)' % (row['%Reads'], row['#Reads']))
-        if seq == reference_seq and not has_indels:
-            is_reference.append(True)
-        else:
-            is_reference.append(False)
-
-        idx_row += 1
-
-        idxs_sub = [i_sub for i_sub in range(len(seq)) if
-                   (row['Reference_Sequence'][i_sub] != seq[i_sub].upper()) and
-                   (row['Reference_Sequence'][i_sub] != '-') and
-                   (seq[i_sub] != '-')]
-        to_append = np.array([{}] * len(seq), dtype=object)
-        to_append[idxs_sub] = {'weight': 'bold', 'color': 'black', 'size': 16}
-        per_element_annot_kws.append(to_append)
-
-    for i, (x, a) in enumerate(zip(X, annot)):
-        X[i] = x + amino_acids_to_numbers([''] * (len(reference_seq) - len(a)))
-        annot[i] = a + [''] * (len(reference_seq) - len(a))
-
-    return X, annot, y_labels, insertion_dict, silent_edit_dict, per_element_annot_kws, is_reference, reference_seq
-
-
 def plot_amino_acid_heatmap(
         reference_seq_amino_acids,
         fig_filename_root,
@@ -3184,110 +3119,6 @@ def plot_amino_acid_heatmap(
     if SAVE_ALSO_PNG:
         fig.savefig(fig_filename_root + '.png', bbox_inches='tight', bbox_extra_artists=(lgd,))
     plt.close(fig)
-
-
-def prep_alleles_table(df_alleles, reference_seq, MAX_N_ROWS, MIN_FREQUENCY):
-    """Prepares a df of alleles for Plotting
-    input:
-    -df_alleles: pandas dataframe of alleles to plot
-    -reference_seq: sequence of unmodified reference
-    -MAX_N_ROWS: max number of rows to plot
-    -MIN_FREQUENCY: min frequency for a row to be plotted
-    returns:
-    -X: list of numbers representing nucleotides of the allele
-    -annot: list of nucleotides (letters) of the allele
-    -y_labels: list of labels for each row/allele
-    -insertion_dict: locations of insertions -- red squares will be drawn around these
-    -per_element_annot_kws: annotations for each cell (e.g. bold for substitutions, etc.)
-    -is_reference: list of booleans for whether the read is equal to the reference
-    """
-    dna_to_numbers = {'-': 0, 'A': 1, 'T': 2, 'C': 3, 'G': 4, 'N': 5}
-    seq_to_numbers = lambda seq: [dna_to_numbers[x] for x in seq]
-    X = []
-    annot = []
-    y_labels = []
-    insertion_dict = defaultdict(list)
-    per_element_annot_kws = []
-    is_reference = []
-
-    re_find_indels = re.compile(r"(-*-)")
-    idx_row = 0
-    for idx, row in df_alleles[df_alleles['%Reads'] >= MIN_FREQUENCY][:MAX_N_ROWS].iterrows():
-        X.append(seq_to_numbers(idx.upper()))
-        annot.append(list(idx))
-
-        has_indels = False
-        for p in re_find_indels.finditer(row['Reference_Sequence']):
-            has_indels = True
-            insertion_dict[idx_row].append((p.start(), p.end()))
-
-        y_labels.append('%.2f%% (%d reads)' % (row['%Reads'], row['#Reads']))
-        if idx == reference_seq and not has_indels:
-            is_reference.append(True)
-        else:
-            is_reference.append(False)
-
-        idx_row += 1
-
-        idxs_sub = [i_sub for i_sub in range(len(idx)) if
-                   (row['Reference_Sequence'][i_sub] != idx[i_sub]) and
-                   (row['Reference_Sequence'][i_sub] != '-') and
-                   (idx[i_sub] != '-')]
-        to_append = np.array([{}] * len(idx), dtype=object)
-        to_append[idxs_sub] = {'weight': 'bold', 'color': 'black', 'size': 16}
-        per_element_annot_kws.append(to_append)
-
-    return X, annot, y_labels, insertion_dict, per_element_annot_kws, is_reference
-
-
-def prep_alleles_table_compare(df_alleles, sample_name_1, sample_name_2, MAX_N_ROWS, MIN_FREQUENCY):
-    """Prepares a df of alleles for Plotting
-    takes a merged allele table, and sets labels to read percents and counts from each sample
-    input:
-    -df_alleles: merged pandas dataframe of alleles to plot
-    -sample_name_1: sample name 1
-    -sample_name_2: sample name 2
-    --- y_labels will be determined using the columns named like: '#Reads_s1' (where s1 is the sample 1 name)
-    -MAX_N_ROWS: max number of rows to plot
-    -MIN_FREQUENCY: min frequency for a row to be plotted
-    returns:
-    -X: list of numbers representing nucleotides of the allele
-    -annot: list of nucleotides (letters) of the allele
-    -y_labels: list of labels for each row/allele
-    -insertion_dict: locations of insertions -- red squares will be drawn around these
-    -per_element_annot_kws: annotations for each cell (e.g. bold for substitutions, etc.)
-    """
-    dna_to_numbers = {'-': 0, 'A': 1, 'T': 2, 'C': 3, 'G': 4, 'N': 5}
-    seq_to_numbers = lambda seq: [dna_to_numbers[x] for x in seq]
-
-    X = []
-    annot = []
-    y_labels = []
-    insertion_dict = defaultdict(list)
-    per_element_annot_kws = []
-
-    re_find_indels = re.compile(r"(-*-)")
-    idx_row = 0
-    for idx, row in df_alleles[df_alleles['%Reads_' + sample_name_1] + df_alleles['%Reads_' + sample_name_2] >= MIN_FREQUENCY][:MAX_N_ROWS].iterrows():
-        X.append(seq_to_numbers(idx.upper()))
-        annot.append(list(idx))
-        y_labels.append('%.2f%% (%d reads) %.2f%% (%d reads) ' % (row['%Reads_' + sample_name_1], row['#Reads_' + sample_name_1],
-                                                    row['%Reads_' + sample_name_2], row['#Reads_' + sample_name_2]))
-
-        for p in re_find_indels.finditer(row['Reference_Sequence']):
-            insertion_dict[idx_row].append((p.start(), p.end()))
-
-        idx_row += 1
-
-        idxs_sub = [i_sub for i_sub in range(len(idx)) if
-                   (row['Reference_Sequence'][i_sub] != idx[i_sub]) and
-                   (row['Reference_Sequence'][i_sub] != '-') and
-                   (idx[i_sub] != '-')]
-        to_append = np.array([{}] * len(idx), dtype=object)
-        to_append[idxs_sub] = {'weight': 'bold', 'color': 'black', 'size': 16}
-        per_element_annot_kws.append(to_append)
-
-    return X, annot, y_labels, insertion_dict, per_element_annot_kws
 
 
 def plot_alleles_heatmap(
@@ -4194,56 +4025,29 @@ def plot_read_barplot(N_READS_INPUT, N_READS_AFTER_PREPROCESSING, N_TOTAL,
     plt.close()
 
 
-def plot_class_piechart_and_barplot(class_counts_order, class_counts, ref_names,
-                                    expected_hdr_amplicon_seq, N_TOTAL,
-                                    piechart_plot_root=None, barplot_plot_root=None, custom_colors=None, save_png=False, **kwargs):
-    """Plot a pie chart and barplot of class assignments for reads.
-
-       Class assignments include: 'MODIFIED','UNMODIFIED','HDR',etc.
+def plot_class_piechart(labels, sizes, N_TOTAL, fig_filename_root=None,
+                        custom_colors=None, save_png=False, **kwargs):
+    """Plot pie chart of class assignments (plot_1b).
 
     Parameters
     ----------
-    class_counts_order : list
-        List of classes ordered by the reference as provided by the user
-    class_counts : dict
-        Dict of number of reads in each class e.g. "ref1_UMODIFIDED"->50
-    ref_names : list
-        List of reference names provided by user
-    expected_hdr_amplicon_seq : str
-        Sequence of the expected hdr amplicon
+    labels : list
+        Display labels for each class slice.
+    sizes : list
+        Percentage sizes for each class slice.
     N_TOTAL : int
-        Number of total reads used by CRISPResso
-    piechart_plot_root : str
-        Root to plot barplot output file (suffixes ".pdf" and ".png" will be added)
-    barplot_plot_root : str
-        Root to plot barplot output file (suffixes ".pdf" and ".png" will be added)
-    custom_colors : dict
-        Dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
+        Total number of reads.
+    fig_filename_root : str, optional
+        Root path for output file (suffixes ".pdf" and ".png" will be added).
+    custom_colors : dict, optional
+        Dict of colors to plot.
     save_png : bool
-        if True, png will be saved as well as pdf
+        If True, png will be saved as well as pdf.
 
     """
     if custom_colors is None:
         custom_config = CRISPRessoShared.check_custom_config(None)
         custom_colors = custom_config['colors']
-
-    labels = []
-    sizes = []
-    for class_name in class_counts_order:
-        if expected_hdr_amplicon_seq != "" and class_name == ref_names[0] + "_MODIFIED":
-            labels.append("NHEJ" + "\n(" + str(class_counts[class_name]) + " reads)")
-        elif expected_hdr_amplicon_seq != "" and class_name == "HDR_MODIFIED":
-            labels.append("Imperfect HDR" + "\n(" + str(class_counts[class_name]) + " reads)")
-        elif expected_hdr_amplicon_seq != "" and class_name == "HDR_UNMODIFIED":
-            labels.append("HDR" + "\n(" + str(class_counts[class_name]) + " reads)")
-        else:
-            display_class_name = class_name
-            if len(ref_names) == 1:
-                display_class_name = display_class_name.replace('Reference_', '')
-
-            labels.append(display_class_name + "\n(" + str(class_counts[class_name]) + " reads)")
-
-        sizes.append(100 * class_counts[class_name] / float(N_TOTAL))
 
     plt.figure(figsize=(12, 12))
     ax = plt.subplot(111)
@@ -4252,15 +4056,39 @@ def plot_class_piechart_and_barplot(class_counts_order, class_counts, ref_names,
     plt.axis('off')
     plt.axis("equal")
 
-    if piechart_plot_root is None:
+    if fig_filename_root is None:
         plt.show()
     else:
-        plt.savefig(piechart_plot_root + '.pdf', pad_inches=1, bbox_inches='tight')
+        plt.savefig(fig_filename_root + '.pdf', pad_inches=1, bbox_inches='tight')
         if save_png:
-            plt.savefig(piechart_plot_root + '.png', bbox_inches='tight')
+            plt.savefig(fig_filename_root + '.png', bbox_inches='tight')
     plt.close()
 
-    # Now the barchart of classes
+
+def plot_class_barplot(labels, sizes, N_TOTAL, fig_filename_root=None,
+                       custom_colors=None, save_png=False, **kwargs):
+    """Plot bar chart of class assignments (plot_1c).
+
+    Parameters
+    ----------
+    labels : list
+        Display labels for each class bar.
+    sizes : list
+        Percentage sizes for each class bar.
+    N_TOTAL : int
+        Total number of reads.
+    fig_filename_root : str, optional
+        Root path for output file (suffixes ".pdf" and ".png" will be added).
+    custom_colors : dict, optional
+        Dict of colors to plot.
+    save_png : bool
+        If True, png will be saved as well as pdf.
+
+    """
+    if custom_colors is None:
+        custom_config = CRISPRessoShared.check_custom_config(None)
+        custom_colors = custom_config['colors']
+
     plt.figure(figsize=(12, 12))
     ax = plt.subplot(111)
 
@@ -4269,7 +4097,6 @@ def plot_class_piechart_and_barplot(class_counts_order, class_counts, ref_names,
     for rect in rects:
         height = rect.get_height()
         if len(sizes) > 4:
-            # ax.text(rect.get_x() + rect.get_width()/2, height + 0.05,"%.2f%%"%height, ha='center', va='bottom',fontsize=12)
             ax.text(rect.get_x() + rect.get_width() / 2, height + 0.05, "%.2f%%" % height, ha='center', va='bottom')
         else:
             ax.text(rect.get_x() + rect.get_width() / 2, height + 0.05, "%.2f%%" % height, ha='center', va='bottom')
@@ -4284,7 +4111,6 @@ def plot_class_piechart_and_barplot(class_counts_order, class_counts, ref_names,
     ax.set_yticklabels(['%.1f%% (%.0f)' % (pct, pct / 100 * N_TOTAL) for pct in y_label_values])
     # if too many barplots, flip the labels
     if len(sizes) > 4:
-        # plt.setp(ax.get_xticklabels(), fontsize=12, rotation='vertical',multialignment='right')
         plt.setp(ax.get_xticklabels(), rotation='vertical', multialignment='right')
     plt.ylim(0, max(sizes) * 1.1)
 
@@ -4294,28 +4120,74 @@ def plot_class_piechart_and_barplot(class_counts_order, class_counts, ref_names,
     plt.tick_params(left=True)
     plt.tight_layout()
 
-    if barplot_plot_root is None:
+    if fig_filename_root is None:
         plt.show()
     else:
-        plt.savefig(barplot_plot_root + '.pdf', pad_inches=1, bbox_inches='tight')
+        plt.savefig(fig_filename_root + '.pdf', pad_inches=1, bbox_inches='tight')
         if save_png:
-            plt.savefig(barplot_plot_root + '.png', bbox_inches='tight')
+            plt.savefig(fig_filename_root + '.png', bbox_inches='tight')
     plt.close()
 
 
-def plot_class_dsODN_piechart(sizes, labels, plot_root=None, save_also_png=False, **kwargs):
+def plot_class_piechart_and_barplot(class_counts_order, class_counts, ref_names,
+                                    expected_hdr_amplicon_seq, N_TOTAL,
+                                    piechart_plot_root=None, barplot_plot_root=None, custom_colors=None, save_png=False, **kwargs):
+    """Backward-compat wrapper that calls both plot_class_piechart and plot_class_barplot.
+
+    Computes labels and sizes from class_counts, then delegates to the
+    two independent plot functions.
+
+    Parameters
+    ----------
+    class_counts_order : list
+        List of classes ordered by the reference as provided by the user
+    class_counts : dict
+        Dict of number of reads in each class e.g. "ref1_UMODIFIDED"->50
+    ref_names : list
+        List of reference names provided by user
+    expected_hdr_amplicon_seq : str
+        Sequence of the expected hdr amplicon
+    N_TOTAL : int
+        Number of total reads used by CRISPResso
+    piechart_plot_root : str
+        Root to plot piechart output file (suffixes ".pdf" and ".png" will be added)
+    barplot_plot_root : str
+        Root to plot barplot output file (suffixes ".pdf" and ".png" will be added)
+    custom_colors : dict
+        Dict of colors to plot (e.g. colors['A'] = (1,0,0,0.4) # red,blue,green,alpha )
+    save_png : bool
+        if True, png will be saved as well as pdf
+
+    """
+    data = prep_class_piechart_and_barplot(
+        class_counts_order, class_counts, ref_names,
+        expected_hdr_amplicon_seq, N_TOTAL,
+    )
+    plot_class_piechart(
+        labels=data['labels'], sizes=data['sizes'], N_TOTAL=data['N_TOTAL'],
+        fig_filename_root=piechart_plot_root, custom_colors=custom_colors,
+        save_png=save_png,
+    )
+    plot_class_barplot(
+        labels=data['labels'], sizes=data['sizes'], N_TOTAL=data['N_TOTAL'],
+        fig_filename_root=barplot_plot_root, custom_colors=custom_colors,
+        save_png=save_png,
+    )
+
+
+def plot_class_dsODN_piechart(sizes, labels, fig_filename_root=None, save_also_png=False, **kwargs):
     fig, ax = plt.subplots(figsize=(12, 12))
     patches, texts, autotexts = ax.pie(sizes, labels=labels, autopct='%1.2f%%')
 
     ax.set_axis_off()
     ax.set_aspect('equal')
 
-    if plot_root is None:
+    if fig_filename_root is None:
         plt.show()
     else:
-        fig.savefig(plot_root + '.pdf', pad_inches=1, bbox_inches='tight')
+        fig.savefig(fig_filename_root + '.pdf', pad_inches=1, bbox_inches='tight')
         if save_also_png:
-            fig.savefig(plot_root + '.png', bbox_inches='tight')
+            fig.savefig(fig_filename_root + '.png', bbox_inches='tight')
     plt.close(fig)
 
 
@@ -4555,7 +4427,7 @@ def plot_quantification_positions(
     plt.close(fig)
 
 
-def plot_combination_upset(fig_root, ref_name, bp_substitutions_arr, binary_allele_counts, save_also_png=False):
+def plot_combination_upset(fig_root, ref_name, bp_substitutions_arr, binary_allele_counts, save_also_png=False, **kwargs):
     header_arr = []
     for ind, (ref_ind, ref_base, mod_base) in enumerate(bp_substitutions_arr):
         header_arr.append(str(ref_ind) + ':' + ref_base + '->' + mod_base)
@@ -4588,7 +4460,7 @@ def plot_combination_upset(fig_root, ref_name, bp_substitutions_arr, binary_alle
     plt.close()
 
 
-def plot_alleles_homology_histogram(fig_root, homology_scores, counts, min_homology, bin_size=5, save_also_png=False):
+def plot_alleles_homology_histogram(fig_root, homology_scores, counts, min_homology, bin_size=5, save_also_png=False, **kwargs):
     """Plot histogram of homology scores for all reads."""
     fig, ax = plt.subplots(figsize=(12, 8))
     bins = np.arange(0, 105, bin_size)

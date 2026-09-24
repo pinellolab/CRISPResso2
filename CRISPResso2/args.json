@@ -136,7 +136,7 @@
         },
         "config_file": {
             "keys": ["--config_file"],
-            "help": "File path to JSON file with config elements",
+            "help": "File path to JSON file with config elements (Pro-only behavior). Use --config_json for inline JSON.",
             "type": "str",
             "default": "None",
             "tools": ["Core", "Batch", "Pooled", "WGS"]

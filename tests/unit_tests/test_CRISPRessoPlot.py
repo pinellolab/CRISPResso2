@@ -154,43 +154,6 @@ def test_hex_to_rgb_gray():
 
 
 # =============================================================================
-# Tests for amino_acids_to_numbers
-# =============================================================================
-
-
-def test_amino_acids_to_numbers_basic():
-    """Test amino_acids_to_numbers with basic sequence."""
-    result = CRISPRessoPlot.amino_acids_to_numbers("MA")
-    assert result == [11, 1]
-
-
-def test_amino_acids_to_numbers_stop():
-    """Test amino_acids_to_numbers with stop codon."""
-    result = CRISPRessoPlot.amino_acids_to_numbers("*")
-    assert len(result) == 1
-    assert result[0] == 0  # Stop codon is first in list
-
-
-def test_amino_acids_to_numbers_gap():
-    """Test amino_acids_to_numbers with gap."""
-    result = CRISPRessoPlot.amino_acids_to_numbers("-")
-    assert result == [22]
-
-
-def test_amino_acids_to_numbers_all_standard():
-    """Test amino_acids_to_numbers with all standard amino acids."""
-    all_aa = "ACDEFGHIKLMNPQRSTVWY"
-    result = CRISPRessoPlot.amino_acids_to_numbers(all_aa)
-    assert result == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
-
-
-def test_amino_acids_to_numbers_empty():
-    """Test amino_acids_to_numbers with empty sequence."""
-    result = CRISPRessoPlot.amino_acids_to_numbers("")
-    assert result == []
-
-
-# =============================================================================
 # Tests for get_amino_acid_color_dict
 # =============================================================================
 
@@ -292,86 +255,6 @@ def test_get_rows_for_sgRNA_annotation_overlapping():
 
 
 # =============================================================================
-# Tests for prep_alleles_table
-# =============================================================================
-
-
-def test_prep_alleles_table_basic():
-    """Test prep_alleles_table with basic data."""
-    import pandas as pd
-    import numpy as np
-
-    # Create minimal allele dataframe
-    df = pd.DataFrame({
-        '%Reads': [50.0, 30.0, 20.0],
-        '#Reads': [500, 300, 200],
-        'Reference_Sequence': ['ATCG', 'ATCG', 'ATCG'],
-    }, index=['ATCG', 'ATGG', 'A-CG'])
-
-    X, annot, y_labels, insertion_dict, per_element_annot_kws, is_reference = \
-        CRISPRessoPlot.prep_alleles_table(df, 'ATCG', MAX_N_ROWS=10, MIN_FREQUENCY=0)
-
-    assert X == [[1, 2, 3, 4], [1, 2, 4, 4], [1, 0, 3, 4]]
-    assert annot == [['A', 'T', 'C', 'G'], ['A', 'T', 'G', 'G'], ['A', '-', 'C', 'G']]
-    assert y_labels == ['50.00% (500 reads)', '30.00% (300 reads)', '20.00% (200 reads)']
-    assert is_reference == [True, False, False]
-
-
-def test_prep_alleles_table_empty():
-    """Test prep_alleles_table with empty dataframe after filtering."""
-    import pandas as pd
-
-    df = pd.DataFrame({
-        '%Reads': [0.1],
-        '#Reads': [1],
-        'Reference_Sequence': ['ATCG'],
-    }, index=['ATCG'])
-
-    X, annot, y_labels, insertion_dict, per_element_annot_kws, is_reference = \
-        CRISPRessoPlot.prep_alleles_table(df, 'ATCG', MAX_N_ROWS=10, MIN_FREQUENCY=1.0)
-
-    assert len(X) == 0
-    assert len(annot) == 0
-
-
-def test_prep_alleles_table_max_rows():
-    """Test prep_alleles_table respects MAX_N_ROWS."""
-    import pandas as pd
-
-    df = pd.DataFrame({
-        '%Reads': [30.0, 25.0, 20.0, 15.0, 10.0],
-        '#Reads': [300, 250, 200, 150, 100],
-        'Reference_Sequence': ['ATCG', 'ATCG', 'ATCG', 'ATCG', 'ATCG'],
-    }, index=['ATCG', 'ATGG', 'TTCG', 'ATCA', 'GGGG'])
-
-    X, annot, y_labels, insertion_dict, per_element_annot_kws, is_reference = \
-        CRISPRessoPlot.prep_alleles_table(df, 'ATCG', MAX_N_ROWS=3, MIN_FREQUENCY=0)
-
-    assert X == [[1, 2, 3, 4], [1, 2, 4, 4], [2, 2, 3, 4]]
-    assert annot == [['A', 'T', 'C', 'G'], ['A', 'T', 'G', 'G'], ['T', 'T', 'C', 'G']]
-    assert y_labels == ['30.00% (300 reads)', '25.00% (250 reads)', '20.00% (200 reads)']
-
-
-def test_prep_alleles_table_with_insertions():
-    """Test prep_alleles_table detects insertions."""
-    import pandas as pd
-
-    # Reference with gap indicates insertion in read
-    df = pd.DataFrame({
-        '%Reads': [50.0],
-        '#Reads': [500],
-        'Reference_Sequence': ['AT--CG'],
-    }, index=['ATGGCG'])
-
-    X, annot, y_labels, insertion_dict, per_element_annot_kws, is_reference = \
-        CRISPRessoPlot.prep_alleles_table(df, 'ATGGCG', MAX_N_ROWS=10, MIN_FREQUENCY=0)
-
-    # Should detect insertion
-    assert 0 in insertion_dict
-    assert len(insertion_dict[0]) > 0
-
-
-# =============================================================================
 # Tests for color functions - additional cases
 # =============================================================================
 
@@ -423,13 +306,6 @@ def test_get_amino_acid_colors_with_dict():
     assert colors[-1] == '#B0B0B066'  # - with hex alpha
 
 
-def test_amino_acids_to_numbers_with_special():
-    """Test amino_acids_to_numbers with special characters."""
-    result = CRISPRessoPlot.amino_acids_to_numbers("*-")
-    assert len(result) == 2
-    assert result[0] == 0  # * is first
-    assert result[1] == 22  # - is last
-
 
 # =============================================================================
 # Tests for hex_to_rgb edge cases
@@ -450,103 +326,6 @@ def test_hex_to_rgb_all_zeros():
 def test_hex_to_rgb_all_ones():
     """Test hex_to_rgb with all max (white)."""
     assert CRISPRessoPlot.hex_to_rgb("#FFFFFF") == (255, 255, 255)
-
-
-# =============================================================================
-# Tests for prep_alleles_table_compare
-# =============================================================================
-
-
-def test_prep_alleles_table_compare_basic():
-    """Test prep_alleles_table_compare with basic data."""
-    import pandas as pd
-    import numpy as np
-
-    # Create merged allele dataframe
-    df = pd.DataFrame({
-        '%Reads_sample1': [50.0, 30.0],
-        '%Reads_sample2': [40.0, 35.0],
-        '#Reads_sample1': [500, 300],
-        '#Reads_sample2': [400, 350],
-        'Reference_Sequence': ['ATCG', 'ATCG'],
-    }, index=['ATCG', 'ATGG'])
-
-    X, annot, y_labels, insertion_dict, per_element_annot_kws = \
-        CRISPRessoPlot.prep_alleles_table_compare(
-            df, 'sample1', 'sample2', MAX_N_ROWS=10, MIN_FREQUENCY=0
-        )
-
-    assert X == [[1, 2, 3, 4], [1, 2, 4, 4]]
-    assert annot == [['A', 'T', 'C', 'G'], ['A', 'T', 'G', 'G']]
-    assert y_labels == [
-        '50.00% (500 reads) 40.00% (400 reads) ',
-        '30.00% (300 reads) 35.00% (350 reads) ',
-    ]
-
-
-def test_prep_alleles_table_compare_with_insertion():
-    """Test prep_alleles_table_compare detects insertions."""
-    import pandas as pd
-
-    df = pd.DataFrame({
-        '%Reads_s1': [50.0],
-        '%Reads_s2': [50.0],
-        '#Reads_s1': [500],
-        '#Reads_s2': [500],
-        'Reference_Sequence': ['AT--CG'],  # Insertion markers
-    }, index=['ATGGCG'])
-
-    X, annot, y_labels, insertion_dict, per_element_annot_kws = \
-        CRISPRessoPlot.prep_alleles_table_compare(
-            df, 's1', 's2', MAX_N_ROWS=10, MIN_FREQUENCY=0
-        )
-
-    # Should detect insertion
-    assert 0 in insertion_dict
-    assert len(insertion_dict[0]) > 0
-
-
-# =============================================================================
-# Tests for prep_amino_acid_table
-# =============================================================================
-
-
-def test_prep_amino_acid_table_basic():
-    """Test prep_amino_acid_table with basic data."""
-    import pandas as pd
-
-    df = pd.DataFrame({
-        '%Reads': [60.0, 40.0],
-        '#Reads': [600, 400],
-        'Reference_Sequence': ['MAS', 'MAS'],
-        'silent_edit_inds': [[], []],
-    }, index=['MAS', 'MAT'])
-
-    X, annot, y_labels, insertion_dict, silent_edit_dict, per_element_annot_kws, is_reference, ref_seq = \
-        CRISPRessoPlot.prep_amino_acid_table(df, 'MAS', MAX_N_ROWS=10, MIN_FREQUENCY=0)
-
-    assert len(X) == 2
-    assert is_reference[0] is True  # First row matches reference
-    assert ref_seq == 'MAS'
-
-
-def test_prep_amino_acid_table_with_silent_edits():
-    """Test prep_amino_acid_table with silent edits."""
-    import pandas as pd
-
-    df = pd.DataFrame({
-        '%Reads': [50.0],
-        '#Reads': [500],
-        'Reference_Sequence': ['MAS'],
-        'silent_edit_inds': [[1]],  # Silent edit at position 1
-    }, index=['MAS'])
-
-    X, annot, y_labels, insertion_dict, silent_edit_dict, per_element_annot_kws, is_reference, ref_seq = \
-        CRISPRessoPlot.prep_amino_acid_table(df, 'MAS', MAX_N_ROWS=10, MIN_FREQUENCY=0)
-
-    # Should have silent edit at row 0, position 1
-    assert 0 in silent_edit_dict
-    assert 1 in silent_edit_dict[0]
 
 
 # =============================================================================
@@ -619,16 +398,6 @@ def test_get_color_lookup_preserves_all_nucleotides():
 # =============================================================================
 
 
-def test_amino_acids_to_numbers_all_standard():
-    """Test amino_acids_to_numbers with all standard amino acids."""
-    aa_seq = "ACDEFGHIKLMNPQRSTVWY"
-    result = CRISPRessoPlot.amino_acids_to_numbers(aa_seq)
-
-    assert len(result) == 20
-    # All should be unique
-    assert len(set(result)) == 20
-
-
 def test_get_amino_acid_colors_none_scheme():
     """Test get_amino_acid_colors with None scheme uses default (clustal)."""
     colors = CRISPRessoPlot.get_amino_acid_colors(None)
@@ -697,48 +466,6 @@ def test_custom_heatmapper_with_mask():
 
 
 # =============================================================================
-# Tests for additional prep functions
-# =============================================================================
-
-
-def test_prep_alleles_table_with_substitution():
-    """Test prep_alleles_table detects substitutions."""
-    import pandas as pd
-    import numpy as np
-
-    df = pd.DataFrame({
-        '%Reads': [50.0],
-        '#Reads': [500],
-        'Reference_Sequence': ['ATCG'],  # Reference
-    }, index=['GTCG'])  # G at position 0 instead of A
-
-    X, annot, y_labels, insertion_dict, per_element_annot_kws, is_reference = \
-        CRISPRessoPlot.prep_alleles_table(df, 'ATCG', MAX_N_ROWS=10, MIN_FREQUENCY=0)
-
-    assert len(X) == 1
-    assert is_reference[0] is False  # Different from reference
-    # Should have bold annotation for substitution
-    assert len(per_element_annot_kws[0]) > 0
-
-
-def test_prep_alleles_table_all_reference():
-    """Test prep_alleles_table with all reference sequences."""
-    import pandas as pd
-
-    df = pd.DataFrame({
-        '%Reads': [100.0],
-        '#Reads': [1000],
-        'Reference_Sequence': ['ATCG'],
-    }, index=['ATCG'])
-
-    X, annot, y_labels, insertion_dict, per_element_annot_kws, is_reference = \
-        CRISPRessoPlot.prep_alleles_table(df, 'ATCG', MAX_N_ROWS=10, MIN_FREQUENCY=0)
-
-    assert len(is_reference) == 1
-    assert is_reference[0] is True
-
-
-# =============================================================================
 # Tests for color edge cases
 # =============================================================================
 
@@ -766,31 +493,6 @@ def test_get_color_lookup_alpha_one():
 
     for nuc in nucs:
         assert colors[nuc][3] == 1.0
-
-
-# =============================================================================
-# Tests for amino acid conversions
-# =============================================================================
-
-
-def test_amino_acids_to_numbers_gap():
-    """Test amino_acids_to_numbers with gap character."""
-    result = CRISPRessoPlot.amino_acids_to_numbers("-")
-    assert len(result) == 1
-    assert result[0] == 22  # Gap is last in the list
-
-
-def test_amino_acids_to_numbers_stop():
-    """Test amino_acids_to_numbers with stop codon."""
-    result = CRISPRessoPlot.amino_acids_to_numbers("*")
-    assert len(result) == 1
-    assert result[0] == 0  # Stop is first in the list
-
-
-def test_amino_acids_to_numbers_empty():
-    """Test amino_acids_to_numbers with empty string."""
-    result = CRISPRessoPlot.amino_acids_to_numbers("")
-    assert result == []
 
 
 # =============================================================================
@@ -841,7 +543,7 @@ def test_plot_indel_size_distribution():
     import os
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        plot_root = os.path.join(tmpdir, "test_indel")
+        fig_filename_root = os.path.join(tmpdir, "test_indel")
         CRISPRessoPlot.plot_indel_size_distribution(
             hdensity=np.array([100, 50, 20, 10, 5]),
             hlengths=np.array([-2, -1, 0, 1, 2]),
@@ -850,10 +552,10 @@ def test_plot_indel_size_distribution():
             xmin=-3,
             xmax=3,
             title="Indel Size Distribution",
-            plot_root=plot_root,
+            fig_filename_root=fig_filename_root,
             save_also_png=False,
         )
-        assert os.path.exists(plot_root + ".pdf")
+        assert os.path.exists(fig_filename_root + ".pdf")
 
 
 def test_plot_read_barplot():
@@ -966,7 +668,7 @@ def test_plot_frequency_deletions_insertions():
                 'del': 'Deletions',
                 'mut': 'Substitutions',
             },
-            plot_path=plot_path,
+            fig_filename_root=plot_path,
             xmax_del=5,
             xmax_ins=5,
             xmax_mut=5,
@@ -1010,7 +712,7 @@ def test_plot_amplicon_modifications():
     import os
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        plot_root = os.path.join(tmpdir, "test_amp_mod")
+        fig_filename_root = os.path.join(tmpdir, "test_amp_mod")
         CRISPRessoPlot.plot_amplicon_modifications(
             all_indelsub_count_vectors=np.zeros(20),
             include_idxs_list=list(range(5, 15)),
@@ -1027,7 +729,7 @@ def test_plot_amplicon_modifications():
                 'main': 'Modification Frequency',
                 'combined': 'All modifications',
             },
-            plot_root=plot_root,
+            fig_filename_root=fig_filename_root,
             save_also_png=False,
         )
-        assert os.path.exists(plot_root + ".pdf")
+        assert os.path.exists(fig_filename_root + ".pdf")

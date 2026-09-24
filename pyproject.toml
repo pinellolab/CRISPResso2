@@ -97,6 +97,7 @@ ignore = [
     "N802",  # Requires function names to be all lowercase
     "N806",  # Requires variables to be all lowercase
     "N803",  # Requires passed variables to be all lowercase
+    "N815",  # Mixed-case variable in class scope - intentional for domain terms like sgRNA
     "PLC0206",  # dict-index-missing-items - iteration pattern is intentional for modifying dict during iteration
     "PLR0911",  # too-many-return-statements - refactoring would reduce readability
     "PLR6301",  # no-self-use - methods are part of class interfaces (e.g., JSON decoder)

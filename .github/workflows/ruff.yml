@@ -20,7 +20,7 @@ jobs:
       uses: prefix-dev/setup-pixi@v0.8.8
       with:
         environments: lint
-        locked: false
+        locked: true
         frozen: false
         cache: false
 
@@ -28,7 +28,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: .pixi
-        key: pixi-${{ runner.os }}-${{ runner.arch }}-lint-${{ hashFiles('pixi.toml') }}
+        key: pixi-${{ runner.os }}-${{ runner.arch }}-lint-${{ hashFiles('pixi.lock') }}
 
     - name: Install environment
       run: pixi install -e lint

@@ -4,6 +4,24 @@ This repo holds the shared reports code and HTML templates that are used by the 
 
 Take care when committing into these files as not to mix unrelated git histories.
 
+## Hover-zoom figures (figure 2a)
+
+`shared/partials/figure_zoom.html` (+ inline `figure_zoom.js`) is the single hover-zoom
+implementation, used by this repo's `report.html` and imported by CRISPRessoPro's
+nucleotide-quilt partial (`partials/nuc_quilt_zoom_figure.html`, resolved through
+Pro's CRISPRessoReports fallback loader). No other copy exists anywhere —
+producers must keep it that way. Behavior contract:
+
+- The zoom strip must keep an explicit `width:100%` (it collapses to 0px inside
+  flex-column figure wrappers) and `overflow:hidden`.
+- The inline JS is **stateless** — it re-measures on every `pointermove`. Do not
+  cache geometry at first hover; that re-introduces the dead-zoom-in-hidden-tabs bug.
+- Only WIDE figures zoom (amplicon-wide nucleotide quilt). sgRNA-scoped quilts render
+  as plain images; a zoom strip would show them smaller than the plain figure.
+
+Tests live in `tests/unit_tests/test_report_figure_zoom.py` (markup contract,
+both jinja autoescape environments the report stack uses).
+
 ## How do I work with this repo?
 
 Step 1 only needs to be done once per cloned repo, the other steps will need to be done more frequently.
