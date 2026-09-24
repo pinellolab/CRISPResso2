@@ -2567,8 +2567,14 @@ def get_scores_and_counts(variant_dict):
     return homology_scores, counts, alleles_homology_scores_and_counts
 
 
-def get_and_save_homology_scores(variantCache, not_aln_variant_objects, alleles_homology_scores_filename):
-    """Get and save the unfiltered homology scores for all alleles"""
+def get_and_save_homology_scores(variantCache, not_aln_variant_objects, alleles_homology_scores_filename, keep_intermediate=False):
+    """Get the unfiltered homology scores for all alleles.
+
+    The homology-scores table is only written when ``keep_intermediate`` is
+    True, in which case the gzipped ``.txt.gz`` version is saved (the
+    uncompressed table is never written). By default no file is written; the
+    report links to the alleles frequency table zip instead.
+    """
     aln_homology_scores, aln_counts, aln_alleles_homology_scores_and_counts = get_scores_and_counts(variantCache)
     not_aln_homology_scores, not_aln_counts, not_aln_alleles_homology_scores_and_counts = get_scores_and_counts(not_aln_variant_objects)
 
@@ -2576,10 +2582,11 @@ def get_and_save_homology_scores(variantCache, not_aln_variant_objects, alleles_
     homology_scores = aln_homology_scores + not_aln_homology_scores
     counts = aln_counts + not_aln_counts
 
-    alleles_homology_scores_and_counts.sort(key=lambda x: (x['homology_score'], x['sequence']), reverse=True)
+    if keep_intermediate:
+        alleles_homology_scores_and_counts.sort(key=lambda x: (x['homology_score'], x['sequence']), reverse=True)
 
-    df = pd.DataFrame(alleles_homology_scores_and_counts)
-    df.to_csv(alleles_homology_scores_filename, sep='\t', header=True, index=None, compression='gzip')
+        df = pd.DataFrame(alleles_homology_scores_and_counts)
+        df.to_csv(alleles_homology_scores_filename, sep='\t', header=True, index=None, compression='gzip')
     return homology_scores, counts
 
 
@@ -4796,11 +4803,15 @@ def main():
 
         n_refs = len(ref_names)
 
-        # Compute homology scores (needed by both Pro and non-Pro paths)
+        # Compute homology scores (needed by both Pro and non-Pro paths).
+        # The homology-scores table itself is only written (gzipped) when
+        # intermediate files are kept; by default the report links to the
+        # alleles frequency table zip instead.
         alleles_homology_scores_filename = _jp('Alleles_homology_scores.txt.gz')
         homology_scores, homology_counts = get_and_save_homology_scores(
             variantCache, not_aln_variant_objects,
             alleles_homology_scores_filename,
+            keep_intermediate=args.keep_intermediate,
         )
 
         # --- Pre-compute alternate allele counts (for plots 10b/10c) ---
