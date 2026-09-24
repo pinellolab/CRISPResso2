@@ -93,6 +93,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: edilytics/CRISPRessoPro
+          # ref: '<BRANCH-NAME>' # update to specific branch
           token: ${{ secrets.CRISPRESSOPRO_PAT }}
           path: CRISPRessoPro
 

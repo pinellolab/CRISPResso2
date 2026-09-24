@@ -1,3 +1,10 @@
+import json
+import shlex
+import sys
+
+import pandas as pd
+import pytest
+
 from CRISPResso2 import CRISPRessoBatchCORE
 
 
@@ -138,3 +145,64 @@ def test_should_plot_large_plots_not_using_matplotlib_large_no_c2pro():
     # Without c2pro: (not use_matplotlib and c2pro_installed) is False
     # And (6000/6 = 1000) >= 300, so should NOT plot
     assert not CRISPRessoBatchCORE.should_plot_large_plots(num_rows, c2pro_installed, use_matplotlib, large_plot_cutoff)
+
+
+@pytest.mark.parametrize('source', ['none', 'config_file', 'config_json'])
+def test_batch_config_inheritance_and_row_override(tmp_path, monkeypatch, source):
+    """Build real Batch commands, then parse each child's config as Core does."""
+    shared = CRISPRessoBatchCORE.CRISPRessoShared
+    if source == 'config_json' and not shared.is_C2Pro_installed():
+        pytest.skip('Inline config arguments require CRISPRessoPro')
+    configs = [
+        {'colors': {'A': '#123456'}, 'figures': [{'section_name': 'Alignment statistics', 'content': []}]},
+        {'colors': {'A': '#654321'}, 'figures': [{'section_name': "O'Brien's alignment", 'content': []}]},
+    ]
+    values = [json.dumps(config) for config in configs]
+    if source == 'config_file':
+        paths = [tmp_path / "global config's.json", tmp_path / 'row config.json']
+        for path, value in zip(paths, values):
+            path.write_text(value)
+        values = [str(path) for path in paths]
+    fastq = tmp_path / 'reads.fastq'
+    fastq.touch()
+    rows = [
+        {'name': name, 'fastq_r1': str(fastq), 'amplicon_seq': 'ACGT' * 25}
+        for name in ['inherited', 'overridden']
+    ]
+    argv = ['CRISPRessoBatch', '-bs', str(tmp_path / 'batch.tsv'), '-bo', str(tmp_path)]
+    if source != 'none':
+        rows[0][source] = None
+        rows[1][source] = values[1]
+        argv += ['--' + source, values[0]]
+    pd.DataFrame(rows).to_csv(tmp_path / 'batch.tsv', sep='\t', index=False)
+    monkeypatch.setattr(sys, 'argv', argv)
+    commands = []
+
+    def capture_commands(cmds, *args, **kwargs):
+        commands.extend(cmds)
+        # Stop before analysis, without being swallowed by main's error handler.
+        raise SystemExit(42)
+
+    monkeypatch.setattr(CRISPRessoBatchCORE.CRISPRessoMultiProcessing, 'run_crispresso_cmds', capture_commands)
+    old_handlers = list(CRISPRessoBatchCORE.logger.handlers)
+    try:
+        with pytest.raises(SystemExit) as exit_info:
+            CRISPRessoBatchCORE.main()
+        assert exit_info.value.code == 42
+    finally:
+        for handler in list(CRISPRessoBatchCORE.logger.handlers):
+            if handler not in old_handlers:
+                CRISPRessoBatchCORE.logger.removeHandler(handler)
+                handler.close()
+    assert len(commands) == 2
+    for index, command in enumerate(commands):
+        child_args = shared.getCRISPRessoArgParser('Core').parse_args(shlex.split(command)[1:])
+        if source == 'none':
+            assert child_args.config_file in (None, 'None')
+            assert getattr(child_args, 'config_json', None) in (None, 'None')
+        else:
+            assert getattr(child_args, source) == values[index]
+            if shared.is_C2Pro_installed():
+                loaded = shared.check_custom_config(child_args)
+                assert loaded['colors']['A'] == configs[index]['colors']['A']
+                assert loaded['figures'] == configs[index]['figures']
