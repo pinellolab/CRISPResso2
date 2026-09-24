@@ -18,6 +18,8 @@
 
 ### CHANGED
 
+- Only write `Alleles_homology_scores` when `--keep_intermediate` is set, and write it gzipped (`.txt.gz`) instead of uncompressed TSV by [@Colelyman](https://github.com/Colelyman) in [#667](https://github.com/pinellolab/CRISPResso2/pull/667)
+
 - Fix how pixi manages environments and clean up the delineation between CRISPResso2, CRISPRessoPro, and testing by [@Colelyman](https://github.com/Colelyman) in [#643](https://github.com/pinellolab/CRISPResso2/pull/643)
 
 - Reduce the Docker image size by pruning the pixi runtime environment, switching to `matplotlib-base`, and moving `plotly` to the Pro feature by [@Colelyman](https://github.com/Colelyman) in [#644](https://github.com/pinellolab/CRISPResso2/pull/644)

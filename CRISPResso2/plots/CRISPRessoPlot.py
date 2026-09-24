@@ -4472,7 +4472,8 @@ def plot_alleles_homology_histogram(fig_root, homology_scores, counts, min_homol
     ax.set_ylabel('# of Reads')
     ax.set_title('Distribution of Homology Scores')
 
+    fig.tight_layout()
     if save_also_png:
-        fig.savefig(fig_root + '.png')
-    fig.savefig(fig_root + '.pdf')
+        fig.savefig(fig_root + '.png', bbox_inches='tight')
+    fig.savefig(fig_root + '.pdf', pad_inches=1, bbox_inches='tight')
     plt.close(fig)
