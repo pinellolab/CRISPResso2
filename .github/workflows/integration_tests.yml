@@ -85,7 +85,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: edilytics/CRISPResso2_tests
-          ref: cole/zip-alleles-homology  # TODO: remove when branch is merged
+          # ref: '<BRANCH-NAME>' # update to specific branch
           path: CRISPResso2_tests
 
       - name: Checkout CRISPRessoPro
