@@ -116,7 +116,8 @@ def main():
 |___________________________|
         '''
         compare_header = CRISPRessoShared.get_crispresso_header(description, compare_header)
-        info(compare_header)
+        if not CRISPRessoShared.header_already_printed():
+            info(compare_header)
 
         # CORE always uses matplotlib; when Pro is installed the hook
         # below skips this path entirely and Pro owns plotting decisions.

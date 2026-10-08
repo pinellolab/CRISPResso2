@@ -287,7 +287,8 @@ def main():
 ||   \__/\__/|__|__|__/ |
 |_______________________|
         '''
-        info(CRISPRessoShared.get_crispresso_header(description, pooled_string))
+        if not CRISPRessoShared.header_already_printed():
+            info(CRISPRessoShared.get_crispresso_header(description, pooled_string))
 
         from CRISPResso2.plots import CRISPRessoPlot
 

@@ -83,7 +83,8 @@ def main():
 |  |_| |_| |_| |_|____   |_|   |_|  |_|  |
 |________________________________________|
         '''
-        info(CRISPRessoShared.get_crispresso_header(description, meta_string))
+        if not CRISPRessoShared.header_already_printed():
+            info(CRISPRessoShared.get_crispresso_header(description, meta_string))
 
         parser = CRISPRessoShared.getCRISPRessoArgParser("Meta", parser_title='CRISPRessoMeta Parameters')
 

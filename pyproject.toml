@@ -35,13 +35,13 @@ classifiers = [
 dev = ["cython"]
 
 [project.scripts]
-CRISPResso = "CRISPResso2.CRISPRessoCORE:main"
-CRISPRessoBatch = "CRISPResso2.CRISPRessoBatchCORE:main"
-CRISPRessoPooled = "CRISPResso2.CRISPRessoPooledCORE:main"
-CRISPRessoWGS = "CRISPResso2.CRISPRessoWGSCORE:main"
-CRISPRessoCompare = "CRISPResso2.CRISPRessoCompareCORE:main"
-CRISPRessoPooledWGSCompare = "CRISPResso2.CRISPRessoPooledWGSCompareCORE:main"
-CRISPRessoAggregate = "CRISPResso2.CRISPRessoAggregateCORE:main"
+CRISPResso = "CRISPResso2.cli:main"
+CRISPRessoBatch = "CRISPResso2.cli:main_batch"
+CRISPRessoPooled = "CRISPResso2.cli:main_pooled"
+CRISPRessoWGS = "CRISPResso2.cli:main_wgs"
+CRISPRessoCompare = "CRISPResso2.cli:main_compare"
+CRISPRessoPooledWGSCompare = "CRISPResso2.cli:main_pooled_wgs_compare"
+CRISPRessoAggregate = "CRISPResso2.cli:main_aggregate"
 
 [project.urls]
 Homepage = "https://github.com/pinellolab/CRISPResso2"

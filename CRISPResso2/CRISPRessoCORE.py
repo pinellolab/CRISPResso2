@@ -24,7 +24,6 @@ from functools import partial
 from multiprocessing import Process
 from CRISPResso2 import CRISPRessoCOREResources, CRISPRessoShared
 from CRISPResso2.writers import vcf
-from CRISPResso2.CRISPRessoReports import CRISPRessoReport
 
 CRISPRessoProVersion = CRISPRessoShared.get_C2Pro_version()
 C2PRO_INSTALLED = CRISPRessoProVersion is not None
@@ -139,13 +138,6 @@ def get_n_reads_bam(bam_filename, bam_chr_loc=""):
 
 pd = check_library('pandas')
 np = check_library('numpy')
-
-# start = time.time()
-sns = check_library('seaborn')
-# end = time.time()
-sns.set_context('poster')
-sns.set(font_scale=2.2)
-sns.set_style('white')
 
 #########################################
 
@@ -2628,7 +2620,8 @@ def main():
 
         description = ['~~~CRISPResso 2~~~', '-Analysis of genome editing outcomes from deep sequencing data-']
         header = CRISPRessoShared.get_crispresso_header(description=description, header_str=None)
-        info(header)
+        if not CRISPRessoShared.header_already_printed():
+            info(header)
 
         OUTPUT_DIRECTORY = 'CRISPResso_on_{0}'.format(normalize_name(args.name, args.fastq_r1, args.fastq_r2, args.bam_input))
 
@@ -5612,6 +5605,7 @@ def main():
             if pro_report:
                 pro_report(crispresso2_info, report_name, OUTPUT_DIRECTORY, _ROOT, logger, plot_context)
             else:
+                from CRISPResso2.CRISPRessoReports import CRISPRessoReport
                 CRISPRessoReport.make_report(crispresso2_info, report_name, OUTPUT_DIRECTORY, _ROOT, logger)
 
             crispresso2_info['running_info']['report_location'] = report_name

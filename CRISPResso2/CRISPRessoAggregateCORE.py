@@ -81,7 +81,8 @@ ___________________________________
 |/--\ \_| \_| | \ |_ \_| /--\ | |_ |
 |__________________________________|
         '''
-        info(CRISPRessoShared.get_crispresso_header(description, aggregate_string))
+        if not CRISPRessoShared.header_already_printed():
+            info(CRISPRessoShared.get_crispresso_header(description, aggregate_string))
 
         output_folder_name = 'CRISPRessoAggregate_on_%s' % args.name
         OUTPUT_DIRECTORY = os.path.abspath(output_folder_name)

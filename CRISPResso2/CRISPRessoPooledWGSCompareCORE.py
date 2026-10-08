@@ -81,7 +81,8 @@ def main():
         compare_header = CRISPRessoShared.get_crispresso_header(
             description, compare_header,
         )
-        info(compare_header)
+        if not CRISPRessoShared.header_already_printed():
+            info(compare_header)
 
         parser = argparse.ArgumentParser(
             description='CRISPRessoPooledWGSCompare Parameters',

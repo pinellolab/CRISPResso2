@@ -320,7 +320,8 @@ def main():
 ||/\|\__)__) |
 |____________|
         '''
-        info(CRISPRessoShared.get_crispresso_header(description, wgs_string))
+        if not CRISPRessoShared.header_already_printed():
+            info(CRISPRessoShared.get_crispresso_header(description, wgs_string))
 
         # CORE always uses matplotlib; when Pro is installed the hooks
         # below skip this path entirely and Pro owns plotting decisions.

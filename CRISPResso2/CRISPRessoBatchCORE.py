@@ -108,7 +108,8 @@ def main():
 ||__)/--\| \__|  ||
 |_________________|
         '''
-        info(CRISPRessoShared.get_crispresso_header(description, batch_string))
+        if not CRISPRessoShared.header_already_printed():
+            info(CRISPRessoShared.get_crispresso_header(description, batch_string))
 
         crispresso_options = CRISPRessoShared.get_core_crispresso_options()
         options_to_ignore = {'name', 'output_folder', 'zip_output'}
