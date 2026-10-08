@@ -1242,6 +1242,60 @@ def test_get_scores_and_counts_single_entry():
     assert counts == [1000]
 
 
+# =============================================================================
+# Tests for get_and_save_homology_scores
+# =============================================================================
+
+
+@pytest.fixture
+def homology_variant_dicts():
+    variant_cache = {
+        'AAA': {'aln_scores': [95.0, 90.0], 'count': 100},
+    }
+    not_aln_variant_objects = {
+        'CCC': {'aln_scores': [80.0], 'count': 50},
+    }
+    return variant_cache, not_aln_variant_objects
+
+
+def test_get_and_save_homology_scores_no_file_by_default(tmp_path, homology_variant_dicts):
+    """By default (keep_intermediate=False) no homology-scores file is written."""
+    variant_cache, not_aln_variant_objects = homology_variant_dicts
+    gz_filename = str(tmp_path / 'Alleles_homology_scores.txt.gz')
+
+    homology_scores, counts = CRISPRessoCORE.get_and_save_homology_scores(
+        variant_cache, not_aln_variant_objects, gz_filename,
+    )
+
+    assert sorted(homology_scores) == [80.0, 95.0]
+    assert counts == [100, 50]
+    assert not os.path.exists(gz_filename)
+    assert not os.path.exists(str(tmp_path / 'Alleles_homology_scores.txt'))
+
+
+def test_get_and_save_homology_scores_keep_intermediate(tmp_path, homology_variant_dicts):
+    """With keep_intermediate=True only the gzipped table is written."""
+    variant_cache, not_aln_variant_objects = homology_variant_dicts
+    gz_filename = str(tmp_path / 'Alleles_homology_scores.txt.gz')
+    txt_filename = str(tmp_path / 'Alleles_homology_scores.txt')
+
+    homology_scores, counts = CRISPRessoCORE.get_and_save_homology_scores(
+        variant_cache, not_aln_variant_objects, gz_filename, keep_intermediate=True,
+    )
+
+    assert sorted(homology_scores) == [80.0, 95.0]
+    assert counts == [100, 50]
+
+    assert os.path.exists(gz_filename)
+    assert not os.path.exists(txt_filename)
+
+    df_gz = pd.read_csv(gz_filename, sep='\t')
+    assert list(df_gz.columns) == ['sequence', 'homology_score', 'count']
+    # Rows are sorted by homology score (descending)
+    assert df_gz.iloc[0]['sequence'] == 'AAA'
+    assert df_gz.iloc[1]['sequence'] == 'CCC'
+
+
 def test_get_scores_and_counts_high_scores():
     """Test get_scores_and_counts with high alignment scores."""
     variant_dict = {

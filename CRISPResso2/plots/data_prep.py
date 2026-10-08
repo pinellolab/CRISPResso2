@@ -2291,7 +2291,7 @@ def prep_alleles_homology_histogram(ctx: CorePlotContext):
             "The dashed line indicates the minimum alignment score threshold used to "
             "discard low-quality alignments."
         ),
-        'data_files': [('Alleles Homology Scores', _data_file_basename(ctx, 'Alleles_homology_scores.txt'))],
+        'data_files': [('Alleles frequency table', _data_file_basename(ctx, 'Alleles_frequency_table.zip'))],
     }
 
 

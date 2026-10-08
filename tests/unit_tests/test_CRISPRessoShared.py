@@ -4,6 +4,10 @@ import re
 import tempfile
 import os
 import gzip
+import json
+import shlex
+import subprocess
+import sys
 
 import numpy as np
 import pandas as pd
@@ -1574,7 +1578,7 @@ def test_propagate_crispresso_options_with_spaces():
 
     result = CRISPRessoShared.propagate_crispresso_options(cmd, options, params)
 
-    assert '"sample with spaces"' in result
+    assert shlex.split(result) == ['CRISPResso', '--name', 'sample with spaces']
 
 
 # =============================================================================
@@ -2161,3 +2165,46 @@ def test_check_custom_config_enforces_guardrail_types(monkeypatch):
 
     with pytest.raises(CRISPRessoShared.BadParameterException, match="guide_len"):
         CRISPRessoShared.check_custom_config(args)
+
+
+@pytest.mark.parametrize('container', ['dict', 'namespace', 'dataframe'])
+@pytest.mark.parametrize('option,value', [
+    ('config_json', '{"colors":{"A":"#123456"}}'),
+    ('config_json', json.dumps({'figures': [{'section_name': 'Alignment statistics', 'content': []}]})),
+    ('config_json', json.dumps({'label': 'O\'Brien "quoted" $HOME $(printf expanded) `printf expanded`; * \n'})),
+    ('config_file', '/tmp/custom.json'),
+    ('config_file', '/tmp/O\'Brien configs/$HOME `printf expanded` $(printf expanded).json'),
+    ('fastp_options_string', '--qualified_quality_phred 20 --adapter_sequence ACGT'),
+    ('quantification_window_center', '-3'),
+])
+def test_propagate_crispresso_options_shell_round_trip(container, option, value):
+    """Exercise the actual shell boundary used by Batch, Pooled and WGS."""
+    params = {option: value}
+    index = None
+    if container == 'namespace':
+        params = argparse.Namespace(**params)
+    elif container == 'dataframe':
+        params = pd.DataFrame([params, params])
+        index = 1
+    echo_argv = shlex.join([
+        sys.executable, '-c', 'import json, sys; print(json.dumps(sys.argv[1:]))',
+    ])
+    command = CRISPRessoShared.propagate_crispresso_options(
+        echo_argv, [option], params, index,
+    )
+    received = json.loads(subprocess.check_output(command, shell=True, text=True))
+    assert received == ['--' + option, value]
+
+
+def test_propagate_crispresso_options_preserves_flags_and_numbers():
+    params = {
+        'debug': True, 'dump': False, 'keep_intermediate': 'True',
+        'fastq_output': 'False', 'name': '', 'config_file': None,
+        'needleman_wunsch_gap_open': -20, 'min_frequency_alleles_around_cut_to_plot': 0.2,
+    }
+    result = CRISPRessoShared.propagate_crispresso_options('CRISPResso', list(params), params)
+    assert shlex.split(result) == [
+        'CRISPResso', '--debug', '--keep_intermediate',
+        '--needleman_wunsch_gap_open', '-20',
+        '--min_frequency_alleles_around_cut_to_plot', '0.2',
+    ]
