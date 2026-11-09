@@ -258,12 +258,10 @@ def overwrite_crispresso_options(cmd, option_names_to_overwrite, option_values, 
                     new_cmd += ' --%s' % action.dest
             elif action.type == str:
                 if val != "":
-                    if re.fullmatch(r"[a-zA-Z0-9\._]*", val):  # if the value is alphanumeric, don't have to quote it
-                        new_cmd += ' --%s %s' % (action.dest, val)
-                    elif val.startswith('"') and val.endswith('"'):
-                        new_cmd += ' --%s %s' % (action.dest, val)
-                    else:
-                        new_cmd += ' --%s "%s"' % (action.dest, val)
+                    # Pooled/WGS reconstruct child commands through this path,
+                    # sometimes more than once. Values are raw argparse data:
+                    # preserve JSON quotes and shell metacharacters literally.
+                    new_cmd += ' --%s %s' % (action.dest, shlex.quote(val))
             elif action.type == int:
                 new_cmd += ' --%s %s' % (action.dest, val)
 

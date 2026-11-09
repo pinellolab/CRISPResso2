@@ -507,9 +507,14 @@ class TestPrepNucleotideQuilt:
             all_indelsub_count_vectors={'r': np.array([5, 5])},
             counts_total={'r': 100},
         )
+        ctx.custom_config = {'colors': {'A': '#123456', '-': '#abcdef'}}
         ctx.ref_name = 'r'
         result = prep_nucleotide_quilt(ctx)
 
+        assert result['custom_colors'] == ctx.custom_config['colors']
+        assert 'nucleotide color legend' in result['caption']
+        assert 'Gap-colored bars' in result['caption']
+        assert all(text not in result['caption'] for text in ('A = green', 'Black bars', 'Brown bars'))
         assert 'nuc_pct_df' in result
         assert 'mod_pct_df' in result
         assert result['nuc_pct_df'].shape[0] == 6  # A,C,G,T,N,-

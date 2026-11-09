@@ -2208,3 +2208,30 @@ def test_propagate_crispresso_options_preserves_flags_and_numbers():
         '--needleman_wunsch_gap_open', '-20',
         '--min_frequency_alleles_around_cut_to_plot', '0.2',
     ]
+
+
+@pytest.mark.parametrize('tool', ['Core', 'Pooled', 'WGS'])
+def test_overwrite_inline_config_survives_repeated_child_reconstruction(tool):
+    import json
+    import shlex
+    import subprocess
+    import sys
+    if not CRISPRessoShared.is_C2Pro_installed():
+        pytest.skip('Inline config argument requires Pro')
+    payload = json.dumps({'colors': {'A': '#123456'}, 'figures': [{
+        'section_name': 'O\'Brien "quoted" $HOME $(printf expanded) `printf expanded`; *',
+        'content': [],
+    }]})
+    required = ['-b', 'reads.bam', '-f', 'regions.txt', '-r', 'ref.fa'] if tool == 'WGS' else []
+    cmd = shlex.join(['CRISPResso', '--config_json', payload] + required)
+    # Pooled overwrites once from global args and again from each amplicon row.
+    for _ in range(2):
+        cmd = CRISPRessoShared.overwrite_crispresso_options(cmd, [], {}, tool=tool)
+        args = CRISPRessoShared.getCRISPRessoArgParser(tool).parse_args(shlex.split(cmd)[1:])
+        assert args.config_json == payload
+        assert args.config_file in (None, 'None')
+    child = shlex.join([sys.executable, '-c', 'import json,sys; print(json.dumps(sys.argv[1:]))'])
+    result = subprocess.check_output(child + cmd[len('CRISPResso'):], shell=True, text=True)
+    child_argv = json.loads(result)
+    assert child_argv[child_argv.index('--config_json') + 1] == payload
+    assert child_argv.count('--config_json') == 1
