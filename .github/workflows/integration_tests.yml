@@ -85,7 +85,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: edilytics/CRISPResso2_tests
-          ref: mckay/plot-colors-companion-fixes
+          ref: master
           path: CRISPResso2_tests
 
       - name: Checkout CRISPRessoPro
@@ -93,7 +93,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: edilytics/CRISPRessoPro
-          ref: mckay/plot-colors-companion-fixes
+          ref: master
           token: ${{ secrets.CRISPRESSOPRO_PAT }}
           path: CRISPRessoPro
 
