@@ -870,8 +870,8 @@ def prep_nucleotide_quilt(ctx: CorePlotContext):
         'caption': (
             "Figure 2a: Nucleotide distribution across amplicon. At each base in the reference "
             "amplicon, the percentage of each base as observed in sequencing reads is shown "
-            "(A = green; C = orange; G = yellow; T = purple). Black bars show the percentage of "
-            "reads for which that base was deleted. Brown bars between bases show the percentage "
+            "(see the nucleotide color legend). Gap-colored bars show the percentage of "
+            "reads for which that base was deleted. Bars between bases show the percentage "
             "of reads having an insertion at that position."
         ),
         'data_files': [('Nucleotide frequency table', os.path.basename(nuc_freq_filename))] if nuc_freq_filename else [],
@@ -997,7 +997,7 @@ def prep_hdr_nucleotide_quilt(ctx: CorePlotContext):
         'caption': (
             "Figure 4g: Nucleotide distribution across all amplicons. At each base in the "
             "reference amplicon, the percentage of each base as observed in sequencing reads "
-            "is shown (A = green; C = orange; G = yellow; T = purple). Black bars show the "
+            "is shown (see the nucleotide color legend). Gap-colored bars show the "
             "percentage of reads for which that base was deleted. Brown bars between bases "
             "show the percentage of reads having an insertion at that position."
         ),
@@ -1022,7 +1022,7 @@ def prep_pe_nucleotide_quilt(ctx: CorePlotContext):
     result['caption'] = (
         "Figure 11a: Nucleotide distribution across all amplicons. At each base in the "
         "reference amplicon, the percentage of each base as observed in sequencing reads "
-        "is shown (A = green; C = orange; G = yellow; T = purple). Black bars show the "
+        "is shown (see the nucleotide color legend). Gap-colored bars show the "
         "percentage of reads for which that base was deleted. Brown bars between bases "
         "show the percentage of reads having an insertion at that position."
     )
@@ -1626,7 +1626,7 @@ def prep_alleles_around_cut(ctx: CorePlotContext):
         'caption': (
             "Figure 9: Visualization of the distribution of identified alleles around the "
             "cleavage site for the " + sgRNA_legend + ". Nucleotides are indicated by unique "
-            "colors (A = green; C = red; G = yellow; T = purple). Substitutions are shown in "
+            "colors (see the nucleotide color legend). Substitutions are shown in "
             "bold font. Red rectangles highlight inserted sequences. Horizontal dashed lines "
             "indicate deleted sequences. The vertical dashed line indicates the predicted "
             "cleavage site."
@@ -1748,7 +1748,7 @@ def prep_base_edit_quilt(ctx: CorePlotContext):
             "Figure 10h: Quilt of target nucleotide: " + conversion_nuc_from
             + " across entire amplicon. The x-axis shows the corresponding position of the "
             "nucleotide in the reference amplicon (1-indexed). Nucleotides are indicated by "
-            "unique colors (A = green; C = red; G = yellow; T = purple). Substitutions are "
+            "unique colors (see the nucleotide color legend). Substitutions are "
             "shown in bold font. Red rectangles highlight inserted sequences. Horizontal "
             "dashed lines indicate deleted sequences."
         ),
