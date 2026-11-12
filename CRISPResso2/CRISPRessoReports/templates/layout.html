@@ -119,6 +119,10 @@
             <div class="crispresso-header-text">
               <h1><a href="{{'/' if is_web else 'https://crispresso.com'}}">CRISPResso2</a></h1>
               <h3>Analysis of genome editing outcomes from deep sequencing data</h3>
+              {#- The shared public-site account is not a sign-in; offer the real one. -#}
+              {%- if is_web and is_default_user %}
+              <p class="mb-0"><a href="{{ url_for('login') }}">Log in</a></p>
+              {%- endif %}
             </div>
           </div>
         </div>
