@@ -56,6 +56,7 @@ def test_core_report_header_uses_feature_flag_and_explicit_target():
     assert 'href="{{ report_data[\'plot_assistant_url\'] }}"' in source
     assert 'href="/plot-assistant/{{ report_data[\'folder_id\'] }}"' not in source
 
+
 LOGIN_PARTIAL = 'shared/partials/pro_login_button.html'
 LOGIN_MARKER = '<div id="cr-pro-login-btn">STUB</div>'
 
@@ -103,3 +104,10 @@ def test_login_partial_sees_layout_context():
     partial = '{% if current_user.email == "a@b.c" and is_default_user %}CTX-OK{% endif %}'
     html = _layout_env({LOGIN_PARTIAL: partial}).get_template('layout.html').render(**_layout_context(True, True))
     assert 'CTX-OK' in html
+
+
+def test_default_user_header_has_no_separate_login_link():
+    """C2Web's login button is the one sign-in; a second header link implied a separate login."""
+    button = '<a id="cr-pro-login-btn" href="/login">STUB</a>'
+    html = _layout_env({LOGIN_PARTIAL: button}).get_template('layout.html').render(**_layout_context(True, True))
+    assert html.count('href="/login"') == 1
