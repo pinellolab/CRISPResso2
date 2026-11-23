@@ -111,3 +111,28 @@ def test_default_user_header_has_no_separate_login_link():
     button = '<a id="cr-pro-login-btn" href="/login">STUB</a>'
     html = _layout_env({LOGIN_PARTIAL: button}).get_template('layout.html').render(**_layout_context(True, True))
     assert html.count('href="/login"') == 1
+
+
+@pytest.mark.parametrize('is_web', [False, True])
+def test_layout_loads_twitter_widget_only_outside_the_web(is_web):
+    # C2Web loads widgets.js itself, after cookie consent.
+    html = _layout_env({}).get_template('layout.html').render(**_layout_context(is_web, is_default_user=True))
+    assert 'twitter-share-button' in html
+    assert ('platform.twitter.com/widgets.js' in html) is (not is_web)
+
+
+def test_cli_layout_twitter_loader_bytes_are_unchanged():
+    # CRISPResso2_tests diffs report HTML against baselines, so the web gate must not move a byte here.
+    import logging
+
+    from CRISPResso2.CRISPRessoReports.CRISPRessoReport import get_jinja_loader
+
+    env = get_jinja_loader(str(TEMPLATES.parents[1]), logging.getLogger(__name__))
+    html = env.get_template('layout.html').render(is_web=False, is_default_user=False)
+    assert '</script>\n\n\n  <script>!function(d,s,id){' in html
+    assert "(document, 'script', 'twitter-wjs');</script>\n  \n\n  </head>" in html
+
+
+def test_layout_loads_twitter_widget_when_is_web_is_not_passed():
+    html = _layout_env({}).get_template('layout.html').render()
+    assert html.count('platform.twitter.com/widgets.js') == 1
